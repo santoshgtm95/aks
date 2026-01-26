@@ -1,0 +1,6 @@
+@AKZ.API_HostAddress = http://localhost:5159
+
+GET {{AKZ.API_HostAddress}}/weatherforecast/
+Accept: application/json
+
+###
