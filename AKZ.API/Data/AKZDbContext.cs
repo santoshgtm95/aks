@@ -15,10 +15,19 @@ public class AKZDbContext : DbContext
     public DbSet<RolePermission> RolePermissions { get; set; }
     public DbSet<Product> Products { get; set; }
     public DbSet<Sale> Sales { get; set; }
+    public DbSet<ProcessingRecord> ProcessingRecords { get; set; }
+    public DbSet<Worker> Workers { get; set; }
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
         base.OnModelCreating(modelBuilder);
+
+        // Configure ProcessingRecord relationship
+        modelBuilder.Entity<ProcessingRecord>()
+            .HasOne(pr => pr.Product)
+            .WithMany()
+            .HasForeignKey(pr => pr.ProductId)
+            .OnDelete(DeleteBehavior.Restrict);
 
         // Configure unique constraints
         modelBuilder.Entity<User>()

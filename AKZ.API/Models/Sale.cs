@@ -45,6 +45,9 @@ public class Sale
     [Column(TypeName = "decimal(18,2)")]
     public decimal TotalRemaining { get; set; }
 
+    [MaxLength(50)]
+    public string Category { get; set; } = "General";
+
     public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
 
     public DateTime? UpdatedAt { get; set; }

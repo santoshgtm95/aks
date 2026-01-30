@@ -20,9 +20,16 @@ public class SalesController : ControllerBase
     }
 
     [HttpGet]
-    public async Task<ActionResult<List<SaleDto>>> GetSales()
+    public async Task<ActionResult<List<SaleDto>>> GetSales([FromQuery] string? category = null)
     {
-        var sales = await _context.Sales
+        var query = _context.Sales.AsQueryable();
+
+        if (!string.IsNullOrEmpty(category))
+        {
+            query = query.Where(s => s.Category == category);
+        }
+
+        var sales = await query
             .Include(s => s.Product)
             .Include(s => s.Seller)
             .OrderByDescending(s => s.Date)
@@ -39,7 +46,8 @@ public class SalesController : ControllerBase
                 Currency = s.Currency,
                 SellerId = s.SellerId,
                 SellerName = s.Seller.FullName,
-                TotalRemaining = s.TotalRemaining
+                TotalRemaining = s.TotalRemaining,
+                Category = s.Category
             })
             .ToListAsync();
 
@@ -66,7 +74,8 @@ public class SalesController : ControllerBase
                 Currency = s.Currency,
                 SellerId = s.SellerId,
                 SellerName = s.Seller.FullName,
-                TotalRemaining = s.TotalRemaining
+                TotalRemaining = s.TotalRemaining,
+                Category = s.Category
             })
             .FirstOrDefaultAsync();
 
@@ -106,6 +115,7 @@ public class SalesController : ControllerBase
             Currency = dto.Currency,
             SellerId = userId,
             TotalRemaining = product.RemainingWeight - dto.Weight,
+            Category = dto.Category,
             CreatedAt = DateTime.UtcNow
         };
 
@@ -133,7 +143,8 @@ public class SalesController : ControllerBase
             Currency = sale.Currency,
             SellerId = sale.SellerId,
             SellerName = sale.Seller.FullName,
-            TotalRemaining = sale.TotalRemaining
+            TotalRemaining = sale.TotalRemaining,
+            Category = sale.Category
         };
 
         return CreatedAtAction(nameof(GetSale), new { id = sale.Id }, saleDto);

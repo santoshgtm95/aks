@@ -55,7 +55,8 @@ public class DashboardController : ControllerBase
                 Currency = s.Currency,
                 SellerId = s.SellerId,
                 SellerName = s.Seller.FullName,
-                TotalRemaining = s.TotalRemaining
+                TotalRemaining = s.TotalRemaining,
+                Category = s.Category
             })
             .ToListAsync();
 

@@ -54,6 +54,7 @@ export interface Sale {
   sellerId: number;
   sellerName: string;
   totalRemaining: number;
+  category: string;
 }
 
 export interface CreateSaleDto {
@@ -64,6 +65,7 @@ export interface CreateSaleDto {
   weight: number;
   price: number;
   currency: string;
+  category: string;
 }
 
 export interface DashboardStats {
@@ -91,4 +93,45 @@ export interface Role {
   id: number;
   name: string;
   description?: string;
+}
+
+export interface ProcessingRecord {
+  id: number;
+  date: string;
+  productId: number;
+  productMarker: string;
+  workerNames: string;
+  count: number;
+  unitWeight: number;
+  redWeight: number;
+  whiteWeight: number;
+  specialWeight: number;
+  naturalWeight: number;
+  shortWeight: number;
+  lossWeight: number;
+  totalWeight: number;
+  difference: number;
+}
+
+export interface CreateProcessingRecordDto {
+  date: string;
+  productId: number;
+  workerNames: string;
+  count: number;
+  unitWeight: number;
+  redWeight: number;
+  whiteWeight: number;
+  specialWeight: number;
+  naturalWeight: number;
+  shortWeight: number;
+  lossWeight: number;
+  totalWeight: number;
+  difference: number;
+}
+
+export interface Worker {
+  id: number;
+  name: string;
+  phoneNumber?: string;
+  isActive: boolean;
 }

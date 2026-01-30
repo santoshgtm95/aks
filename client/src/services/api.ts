@@ -1,5 +1,5 @@
 import axios from 'axios';
-import type { LoginRequest, LoginResponse, Product, CreateProductDto, Sale, CreateSaleDto, DashboardStats, User, CreateUserDto, Role } from '../types';
+import type { LoginRequest, LoginResponse, Product, CreateProductDto, Sale, CreateSaleDto, DashboardStats, User, CreateUserDto, Role, ProcessingRecord, CreateProcessingRecordDto, Worker } from '../types';
 
 const API_BASE_URL = 'http://localhost:5159/api';
 
@@ -71,8 +71,10 @@ export const productsAPI = {
 
 // Sales API
 export const salesAPI = {
-    getAll: async (): Promise<Sale[]> => {
-        const response = await api.get<Sale[]>('/sales');
+    getAll: async (category?: string): Promise<Sale[]> => {
+        const response = await api.get<Sale[]>('/sales', {
+            params: { category }
+        });
         return response.data;
     },
     getById: async (id: number): Promise<Sale> => {
@@ -81,6 +83,30 @@ export const salesAPI = {
     },
     create: async (data: CreateSaleDto): Promise<Sale> => {
         const response = await api.post<Sale>('/sales', data);
+        return response.data;
+    },
+};
+
+// Processing API
+export const processingAPI = {
+    getAll: async (): Promise<ProcessingRecord[]> => {
+        const response = await api.get<ProcessingRecord[]>('/processing');
+        return response.data;
+    },
+    create: async (data: CreateProcessingRecordDto): Promise<ProcessingRecord> => {
+        const response = await api.post<ProcessingRecord>('/processing', data);
+        return response.data;
+    },
+};
+
+// Workers API
+export const workersAPI = {
+    getAll: async (): Promise<Worker[]> => {
+        const response = await api.get<Worker[]>('/workers');
+        return response.data;
+    },
+    create: async (data: Partial<Worker>): Promise<Worker> => {
+        const response = await api.post<Worker>('/workers', data);
         return response.data;
     },
 };

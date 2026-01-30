@@ -13,7 +13,7 @@ using System.Reflection;
 [assembly: System.Reflection.AssemblyCompanyAttribute("AKZ.API")]
 [assembly: System.Reflection.AssemblyConfigurationAttribute("Debug")]
 [assembly: System.Reflection.AssemblyFileVersionAttribute("1.0.0.0")]
-[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0")]
+[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+e8ad7cd850d16491b625c2c9056343e01310d4fe")]
 [assembly: System.Reflection.AssemblyProductAttribute("AKZ.API")]
 [assembly: System.Reflection.AssemblyTitleAttribute("AKZ.API")]
 [assembly: System.Reflection.AssemblyVersionAttribute("1.0.0.0")]

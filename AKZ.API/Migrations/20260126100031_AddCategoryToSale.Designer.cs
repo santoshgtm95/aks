@@ -4,6 +4,7 @@ using AKZ.API.Data;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 #nullable disable
@@ -11,9 +12,11 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace AKZ.API.Migrations
 {
     [DbContext(typeof(AKZDbContext))]
-    partial class AKZDbContextModelSnapshot : ModelSnapshot
+    [Migration("20260126100031_AddCategoryToSale")]
+    partial class AddCategoryToSale
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -45,64 +48,6 @@ namespace AKZ.API.Migrations
                         .IsUnique();
 
                     b.ToTable("Permissions");
-                });
-
-            modelBuilder.Entity("AKZ.API.Models.ProcessingRecord", b =>
-                {
-                    b.Property<int>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("int");
-
-                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
-
-                    b.Property<int>("Count")
-                        .HasColumnType("int");
-
-                    b.Property<DateTime>("CreatedAt")
-                        .HasColumnType("datetime2");
-
-                    b.Property<DateTime>("Date")
-                        .HasColumnType("datetime2");
-
-                    b.Property<decimal>("Difference")
-                        .HasColumnType("decimal(18,4)");
-
-                    b.Property<decimal>("LossWeight")
-                        .HasColumnType("decimal(18,4)");
-
-                    b.Property<decimal>("NaturalWeight")
-                        .HasColumnType("decimal(18,4)");
-
-                    b.Property<int>("ProductId")
-                        .HasColumnType("int");
-
-                    b.Property<decimal>("RedWeight")
-                        .HasColumnType("decimal(18,4)");
-
-                    b.Property<decimal>("ShortWeight")
-                        .HasColumnType("decimal(18,4)");
-
-                    b.Property<decimal>("SpecialWeight")
-                        .HasColumnType("decimal(18,4)");
-
-                    b.Property<decimal>("TotalWeight")
-                        .HasColumnType("decimal(18,4)");
-
-                    b.Property<decimal>("UnitWeight")
-                        .HasColumnType("decimal(18,4)");
-
-                    b.Property<decimal>("WhiteWeight")
-                        .HasColumnType("decimal(18,4)");
-
-                    b.Property<string>("WorkerNames")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(max)");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("ProductId");
-
-                    b.ToTable("ProcessingRecords");
                 });
 
             modelBuilder.Entity("AKZ.API.Models.Product", b =>
@@ -321,45 +266,6 @@ namespace AKZ.API.Migrations
                         .IsUnique();
 
                     b.ToTable("Users");
-                });
-
-            modelBuilder.Entity("AKZ.API.Models.Worker", b =>
-                {
-                    b.Property<int>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("int");
-
-                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
-
-                    b.Property<DateTime>("CreatedAt")
-                        .HasColumnType("datetime2");
-
-                    b.Property<bool>("IsActive")
-                        .HasColumnType("bit");
-
-                    b.Property<string>("Name")
-                        .IsRequired()
-                        .HasMaxLength(100)
-                        .HasColumnType("nvarchar(100)");
-
-                    b.Property<string>("PhoneNumber")
-                        .HasMaxLength(20)
-                        .HasColumnType("nvarchar(20)");
-
-                    b.HasKey("Id");
-
-                    b.ToTable("Workers");
-                });
-
-            modelBuilder.Entity("AKZ.API.Models.ProcessingRecord", b =>
-                {
-                    b.HasOne("AKZ.API.Models.Product", "Product")
-                        .WithMany()
-                        .HasForeignKey("ProductId")
-                        .OnDelete(DeleteBehavior.Restrict)
-                        .IsRequired();
-
-                    b.Navigation("Product");
                 });
 
             modelBuilder.Entity("AKZ.API.Models.RolePermission", b =>

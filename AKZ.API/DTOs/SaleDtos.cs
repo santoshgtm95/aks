@@ -14,6 +14,7 @@ public class SaleDto
     public int SellerId { get; set; }
     public string SellerName { get; set; } = string.Empty;
     public decimal TotalRemaining { get; set; }
+    public string Category { get; set; } = string.Empty;
 }
 
 public class CreateSaleDto
@@ -25,6 +26,7 @@ public class CreateSaleDto
     public decimal Weight { get; set; }
     public decimal Price { get; set; }
     public string Currency { get; set; } = "MMK";
+    public string Category { get; set; } = "General";
 }
 
 public class DashboardStatsDto

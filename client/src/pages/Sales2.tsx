@@ -3,6 +3,8 @@ import { salesAPI, productsAPI } from '../services/api';
 import type { Sale, Product, CreateSaleDto } from '../types';
 import './Sales2.css';
 
+const PAGE_CATEGORY = 'Sales2';
+
 const Sales2: React.FC = () => {
     const [sales, setSales] = useState<Sale[]>([]);
     const [products, setProducts] = useState<Product[]>([]);
@@ -15,6 +17,7 @@ const Sales2: React.FC = () => {
         weight: 0,
         price: 0,
         currency: 'MMK',
+        category: PAGE_CATEGORY,
     });
 
     useEffect(() => {
@@ -24,7 +27,7 @@ const Sales2: React.FC = () => {
     const loadData = async () => {
         try {
             const [salesData, productsData] = await Promise.all([
-                salesAPI.getAll(),
+                salesAPI.getAll(PAGE_CATEGORY),
                 productsAPI.getAll(),
             ]);
             setSales(salesData);
@@ -73,6 +76,7 @@ const Sales2: React.FC = () => {
                 weight: 0,
                 price: 0,
                 currency: 'MMK',
+                category: PAGE_CATEGORY,
             });
             loadData();
         } catch (error: any) {
@@ -203,7 +207,6 @@ const Sales2: React.FC = () => {
                                 <th>Price</th>
                                 <th>Total</th>
                                 <th>Seller</th>
-                                <th>Remaining</th>
                             </tr>
                         </thead>
                         <tbody>
@@ -215,7 +218,6 @@ const Sales2: React.FC = () => {
                                     <td>{sale.price} {sale.currency}</td>
                                     <td>{(sale.weight * sale.price).toFixed(2)} {sale.currency}</td>
                                     <td>{sale.sellerName}</td>
-                                    <td>{sale.totalRemaining.toFixed(2)} {sale.unit}</td>
                                 </tr>
                             ))}
                         </tbody>

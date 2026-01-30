@@ -156,3 +156,4 @@ C:\Users\user\Documents\me\AKZNew\AKZ.API\obj\Debug\net9.0\refint\AKZ.API.dll
 C:\Users\user\Documents\me\AKZNew\AKZ.API\obj\Debug\net9.0\AKZ.API.pdb
 C:\Users\user\Documents\me\AKZNew\AKZ.API\obj\Debug\net9.0\AKZ.API.genruntimeconfig.cache
 C:\Users\user\Documents\me\AKZNew\AKZ.API\obj\Debug\net9.0\ref\AKZ.API.dll
+C:\Users\user\Documents\me\AKZNew\AKZ.API\obj\Debug\net9.0\AKZ.API.sourcelink.json
