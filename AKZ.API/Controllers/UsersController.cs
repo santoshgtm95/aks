@@ -26,6 +26,7 @@ public class UsersController : ControllerBase
             .Include(u => u.Role)
                 .ThenInclude(r => r.RolePermissions)
                 .ThenInclude(rp => rp.Permission)
+            .Where(u => u.IsActive)
             .Select(u => new UserDto
             {
                 Id = u.Id,
@@ -34,7 +35,11 @@ public class UsersController : ControllerBase
                 Email = u.Email,
                 PhoneNumber = u.PhoneNumber,
                 RoleName = u.Role.Name,
-                Permissions = u.Role.RolePermissions.Select(rp => rp.Permission.Name).ToList()
+                Permissions = _context.UserPermissions
+                    .Where(up => up.UserId == u.Id)
+                    .Select(up => up.Permission.Name)
+                    .Union(u.Role.RolePermissions.Select(rp => rp.Permission.Name))
+                    .ToList()
             })
             .ToListAsync();
 
@@ -57,7 +62,12 @@ public class UsersController : ControllerBase
                 Email = u.Email,
                 PhoneNumber = u.PhoneNumber,
                 RoleName = u.Role.Name,
-                Permissions = u.Role.RolePermissions.Select(rp => rp.Permission.Name).ToList()
+                Permissions = _context.UserPermissions
+                    .Where(up => up.UserId == u.Id)
+                    .Select(up => up.Permission.Name)
+                    .Union(u.Role.RolePermissions.Select(rp => rp.Permission.Name))
+                    .ToList()
+
             })
             .FirstOrDefaultAsync();
 
@@ -73,15 +83,21 @@ public class UsersController : ControllerBase
     public async Task<ActionResult<UserDto>> CreateUser([FromBody] CreateUserDto dto)
     {
         // Check if username already exists
-        if (await _context.Users.AnyAsync(u => u.Username == dto.Username))
+        if (await _context.Users.IgnoreQueryFilters().AnyAsync(u => u.Username == dto.Username && u.DeleteFlg == 0))
         {
             return BadRequest(new { message = "Username already exists" });
         }
 
         // Check if email already exists
-        if (await _context.Users.AnyAsync(u => u.Email == dto.Email))
+        if (await _context.Users.IgnoreQueryFilters().AnyAsync(u => u.Email == dto.Email && u.DeleteFlg == 0))
         {
             return BadRequest(new { message = "Email already exists" });
+        }
+
+        // Validate RoleId
+        if (dto.RoleId <= 0 || !await _context.Roles.AnyAsync(r => r.Id == dto.RoleId))
+        {
+            return BadRequest(new { message = "Please select a valid role" });
         }
 
         var user = new User
@@ -92,16 +108,22 @@ public class UsersController : ControllerBase
             Email = dto.Email,
             PhoneNumber = dto.PhoneNumber,
             RoleId = dto.RoleId,
-            IsActive = true,
-            CreatedAt = DateTime.UtcNow
+            IsActive = true
         };
 
         _context.Users.Add(user);
         await _context.SaveChangesAsync();
 
-        // Reload to get navigation properties
-        await _context.Entry(user).Reference(u => u.Role).LoadAsync();
-        await _context.Entry(user.Role).Collection(r => r.RolePermissions).LoadAsync();
+        // Fetch combined permissions (Role + User Overrides)
+        var userPermissions = await _context.UserPermissions
+            .Where(up => up.UserId == user.Id)
+            .Select(up => up.Permission.Name)
+            .ToListAsync();
+
+        var rolePermissions = await _context.RolePermissions
+            .Where(rp => rp.RoleId == user.RoleId)
+            .Select(rp => rp.Permission.Name)
+            .ToListAsync();
 
         var userDto = new UserDto
         {
@@ -110,8 +132,8 @@ public class UsersController : ControllerBase
             FullName = user.FullName,
             Email = user.Email,
             PhoneNumber = user.PhoneNumber,
-            RoleName = user.Role.Name,
-            Permissions = user.Role.RolePermissions.Select(rp => rp.Permission.Name).ToList()
+            RoleName = (await _context.Roles.FindAsync(user.RoleId))?.Name ?? "",
+            Permissions = userPermissions.Union(rolePermissions).ToList()
         };
 
         return CreatedAtAction(nameof(GetUser), new { id = user.Id }, userDto);
@@ -132,7 +154,6 @@ public class UsersController : ControllerBase
         user.PhoneNumber = dto.PhoneNumber;
         user.RoleId = dto.RoleId;
         user.IsActive = dto.IsActive;
-        user.UpdatedAt = DateTime.UtcNow;
 
         await _context.SaveChangesAsync();
 
@@ -149,11 +170,62 @@ public class UsersController : ControllerBase
             return NotFound();
         }
 
-        user.IsActive = false;
-        user.UpdatedAt = DateTime.UtcNow;
-
+        _context.Users.Remove(user);
         await _context.SaveChangesAsync();
 
+        return NoContent();
+    }
+
+    [HttpGet("{id}/permissions")]
+    public async Task<ActionResult<List<int>>> GetUserPermissionIds(int id)
+    {
+        var permissionIds = await _context.UserPermissions
+            .Where(up => up.UserId == id)
+            .Select(up => up.PermissionId)
+            .ToListAsync();
+
+        // If no user-specific permissions, return role permissions as default
+        if (!permissionIds.Any())
+        {
+            var user = await _context.Users
+                .Include(u => u.Role)
+                    .ThenInclude(r => r.RolePermissions)
+                .FirstOrDefaultAsync(u => u.Id == id);
+            
+            if (user != null)
+            {
+                permissionIds = user.Role.RolePermissions.Select(rp => rp.PermissionId).ToList();
+            }
+        }
+
+        return Ok(permissionIds);
+    }
+
+    [HttpPost("{id}/permissions")]
+    public async Task<IActionResult> UpdateUserPermissions(int id, [FromBody] UpdateUserPermissionsDto dto)
+    {
+        var user = await _context.Users.FindAsync(id);
+        if (user == null) return NotFound();
+
+        // Remove existing user-specific permissions
+        var existingPermissions = await _context.UserPermissions
+            .Where(up => up.UserId == id)
+            .ToListAsync();
+        
+        _context.UserPermissions.RemoveRange(existingPermissions);
+
+        // Add new permissions
+        foreach (var permId in dto.PermissionIds)
+        {
+            _context.UserPermissions.Add(new UserPermission
+            {
+                UserId = id,
+                PermissionId = permId,
+                IsGranted = true
+            });
+        }
+
+        await _context.SaveChangesAsync();
         return NoContent();
     }
 

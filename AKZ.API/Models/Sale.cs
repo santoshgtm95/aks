@@ -4,7 +4,7 @@ using System.ComponentModel.DataAnnotations.Schema;
 namespace AKZ.API.Models;
 
 [Table("Sales")]
-public class Sale
+public class Sale : BaseEntity
 {
     [Key]
     public int Id { get; set; }
@@ -47,8 +47,4 @@ public class Sale
 
     [MaxLength(50)]
     public string Category { get; set; } = "General";
-
-    public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
-
-    public DateTime? UpdatedAt { get; set; }
 }

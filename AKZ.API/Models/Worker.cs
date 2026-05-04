@@ -4,7 +4,7 @@ using System.ComponentModel.DataAnnotations.Schema;
 namespace AKZ.API.Models;
 
 [Table("Workers")]
-public class Worker
+public class Worker : BaseEntity
 {
     [Key]
     public int Id { get; set; }
@@ -17,6 +17,4 @@ public class Worker
     public string? PhoneNumber { get; set; }
 
     public bool IsActive { get; set; } = true;
-
-    public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
 }

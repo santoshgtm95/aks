@@ -1,12 +1,16 @@
 using Microsoft.EntityFrameworkCore;
 using AKZ.API.Models;
+using AKZ.API.Services;
 
 namespace AKZ.API.Data;
 
 public class AKZDbContext : DbContext
 {
-    public AKZDbContext(DbContextOptions<AKZDbContext> options) : base(options)
+    private readonly ICurrentUserService _currentUserService;
+
+    public AKZDbContext(DbContextOptions<AKZDbContext> options, ICurrentUserService currentUserService) : base(options)
     {
+        _currentUserService = currentUserService;
     }
 
     public DbSet<User> Users { get; set; }
@@ -17,10 +21,60 @@ public class AKZDbContext : DbContext
     public DbSet<Sale> Sales { get; set; }
     public DbSet<ProcessingRecord> ProcessingRecords { get; set; }
     public DbSet<Worker> Workers { get; set; }
+    public DbSet<Warehouse> Warehouses { get; set; }
+    public DbSet<UserPermission> UserPermissions { get; set; }
+
+    public override Task<int> SaveChangesAsync(CancellationToken cancellationToken = default)
+    {
+        var username = _currentUserService.GetUsername() ?? "System";
+        var now = DateTime.UtcNow;
+
+        foreach (var entry in ChangeTracker.Entries<BaseEntity>())
+        {
+            switch (entry.State)
+            {
+                case EntityState.Added:
+                    entry.Entity.DeleteFlg = 0;
+                    entry.Entity.CreateDate = now;
+                    entry.Entity.CreateBy = username;
+                    entry.Entity.UpdateDate = now;
+                    entry.Entity.UpdateBy = username;
+                    break;
+
+                case EntityState.Modified:
+                    entry.Entity.UpdateDate = now;
+                    entry.Entity.UpdateBy = username;
+                    break;
+
+                case EntityState.Deleted:
+                    entry.State = EntityState.Modified;
+                    entry.Entity.DeleteFlg = 1;
+                    entry.Entity.DeleteDate = now;
+                    entry.Entity.DeleteBy = username;
+                    entry.Entity.UpdateDate = now;
+                    entry.Entity.UpdateBy = username;
+                    break;
+            }
+        }
+
+        return base.SaveChangesAsync(cancellationToken);
+    }
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
         base.OnModelCreating(modelBuilder);
+
+        // Apply global query filters for soft delete
+        modelBuilder.Entity<User>().HasQueryFilter(e => e.DeleteFlg == 0);
+        modelBuilder.Entity<Role>().HasQueryFilter(e => e.DeleteFlg == 0);
+        modelBuilder.Entity<Permission>().HasQueryFilter(e => e.DeleteFlg == 0);
+        modelBuilder.Entity<RolePermission>().HasQueryFilter(e => e.DeleteFlg == 0);
+        modelBuilder.Entity<Product>().HasQueryFilter(e => e.DeleteFlg == 0);
+        modelBuilder.Entity<Sale>().HasQueryFilter(e => e.DeleteFlg == 0);
+        modelBuilder.Entity<ProcessingRecord>().HasQueryFilter(e => e.DeleteFlg == 0);
+        modelBuilder.Entity<Worker>().HasQueryFilter(e => e.DeleteFlg == 0);
+        modelBuilder.Entity<Warehouse>().HasQueryFilter(e => e.DeleteFlg == 0);
+        modelBuilder.Entity<UserPermission>().HasQueryFilter(e => e.DeleteFlg == 0);
 
         // Configure ProcessingRecord relationship
         modelBuilder.Entity<ProcessingRecord>()
@@ -32,10 +86,12 @@ public class AKZDbContext : DbContext
         // Configure unique constraints
         modelBuilder.Entity<User>()
             .HasIndex(u => u.Username)
+            .HasFilter("[DeleteFlg] = 0")
             .IsUnique();
 
         modelBuilder.Entity<User>()
             .HasIndex(u => u.Email)
+            .HasFilter("[DeleteFlg] = 0")
             .IsUnique();
 
         modelBuilder.Entity<Role>()
@@ -76,5 +132,23 @@ public class AKZDbContext : DbContext
             .WithMany(u => u.Sales)
             .HasForeignKey(s => s.SellerId)
             .OnDelete(DeleteBehavior.Restrict);
+
+        modelBuilder.Entity<Product>()
+            .HasOne(p => p.Warehouse)
+            .WithMany(w => w.Products)
+            .HasForeignKey(p => p.WarehouseId)
+            .OnDelete(DeleteBehavior.SetNull);
+
+        modelBuilder.Entity<UserPermission>()
+            .HasOne(up => up.User)
+            .WithMany()
+            .HasForeignKey(up => up.UserId)
+            .OnDelete(DeleteBehavior.Cascade);
+
+        modelBuilder.Entity<UserPermission>()
+            .HasOne(up => up.Permission)
+            .WithMany()
+            .HasForeignKey(up => up.PermissionId)
+            .OnDelete(DeleteBehavior.Cascade);
     }
 }

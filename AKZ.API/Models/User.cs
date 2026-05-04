@@ -4,7 +4,7 @@ using System.ComponentModel.DataAnnotations.Schema;
 namespace AKZ.API.Models;
 
 [Table("Users")]
-public class User
+public class User : BaseEntity
 {
     [Key]
     public int Id { get; set; }
@@ -34,10 +34,6 @@ public class User
     public Role Role { get; set; } = null!;
 
     public bool IsActive { get; set; } = true;
-
-    public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
-
-    public DateTime? UpdatedAt { get; set; }
 
     // Navigation properties
     public ICollection<Sale> Sales { get; set; } = new List<Sale>();

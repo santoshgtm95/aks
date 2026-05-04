@@ -4,7 +4,7 @@ using System.ComponentModel.DataAnnotations.Schema;
 namespace AKZ.API.Models;
 
 [Table("RolePermissions")]
-public class RolePermission
+public class RolePermission : BaseEntity
 {
     [Key]
     public int Id { get; set; }

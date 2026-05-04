@@ -115,13 +115,11 @@ public class SalesController : ControllerBase
             Currency = dto.Currency,
             SellerId = userId,
             TotalRemaining = product.RemainingWeight - dto.Weight,
-            Category = dto.Category,
-            CreatedAt = DateTime.UtcNow
+            Category = dto.Category
         };
 
         // Update product remaining weight
         product.RemainingWeight -= dto.Weight;
-        product.UpdatedAt = DateTime.UtcNow;
 
         _context.Sales.Add(sale);
         await _context.SaveChangesAsync();

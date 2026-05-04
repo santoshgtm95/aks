@@ -30,7 +30,6 @@ public class WorkersController : ControllerBase
     [HttpPost]
     public async Task<ActionResult<Worker>> CreateWorker([FromBody] Worker worker)
     {
-        worker.CreatedAt = DateTime.UtcNow;
         _context.Workers.Add(worker);
         await _context.SaveChangesAsync();
         return Ok(worker);

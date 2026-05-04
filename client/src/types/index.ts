@@ -21,7 +21,7 @@ export interface LoginResponse {
 export interface Product {
   id: number;
   date: string;
-  packages: number;
+  packages: string;
   marker: string;
   unit: string;
   weight: number;
@@ -29,16 +29,38 @@ export interface Product {
   currency: string;
   remainingWeight: number;
   isActive: boolean;
+  warehouseId?: number;
+  warehouseName?: string;
+}
+
+export interface Warehouse {
+  id: number;
+  name: string;
+  location?: string;
+  isActive: boolean;
 }
 
 export interface CreateProductDto {
   date: string;
-  packages: number;
+  packages: string;
   marker: string;
   unit: string;
   weight: number;
   price: number;
   currency: string;
+  remainingWeight?: number;
+  warehouseId?: number;
+}
+
+export interface CreateWarehouseDto {
+  name: string;
+  location?: string;
+}
+
+export interface UpdateWarehouseDto {
+  name: string;
+  location?: string;
+  isActive: boolean;
 }
 
 export interface Sale {
@@ -89,6 +111,14 @@ export interface CreateUserDto {
   roleId: number;
 }
 
+export interface UpdateUserDto {
+  fullName: string;
+  email: string;
+  phoneNumber?: string;
+  roleId: number;
+  isActive: boolean;
+}
+
 export interface Role {
   id: number;
   name: string;
@@ -102,14 +132,30 @@ export interface ProcessingRecord {
   productMarker: string;
   workerNames: string;
   count: number;
+  remainingCount: number;
   unitWeight: number;
   redWeight: number;
+  redCount: number;
   whiteWeight: number;
+  whiteCount: number;
   specialWeight: number;
+  specialCount: number;
   naturalWeight: number;
+  naturalCount: number;
+  naturalWhiteWeight: number;
+  naturalWhiteCount: number;
+  naturalRedWeight: number;
+  naturalRedCount: number;
+  shortCutWeight: number;
+  shortCutCount: number;
+  artificialWeight: number;
+  artificialCount: number;
   shortWeight: number;
+  shortCount: number;
   lossWeight: number;
   totalWeight: number;
+  remainingWeight: number;
+  remainingWeightKg?: number;
   difference: number;
 }
 
@@ -118,14 +164,30 @@ export interface CreateProcessingRecordDto {
   productId: number;
   workerNames: string;
   count: number;
+  remainingCount: number;
   unitWeight: number;
   redWeight: number;
+  redCount: number;
   whiteWeight: number;
+  whiteCount: number;
   specialWeight: number;
+  specialCount: number;
   naturalWeight: number;
+  naturalCount: number;
+  naturalWhiteWeight: number;
+  naturalWhiteCount: number;
+  naturalRedWeight: number;
+  naturalRedCount: number;
+  shortCutWeight: number;
+  shortCutCount: number;
+  artificialWeight: number;
+  artificialCount: number;
   shortWeight: number;
+  shortCount: number;
   lossWeight: number;
   totalWeight: number;
+  remainingWeight: number;
+  remainingWeightKg?: number;
   difference: number;
 }
 

@@ -20,10 +20,14 @@ public class ProductsController : ControllerBase
     }
 
     [HttpGet]
-    public async Task<ActionResult<List<ProductDto>>> GetProducts()
+    public async Task<ActionResult<List<ProductDto>>> GetProducts([FromQuery] bool all = false)
     {
-        var products = await _context.Products
-            .Where(p => p.IsActive)
+        var query = _context.Products.AsQueryable();
+
+        if (!all)
+            query = query.Where(p => p.IsActive);
+
+        var products = await query
             .OrderByDescending(p => p.Date)
             .Select(p => new ProductDto
             {
@@ -36,7 +40,9 @@ public class ProductsController : ControllerBase
                 Price = p.Price,
                 Currency = p.Currency,
                 RemainingWeight = p.RemainingWeight,
-                IsActive = p.IsActive
+                IsActive = p.IsActive,
+                WarehouseId = p.WarehouseId,
+                WarehouseName = p.Warehouse != null ? p.Warehouse.Name : null
             })
             .ToListAsync();
 
@@ -59,7 +65,9 @@ public class ProductsController : ControllerBase
                 Price = p.Price,
                 Currency = p.Currency,
                 RemainingWeight = p.RemainingWeight,
-                IsActive = p.IsActive
+                IsActive = p.IsActive,
+                WarehouseId = p.WarehouseId,
+                WarehouseName = p.Warehouse != null ? p.Warehouse.Name : null
             })
             .FirstOrDefaultAsync();
 
@@ -85,7 +93,7 @@ public class ProductsController : ControllerBase
             Currency = dto.Currency,
             RemainingWeight = dto.Weight,
             IsActive = true,
-            CreatedAt = DateTime.UtcNow
+            WarehouseId = dto.WarehouseId
         };
 
         _context.Products.Add(product);
@@ -102,7 +110,8 @@ public class ProductsController : ControllerBase
             Price = product.Price,
             Currency = product.Currency,
             RemainingWeight = product.RemainingWeight,
-            IsActive = product.IsActive
+            IsActive = product.IsActive,
+            WarehouseId = product.WarehouseId
         };
 
         return CreatedAtAction(nameof(GetProduct), new { id = product.Id }, productDto);
@@ -125,7 +134,12 @@ public class ProductsController : ControllerBase
         product.Weight = dto.Weight;
         product.Price = dto.Price;
         product.Currency = dto.Currency;
-        product.UpdatedAt = DateTime.UtcNow;
+        product.WarehouseId = dto.WarehouseId;
+        
+        if (dto.RemainingWeight.HasValue)
+        {
+            product.RemainingWeight = dto.RemainingWeight.Value;
+        }
 
         await _context.SaveChangesAsync();
 
@@ -143,7 +157,6 @@ public class ProductsController : ControllerBase
         }
 
         product.IsActive = false;
-        product.UpdatedAt = DateTime.UtcNow;
 
         await _context.SaveChangesAsync();
 

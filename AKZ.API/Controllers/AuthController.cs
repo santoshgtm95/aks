@@ -80,7 +80,6 @@ public class AuthController : ControllerBase
         }
 
         user.PasswordHash = BCrypt.Net.BCrypt.HashPassword(request.NewPassword);
-        user.UpdatedAt = DateTime.UtcNow;
 
         await _context.SaveChangesAsync();
 

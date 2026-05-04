@@ -1,8 +1,8 @@
 import React, { useEffect, useState } from 'react';
-import { dashboardAPI } from '../services/api';
-import type { DashboardStats } from '../types';
+import { dashboardAPI } from '../../services/api';
+import type { DashboardStats } from '../../types';
 import { Package, CheckCircle2, Scale, TrendingUp, ShoppingCart, AlertTriangle } from 'lucide-react';
-import './Dashboard.css';
+import './index.css';
 
 const Dashboard: React.FC = () => {
     const [stats, setStats] = useState<DashboardStats | null>(null);

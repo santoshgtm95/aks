@@ -1,11 +1,13 @@
 import React, { useEffect, useState } from 'react';
-import { salesAPI, productsAPI } from '../services/api';
-import type { Sale, Product, CreateSaleDto } from '../types';
-import './Sales.css';
+import { useAuth } from '../../context/AuthContext';
+import { salesAPI, productsAPI } from '../../services/api';
+import type { Sale, Product, CreateSaleDto } from '../../types';
+import './index.css';
 
-const PAGE_CATEGORY = 'Sales';
+const PAGE_CATEGORY = 'Sales4';
 
-const Sales: React.FC = () => {
+const Sales4: React.FC = () => {
+    const { hasPermission } = useAuth();
     const [sales, setSales] = useState<Sale[]>([]);
     const [products, setProducts] = useState<Product[]>([]);
     const [loading, setLoading] = useState(true);
@@ -96,8 +98,9 @@ const Sales: React.FC = () => {
 
     return (
         <div className="sales fade-in">
-            <h1 className="page-title">Sales Management</h1>
+            <h1 className="page-title">Sales4</h1>
 
+            {hasPermission('Sales4.Create') && (
             <div className="card registration-card">
                 <h2 className="card-title">New Sale Transaction</h2>
                 <form onSubmit={handleSubmit} className="sale-form">
@@ -194,6 +197,7 @@ const Sales: React.FC = () => {
                     </div>
                 </form>
             </div>
+            )}
 
             <div className="card list-card">
                 <h2 className="card-title">Sales History</h2>
@@ -228,4 +232,4 @@ const Sales: React.FC = () => {
     );
 };
 
-export default Sales;
+export default Sales4;

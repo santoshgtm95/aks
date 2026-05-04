@@ -1,12 +1,17 @@
 import React, { useEffect, useState } from 'react';
-import { usersAPI } from '../services/api';
-import type { User, Role, CreateUserDto } from '../types';
-import './Staff.css';
+import { useAuth } from '../../context/AuthContext';
+import { usersAPI } from '../../services/api';
+import type { User, Role, CreateUserDto } from '../../types';
+import Modal from '../../components/Modal';
+import './index.css';
 
 const Staff: React.FC = () => {
+    const { hasPermission } = useAuth();
     const [users, setUsers] = useState<User[]>([]);
     const [roles, setRoles] = useState<Role[]>([]);
     const [loading, setLoading] = useState(true);
+    const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+    const [editingUserId, setEditingUserId] = useState<number | null>(null);
     const [formData, setFormData] = useState<CreateUserDto>({
         username: '',
         password: '',
@@ -72,6 +77,40 @@ const Staff: React.FC = () => {
         }
     };
 
+    const handleEdit = (user: User) => {
+        setEditingUserId(user.id);
+        const role = roles.find(r => r.name === user.roleName);
+        setFormData({
+            username: user.username,
+            password: '', // Password not required for update
+            fullName: user.fullName,
+            email: user.email,
+            phoneNumber: user.phoneNumber || '',
+            roleId: role ? role.id : 0,
+        });
+        setIsEditModalOpen(true);
+    };
+
+    const handleUpdateSubmit = async (e: React.FormEvent) => {
+        e.preventDefault();
+        if (!editingUserId) return;
+
+        try {
+            await usersAPI.update(editingUserId, {
+                fullName: formData.fullName,
+                email: formData.email,
+                phoneNumber: formData.phoneNumber,
+                roleId: formData.roleId,
+                isActive: true
+            });
+            setIsEditModalOpen(false);
+            setEditingUserId(null);
+            loadData();
+        } catch (error: any) {
+            alert(error.response?.data?.message || 'Failed to update staff member');
+        }
+    };
+
     if (loading) {
         return <div className="spinner"></div>;
     }
@@ -80,6 +119,7 @@ const Staff: React.FC = () => {
         <div className="staff fade-in">
             <h1 className="page-title">Staff Management</h1>
 
+            {hasPermission('Staff.Create') && (
             <div className="card registration-card">
                 <h2 className="card-title">Create New Staff Member</h2>
                 <form onSubmit={handleSubmit} className="staff-form">
@@ -174,6 +214,7 @@ const Staff: React.FC = () => {
                     </div>
                 </form>
             </div>
+            )}
 
             <div className="card list-card">
                 <h2 className="card-title">Staff List</h2>
@@ -207,9 +248,18 @@ const Staff: React.FC = () => {
                                         </div>
                                     </td>
                                     <td>
-                                        <button className="btn-icon btn-icon-danger" onClick={() => handleDelete(user.id)} title="Deactivate">
-                                            🚫
-                                        </button>
+                                        <div className="action-buttons">
+                                            {hasPermission('Staff.Edit') && (
+                                                <button className="btn-icon" onClick={() => handleEdit(user)} title="Edit">
+                                                    ✏️
+                                                </button>
+                                            )}
+                                            {hasPermission('Staff.Delete') && (
+                                                <button className="btn-icon btn-icon-danger" onClick={() => handleDelete(user.id)} title="Deactivate">
+                                                    🚫
+                                                </button>
+                                            )}
+                                        </div>
                                     </td>
                                 </tr>
                             ))}
@@ -217,6 +267,96 @@ const Staff: React.FC = () => {
                     </table>
                 </div>
             </div>
+
+            <Modal
+                isOpen={isEditModalOpen}
+                onClose={() => {
+                    setIsEditModalOpen(false);
+                    setEditingUserId(null);
+                    setFormData({
+                        username: '',
+                        password: '',
+                        fullName: '',
+                        email: '',
+                        phoneNumber: '',
+                        roleId: 0,
+                    });
+                }}
+                title="Edit Staff Member"
+            >
+                <form onSubmit={handleUpdateSubmit} className="staff-form">
+                    <div className="form-grid">
+                        <div className="form-group">
+                            <label className="form-label">Full Name</label>
+                            <input
+                                type="text"
+                                name="fullName"
+                                className="form-control"
+                                value={formData.fullName}
+                                onChange={handleInputChange}
+                                required
+                            />
+                        </div>
+
+                        <div className="form-group">
+                            <label className="form-label">Email</label>
+                            <input
+                                type="email"
+                                name="email"
+                                className="form-control"
+                                value={formData.email}
+                                onChange={handleInputChange}
+                                required
+                            />
+                        </div>
+
+                        <div className="form-group">
+                            <label className="form-label">Phone Number</label>
+                            <input
+                                type="text"
+                                name="phoneNumber"
+                                className="form-control"
+                                value={formData.phoneNumber}
+                                onChange={handleInputChange}
+                            />
+                        </div>
+
+                        <div className="form-group">
+                            <label className="form-label">Role</label>
+                            <select
+                                name="roleId"
+                                className="form-select"
+                                value={formData.roleId}
+                                onChange={handleInputChange}
+                                required
+                            >
+                                <option value="0">-- Select Role --</option>
+                                {roles.map(role => (
+                                    <option key={role.id} value={role.id}>
+                                        {role.name}
+                                    </option>
+                                ))}
+                            </select>
+                        </div>
+                    </div>
+
+                    <div className="form-actions">
+                        <button type="submit" className="btn btn-primary">
+                            Update Staff
+                        </button>
+                        <button 
+                            type="button" 
+                            className="btn btn-secondary" 
+                            onClick={() => {
+                                setIsEditModalOpen(false);
+                                setEditingUserId(null);
+                            }}
+                        >
+                            Cancel
+                        </button>
+                    </div>
+                </form>
+            </Modal>
         </div>
     );
 };

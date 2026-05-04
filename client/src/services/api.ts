@@ -1,5 +1,5 @@
 import axios from 'axios';
-import type { LoginRequest, LoginResponse, Product, CreateProductDto, Sale, CreateSaleDto, DashboardStats, User, CreateUserDto, Role, ProcessingRecord, CreateProcessingRecordDto, Worker } from '../types';
+import type { LoginRequest, LoginResponse, Product, CreateProductDto, Sale, CreateSaleDto, DashboardStats, User, CreateUserDto, UpdateUserDto, Role, ProcessingRecord, CreateProcessingRecordDto, Worker, Warehouse, CreateWarehouseDto, UpdateWarehouseDto } from '../types';
 
 const API_BASE_URL = 'http://localhost:5159/api';
 
@@ -49,8 +49,8 @@ export const authAPI = {
 
 // Products API
 export const productsAPI = {
-    getAll: async (): Promise<Product[]> => {
-        const response = await api.get<Product[]>('/products');
+    getAll: async (all = false): Promise<Product[]> => {
+        const response = await api.get<Product[]>('/products', { params: { all } });
         return response.data;
     },
     getById: async (id: number): Promise<Product> => {
@@ -97,6 +97,13 @@ export const processingAPI = {
         const response = await api.post<ProcessingRecord>('/processing', data);
         return response.data;
     },
+    update: async (id: number, data: CreateProcessingRecordDto): Promise<ProcessingRecord> => {
+        const response = await api.put<ProcessingRecord>(`/processing/${id}`, data);
+        return response.data;
+    },
+    delete: async (id: number): Promise<void> => {
+        await api.delete(`/processing/${id}`);
+    },
 };
 
 // Workers API
@@ -133,7 +140,7 @@ export const usersAPI = {
         const response = await api.post<User>('/users', data);
         return response.data;
     },
-    update: async (id: number, data: Partial<CreateUserDto>): Promise<void> => {
+    update: async (id: number, data: UpdateUserDto): Promise<void> => {
         await api.put(`/users/${id}`, data);
     },
     delete: async (id: number): Promise<void> => {
@@ -142,6 +149,43 @@ export const usersAPI = {
     getRoles: async (): Promise<Role[]> => {
         const response = await api.get<Role[]>('/users/roles');
         return response.data;
+    },
+    getPermissions: async (id: number): Promise<number[]> => {
+        const response = await api.get<number[]>(`/users/${id}/permissions`);
+        return response.data;
+    },
+    updatePermissions: async (id: number, permissionIds: number[]): Promise<void> => {
+        await api.post(`/users/${id}/permissions`, { permissionIds });
+    },
+};
+
+// Permissions API
+export const permissionsAPI = {
+    getAll: async (): Promise<any[]> => {
+        const response = await api.get<any[]>('/permissions');
+        return response.data;
+    },
+};
+
+// Warehouses API
+export const warehousesAPI = {
+    getAll: async (): Promise<Warehouse[]> => {
+        const response = await api.get<Warehouse[]>('/warehouses');
+        return response.data;
+    },
+    getById: async (id: number): Promise<Warehouse> => {
+        const response = await api.get<Warehouse>(`/warehouses/${id}`);
+        return response.data;
+    },
+    create: async (data: CreateWarehouseDto): Promise<Warehouse> => {
+        const response = await api.post<Warehouse>('/warehouses', data);
+        return response.data;
+    },
+    update: async (id: number, data: UpdateWarehouseDto): Promise<void> => {
+        await api.put(`/warehouses/${id}`, data);
+    },
+    delete: async (id: number): Promise<void> => {
+        await api.delete(`/warehouses/${id}`);
     },
 };
 

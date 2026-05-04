@@ -41,3 +41,7 @@ public class UpdateUserDto
     public int RoleId { get; set; }
     public bool IsActive { get; set; }
 }
+public class UpdateUserPermissionsDto
+{
+    public List<int> PermissionIds { get; set; } = new();
+}

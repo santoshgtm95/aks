@@ -4,7 +4,7 @@ using System.ComponentModel.DataAnnotations.Schema;
 namespace AKZ.API.Models;
 
 [Table("Products")]
-public class Product
+public class Product : BaseEntity
 {
     [Key]
     public int Id { get; set; }
@@ -13,7 +13,8 @@ public class Product
     public DateTime Date { get; set; }
 
     [Required]
-    public int Packages { get; set; }
+    [MaxLength(100)]
+    public string Packages { get; set; } = string.Empty;
 
     [Required]
     [MaxLength(100)]
@@ -40,9 +41,9 @@ public class Product
 
     public bool IsActive { get; set; } = true;
 
-    public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
-
-    public DateTime? UpdatedAt { get; set; }
+    [ForeignKey("Warehouse")]
+    public int? WarehouseId { get; set; }
+    public Warehouse? Warehouse { get; set; }
 
     // Navigation properties
     public ICollection<Sale> Sales { get; set; } = new List<Sale>();

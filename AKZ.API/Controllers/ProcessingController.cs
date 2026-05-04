@@ -33,14 +33,30 @@ public class ProcessingController : ControllerBase
                 ProductMarker = r.Product.Marker,
                 WorkerNames = r.WorkerNames,
                 Count = r.Count,
+                RemainingCount = r.RemainingCount,
                 UnitWeight = r.UnitWeight,
                 RedWeight = r.RedWeight,
+                RedCount = r.RedCount,
                 WhiteWeight = r.WhiteWeight,
+                WhiteCount = r.WhiteCount,
                 SpecialWeight = r.SpecialWeight,
+                SpecialCount = r.SpecialCount,
                 NaturalWeight = r.NaturalWeight,
+                NaturalCount = r.NaturalCount,
+                NaturalWhiteWeight = r.NaturalWhiteWeight,
+                NaturalWhiteCount = r.NaturalWhiteCount,
+                NaturalRedWeight = r.NaturalRedWeight,
+                NaturalRedCount = r.NaturalRedCount,
+                ShortCutWeight = r.ShortCutWeight,
+                ShortCutCount = r.ShortCutCount,
+                ArtificialWeight = r.ArtificialWeight,
+                ArtificialCount = r.ArtificialCount,
                 ShortWeight = r.ShortWeight,
+                ShortCount = r.ShortCount,
                 LossWeight = r.LossWeight,
                 TotalWeight = r.TotalWeight,
+                RemainingWeight = r.RemainingWeight,
+                RemainingWeightKg = r.RemainingWeightKg,
                 Difference = r.Difference
             })
             .ToListAsync();
@@ -57,46 +73,65 @@ public class ProcessingController : ControllerBase
             return BadRequest(new { message = "Product not found" });
         }
 
-        // We should probably deduct the weight from the product
-        // Based on the image, the original weight is used as a reference.
-        // Let's deduct the total weight from the product's remaining weight.
-        if (product.RemainingWeight < dto.TotalWeight)
-        {
-            // Maybe we should allow it if it's close? The image shows a "Diff".
-            // For now, let's be strict or just deduct what was actually processed.
-        }
-
         var record = new ProcessingRecord
         {
             Date = dto.Date,
             ProductId = dto.ProductId,
             WorkerNames = dto.WorkerNames,
             Count = dto.Count,
+            RemainingCount = dto.RemainingCount,
             UnitWeight = dto.UnitWeight,
             RedWeight = dto.RedWeight,
+            RedCount = dto.RedCount,
             WhiteWeight = dto.WhiteWeight,
+            WhiteCount = dto.WhiteCount,
             SpecialWeight = dto.SpecialWeight,
+            SpecialCount = dto.SpecialCount,
             NaturalWeight = dto.NaturalWeight,
+            NaturalCount = dto.NaturalCount,
+            NaturalWhiteWeight = dto.NaturalWhiteWeight,
+            NaturalWhiteCount = dto.NaturalWhiteCount,
+            NaturalRedWeight = dto.NaturalRedWeight,
+            NaturalRedCount = dto.NaturalRedCount,
+            ShortCutWeight = dto.ShortCutWeight,
+            ShortCutCount = dto.ShortCutCount,
+            ArtificialWeight = dto.ArtificialWeight,
+            ArtificialCount = dto.ArtificialCount,
             ShortWeight = dto.ShortWeight,
+            ShortCount = dto.ShortCount,
             LossWeight = dto.LossWeight,
             TotalWeight = dto.TotalWeight,
-            Difference = dto.Difference,
-            CreatedAt = DateTime.UtcNow
+            RemainingWeight = dto.RemainingWeight,
+            RemainingWeightKg = dto.RemainingWeightKg,
+            Difference = dto.Difference
         };
 
-        // Update product remaining weight
-        // In this workflow, we are "processing" the product. 
-        // The remaining weight should be reduced by the original weight of the bag being processed.
-        // But the user might be processing only part of it? 
-        // Usually, "Processing" means taking the whole bag and sorting it.
-        // So we deduct the original weight of the bag.
-        
-        // Wait, if the user selects a product, they are processing THAT product.
-        // Let's deduct the weight that was processed.
-        product.RemainingWeight -= dto.TotalWeight; 
-        product.UpdatedAt = DateTime.UtcNow;
-
         _context.ProcessingRecords.Add(record);
+
+        // DATA FROM SALES1 IS IN VISS. 
+        // If product unit is KG, convert Viss to KG before updating Products table.
+        string productUnit = (product.Unit ?? "").ToLower().Trim();
+        bool isProductKg = productUnit.Contains("kg") || productUnit.Contains("kilogram");
+        
+        decimal categorizedWeight = dto.RedWeight + dto.WhiteWeight + dto.SpecialWeight + 
+                                    dto.NaturalWeight + dto.NaturalWhiteWeight + dto.NaturalRedWeight + 
+                                    dto.ShortCutWeight + dto.ArtificialWeight + dto.ShortWeight;
+
+        // The UI calculates remaining as: rwViss - categorizedWeight
+        // Therefore, we deduct categorizedWeight to match the UI's remaining weight exactly.
+        decimal processedWeightInProductUnit = isProductKg 
+            ? categorizedWeight / 1.62m 
+            : categorizedWeight;
+
+        // Update the Products table RemainingWeight
+        product.RemainingWeight -= processedWeightInProductUnit;
+        
+        // Safeguard: Prevent small floating point errors from showing near-zero values
+        if (Math.Abs(product.RemainingWeight) < 0.0001m)
+        {
+            product.RemainingWeight = 0;
+        }
+
         await _context.SaveChangesAsync();
 
         await _context.Entry(record).Reference(r => r.Product).LoadAsync();
@@ -109,17 +144,160 @@ public class ProcessingController : ControllerBase
             ProductMarker = record.Product.Marker,
             WorkerNames = record.WorkerNames,
             Count = record.Count,
+            RemainingCount = record.RemainingCount,
             UnitWeight = record.UnitWeight,
             RedWeight = record.RedWeight,
+            RedCount = record.RedCount,
             WhiteWeight = record.WhiteWeight,
+            WhiteCount = record.WhiteCount,
             SpecialWeight = record.SpecialWeight,
+            SpecialCount = record.SpecialCount,
             NaturalWeight = record.NaturalWeight,
+            NaturalCount = record.NaturalCount,
+            NaturalWhiteWeight = record.NaturalWhiteWeight,
+            NaturalWhiteCount = record.NaturalWhiteCount,
+            NaturalRedWeight = record.NaturalRedWeight,
+            NaturalRedCount = record.NaturalRedCount,
+            ShortCutWeight = record.ShortCutWeight,
+            ShortCutCount = record.ShortCutCount,
+            ArtificialWeight = record.ArtificialWeight,
+            ArtificialCount = record.ArtificialCount,
             ShortWeight = record.ShortWeight,
+            ShortCount = record.ShortCount,
             LossWeight = record.LossWeight,
             TotalWeight = record.TotalWeight,
+            RemainingWeight = record.RemainingWeight,
+            RemainingWeightKg = record.RemainingWeightKg,
             Difference = record.Difference
         };
 
         return Ok(resultDto);
+    }
+
+    [HttpPut("{id}")]
+    public async Task<ActionResult<ProcessingRecordDto>> UpdateRecord(int id, [FromBody] CreateProcessingRecordDto dto)
+    {
+        var record = await _context.ProcessingRecords
+            .Include(r => r.Product)
+            .FirstOrDefaultAsync(r => r.Id == id);
+
+        if (record == null)
+            return NotFound(new { message = "Record not found" });
+
+        var product = record.Product;
+        string productUnit = (product.Unit ?? "").ToLower().Trim();
+        bool isProductKg = productUnit.Contains("kg") || productUnit.Contains("kilogram");
+
+        decimal oldCategorizedWeight = record.RedWeight + record.WhiteWeight + record.SpecialWeight + 
+                                       record.NaturalWeight + record.NaturalWhiteWeight + record.NaturalRedWeight + 
+                                       record.ShortCutWeight + record.ArtificialWeight + record.ShortWeight;
+
+        // Revert old weight deduction (convert Viss back to product unit)
+        decimal oldDeduction = isProductKg ? oldCategorizedWeight / 1.62m : oldCategorizedWeight;
+        product.RemainingWeight += oldDeduction;
+
+        decimal newCategorizedWeight = dto.RedWeight + dto.WhiteWeight + dto.SpecialWeight + 
+                                       dto.NaturalWeight + dto.NaturalWhiteWeight + dto.NaturalRedWeight + 
+                                       dto.ShortCutWeight + dto.ArtificialWeight + dto.ShortWeight;
+
+        // Apply new weight deduction (convert new Viss to product unit)
+        decimal newDeduction = isProductKg ? newCategorizedWeight / 1.62m : newCategorizedWeight;
+        product.RemainingWeight -= newDeduction;
+
+        record.Date = dto.Date;
+        record.WorkerNames = dto.WorkerNames;
+        record.Count = dto.Count;
+        record.RemainingCount = dto.RemainingCount;
+        record.UnitWeight = dto.UnitWeight;
+        record.RedWeight = dto.RedWeight;
+        record.RedCount = dto.RedCount;
+        record.WhiteWeight = dto.WhiteWeight;
+        record.WhiteCount = dto.WhiteCount;
+        record.SpecialWeight = dto.SpecialWeight;
+        record.SpecialCount = dto.SpecialCount;
+        record.NaturalWeight = dto.NaturalWeight;
+        record.NaturalCount = dto.NaturalCount;
+        record.NaturalWhiteWeight = dto.NaturalWhiteWeight;
+        record.NaturalWhiteCount = dto.NaturalWhiteCount;
+        record.NaturalRedWeight = dto.NaturalRedWeight;
+        record.NaturalRedCount = dto.NaturalRedCount;
+        record.ShortCutWeight = dto.ShortCutWeight;
+        record.ShortCutCount = dto.ShortCutCount;
+        record.ArtificialWeight = dto.ArtificialWeight;
+        record.ArtificialCount = dto.ArtificialCount;
+        record.ShortWeight = dto.ShortWeight;
+        record.ShortCount = dto.ShortCount;
+        record.LossWeight = dto.LossWeight;
+        record.TotalWeight = dto.TotalWeight;
+        record.RemainingWeight = dto.RemainingWeight;
+        record.RemainingWeightKg = dto.RemainingWeightKg;
+        record.Difference = dto.Difference;
+
+        await _context.SaveChangesAsync();
+
+        var resultDto = new ProcessingRecordDto
+        {
+            Id = record.Id,
+            Date = record.Date,
+            ProductId = record.ProductId,
+            ProductMarker = record.Product.Marker,
+            WorkerNames = record.WorkerNames,
+            Count = record.Count,
+            RemainingCount = record.RemainingCount,
+            UnitWeight = record.UnitWeight,
+            RedWeight = record.RedWeight,
+            RedCount = record.RedCount,
+            WhiteWeight = record.WhiteWeight,
+            WhiteCount = record.WhiteCount,
+            SpecialWeight = record.SpecialWeight,
+            SpecialCount = record.SpecialCount,
+            NaturalWeight = record.NaturalWeight,
+            NaturalCount = record.NaturalCount,
+            NaturalWhiteWeight = record.NaturalWhiteWeight,
+            NaturalWhiteCount = record.NaturalWhiteCount,
+            NaturalRedWeight = record.NaturalRedWeight,
+            NaturalRedCount = record.NaturalRedCount,
+            ShortCutWeight = record.ShortCutWeight,
+            ShortCutCount = record.ShortCutCount,
+            ArtificialWeight = record.ArtificialWeight,
+            ArtificialCount = record.ArtificialCount,
+            ShortWeight = record.ShortWeight,
+            ShortCount = record.ShortCount,
+            LossWeight = record.LossWeight,
+            TotalWeight = record.TotalWeight,
+            RemainingWeight = record.RemainingWeight,
+            RemainingWeightKg = record.RemainingWeightKg,
+            Difference = record.Difference
+        };
+
+        return Ok(resultDto);
+    }
+
+    [HttpDelete("{id}")]
+    public async Task<IActionResult> DeleteRecord(int id)
+    {
+        var record = await _context.ProcessingRecords
+            .Include(r => r.Product)
+            .FirstOrDefaultAsync(r => r.Id == id);
+
+        if (record == null)
+            return NotFound(new { message = "Record not found" });
+
+        // Restore product weight (convert Viss back to product unit)
+        string productUnit = (record.Product.Unit ?? "").ToLower().Trim();
+        bool isProductKg = productUnit.Contains("kg") || productUnit.Contains("kilogram");
+        
+        decimal oldCategorizedWeight = record.RedWeight + record.WhiteWeight + record.SpecialWeight + 
+                                       record.NaturalWeight + record.NaturalWhiteWeight + record.NaturalRedWeight + 
+                                       record.ShortCutWeight + record.ArtificialWeight + record.ShortWeight;
+
+        decimal restoreWeight = isProductKg ? oldCategorizedWeight / 1.62m : oldCategorizedWeight;
+
+        record.Product.RemainingWeight += restoreWeight;
+
+        _context.ProcessingRecords.Remove(record);
+        await _context.SaveChangesAsync();
+
+        return NoContent();
     }
 }

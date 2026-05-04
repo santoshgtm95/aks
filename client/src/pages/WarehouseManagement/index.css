@@ -1,4 +1,4 @@
-.sales {
+.warehouse {
     width: 100%;
 }
 
@@ -29,6 +29,30 @@
 
 .list-card {
     margin-bottom: 32px;
+}
+
+.action-buttons {
+    display: flex;
+    gap: 8px;
+}
+
+.btn-icon {
+    background: none;
+    border: none;
+    font-size: 18px;
+    cursor: pointer;
+    padding: 4px;
+    border-radius: 4px;
+    transition: all 0.2s ease;
+}
+
+.btn-icon:hover {
+    background: var(--light);
+    transform: scale(1.1);
+}
+
+.btn-icon-danger:hover {
+    background: #fee2e2;
 }
 
 @media (max-width: 768px) {
