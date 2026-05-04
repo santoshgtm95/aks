@@ -77,6 +77,7 @@ export interface Sale {
   sellerName: string;
   totalRemaining: number;
   category: string;
+  warehouseName?: string;
 }
 
 export interface CreateSaleDto {
@@ -157,6 +158,25 @@ export interface ProcessingRecord {
   remainingWeight: number;
   remainingWeightKg?: number;
   difference: number;
+  remRedCount: number;
+  remWhiteCount: number;
+  remSpecialCount: number;
+  remNaturalCount: number;
+  remNaturalWhiteCount: number;
+  remNaturalRedCount: number;
+  remShortCutCount: number;
+  remArtificialCount: number;
+  remShortCount: number;
+  remRedWeight: number;
+  remWhiteWeight: number;
+  remSpecialWeight: number;
+  remNaturalWeight: number;
+  remNaturalWhiteWeight: number;
+  remNaturalRedWeight: number;
+  remShortCutWeight: number;
+  remArtificialWeight: number;
+  remShortWeight: number;
+  warehouseName?: string;
 }
 
 export interface CreateProcessingRecordDto {
@@ -195,5 +215,75 @@ export interface Worker {
   id: number;
   name: string;
   phoneNumber?: string;
+  isActive: boolean;
+}
+
+export interface PurificationProcess {
+  id: number;
+  date: string;
+  processingRecordId: number;
+  productMarker: string;
+  category: string;
+  purifyCount: number;
+  purifyWeight: number;
+  remainingCountAfter: number;
+  remainingWeightAfter: number;
+  warehouseName?: string;
+  purifierId?: number;
+  purifierName?: string;
+  isWeightFull: boolean;
+}
+
+export interface PurifiedRecord {
+  id: number;
+  date: string;
+  processingRecordId: number;
+  productMarker: string;
+  category: string;
+  count: number;
+  weight: number;
+  warehouseName?: string;
+  purifierId?: number;
+  purifierName?: string;
+  isWeightFull: boolean;
+}
+
+export interface CreatePurificationProcessDto {
+  date: string;
+  processingRecordId: number;
+  category: string;
+  purifyCount: number;
+  purifierId?: number;
+  isWeightFull: boolean;
+}
+
+export interface AvailableCategory {
+  processingRecordId: number;
+  productId: number;
+  productMarker: string;
+  category: string;
+  remainingCount: number;
+  remainingWeight: number;
+  unitWeight: number;
+  warehouseName?: string;
+  warehouseId?: number;
+}
+
+export interface Purifier {
+  id: number;
+  name: string;
+  warehouseId: number;
+  warehouseName: string;
+  isActive: boolean;
+}
+
+export interface CreatePurifierDto {
+  name: string;
+  warehouseId: number;
+}
+
+export interface UpdatePurifierDto {
+  name: string;
+  warehouseId: number;
   isActive: boolean;
 }

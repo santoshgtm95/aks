@@ -6,6 +6,7 @@ public class SaleDto
     public DateTime Date { get; set; }
     public int ProductId { get; set; }
     public string ProductMarker { get; set; } = string.Empty;
+    public string WarehouseName { get; set; } = string.Empty;
     public string Marker { get; set; } = string.Empty;
     public string Unit { get; set; } = string.Empty;
     public decimal Weight { get; set; }

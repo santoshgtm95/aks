@@ -1,5 +1,5 @@
 import axios from 'axios';
-import type { LoginRequest, LoginResponse, Product, CreateProductDto, Sale, CreateSaleDto, DashboardStats, User, CreateUserDto, UpdateUserDto, Role, ProcessingRecord, CreateProcessingRecordDto, Worker, Warehouse, CreateWarehouseDto, UpdateWarehouseDto } from '../types';
+import type { LoginRequest, LoginResponse, Product, CreateProductDto, Sale, CreateSaleDto, DashboardStats, User, CreateUserDto, UpdateUserDto, Role, ProcessingRecord, CreateProcessingRecordDto, Worker, Warehouse, CreateWarehouseDto, UpdateWarehouseDto, PurificationProcess, CreatePurificationProcessDto, AvailableCategory, Purifier, CreatePurifierDto, UpdatePurifierDto } from '../types';
 
 const API_BASE_URL = 'http://localhost:5159/api';
 
@@ -186,6 +186,59 @@ export const warehousesAPI = {
     },
     delete: async (id: number): Promise<void> => {
         await api.delete(`/warehouses/${id}`);
+    },
+};
+
+export const purificationAPI = {
+    getAvailableCategories: async () => {
+        const response = await api.get<AvailableCategory[]>('/purification/available-categories');
+        return response.data;
+    },
+    getAll: async () => {
+        const response = await api.get<PurificationProcess[]>('/purification');
+        return response.data;
+    },
+    getPurifiedRecords: async () => {
+        const response = await api.get<PurifiedRecord[]>('/purification/purified-records');
+        return response.data;
+    },
+    create: async (data: CreatePurificationProcessDto) => {
+        const response = await api.post<PurificationProcess>('/purification', data);
+        return response.data;
+    },
+    update: async (id: number, data: CreatePurificationProcessDto) => {
+        await api.put(`/purification/${id}`, data);
+    },
+    delete: async (id: number) => {
+        await api.delete(`/purification/${id}`);
+    },
+    updatePurifiedRecord: async (id: number, data: CreatePurificationProcessDto) => {
+        await api.put(`/purification/purified-records/${id}`, data);
+    },
+    deletePurifiedRecord: async (id: number) => {
+        await api.delete(`/purification/purified-records/${id}`);
+    },
+};
+
+// Purifiers API
+export const purifiersAPI = {
+    getAll: async (): Promise<Purifier[]> => {
+        const response = await api.get<Purifier[]>('/purifiers');
+        return response.data;
+    },
+    getByWarehouse: async (warehouseId: number): Promise<Purifier[]> => {
+        const response = await api.get<Purifier[]>(`/purifiers/warehouse/${warehouseId}`);
+        return response.data;
+    },
+    create: async (data: CreatePurifierDto): Promise<Purifier> => {
+        const response = await api.post<Purifier>('/purifiers', data);
+        return response.data;
+    },
+    update: async (id: number, data: UpdatePurifierDto): Promise<void> => {
+        await api.put(`/purifiers/${id}`, data);
+    },
+    delete: async (id: number): Promise<void> => {
+        await api.delete(`/purifiers/${id}`);
     },
 };
 

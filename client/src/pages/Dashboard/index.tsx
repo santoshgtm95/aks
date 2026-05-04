@@ -94,7 +94,10 @@ const Dashboard: React.FC = () => {
                                 {stats?.recentSales.slice(0, 5).map((sale) => (
                                     <tr key={sale.id}>
                                         <td>{new Date(sale.date).toLocaleDateString()}</td>
-                                        <td>{sale.productMarker}</td>
+                                        <td>
+                                            <div style={{ fontWeight: 600 }}>{sale.productMarker}</div>
+                                            <div style={{ fontSize: '11px', color: '#64748b' }}>{sale.warehouseName}</div>
+                                        </td>
                                         <td>{sale.weight} {sale.unit}</td>
                                         <td>{sale.price} {sale.currency}</td>
                                         <td>{sale.sellerName}</td>

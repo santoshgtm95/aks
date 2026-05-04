@@ -1,0 +1,40 @@
+using System.ComponentModel.DataAnnotations;
+using System.ComponentModel.DataAnnotations.Schema;
+
+namespace AKZ.API.Models;
+
+[Table("PurificationProcesses")]
+public class PurificationProcess : BaseEntity
+{
+    [Key]
+    public int Id { get; set; }
+
+    [Required]
+    public DateTime Date { get; set; }
+
+    public int ProcessingRecordId { get; set; }
+
+    [ForeignKey("ProcessingRecordId")]
+    public ProcessingRecord ProcessingRecord { get; set; } = null!;
+
+    [Required]
+    public string Category { get; set; } = string.Empty;
+
+    public int PurifyCount { get; set; }
+
+    [Column(TypeName = "decimal(18,4)")]
+    public decimal PurifyWeight { get; set; }
+
+    public int RemainingCountAfter { get; set; }
+
+    [Column(TypeName = "decimal(18,4)")]
+    public decimal RemainingWeightAfter { get; set; }
+
+    public int? PurifierId { get; set; }
+    public bool IsWeightFull { get; set; } = true;
+
+    [ForeignKey("PurifierId")]
+    public Purifier? Purifier { get; set; }
+
+    public ICollection<PurifiedRecord> PurifiedRecords { get; set; } = new List<PurifiedRecord>();
+}

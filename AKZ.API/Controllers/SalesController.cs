@@ -31,6 +31,7 @@ public class SalesController : ControllerBase
 
         var sales = await query
             .Include(s => s.Product)
+                .ThenInclude(p => p.Warehouse)
             .Include(s => s.Seller)
             .OrderByDescending(s => s.Date)
             .Select(s => new SaleDto
@@ -47,7 +48,8 @@ public class SalesController : ControllerBase
                 SellerId = s.SellerId,
                 SellerName = s.Seller.FullName,
                 TotalRemaining = s.TotalRemaining,
-                Category = s.Category
+                Category = s.Category,
+                WarehouseName = s.Product.Warehouse != null ? s.Product.Warehouse.Name : ""
             })
             .ToListAsync();
 
@@ -59,6 +61,7 @@ public class SalesController : ControllerBase
     {
         var sale = await _context.Sales
             .Include(s => s.Product)
+                .ThenInclude(p => p.Warehouse)
             .Include(s => s.Seller)
             .Where(s => s.Id == id)
             .Select(s => new SaleDto
@@ -75,7 +78,8 @@ public class SalesController : ControllerBase
                 SellerId = s.SellerId,
                 SellerName = s.Seller.FullName,
                 TotalRemaining = s.TotalRemaining,
-                Category = s.Category
+                Category = s.Category,
+                WarehouseName = s.Product.Warehouse != null ? s.Product.Warehouse.Name : ""
             })
             .FirstOrDefaultAsync();
 
@@ -126,6 +130,7 @@ public class SalesController : ControllerBase
 
         // Reload to get navigation properties
         await _context.Entry(sale).Reference(s => s.Product).LoadAsync();
+        await _context.Entry(sale.Product).Reference(p => p.Warehouse).LoadAsync();
         await _context.Entry(sale).Reference(s => s.Seller).LoadAsync();
 
         var saleDto = new SaleDto
@@ -142,7 +147,8 @@ public class SalesController : ControllerBase
             SellerId = sale.SellerId,
             SellerName = sale.Seller.FullName,
             TotalRemaining = sale.TotalRemaining,
-            Category = sale.Category
+            Category = sale.Category,
+            WarehouseName = sale.Product.Warehouse != null ? sale.Product.Warehouse.Name : ""
         };
 
         return CreatedAtAction(nameof(GetSale), new { id = sale.Id }, saleDto);

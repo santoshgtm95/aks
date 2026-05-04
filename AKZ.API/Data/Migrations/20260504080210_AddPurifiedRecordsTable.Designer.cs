@@ -4,16 +4,19 @@ using AKZ.API.Data;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 #nullable disable
 
-namespace AKZ.API.Migrations
+namespace AKZ.API.Data.Migrations
 {
     [DbContext(typeof(AKZDbContext))]
-    partial class AKZDbContextModelSnapshot : ModelSnapshot
+    [Migration("20260504080210_AddPurifiedRecordsTable")]
+    partial class AddPurifiedRecordsTable
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -434,9 +437,6 @@ namespace AKZ.API.Migrations
                     b.Property<int>("ProcessingRecordId")
                         .HasColumnType("int");
 
-                    b.Property<int?>("PurificationProcessId")
-                        .HasColumnType("int");
-
                     b.Property<int?>("PurifierId")
                         .HasColumnType("int");
 
@@ -459,8 +459,6 @@ namespace AKZ.API.Migrations
                     b.HasKey("Id");
 
                     b.HasIndex("ProcessingRecordId");
-
-                    b.HasIndex("PurificationProcessId");
 
                     b.HasIndex("PurifierId");
 
@@ -956,17 +954,11 @@ namespace AKZ.API.Migrations
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
-                    b.HasOne("AKZ.API.Models.PurificationProcess", "PurificationProcess")
-                        .WithMany("PurifiedRecords")
-                        .HasForeignKey("PurificationProcessId");
-
                     b.HasOne("AKZ.API.Models.Purifier", "Purifier")
                         .WithMany()
                         .HasForeignKey("PurifierId");
 
                     b.Navigation("ProcessingRecord");
-
-                    b.Navigation("PurificationProcess");
 
                     b.Navigation("Purifier");
                 });
@@ -1058,11 +1050,6 @@ namespace AKZ.API.Migrations
             modelBuilder.Entity("AKZ.API.Models.Product", b =>
                 {
                     b.Navigation("Sales");
-                });
-
-            modelBuilder.Entity("AKZ.API.Models.PurificationProcess", b =>
-                {
-                    b.Navigation("PurifiedRecords");
                 });
 
             modelBuilder.Entity("AKZ.API.Models.Role", b =>

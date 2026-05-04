@@ -653,7 +653,10 @@ const Sales1: React.FC = () => {
               onClick={() => setSelectedProductId(product.id)}
             >
               <div className="card-header">
-                <span className="card-marker">{product.marker}</span>
+                <div style={{ display: 'flex', flexDirection: 'column' }}>
+                  <span className="card-marker">{product.marker}</span>
+                  <span style={{ fontSize: '11px', color: '#64748b', fontWeight: 500 }}>{product.warehouseName}</span>
+                </div>
                 <span className={`card-badge ${product.remainingWeight <= 0.0001 ? "badge-used" : ""}`}>
                   {product.remainingWeight <= 0.0001 ? "Used" : "New"}
                 </span>

@@ -76,4 +76,35 @@ public class ProcessingRecord : BaseEntity
 
     [Column(TypeName = "decimal(18,4)")]
     public decimal Difference { get; set; }
+
+    // Remaining counts per category
+    public int RemRedCount { get; set; }
+    public int RemWhiteCount { get; set; }
+    public int RemSpecialCount { get; set; }
+    public int RemNaturalCount { get; set; }
+    public int RemNaturalWhiteCount { get; set; }
+    public int RemNaturalRedCount { get; set; }
+    public int RemShortCutCount { get; set; }
+    public int RemArtificialCount { get; set; }
+    public int RemShortCount { get; set; }
+
+    // Remaining weights per category
+    [Column(TypeName = "decimal(18,4)")]
+    public decimal RemRedWeight { get; set; }
+    [Column(TypeName = "decimal(18,4)")]
+    public decimal RemWhiteWeight { get; set; }
+    [Column(TypeName = "decimal(18,4)")]
+    public decimal RemSpecialWeight { get; set; }
+    [Column(TypeName = "decimal(18,4)")]
+    public decimal RemNaturalWeight { get; set; }
+    [Column(TypeName = "decimal(18,4)")]
+    public decimal RemNaturalWhiteWeight { get; set; }
+    [Column(TypeName = "decimal(18,4)")]
+    public decimal RemNaturalRedWeight { get; set; }
+    [Column(TypeName = "decimal(18,4)")]
+    public decimal RemShortCutWeight { get; set; }
+    [Column(TypeName = "decimal(18,4)")]
+    public decimal RemArtificialWeight { get; set; }
+    [Column(TypeName = "decimal(18,4)")]
+    public decimal RemShortWeight { get; set; }
 }

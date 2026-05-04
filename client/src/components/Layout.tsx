@@ -85,12 +85,12 @@ const Layout: React.FC = () => {
 
                     {(hasPermission('Sales2.View') || hasPermission('Sales2.Create')) && (
                         <Link
-                            to="/sales2"
-                            className={`nav-item ${isActive('/sales2') ? 'active' : ''}`}
+                            to="/purification"
+                            className={`nav-item ${isActive('/purification') ? 'active' : ''}`}
                             onClick={closeMobileMenu}
                         >
                             <ShoppingCart className="nav-icon" size={24} />
-                            အပွရုံစာရင်း
+                            Purification
                         </Link>
                     )}
 
@@ -139,14 +139,16 @@ const Layout: React.FC = () => {
                     )}
 
                     {(hasPermission('Warehouse.View') || hasPermission('Warehouse.Create') || hasPermission('Warehouse.Edit') || hasPermission('Warehouse.Delete')) && (
-                        <Link
-                            to="/warehouses"
-                            className={`nav-item ${isActive('/warehouses') ? 'active' : ''}`}
-                            onClick={closeMobileMenu}
-                        >
-                            <Warehouse className="nav-icon" size={24} />
-                            Warehouses
-                        </Link>
+                        <>
+                            <Link
+                                to="/warehouses"
+                                className={`nav-item ${isActive('/warehouses') ? 'active' : ''}`}
+                                onClick={closeMobileMenu}
+                            >
+                                <Warehouse className="nav-icon" size={24} />
+                                Warehouses
+                            </Link>
+                        </>
                     )}
 
                     {(hasPermission('Staff.View') || hasPermission('Staff.Create')) && (

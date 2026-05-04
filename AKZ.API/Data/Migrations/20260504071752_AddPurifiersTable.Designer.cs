@@ -4,16 +4,19 @@ using AKZ.API.Data;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 #nullable disable
 
-namespace AKZ.API.Migrations
+namespace AKZ.API.Data.Migrations
 {
     [DbContext(typeof(AKZDbContext))]
-    partial class AKZDbContextModelSnapshot : ModelSnapshot
+    [Migration("20260504071752_AddPurifiersTable")]
+    partial class AddPurifiersTable
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -357,9 +360,6 @@ namespace AKZ.API.Migrations
                     b.Property<int>("DeleteFlg")
                         .HasColumnType("int");
 
-                    b.Property<bool>("IsWeightFull")
-                        .HasColumnType("bit");
-
                     b.Property<int>("ProcessingRecordId")
                         .HasColumnType("int");
 
@@ -392,79 +392,6 @@ namespace AKZ.API.Migrations
                     b.HasIndex("PurifierId");
 
                     b.ToTable("PurificationProcesses");
-                });
-
-            modelBuilder.Entity("AKZ.API.Models.PurifiedRecord", b =>
-                {
-                    b.Property<int>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("int");
-
-                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
-
-                    b.Property<string>("Category")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<int>("Count")
-                        .HasColumnType("int");
-
-                    b.Property<string>("CreateBy")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<DateTime>("CreateDate")
-                        .HasColumnType("datetime2");
-
-                    b.Property<DateTime>("Date")
-                        .HasColumnType("datetime2");
-
-                    b.Property<string>("DeleteBy")
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<DateTime?>("DeleteDate")
-                        .HasColumnType("datetime2");
-
-                    b.Property<int>("DeleteFlg")
-                        .HasColumnType("int");
-
-                    b.Property<bool>("IsWeightFull")
-                        .HasColumnType("bit");
-
-                    b.Property<int>("ProcessingRecordId")
-                        .HasColumnType("int");
-
-                    b.Property<int?>("PurificationProcessId")
-                        .HasColumnType("int");
-
-                    b.Property<int?>("PurifierId")
-                        .HasColumnType("int");
-
-                    b.Property<int>("RemainingCount")
-                        .HasColumnType("int");
-
-                    b.Property<decimal>("RemainingWeight")
-                        .HasColumnType("decimal(18,4)");
-
-                    b.Property<string>("UpdateBy")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<DateTime>("UpdateDate")
-                        .HasColumnType("datetime2");
-
-                    b.Property<decimal>("Weight")
-                        .HasColumnType("decimal(18,4)");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("ProcessingRecordId");
-
-                    b.HasIndex("PurificationProcessId");
-
-                    b.HasIndex("PurifierId");
-
-                    b.ToTable("PurifiedRecords");
                 });
 
             modelBuilder.Entity("AKZ.API.Models.Purifier", b =>
@@ -948,29 +875,6 @@ namespace AKZ.API.Migrations
                     b.Navigation("Purifier");
                 });
 
-            modelBuilder.Entity("AKZ.API.Models.PurifiedRecord", b =>
-                {
-                    b.HasOne("AKZ.API.Models.ProcessingRecord", "ProcessingRecord")
-                        .WithMany()
-                        .HasForeignKey("ProcessingRecordId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.HasOne("AKZ.API.Models.PurificationProcess", "PurificationProcess")
-                        .WithMany("PurifiedRecords")
-                        .HasForeignKey("PurificationProcessId");
-
-                    b.HasOne("AKZ.API.Models.Purifier", "Purifier")
-                        .WithMany()
-                        .HasForeignKey("PurifierId");
-
-                    b.Navigation("ProcessingRecord");
-
-                    b.Navigation("PurificationProcess");
-
-                    b.Navigation("Purifier");
-                });
-
             modelBuilder.Entity("AKZ.API.Models.Purifier", b =>
                 {
                     b.HasOne("AKZ.API.Models.Warehouse", "Warehouse")
@@ -1058,11 +962,6 @@ namespace AKZ.API.Migrations
             modelBuilder.Entity("AKZ.API.Models.Product", b =>
                 {
                     b.Navigation("Sales");
-                });
-
-            modelBuilder.Entity("AKZ.API.Models.PurificationProcess", b =>
-                {
-                    b.Navigation("PurifiedRecords");
                 });
 
             modelBuilder.Entity("AKZ.API.Models.Role", b =>

@@ -217,7 +217,10 @@ const Sales: React.FC = () => {
                             {sales.map((sale) => (
                                 <tr key={sale.id}>
                                     <td>{new Date(sale.date).toLocaleDateString()}</td>
-                                    <td>{sale.marker}</td>
+                                    <td>
+                                        <div style={{ fontWeight: 600 }}>{sale.marker}</div>
+                                        <div style={{ fontSize: '11px', color: '#64748b' }}>{sale.warehouseName}</div>
+                                    </td>
                                     <td>{sale.weight} {sale.unit}</td>
                                     <td>{sale.price} {sale.currency}</td>
                                     <td>{(sale.weight * sale.price).toFixed(2)} {sale.currency}</td>

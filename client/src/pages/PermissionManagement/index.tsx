@@ -78,7 +78,7 @@ const PermissionManagement: React.FC = () => {
         { title: 'Inventory', prefix: 'Inventory.' },
         { title: 'အပွရောင်းစာရင်း', prefix: 'Sales.' },
         { title: 'အပွရွေးစာရင်း', prefix: 'Sales1.' },
-        { title: 'အပွရုံစာရင်း', prefix: 'Sales2.' },
+        { title: 'Purification', prefix: 'Sales2.' },
         { title: 'ခါးစီး/အကြမ်းရိုက်စာရင်း', prefix: 'Sales3.' },
         { title: 'အချောဆွဲစာရင်း', prefix: 'Sales4.' },
         { title: 'Semi Export', prefix: 'Sales5.' },

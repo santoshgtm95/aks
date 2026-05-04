@@ -6,6 +6,7 @@ public class ProcessingRecordDto
     public DateTime Date { get; set; }
     public int ProductId { get; set; }
     public string ProductMarker { get; set; } = string.Empty;
+    public string WarehouseName { get; set; } = string.Empty;
     public string WorkerNames { get; set; } = string.Empty;
     public int Count { get; set; }
     public int RemainingCount { get; set; }
@@ -33,6 +34,28 @@ public class ProcessingRecordDto
     public decimal RemainingWeight { get; set; }
     public decimal? RemainingWeightKg { get; set; }
     public decimal Difference { get; set; }
+
+    // Remaining counts per category
+    public int RemRedCount { get; set; }
+    public int RemWhiteCount { get; set; }
+    public int RemSpecialCount { get; set; }
+    public int RemNaturalCount { get; set; }
+    public int RemNaturalWhiteCount { get; set; }
+    public int RemNaturalRedCount { get; set; }
+    public int RemShortCutCount { get; set; }
+    public int RemArtificialCount { get; set; }
+    public int RemShortCount { get; set; }
+
+    // Remaining weights per category
+    public decimal RemRedWeight { get; set; }
+    public decimal RemWhiteWeight { get; set; }
+    public decimal RemSpecialWeight { get; set; }
+    public decimal RemNaturalWeight { get; set; }
+    public decimal RemNaturalWhiteWeight { get; set; }
+    public decimal RemNaturalRedWeight { get; set; }
+    public decimal RemShortCutWeight { get; set; }
+    public decimal RemArtificialWeight { get; set; }
+    public decimal RemShortWeight { get; set; }
 }
 
 public class CreateProcessingRecordDto

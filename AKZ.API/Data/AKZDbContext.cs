@@ -23,6 +23,9 @@ public class AKZDbContext : DbContext
     public DbSet<Worker> Workers { get; set; }
     public DbSet<Warehouse> Warehouses { get; set; }
     public DbSet<UserPermission> UserPermissions { get; set; }
+    public DbSet<PurificationProcess> PurificationProcesses { get; set; }
+    public DbSet<Purifier> Purifiers { get; set; }
+    public DbSet<PurifiedRecord> PurifiedRecords { get; set; }
 
     public override Task<int> SaveChangesAsync(CancellationToken cancellationToken = default)
     {
@@ -75,6 +78,8 @@ public class AKZDbContext : DbContext
         modelBuilder.Entity<Worker>().HasQueryFilter(e => e.DeleteFlg == 0);
         modelBuilder.Entity<Warehouse>().HasQueryFilter(e => e.DeleteFlg == 0);
         modelBuilder.Entity<UserPermission>().HasQueryFilter(e => e.DeleteFlg == 0);
+        modelBuilder.Entity<PurificationProcess>().HasQueryFilter(e => e.DeleteFlg == 0);
+        modelBuilder.Entity<Purifier>().HasQueryFilter(e => e.DeleteFlg == 0);
 
         // Configure ProcessingRecord relationship
         modelBuilder.Entity<ProcessingRecord>()
@@ -150,5 +155,18 @@ public class AKZDbContext : DbContext
             .WithMany()
             .HasForeignKey(up => up.PermissionId)
             .OnDelete(DeleteBehavior.Cascade);
+
+        modelBuilder.Entity<Purifier>()
+            .HasOne(p => p.Warehouse)
+            .WithMany()
+            .HasForeignKey(p => p.WarehouseId)
+            .OnDelete(DeleteBehavior.Restrict);
+
+        modelBuilder.Entity<PurificationProcess>()
+            .HasOne(p => p.Purifier)
+            .WithMany()
+            .HasForeignKey(p => p.PurifierId)
+            .OnDelete(DeleteBehavior.Restrict);
+        modelBuilder.Entity<PurifiedRecord>().HasQueryFilter(e => e.DeleteFlg == 0);
     }
 }

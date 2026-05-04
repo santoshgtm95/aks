@@ -24,6 +24,7 @@ public class ProcessingController : ControllerBase
     {
         var records = await _context.ProcessingRecords
             .Include(r => r.Product)
+                .ThenInclude(p => p.Warehouse)
             .OrderByDescending(r => r.Date)
             .Select(r => new ProcessingRecordDto
             {
@@ -31,6 +32,7 @@ public class ProcessingController : ControllerBase
                 Date = r.Date,
                 ProductId = r.ProductId,
                 ProductMarker = r.Product.Marker,
+                WarehouseName = r.Product.Warehouse != null ? r.Product.Warehouse.Name : "",
                 WorkerNames = r.WorkerNames,
                 Count = r.Count,
                 RemainingCount = r.RemainingCount,
@@ -57,7 +59,25 @@ public class ProcessingController : ControllerBase
                 TotalWeight = r.TotalWeight,
                 RemainingWeight = r.RemainingWeight,
                 RemainingWeightKg = r.RemainingWeightKg,
-                Difference = r.Difference
+                Difference = r.Difference,
+                RemRedCount = r.RemRedCount,
+                RemWhiteCount = r.RemWhiteCount,
+                RemSpecialCount = r.RemSpecialCount,
+                RemNaturalCount = r.RemNaturalCount,
+                RemNaturalWhiteCount = r.RemNaturalWhiteCount,
+                RemNaturalRedCount = r.RemNaturalRedCount,
+                RemShortCutCount = r.RemShortCutCount,
+                RemArtificialCount = r.RemArtificialCount,
+                RemShortCount = r.RemShortCount,
+                RemRedWeight = r.RemRedWeight,
+                RemWhiteWeight = r.RemWhiteWeight,
+                RemSpecialWeight = r.RemSpecialWeight,
+                RemNaturalWeight = r.RemNaturalWeight,
+                RemNaturalWhiteWeight = r.RemNaturalWhiteWeight,
+                RemNaturalRedWeight = r.RemNaturalRedWeight,
+                RemShortCutWeight = r.RemShortCutWeight,
+                RemArtificialWeight = r.RemArtificialWeight,
+                RemShortWeight = r.RemShortWeight
             })
             .ToListAsync();
 
@@ -103,7 +123,26 @@ public class ProcessingController : ControllerBase
             TotalWeight = dto.TotalWeight,
             RemainingWeight = dto.RemainingWeight,
             RemainingWeightKg = dto.RemainingWeightKg,
-            Difference = dto.Difference
+            Difference = dto.Difference,
+            // Initialize remaining fields with original counts/weights
+            RemRedCount = dto.RedCount,
+            RemWhiteCount = dto.WhiteCount,
+            RemSpecialCount = dto.SpecialCount,
+            RemNaturalCount = dto.NaturalCount,
+            RemNaturalWhiteCount = dto.NaturalWhiteCount,
+            RemNaturalRedCount = dto.NaturalRedCount,
+            RemShortCutCount = dto.ShortCutCount,
+            RemArtificialCount = dto.ArtificialCount,
+            RemShortCount = dto.ShortCount,
+            RemRedWeight = dto.RedWeight,
+            RemWhiteWeight = dto.WhiteWeight,
+            RemSpecialWeight = dto.SpecialWeight,
+            RemNaturalWeight = dto.NaturalWeight,
+            RemNaturalWhiteWeight = dto.NaturalWhiteWeight,
+            RemNaturalRedWeight = dto.NaturalRedWeight,
+            RemShortCutWeight = dto.ShortCutWeight,
+            RemArtificialWeight = dto.ArtificialWeight,
+            RemShortWeight = dto.ShortWeight
         };
 
         _context.ProcessingRecords.Add(record);
@@ -135,6 +174,7 @@ public class ProcessingController : ControllerBase
         await _context.SaveChangesAsync();
 
         await _context.Entry(record).Reference(r => r.Product).LoadAsync();
+        await _context.Entry(record.Product).Reference(p => p.Warehouse).LoadAsync();
 
         var resultDto = new ProcessingRecordDto
         {
@@ -142,6 +182,7 @@ public class ProcessingController : ControllerBase
             Date = record.Date,
             ProductId = record.ProductId,
             ProductMarker = record.Product.Marker,
+            WarehouseName = record.Product.Warehouse != null ? record.Product.Warehouse.Name : "",
             WorkerNames = record.WorkerNames,
             Count = record.Count,
             RemainingCount = record.RemainingCount,
