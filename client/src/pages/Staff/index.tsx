@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { useAuth } from '../../context/AuthContext';
-import { usersAPI } from '../../services/api';
-import type { User, Role, CreateUserDto } from '../../types';
+import { usersAPI, warehousesAPI } from '../../services/api';
+import type { User, Role, CreateUserDto, Warehouse } from '../../types';
 import Modal from '../../components/Modal';
 import './index.css';
 
@@ -9,6 +9,7 @@ const Staff: React.FC = () => {
     const { hasPermission } = useAuth();
     const [users, setUsers] = useState<User[]>([]);
     const [roles, setRoles] = useState<Role[]>([]);
+    const [warehouses, setWarehouses] = useState<Warehouse[]>([]);
     const [loading, setLoading] = useState(true);
     const [isEditModalOpen, setIsEditModalOpen] = useState(false);
     const [editingUserId, setEditingUserId] = useState<number | null>(null);
@@ -19,6 +20,7 @@ const Staff: React.FC = () => {
         email: '',
         phoneNumber: '',
         roleId: 0,
+        warehouseId: undefined,
     });
 
     useEffect(() => {
@@ -27,12 +29,14 @@ const Staff: React.FC = () => {
 
     const loadData = async () => {
         try {
-            const [usersData, rolesData] = await Promise.all([
+            const [usersData, rolesData, warehousesData] = await Promise.all([
                 usersAPI.getAll(),
                 usersAPI.getRoles(),
+                warehousesAPI.getAll(),
             ]);
             setUsers(usersData);
             setRoles(rolesData);
+            setWarehouses(warehousesData);
         } catch (error) {
             console.error('Failed to load staff data:', error);
         } finally {
@@ -44,7 +48,9 @@ const Staff: React.FC = () => {
         const { name, value } = e.target;
         setFormData((prev) => ({
             ...prev,
-            [name]: name === 'roleId' ? parseInt(value) : value,
+            [name]: name === 'roleId' ? parseInt(value) :
+                    name === 'warehouseId' ? (value === '' ? undefined : parseInt(value)) :
+                    value,
         }));
     };
 
@@ -59,6 +65,7 @@ const Staff: React.FC = () => {
                 email: '',
                 phoneNumber: '',
                 roleId: 0,
+                warehouseId: undefined,
             });
             loadData();
         } catch (error: any) {
@@ -82,11 +89,12 @@ const Staff: React.FC = () => {
         const role = roles.find(r => r.name === user.roleName);
         setFormData({
             username: user.username,
-            password: '', // Password not required for update
+            password: '',
             fullName: user.fullName,
             email: user.email,
             phoneNumber: user.phoneNumber || '',
             roleId: role ? role.id : 0,
+            warehouseId: user.warehouseId,
         });
         setIsEditModalOpen(true);
     };
@@ -101,7 +109,8 @@ const Staff: React.FC = () => {
                 email: formData.email,
                 phoneNumber: formData.phoneNumber,
                 roleId: formData.roleId,
-                isActive: true
+                isActive: true,
+                warehouseId: formData.warehouseId,
             });
             setIsEditModalOpen(false);
             setEditingUserId(null);
@@ -205,6 +214,23 @@ const Staff: React.FC = () => {
                                 ))}
                             </select>
                         </div>
+
+                        <div className="form-group">
+                            <label className="form-label">Warehouse</label>
+                            <select
+                                name="warehouseId"
+                                className="form-select"
+                                value={formData.warehouseId ?? ''}
+                                onChange={handleInputChange}
+                            >
+                                <option value="">-- All Warehouses (Admin) --</option>
+                                {warehouses.map(w => (
+                                    <option key={w.id} value={w.id}>
+                                        {w.name}
+                                    </option>
+                                ))}
+                            </select>
+                        </div>
                     </div>
 
                     <div className="form-actions">
@@ -226,6 +252,7 @@ const Staff: React.FC = () => {
                                 <th>Username</th>
                                 <th>Email</th>
                                 <th>Role</th>
+                                <th>Warehouse</th>
                                 <th>Permissions</th>
                                 <th>Actions</th>
                             </tr>
@@ -238,6 +265,12 @@ const Staff: React.FC = () => {
                                     <td>{user.email}</td>
                                     <td>
                                         <span className="badge badge-info">{user.roleName}</span>
+                                    </td>
+                                    <td>
+                                        {user.warehouseName 
+                                            ? <span className="badge badge-success">{user.warehouseName}</span>
+                                            : <span style={{ color: '#94a3b8', fontSize: '12px' }}>All Access</span>
+                                        }
                                     </td>
                                     <td>
                                         <div className="permissions-list">
@@ -280,6 +313,7 @@ const Staff: React.FC = () => {
                         email: '',
                         phoneNumber: '',
                         roleId: 0,
+                        warehouseId: undefined,
                     });
                 }}
                 title="Edit Staff Member"
@@ -334,6 +368,23 @@ const Staff: React.FC = () => {
                                 {roles.map(role => (
                                     <option key={role.id} value={role.id}>
                                         {role.name}
+                                    </option>
+                                ))}
+                            </select>
+                        </div>
+
+                        <div className="form-group">
+                            <label className="form-label">Warehouse</label>
+                            <select
+                                name="warehouseId"
+                                className="form-select"
+                                value={formData.warehouseId ?? ''}
+                                onChange={handleInputChange}
+                            >
+                                <option value="">-- All Warehouses (Admin) --</option>
+                                {warehouses.map(w => (
+                                    <option key={w.id} value={w.id}>
+                                        {w.name}
                                     </option>
                                 ))}
                             </select>

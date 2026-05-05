@@ -6,6 +6,8 @@ export interface User {
   phoneNumber?: string;
   roleName: string;
   permissions: string[];
+  warehouseId?: number;
+  warehouseName?: string;
 }
 
 export interface LoginRequest {
@@ -110,6 +112,7 @@ export interface CreateUserDto {
   email: string;
   phoneNumber?: string;
   roleId: number;
+  warehouseId?: number;
 }
 
 export interface UpdateUserDto {
@@ -118,6 +121,7 @@ export interface UpdateUserDto {
   phoneNumber?: string;
   roleId: number;
   isActive: boolean;
+  warehouseId?: number;
 }
 
 export interface Role {

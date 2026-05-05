@@ -19,12 +19,22 @@ public class ProcessingController : ControllerBase
         _context = context;
     }
 
+    private int? GetCurrentUserWarehouseId()
+    {
+        var claim = User.FindFirst("warehouseId")?.Value;
+        if (string.IsNullOrEmpty(claim)) return null;
+        return int.TryParse(claim, out var id) ? id : null;
+    }
+
     [HttpGet]
     public async Task<ActionResult<List<ProcessingRecordDto>>> GetRecords()
     {
+        var warehouseId = GetCurrentUserWarehouseId();
+
         var records = await _context.ProcessingRecords
             .Include(r => r.Product)
                 .ThenInclude(p => p.Warehouse)
+            .Where(r => warehouseId == null || r.Product.WarehouseId == warehouseId)
             .OrderByDescending(r => r.Date)
             .Select(r => new ProcessingRecordDto
             {

@@ -19,13 +19,24 @@ public class ProductsController : ControllerBase
         _context = context;
     }
 
+    private int? GetCurrentUserWarehouseId()
+    {
+        var claim = User.FindFirst("warehouseId")?.Value;
+        if (string.IsNullOrEmpty(claim)) return null;
+        return int.TryParse(claim, out var id) ? id : null;
+    }
+
     [HttpGet]
     public async Task<ActionResult<List<ProductDto>>> GetProducts([FromQuery] bool all = false)
     {
+        var warehouseId = GetCurrentUserWarehouseId();
         var query = _context.Products.AsQueryable();
 
         if (!all)
             query = query.Where(p => p.IsActive);
+
+        if (warehouseId.HasValue)
+            query = query.Where(p => p.WarehouseId == warehouseId);
 
         var products = await query
             .OrderByDescending(p => p.Date)

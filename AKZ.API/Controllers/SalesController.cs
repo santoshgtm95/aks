@@ -19,14 +19,27 @@ public class SalesController : ControllerBase
         _context = context;
     }
 
+    private int? GetCurrentUserWarehouseId()
+    {
+        var claim = User.FindFirst("warehouseId")?.Value;
+        if (string.IsNullOrEmpty(claim)) return null;
+        return int.TryParse(claim, out var id) ? id : null;
+    }
+
     [HttpGet]
     public async Task<ActionResult<List<SaleDto>>> GetSales([FromQuery] string? category = null)
     {
+        var warehouseId = GetCurrentUserWarehouseId();
         var query = _context.Sales.AsQueryable();
 
         if (!string.IsNullOrEmpty(category))
         {
             query = query.Where(s => s.Category == category);
+        }
+
+        if (warehouseId.HasValue)
+        {
+            query = query.Where(s => s.Product.WarehouseId == warehouseId);
         }
 
         var sales = await query

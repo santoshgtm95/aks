@@ -35,6 +35,11 @@ public class User : BaseEntity
 
     public bool IsActive { get; set; } = true;
 
+    public int? WarehouseId { get; set; }
+
+    [ForeignKey("WarehouseId")]
+    public Warehouse? Warehouse { get; set; }
+
     // Navigation properties
     public ICollection<Sale> Sales { get; set; } = new List<Sale>();
 }

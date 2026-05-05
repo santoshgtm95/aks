@@ -27,6 +27,7 @@ public class AuthController : ControllerBase
             .Include(u => u.Role)
                 .ThenInclude(r => r.RolePermissions)
                 .ThenInclude(rp => rp.Permission)
+            .Include(u => u.Warehouse)
             .FirstOrDefaultAsync(u => u.Username == request.Username);
 
         if (user == null || !BCrypt.Net.BCrypt.Verify(request.Password, user.PasswordHash))
@@ -56,7 +57,9 @@ public class AuthController : ControllerBase
                 Email = user.Email,
                 PhoneNumber = user.PhoneNumber,
                 RoleName = user.Role.Name,
-                Permissions = permissions
+                Permissions = permissions,
+                WarehouseId = user.WarehouseId,
+                WarehouseName = user.Warehouse?.Name
             }
         };
 

@@ -19,13 +19,23 @@ public class PurificationController : ControllerBase
         _context = context;
     }
 
+    private int? GetCurrentUserWarehouseId()
+    {
+        var claim = User.FindFirst("warehouseId")?.Value;
+        if (string.IsNullOrEmpty(claim)) return null; // null = all warehouses (admin)
+        return int.TryParse(claim, out var id) ? id : null;
+    }
+
     [HttpGet("available-categories")]
     public async Task<ActionResult<List<AvailableCategoryDto>>> GetAvailableCategories()
     {
+        var warehouseId = GetCurrentUserWarehouseId();
+
         var records = await _context.ProcessingRecords
             .Include(r => r.Product)
                 .ThenInclude(p => p.Warehouse)
             .Where(r => r.DeleteFlg == 0)
+            .Where(r => warehouseId == null || r.Product.WarehouseId == warehouseId)
             .OrderByDescending(r => r.Date)
             .ToListAsync();
 
@@ -91,6 +101,8 @@ public class PurificationController : ControllerBase
     [HttpGet]
     public async Task<ActionResult<List<PurificationProcessDto>>> GetProcesses()
     {
+        var warehouseId = GetCurrentUserWarehouseId();
+
         var processes = await _context.PurificationProcesses
             .Include(p => p.ProcessingRecord)
                 .ThenInclude(r => r.Product)
@@ -98,6 +110,7 @@ public class PurificationController : ControllerBase
             .Include(p => p.Purifier)
             .Include(p => p.PurifiedRecords)
             .Where(p => p.DeleteFlg == 0)
+            .Where(p => warehouseId == null || p.ProcessingRecord.Product.WarehouseId == warehouseId)
             .OrderByDescending(p => p.Date)
             .ToListAsync();
 
@@ -142,12 +155,15 @@ public class PurificationController : ControllerBase
     [HttpGet("purified-records")]
     public async Task<ActionResult<List<PurifiedRecordDto>>> GetPurifiedRecords()
     {
+        var warehouseId = GetCurrentUserWarehouseId();
+
         var records = await _context.PurifiedRecords
             .Include(p => p.ProcessingRecord)
                 .ThenInclude(r => r.Product)
                     .ThenInclude(pr => pr.Warehouse)
             .Include(p => p.Purifier)
             .Where(p => p.DeleteFlg == 0)
+            .Where(p => warehouseId == null || p.ProcessingRecord.Product.WarehouseId == warehouseId)
             .OrderByDescending(p => p.Date)
             .ToListAsync();
 

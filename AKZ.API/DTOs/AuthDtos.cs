@@ -21,6 +21,8 @@ public class UserDto
     public string? PhoneNumber { get; set; }
     public string RoleName { get; set; } = string.Empty;
     public List<string> Permissions { get; set; } = new();
+    public int? WarehouseId { get; set; }
+    public string? WarehouseName { get; set; }
 }
 
 public class CreateUserDto
@@ -31,6 +33,7 @@ public class CreateUserDto
     public string Email { get; set; } = string.Empty;
     public string? PhoneNumber { get; set; }
     public int RoleId { get; set; }
+    public int? WarehouseId { get; set; }
 }
 
 public class UpdateUserDto
@@ -40,6 +43,7 @@ public class UpdateUserDto
     public string? PhoneNumber { get; set; }
     public int RoleId { get; set; }
     public bool IsActive { get; set; }
+    public int? WarehouseId { get; set; }
 }
 public class UpdateUserPermissionsDto
 {

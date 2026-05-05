@@ -26,6 +26,7 @@ public class UsersController : ControllerBase
             .Include(u => u.Role)
                 .ThenInclude(r => r.RolePermissions)
                 .ThenInclude(rp => rp.Permission)
+            .Include(u => u.Warehouse)
             .Where(u => u.IsActive)
             .Select(u => new UserDto
             {
@@ -35,6 +36,8 @@ public class UsersController : ControllerBase
                 Email = u.Email,
                 PhoneNumber = u.PhoneNumber,
                 RoleName = u.Role.Name,
+                WarehouseId = u.WarehouseId,
+                WarehouseName = u.Warehouse != null ? u.Warehouse.Name : null,
                 Permissions = _context.UserPermissions
                     .Where(up => up.UserId == u.Id)
                     .Select(up => up.Permission.Name)
@@ -53,6 +56,7 @@ public class UsersController : ControllerBase
             .Include(u => u.Role)
                 .ThenInclude(r => r.RolePermissions)
                 .ThenInclude(rp => rp.Permission)
+            .Include(u => u.Warehouse)
             .Where(u => u.Id == id)
             .Select(u => new UserDto
             {
@@ -62,6 +66,8 @@ public class UsersController : ControllerBase
                 Email = u.Email,
                 PhoneNumber = u.PhoneNumber,
                 RoleName = u.Role.Name,
+                WarehouseId = u.WarehouseId,
+                WarehouseName = u.Warehouse != null ? u.Warehouse.Name : null,
                 Permissions = _context.UserPermissions
                     .Where(up => up.UserId == u.Id)
                     .Select(up => up.Permission.Name)
@@ -108,6 +114,7 @@ public class UsersController : ControllerBase
             Email = dto.Email,
             PhoneNumber = dto.PhoneNumber,
             RoleId = dto.RoleId,
+            WarehouseId = dto.WarehouseId,
             IsActive = true
         };
 
@@ -154,6 +161,7 @@ public class UsersController : ControllerBase
         user.PhoneNumber = dto.PhoneNumber;
         user.RoleId = dto.RoleId;
         user.IsActive = dto.IsActive;
+        user.WarehouseId = dto.WarehouseId;
 
         await _context.SaveChangesAsync();
 
