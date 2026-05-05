@@ -3,6 +3,7 @@ import { useAuth } from '../../context/AuthContext';
 import { productsAPI, warehousesAPI } from '../../services/api';
 import type { Product, CreateProductDto, Warehouse as WarehouseType } from '../../types';
 import Modal from '../../components/Modal';
+import { formatDateTime, getMyanmarNow, combineDateWithMyanmarTime } from '../../utils/format';
 import './index.css';
 
 const Inventory: React.FC = () => {
@@ -13,7 +14,7 @@ const Inventory: React.FC = () => {
     const [editingId, setEditingId] = useState<number | null>(null);
     const [isEditModalOpen, setIsEditModalOpen] = useState(false);
     const [formData, setFormData] = useState<CreateProductDto>({
-        date: new Date().toISOString().split('T')[0],
+        date: getMyanmarNow(),
         packages: '',
         marker: '',
         unit: 'kg',
@@ -65,7 +66,10 @@ const Inventory: React.FC = () => {
         e.preventDefault();
         try {
             if (editingId) {
-                const finalData = { ...formData };
+                const finalData = { 
+                    ...formData,
+                    date: combineDateWithMyanmarTime(formData.date)
+                };
                 if (weightAdjustment !== 0) {
                     finalData.weight = originalWeights.weight + weightAdjustment;
                     finalData.remainingWeight = originalWeights.remaining + weightAdjustment;
@@ -75,10 +79,13 @@ const Inventory: React.FC = () => {
                 setIsEditModalOpen(false);
                 setWeightAdjustment(0);
             } else {
-                await productsAPI.create(formData);
+                await productsAPI.create({
+                    ...formData,
+                    date: combineDateWithMyanmarTime(formData.date)
+                });
             }
             setFormData({
-                date: new Date().toISOString().split('T')[0],
+                date: getMyanmarNow(),
                 packages: '',
                 marker: '',
                 unit: 'kg',
@@ -96,7 +103,7 @@ const Inventory: React.FC = () => {
     const handleEdit = (product: Product) => {
         setEditingId(product.id);
         setFormData({
-            date: new Date(product.date).toISOString().split('T')[0],
+            date: new Date(product.date).toISOString().slice(0, 16),
             packages: product.packages,
             marker: product.marker,
             unit: product.unit,
@@ -116,7 +123,9 @@ const Inventory: React.FC = () => {
             try {
                 await productsAPI.delete(id);
                 loadData();
-            } catch (error) {
+            } catch (error: any) {
+                const message = error.response?.data?.message || 'Failed to delete product';
+                alert(message);
                 console.error('Failed to delete product:', error);
             }
         }
@@ -266,7 +275,7 @@ const Inventory: React.FC = () => {
                     setIsEditModalOpen(false);
                     setEditingId(null);
                     setFormData({
-                        date: new Date().toISOString().split('T')[0],
+                        date: getMyanmarNow(),
                         packages: '',
                         marker: '',
                         unit: 'kg',
@@ -434,7 +443,7 @@ const Inventory: React.FC = () => {
                                 setIsEditModalOpen(false);
                                 setEditingId(null);
                                 setFormData({
-                                    date: new Date().toISOString().split('T')[0],
+                                    date: getMyanmarNow(),
                                     packages: '',
                                     marker: '',
                                     unit: 'kg',
@@ -470,7 +479,7 @@ const Inventory: React.FC = () => {
                         <tbody>
                             {products.map((product) => (
                                 <tr key={product.id}>
-                                    <td>{new Date(product.date).toLocaleDateString()}</td>
+                                    <td>{formatDateTime(product.date)}</td>
                                     <td>
                                         <span className="warehouse-badge" style={{ background: '#f1f5f9', padding: '4px 8px', borderRadius: '6px', fontSize: '13px', fontWeight: 600 }}>
                                             {product.warehouseName || 'No Warehouse'}

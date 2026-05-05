@@ -1,5 +1,5 @@
 import axios from 'axios';
-import type { LoginRequest, LoginResponse, Product, CreateProductDto, Sale, CreateSaleDto, DashboardStats, User, CreateUserDto, UpdateUserDto, Role, ProcessingRecord, CreateProcessingRecordDto, Worker, Warehouse, CreateWarehouseDto, UpdateWarehouseDto, PurificationProcess, CreatePurificationProcessDto, AvailableCategory, Purifier, CreatePurifierDto, UpdatePurifierDto } from '../types';
+import type { LoginRequest, LoginResponse, Product, CreateProductDto, Sale, CreateSaleDto, DashboardStats, User, CreateUserDto, UpdateUserDto, Role, ProcessingRecord, CreateProcessingRecordDto, Worker, Warehouse, CreateWarehouseDto, UpdateWarehouseDto, PurificationProcess, CreatePurificationProcessDto, AvailableCategory, Purifier, CreatePurifierDto, UpdatePurifierDto, PurifiedRecord } from '../types';
 
 const API_BASE_URL = 'http://localhost:5159/api';
 

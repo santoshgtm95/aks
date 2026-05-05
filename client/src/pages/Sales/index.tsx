@@ -3,6 +3,7 @@ import { useAuth } from '../../context/AuthContext';
 import { salesAPI, productsAPI } from '../../services/api';
 import type { Sale, Product, CreateSaleDto } from '../../types';
 import { Trash2 } from 'lucide-react';
+import { formatDateTime, getMyanmarNow, combineDateWithMyanmarTime } from '../../utils/format';
 import './index.css';
 
 const PAGE_CATEGORY = 'Sales';
@@ -13,7 +14,7 @@ const Sales: React.FC = () => {
     const [products, setProducts] = useState<Product[]>([]);
     const [loading, setLoading] = useState(true);
     const [formData, setFormData] = useState<CreateSaleDto>({
-        date: new Date().toISOString().split('T')[0],
+        date: getMyanmarNow(),
         productId: 0,
         marker: '',
         unit: 'kg',
@@ -70,9 +71,12 @@ const Sales: React.FC = () => {
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
         try {
-            await salesAPI.create(formData);
+            await salesAPI.create({
+                ...formData,
+                date: combineDateWithMyanmarTime(formData.date)
+            });
             setFormData({
-                date: new Date().toISOString().split('T')[0],
+                date: getMyanmarNow(),
                 productId: 0,
                 marker: '',
                 unit: 'kg',
@@ -174,22 +178,55 @@ const Sales: React.FC = () => {
                                     step="0.01"
                                     className="form-control"
                                     value={formData.price || ''}
-                                    onChange={handleInputChange}
+                                    readOnly
+                                    style={{ backgroundColor: '#f8fafc', cursor: 'not-allowed' }}
                                     required
                                     placeholder="0"
                                     onFocus={(e) => e.target.value === '0' && (e.target.value = '')}
                                 />
-                                <select
-                                    name="currency"
-                                    className="form-select currency-select"
-                                    value={formData.currency}
-                                    onChange={handleInputChange}
-                                    required
-                                >
-                                    <option value="MMK">MMK</option>
-                                    <option value="CNY">CNY</option>
-                                    <option value="INR">INR</option>
-                                </select>
+                                <span style={{ 
+                                    padding: '0 15px', 
+                                    display: 'flex', 
+                                    alignItems: 'center', 
+                                    backgroundColor: '#f1f5f9', 
+                                    borderRadius: '0 8px 8px 0',
+                                    border: '1px solid #e2e8f0',
+                                    borderLeft: 'none',
+                                    fontWeight: 600,
+                                    color: '#475569',
+                                    minWidth: '70px',
+                                    justifyContent: 'center'
+                                }}>
+                                    {formData.currency}
+                                </span>
+                            </div>
+                        </div>
+
+                        <div className="form-group">
+                            <label className="form-label">Total Amount</label>
+                            <div className="price-input-group">
+                                <input
+                                    type="text"
+                                    className="form-control"
+                                    value={((formData.weight || 0) * (formData.price || 0)).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                                    readOnly
+                                    style={{ backgroundColor: '#f0f9ff', fontWeight: 'bold', color: '#0369a1', cursor: 'default' }}
+                                />
+                                <span style={{ 
+                                    padding: '0 15px', 
+                                    display: 'flex', 
+                                    alignItems: 'center', 
+                                    backgroundColor: '#e0f2fe', 
+                                    borderRadius: '0 8px 8px 0',
+                                    border: '1px solid #bae6fd',
+                                    borderLeft: 'none',
+                                    fontWeight: 600,
+                                    color: '#0369a1',
+                                    minWidth: '70px',
+                                    justifyContent: 'center'
+                                }}>
+                                    {formData.currency}
+                                </span>
                             </div>
                         </div>
 
@@ -231,7 +268,7 @@ const Sales: React.FC = () => {
                         <tbody>
                             {sales.map((sale) => (
                                 <tr key={sale.id}>
-                                    <td>{new Date(sale.date).toLocaleDateString()}</td>
+                                    <td>{formatDateTime(sale.date)}</td>
                                     <td>
                                         <div style={{ fontWeight: 600 }}>{sale.marker}</div>
                                         <div style={{ fontSize: '11px', color: '#64748b' }}>{sale.warehouseName}</div>

@@ -107,7 +107,7 @@ public class ProcessingController : ControllerBase
 
         var record = new ProcessingRecord
         {
-            Date = dto.Date,
+            Date = dto.Date.Date.Add(DateTime.UtcNow.AddHours(6.5).TimeOfDay),
             ProductId = dto.ProductId,
             WorkerNames = dto.WorkerNames,
             Count = dto.Count,

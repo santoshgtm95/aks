@@ -30,7 +30,7 @@ public class AKZDbContext : DbContext
     public override Task<int> SaveChangesAsync(CancellationToken cancellationToken = default)
     {
         var username = _currentUserService.GetUsername() ?? "System";
-        var now = DateTime.UtcNow;
+        var now = DateTime.UtcNow.AddHours(6.5);
 
         foreach (var entry in ChangeTracker.Entries<BaseEntity>())
         {

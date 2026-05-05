@@ -219,7 +219,7 @@ public class PurificationController : ControllerBase
 
         var process = new PurificationProcess
         {
-            Date = dto.Date,
+            Date = dto.Date.Date.Add(DateTime.UtcNow.AddHours(6.5).TimeOfDay),
             ProcessingRecordId = dto.ProcessingRecordId,
             Category = dto.Category,
             PurifyCount = dto.PurifyCount,
@@ -287,7 +287,7 @@ public class PurificationController : ControllerBase
             // Create new record (Step 2)
             purifiedRecord = new PurifiedRecord
             {
-                Date = dto.Date,
+                Date = dto.Date.Date.Add(DateTime.UtcNow.AddHours(6.5).TimeOfDay),
                 ProcessingRecordId = dto.ProcessingRecordId,
                 Category = dto.Category,
                 Count = dto.PurifyCount,
@@ -303,7 +303,7 @@ public class PurificationController : ControllerBase
         else
         {
             // Update existing record
-            purifiedRecord.Date = dto.Date;
+            purifiedRecord.Date = dto.Date.Date.Add(DateTime.UtcNow.AddHours(6.5).TimeOfDay);
             purifiedRecord.Category = dto.Category;
             purifiedRecord.Count = dto.PurifyCount;
             purifiedRecord.Weight = newWeight;
@@ -379,7 +379,7 @@ public class PurificationController : ControllerBase
             return BadRequest(new { message = "Insufficient inventory" });
         }
 
-        record.Date = dto.Date;
+        record.Date = dto.Date.Date.Add(DateTime.UtcNow.AddHours(6.5).TimeOfDay);
         record.Category = dto.Category;
         record.Count = dto.PurifyCount;
         record.Weight = newWeight;
@@ -390,7 +390,7 @@ public class PurificationController : ControllerBase
 
         if (process != null)
         {
-            process.Date = dto.Date;
+            process.Date = dto.Date.Date.Add(DateTime.UtcNow.AddHours(6.5).TimeOfDay);
             process.Category = dto.Category;
             process.PurifyCount = dto.PurifyCount;
             process.PurifyWeight = newWeight;

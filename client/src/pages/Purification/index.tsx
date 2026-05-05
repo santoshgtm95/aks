@@ -2,8 +2,9 @@ import React, { useEffect, useState } from 'react';
 import { purificationAPI, purifiersAPI } from '../../services/api';
 import type { AvailableCategory, PurificationProcess, PurifiedRecord, Purifier } from '../../types';
 import { Package, Send, History, Loader2, Search, User, Settings, X, Pencil, Trash2 } from 'lucide-react';
-import './index.css';
 import PurifierManagement from '../PurifierManagement';
+import { formatDateTime, getMyanmarNow, combineDateWithMyanmarTime } from '../../utils/format';
+import './index.css';
 
 const Purification: React.FC = () => {
     const [availableCategories, setAvailableCategories] = useState<AvailableCategory[]>([]);
@@ -25,7 +26,7 @@ const Purification: React.FC = () => {
         count: '',
         purifierId: 0,
         isWeightFull: true,
-        date: new Date().toISOString().split('T')[0]
+        date: getMyanmarNow()
     });
 
     useEffect(() => {
@@ -116,7 +117,7 @@ const Purification: React.FC = () => {
         setEditingRecord(null);
         setSelectedCategory(null);
         
-        const dateStr = p.date ? (p.date.includes('T') ? p.date.split('T')[0] : p.date) : new Date().toISOString().split('T')[0];
+        const dateStr = p.date ? (p.date.includes('T') ? p.date.slice(0, 16) : p.date + 'T00:00') : getMyanmarNow();
         
         setPurifyForm({
             count: p.purifyCount.toString(),
@@ -132,7 +133,7 @@ const Purification: React.FC = () => {
         setEditingProcess(null);
         setSelectedCategory(null);
         
-        const dateStr = p.date ? (p.date.includes('T') ? p.date.split('T')[0] : p.date) : new Date().toISOString().split('T')[0];
+        const dateStr = p.date ? (p.date.includes('T') ? p.date.slice(0, 16) : p.date + 'T00:00') : getMyanmarNow();
         
         setPurifyForm({
             count: p.count.toString(),
@@ -174,7 +175,7 @@ const Purification: React.FC = () => {
         try {
             if (editingProcess) {
                 await purificationAPI.update(editingProcess.id, {
-                    date: new Date(purifyForm.date).toISOString(),
+                    date: combineDateWithMyanmarTime(purifyForm.date),
                     processingRecordId: editingProcess.processingRecordId,
                     category: editingProcess.category,
                     purifyCount: count,
@@ -183,7 +184,7 @@ const Purification: React.FC = () => {
                 });
             } else if (editingRecord) {
                 await purificationAPI.updatePurifiedRecord(editingRecord.id, {
-                    date: new Date(purifyForm.date).toISOString(),
+                    date: combineDateWithMyanmarTime(purifyForm.date),
                     processingRecordId: editingRecord.processingRecordId,
                     category: editingRecord.category,
                     purifyCount: count,
@@ -192,7 +193,7 @@ const Purification: React.FC = () => {
                 });
             } else if (selectedCategory) {
                 await purificationAPI.create({
-                    date: new Date(purifyForm.date).toISOString(),
+                    date: combineDateWithMyanmarTime(purifyForm.date),
                     processingRecordId: selectedCategory.processingRecordId,
                     category: selectedCategory.category,
                     purifyCount: count,
@@ -396,7 +397,7 @@ const Purification: React.FC = () => {
                                     ) : (
                                         processes.map((p) => (
                                             <tr key={p.id} onClick={() => handleEditClick(p)} style={{ cursor: 'pointer' }}>
-                                                <td>{new Date(p.date).toLocaleDateString()}</td>
+                                                <td>{formatDateTime(p.date)}</td>
                                                 <td style={{ fontWeight: 600, color: '#0f172a' }}>
                                                     <div>{p.productMarker}</div>
                                                     <div style={{ fontSize: '11px', color: '#3b82f6', fontWeight: 500 }}>{p.warehouseName || '---'}</div>
@@ -442,7 +443,7 @@ const Purification: React.FC = () => {
                                     ) : (
                                         purifiedRecords.map((p) => (
                                             <tr key={p.id}>
-                                                <td>{new Date(p.date).toLocaleDateString()}</td>
+                                                <td>{formatDateTime(p.date)}</td>
                                                 <td style={{ fontWeight: 600, color: '#0f172a' }}>
                                                     <div>{p.productMarker}</div>
                                                     <div style={{ fontSize: '11px', color: '#3b82f6', fontWeight: 500 }}>{p.warehouseName || '---'}</div>
@@ -612,7 +613,7 @@ const Purification: React.FC = () => {
                                     type="date" 
                                     className="form-control" 
                                     style={{ height: '48px', borderRadius: '12px', fontSize: '15px' }}
-                                    value={purifyForm.date}
+                                    value={purifyForm.date.split('T')[0]}
                                     onChange={(e) => setPurifyForm(prev => ({ ...prev, date: e.target.value }))}
                                     required 
                                 />

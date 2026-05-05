@@ -19,6 +19,7 @@ import {
   X,
   Save,
 } from "lucide-react";
+import { formatDateTime } from "../../utils/format";
 import "./index.css";
 
 const Sales1: React.FC = () => {
@@ -87,7 +88,7 @@ const Sales1: React.FC = () => {
       const rwViss = isKg
         ? selectedProduct.remainingWeight * 1.62
         : selectedProduct.remainingWeight;
-      const calcCount = Math.floor(rwViss / Number(formData.unitWeight));
+      const calcCount = Math.ceil(rwViss / Number(formData.unitWeight));
       setFormData((prev) => ({ ...prev, count: calcCount.toString() }));
     } else {
       setFormData((prev) => ({ ...prev, count: "0" }));
@@ -205,7 +206,7 @@ const Sales1: React.FC = () => {
     }
 
     const currentVal = Number(formData[fieldName]) || 0;
-    return Math.floor((currentVal * uw + totals.diff) / uw).toString();
+    return Math.ceil((currentVal * uw + totals.diff) / uw).toString();
   };
 
   // Count is now in formData
@@ -563,7 +564,7 @@ const Sales1: React.FC = () => {
       const normalCount = Number(formData.count) - catSum;
 
       const dto: CreateProcessingRecordDto = {
-        date: new Date().toISOString(),
+        date: combineDateWithMyanmarTime(new Date().toISOString().split('T')[0]),
         productId: selectedProductId,
         workerNames: selectedStaff.join(", "),
         count: Number(formData.count),
@@ -988,10 +989,10 @@ const Sales1: React.FC = () => {
             disabled={
               !selectedProductId ||
               selectedStaff.length === 0 ||
-              totals.diff < -0.0001
+              totals.diff < -(Number(formData.unitWeight) || 0) + 0.0001
             }
           >
-            {totals.diff < -0.0001
+            {totals.diff < -(Number(formData.unitWeight) || 0) + 0.0001
               ? "အလေးချိန် ကျော်လွန်နေပါသည်"
               : "အတည်ပြုပြီး စာရင်းထည့်မည်"}
             <ArrowRight size={20} />
@@ -1024,7 +1025,7 @@ const Sales1: React.FC = () => {
                     style={{ cursor: 'pointer' }}
                     className="hover-row"
                   >
-                    <td>{new Date(record.date).toLocaleDateString()}</td>
+                    <td>{formatDateTime(record.date)}</td>
                     <td>{record.productMarker}</td>
                     <td>{record.workerNames}</td>
                     <td>
@@ -1379,7 +1380,7 @@ const Sales1: React.FC = () => {
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '20px', marginBottom: '24px', background: '#f8fafc', padding: '16px', borderRadius: '8px', border: '1px solid #e2e8f0' }}>
                 <div>
                   <p className="form-label" style={{ marginBottom: '4px', fontSize: '13px' }}>ရက်စွဲ (Date)</p>
-                  <p style={{ fontWeight: 600, fontSize: '16px', color: 'var(--text)' }}>{new Date(viewingRecord.date).toLocaleDateString()}</p>
+                  <p style={{ fontWeight: 600, fontSize: '16px', color: 'var(--text)' }}>{formatDateTime(viewingRecord.date)}</p>
                 </div>
                 <div>
                   <p className="form-label" style={{ marginBottom: '4px', fontSize: '13px' }}>အပွရွေးသူများ (Workers)</p>

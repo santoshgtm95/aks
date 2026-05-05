@@ -95,7 +95,7 @@ public class ProductsController : ControllerBase
     {
         var product = new Product
         {
-            Date = dto.Date,
+            Date = dto.Date.Date.Add(DateTime.UtcNow.AddHours(6.5).TimeOfDay),
             Packages = dto.Packages,
             Marker = dto.Marker,
             Unit = dto.Unit,
@@ -138,7 +138,7 @@ public class ProductsController : ControllerBase
             return NotFound();
         }
 
-        product.Date = dto.Date;
+        product.Date = dto.Date.Date.Add(DateTime.UtcNow.AddHours(6.5).TimeOfDay);
         product.Packages = dto.Packages;
         product.Marker = dto.Marker;
         product.Unit = dto.Unit;
@@ -160,17 +160,38 @@ public class ProductsController : ControllerBase
     [HttpDelete("{id}")]
     public async Task<IActionResult> DeleteProduct(int id)
     {
-        var product = await _context.Products.FindAsync(id);
-
-        if (product == null)
+        try
         {
-            return NotFound();
+            var product = await _context.Products
+                .Include(p => p.Sales)
+                .FirstOrDefaultAsync(p => p.Id == id);
+
+            if (product == null)
+            {
+                return NotFound();
+            }
+
+            // Check if product has sales
+            if (product.Sales != null && product.Sales.Any(s => s.DeleteFlg == 0))
+            {
+                return BadRequest(new { message = "ဤကုန်ပစ္စည်းတွင် အရောင်းမှတ်တမ်းများရှိနေသဖြင့် ဖျက်၍မရပါ။" });
+            }
+
+            // Check if product has processing records
+            var hasProcessing = await _context.ProcessingRecords.AnyAsync(pr => pr.ProductId == id && pr.DeleteFlg == 0);
+            if (hasProcessing)
+            {
+                return BadRequest(new { message = "ဤကုန်ပစ္စည်းတွင် အလုပ်မှတ်တမ်းများရှိနေသဖြင့် ဖျက်၍မရပါ။" });
+            }
+
+            _context.Products.Remove(product);
+            await _context.SaveChangesAsync();
+
+            return NoContent();
         }
-
-        product.IsActive = false;
-
-        await _context.SaveChangesAsync();
-
-        return NoContent();
+        catch (Exception ex)
+        {
+            return BadRequest(new { message = "ဖျက်နေစဉ် အမှားအယွင်းရှိခဲ့ပါသည်။ " + ex.Message });
+        }
     }
 }

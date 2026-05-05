@@ -123,7 +123,7 @@ public class SalesController : ControllerBase
 
         var sale = new Sale
         {
-            Date = dto.Date,
+            Date = dto.Date.Date.Add(DateTime.UtcNow.AddHours(6.5).TimeOfDay),
             ProductId = dto.ProductId,
             Marker = dto.Marker,
             Unit = dto.Unit,
