@@ -181,6 +181,7 @@ export interface ProcessingRecord {
   remArtificialWeight: number;
   remShortWeight: number;
   warehouseName?: string;
+  isLocked?: boolean;
 }
 
 export interface CreateProcessingRecordDto {

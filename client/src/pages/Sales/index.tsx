@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { useAuth } from '../../context/AuthContext';
 import { salesAPI, productsAPI } from '../../services/api';
 import type { Sale, Product, CreateSaleDto } from '../../types';
+import { Trash2 } from 'lucide-react';
 import './index.css';
 
 const PAGE_CATEGORY = 'Sales';
@@ -83,6 +84,19 @@ const Sales: React.FC = () => {
             loadData();
         } catch (error: any) {
             alert(error.response?.data?.message || 'Failed to create sale');
+        }
+    };
+    
+    const handleDeleteSale = async (id: number) => {
+        if (!window.confirm('Are you sure you want to delete this sale record? Product weight will be restored.')) {
+            return;
+        }
+
+        try {
+            await salesAPI.delete(id);
+            loadData();
+        } catch (error: any) {
+            alert(error.response?.data?.message || 'Failed to delete sale');
         }
     };
 
@@ -211,6 +225,7 @@ const Sales: React.FC = () => {
                                 <th>Price</th>
                                 <th>Total</th>
                                 <th>Seller</th>
+                                {hasPermission('Sales.Delete') && <th style={{ textAlign: 'center' }}>Actions</th>}
                             </tr>
                         </thead>
                         <tbody>
@@ -225,6 +240,31 @@ const Sales: React.FC = () => {
                                     <td>{sale.price} {sale.currency}</td>
                                     <td>{(sale.weight * sale.price).toFixed(2)} {sale.currency}</td>
                                     <td>{sale.sellerName}</td>
+                                    {hasPermission('Sales.Delete') && (
+                                        <td style={{ textAlign: 'center' }}>
+                                            <button 
+                                                className="btn-delete" 
+                                                onClick={() => handleDeleteSale(sale.id)}
+                                                title="Delete Sale"
+                                                style={{ 
+                                                    background: 'none', 
+                                                    border: 'none', 
+                                                    color: '#ef4444', 
+                                                    cursor: 'pointer',
+                                                    padding: '4px',
+                                                    display: 'inline-flex',
+                                                    alignItems: 'center',
+                                                    justifyContent: 'center',
+                                                    borderRadius: '4px',
+                                                    transition: 'background-color 0.2s'
+                                                }}
+                                                onMouseOver={(e) => (e.currentTarget.style.backgroundColor = '#fee2e2')}
+                                                onMouseOut={(e) => (e.currentTarget.style.backgroundColor = 'transparent')}
+                                            >
+                                                <Trash2 size={18} />
+                                            </button>
+                                        </td>
+                                    )}
                                 </tr>
                             ))}
                         </tbody>

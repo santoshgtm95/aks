@@ -52,7 +52,6 @@ const Sales1: React.FC = () => {
     shortCut: 0,
     artificial: 0,
     short: 0,
-    loss: 0,
     selectedStaff: [] as string[],
   });
 
@@ -68,7 +67,6 @@ const Sales1: React.FC = () => {
     shortCut: "",
     artificial: "",
     short: "",
-    loss: "",
   });
 
   const selectedProduct = useMemo(
@@ -89,13 +87,12 @@ const Sales1: React.FC = () => {
       const rwViss = isKg
         ? selectedProduct.remainingWeight * 1.62
         : selectedProduct.remainingWeight;
-      const loss = Number(formData.loss) || 0;
-      const calcCount = Math.floor((rwViss - loss) / Number(formData.unitWeight));
+      const calcCount = Math.floor(rwViss / Number(formData.unitWeight));
       setFormData((prev) => ({ ...prev, count: calcCount.toString() }));
     } else {
       setFormData((prev) => ({ ...prev, count: "0" }));
     }
-  }, [selectedProduct, formData.unitWeight, formData.loss]);
+  }, [selectedProduct, formData.unitWeight]);
 
   // Clamping categories if total count decreases (e.g. due to loss increase)
   useEffect(() => {
@@ -185,11 +182,6 @@ const Sales1: React.FC = () => {
     if (!selectedProduct || !formData.unitWeight) return undefined;
     const uw = Number(formData.unitWeight) || 0;
 
-    if (fieldName === "loss") {
-      const currentVal = Number(formData.loss) || 0;
-      return Math.max(0, currentVal + totals.diff).toFixed(4);
-    }
-
     if (uw <= 0) return undefined;
 
     const categoryFields: (keyof typeof formData)[] = [
@@ -261,7 +253,7 @@ const Sales1: React.FC = () => {
       shortWeight;
     const remainingWeight = rwViss - categorizedWeight;
 
-    const total = totalWeightFromCount + (Number(formData.loss) || 0);
+    const total = totalWeightFromCount;
     const diff = selectedProduct ? rwViss - total : 0;
 
     return {
@@ -278,7 +270,6 @@ const Sales1: React.FC = () => {
       shortWeight,
       categorizedWeight,
       remainingWeight,
-      categoryWeight: Number(formData.loss) || 0,
       total,
       diff,
       catSum:
@@ -331,7 +322,6 @@ const Sales1: React.FC = () => {
       shortCut,
       artificial,
       short,
-      loss: Number(record.lossWeight) || 0,
       selectedStaff: record.workerNames ? record.workerNames.split(", ").filter(n => n.trim() !== "") : [],
     });
   };
@@ -473,8 +463,7 @@ const Sales1: React.FC = () => {
       naturalRedWeight +
       shortCutWeight +
       artificialWeight +
-      shortWeight +
-      editFormData.loss;
+      shortWeight;
     const totalWeight = normalWeight + categoryWeight;
 
     const dto: CreateProcessingRecordDto = {
@@ -502,7 +491,7 @@ const Sales1: React.FC = () => {
       artificialCount: editFormData.artificial,
       shortWeight: shortWeight,
       shortCount: editFormData.short,
-      lossWeight: editFormData.loss,
+      lossWeight: 0,
       totalWeight,
       remainingWeight: normalWeight, // normalWeight is the remaining weight for sale
       remainingWeightKg: (() => {
@@ -598,7 +587,7 @@ const Sales1: React.FC = () => {
         artificialCount: Number(formData.artificial) || 0,
         shortWeight: totals.shortWeight,
         shortCount: Number(formData.short) || 0,
-        lossWeight: Number(formData.loss),
+        lossWeight: 0,
         totalWeight: totals.total,
         remainingWeight: totals.remainingWeight,
         remainingWeightKg: (selectedProduct?.unit?.toLowerCase() === "kg" || selectedProduct?.unit?.toLowerCase() === "kilogram") 
@@ -622,7 +611,6 @@ const Sales1: React.FC = () => {
         shortCut: "",
         artificial: "",
         short: "",
-        loss: "",
       });
       setSelectedStaff([]);
       setSelectedProductId(null);
@@ -952,22 +940,7 @@ const Sales1: React.FC = () => {
               </div>
             </div>
 
-            <div className="extra-grid">
-              <div className="extra-input-box">
-                <span className="box-label label-extra">အလျော့ (VISS)</span>
-                <input
-                  type="number"
-                  name="loss"
-                  step="0.001"
-                  className="box-input"
-                  max={getFieldMax("loss")}
-                  value={formData.loss || ""}
-                  onChange={handleInputChange}
-                  placeholder="0.00"
-                />
-              </div>
-            </div>
-          </section>
+           </section>
 
           {/* Summary & Verification */}
           <div className="summary-section">
@@ -1065,17 +1038,21 @@ const Sales1: React.FC = () => {
                         {record.shortCutCount > 0 && <span className="card-badge" style={{ color: "#975a16", background: "#fffff0", border: "1px solid #f6e05e" }}>S.Cut: {record.shortCutCount}</span>}
                         {record.artificialCount > 0 && <span className="card-badge" style={{ color: "#702459", background: "#fdf2f8", border: "1px solid #d6bcfa" }}>Art: {record.artificialCount}</span>}
                         {record.shortCount > 0 && <span className="card-badge" style={{ color: "#92400e", background: "#fef3c7", border: "1px solid #f59e0b" }}>Short: {record.shortCount}</span>}
-                        {record.lossWeight > 0 && <span className="card-badge" style={{ color: "#975a16", background: "#fffaf0", border: "1px solid #fbd38d" }}>Loss: {record.lossWeight.toFixed(2)}v</span>}
                       </div>
                     </td>
                     <td style={{ textAlign: "center", whiteSpace: "nowrap" }}>
                       {hasPermission('Sales1.Edit') && (
                         <button
-                          className="rec-action-btn edit-btn"
-                          title="ပြင်ဆင်မည်"
+                          className={`rec-action-btn edit-btn ${record.isLocked ? 'disabled' : ''}`}
+                          title={record.isLocked ? "purification တွင် အသုံးပြုထားသောကြောင့် ပြင်ဆင်၍မရပါ" : "ပြင်ဆင်မည်"}
                           onClick={(e) => {
                             e.stopPropagation();
+                            if (record.isLocked) return;
                             openEditModal(record);
+                          }}
+                          style={{ 
+                            opacity: record.isLocked ? 0.5 : 1, 
+                            cursor: record.isLocked ? 'not-allowed' : 'pointer' 
                           }}
                         >
                           <Pencil size={14} />
@@ -1083,11 +1060,16 @@ const Sales1: React.FC = () => {
                       )}
                       {hasPermission('Sales1.Delete') && (
                         <button
-                          className="rec-action-btn delete-btn"
-                          title="ဖျက်မည်"
+                          className={`rec-action-btn delete-btn ${record.isLocked ? 'disabled' : ''}`}
+                          title={record.isLocked ? "purification တွင် အသုံးပြုထားသောကြောင့် ဖျက်၍မရပါ" : "ဖျက်မည်"}
                           onClick={(e) => {
                             e.stopPropagation();
+                            if (record.isLocked) return;
                             handleDeleteRecord(record);
+                          }}
+                          style={{ 
+                            opacity: record.isLocked ? 0.5 : 1, 
+                            cursor: record.isLocked ? 'not-allowed' : 'pointer' 
                           }}
                         >
                           <Trash2 size={14} />
@@ -1326,23 +1308,6 @@ const Sales1: React.FC = () => {
                 </div>
               </div>
 
-              {/* Loss */}
-              <div className="edit-extra-row">
-                <div className="extra-input-box" style={{ padding: "12px", gap: "6px", width: "100%", maxWidth: "100%" }}>
-                  <span className="box-label label-extra">အလျော့ (VISS)</span>
-                  <input
-                    type="number"
-                    name="loss"
-                    step="0.001"
-                    className="box-input"
-                    value={editFormData.loss || ""}
-                    onChange={handleEditInputChange}
-                    placeholder="0.000"
-                    min="0"
-                  />
-                </div>
-              </div>
-
               {/* Summary */}
               <div className="edit-summary" style={{ display: 'flex', flexDirection: 'column', gap: '8px', width: '100%' }}>
                 {(() => {
@@ -1449,7 +1414,6 @@ const Sales1: React.FC = () => {
                 {viewingRecord.shortCutCount > 0 && <span className="card-badge" style={{ color: "#975a16", background: "#fffff0", border: "1px solid #f6e05e", padding: '8px 12px', fontSize: '14px' }}>S.Cut: {viewingRecord.shortCutCount} ({viewingRecord.shortCutWeight.toFixed(3)}v)</span>}
                 {viewingRecord.artificialCount > 0 && <span className="card-badge" style={{ color: "#702459", background: "#fdf2f8", border: "1px solid #d6bcfa", padding: '8px 12px', fontSize: '14px' }}>Art: {viewingRecord.artificialCount} ({viewingRecord.artificialWeight.toFixed(3)}v)</span>}
                 {viewingRecord.shortCount > 0 && <span className="card-badge" style={{ color: "#92400e", background: "#fef3c7", border: "1px solid #f59e0b", padding: '8px 12px', fontSize: '14px' }}>Short: {viewingRecord.shortCount} ({viewingRecord.shortWeight.toFixed(3)}v)</span>}
-                {viewingRecord.lossWeight > 0 && <span className="card-badge" style={{ color: "#975a16", background: "#fffaf0", border: "1px solid #fbd38d", padding: '8px 12px', fontSize: '14px' }}>Loss: {viewingRecord.lossWeight.toFixed(3)}v</span>}
               </div>
 
               <div style={{ display: 'flex', justifyContent: 'space-between', borderTop: '1px solid #e2e8f0', paddingTop: '20px', alignItems: 'center' }}>

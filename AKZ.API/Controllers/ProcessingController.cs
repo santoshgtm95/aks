@@ -87,7 +87,9 @@ public class ProcessingController : ControllerBase
                 RemNaturalRedWeight = r.RemNaturalRedWeight,
                 RemShortCutWeight = r.RemShortCutWeight,
                 RemArtificialWeight = r.RemArtificialWeight,
-                RemShortWeight = r.RemShortWeight
+                RemShortWeight = r.RemShortWeight,
+                IsLocked = _context.PurificationProcesses.Any(p => p.ProcessingRecordId == r.Id && p.DeleteFlg == 0) ||
+                           _context.PurifiedRecords.Any(pr => pr.ProcessingRecordId == r.Id && pr.DeleteFlg == 0)
             })
             .ToListAsync();
 
@@ -235,6 +237,12 @@ public class ProcessingController : ControllerBase
         if (record == null)
             return NotFound(new { message = "Record not found" });
 
+        bool isLocked = await _context.PurificationProcesses.AnyAsync(p => p.ProcessingRecordId == id && p.DeleteFlg == 0) ||
+                        await _context.PurifiedRecords.AnyAsync(pr => pr.ProcessingRecordId == id && pr.DeleteFlg == 0);
+
+        if (isLocked)
+            return BadRequest(new { message = "ဤမှတ်တမ်းကို purification တွင် အသုံးပြုထားသောကြောင့် ပြင်ဆင်၍မရပါ (Record is used in purification and cannot be edited)" });
+
         var product = record.Product;
         string productUnit = (product.Unit ?? "").ToLower().Trim();
         bool isProductKg = productUnit.Contains("kg") || productUnit.Contains("kilogram");
@@ -333,6 +341,12 @@ public class ProcessingController : ControllerBase
 
         if (record == null)
             return NotFound(new { message = "Record not found" });
+
+        bool isLocked = await _context.PurificationProcesses.AnyAsync(p => p.ProcessingRecordId == id && p.DeleteFlg == 0) ||
+                        await _context.PurifiedRecords.AnyAsync(pr => pr.ProcessingRecordId == id && pr.DeleteFlg == 0);
+
+        if (isLocked)
+            return BadRequest(new { message = "ဤမှတ်တမ်းကို purification တွင် အသုံးပြုထားသောကြောင့် ဖျက်၍မရပါ (Record is used in purification and cannot be deleted)" });
 
         // Restore product weight (convert Viss back to product unit)
         string productUnit = (record.Product.Unit ?? "").ToLower().Trim();

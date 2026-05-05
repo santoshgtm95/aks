@@ -166,4 +166,37 @@ public class SalesController : ControllerBase
 
         return CreatedAtAction(nameof(GetSale), new { id = sale.Id }, saleDto);
     }
+
+    [HttpDelete("{id}")]
+    public async Task<IActionResult> DeleteSale(int id)
+    {
+        try
+        {
+            var sale = await _context.Sales
+                .Include(s => s.Product)
+                .FirstOrDefaultAsync(s => s.Id == id);
+
+            if (sale == null)
+            {
+                return NotFound(new { message = "Sale record not found" });
+            }
+
+            if (sale.Product != null)
+            {
+                // Restore product remaining weight
+                sale.Product.RemainingWeight += sale.Weight;
+                sale.Product.UpdateDate = DateTime.Now;
+            }
+
+            // AKZDbContext handles soft delete in SaveChangesAsync when state is Deleted
+            _context.Sales.Remove(sale);
+            await _context.SaveChangesAsync();
+
+            return NoContent();
+        }
+        catch (Exception ex)
+        {
+            return BadRequest(new { message = "Failed to delete sale: " + ex.Message });
+        }
+    }
 }

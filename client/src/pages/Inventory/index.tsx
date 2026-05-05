@@ -6,7 +6,7 @@ import Modal from '../../components/Modal';
 import './index.css';
 
 const Inventory: React.FC = () => {
-    const { hasPermission } = useAuth();
+    const { user, hasPermission } = useAuth();
     const [products, setProducts] = useState<Product[]>([]);
     const [warehouses, setWarehouses] = useState<WarehouseType[]>([]);
     const [loading, setLoading] = useState(true);
@@ -22,6 +22,12 @@ const Inventory: React.FC = () => {
         currency: 'MMK',
         warehouseId: undefined,
     });
+
+    useEffect(() => {
+        if (user?.warehouseId) {
+            setFormData(prev => ({ ...prev, warehouseId: user.warehouseId }));
+        }
+    }, [user]);
     const [weightAdjustment, setWeightAdjustment] = useState<number>(0);
     const [originalWeights, setOriginalWeights] = useState({ weight: 0, remaining: 0 });
 
@@ -79,7 +85,7 @@ const Inventory: React.FC = () => {
                 weight: 0,
                 price: 0,
                 currency: 'MMK',
-                warehouseId: undefined,
+                warehouseId: user?.warehouseId || undefined,
             });
             loadData();
         } catch (error) {
@@ -151,9 +157,11 @@ const Inventory: React.FC = () => {
                                 required
                             >
                                 <option value="">Select Warehouse</option>
-                                {warehouses.map(w => (
-                                    <option key={w.id} value={w.id}>{w.name}</option>
-                                ))}
+                                {warehouses
+                                    .filter(w => !user?.warehouseId || w.id === user.warehouseId)
+                                    .map(w => (
+                                        <option key={w.id} value={w.id}>{w.name}</option>
+                                    ))}
                             </select>
                         </div>
 
@@ -265,7 +273,7 @@ const Inventory: React.FC = () => {
                         weight: 0,
                         price: 0,
                         currency: 'MMK',
-                        warehouseId: undefined,
+                        warehouseId: user?.warehouseId || undefined,
                     });
                 }}
                 title="Edit Product"
@@ -295,9 +303,11 @@ const Inventory: React.FC = () => {
                                 required
                             >
                                 <option value="">Select Warehouse</option>
-                                {warehouses.map(w => (
-                                    <option key={w.id} value={w.id}>{w.name}</option>
-                                ))}
+                                {warehouses
+                                    .filter(w => !user?.warehouseId || w.id === user.warehouseId)
+                                    .map(w => (
+                                        <option key={w.id} value={w.id}>{w.name}</option>
+                                    ))}
                             </select>
                         </div>
 
@@ -431,7 +441,7 @@ const Inventory: React.FC = () => {
                                     weight: 0,
                                     price: 0,
                                     currency: 'MMK',
-                                    warehouseId: undefined,
+                                    warehouseId: user?.warehouseId || undefined,
                                 });
                             }}
                         >

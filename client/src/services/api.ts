@@ -85,6 +85,9 @@ export const salesAPI = {
         const response = await api.post<Sale>('/sales', data);
         return response.data;
     },
+    delete: async (id: number): Promise<void> => {
+        await api.delete(`/sales/${id}`);
+    },
 };
 
 // Processing API

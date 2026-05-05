@@ -40,9 +40,15 @@ public class AuthController : ControllerBase
             return Unauthorized(new { message = "Account is inactive" });
         }
 
-        var permissions = user.Role.RolePermissions
-            .Select(rp => rp.Permission.Name)
-            .ToList();
+        var rolePermissions = user.Role.RolePermissions
+            .Select(rp => rp.Permission.Name);
+
+        var userSpecificPermissions = await _context.UserPermissions
+            .Where(up => up.UserId == user.Id)
+            .Select(up => up.Permission.Name)
+            .ToListAsync();
+
+        var permissions = rolePermissions.Union(userSpecificPermissions).ToList();
 
         var token = _jwtService.GenerateToken(user, permissions);
 

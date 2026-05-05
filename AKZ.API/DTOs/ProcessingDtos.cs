@@ -56,6 +56,7 @@ public class ProcessingRecordDto
     public decimal RemShortCutWeight { get; set; }
     public decimal RemArtificialWeight { get; set; }
     public decimal RemShortWeight { get; set; }
+    public bool IsLocked { get; set; }
 }
 
 public class CreateProcessingRecordDto
