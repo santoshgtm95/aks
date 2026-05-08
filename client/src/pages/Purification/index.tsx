@@ -1,5 +1,4 @@
 import React, { useEffect, useState } from 'react';
-import { useAuth } from '../../context/AuthContext';
 import { purificationAPI, purifiersAPI } from '../../services/api';
 import { useNotification } from '../../context/NotificationContext';
 import type { AvailableCategory, PurificationProcess, PurifiedRecord, Purifier } from '../../types';
@@ -9,7 +8,6 @@ import { formatDateTime, getMyanmarNow, combineDateWithMyanmarTime } from '../..
 import './index.css';
 
 const Purification: React.FC = () => {
-    const { hasPermission } = useAuth();
     const { showAlert, showConfirm } = useNotification();
     const [availableCategories, setAvailableCategories] = useState<AvailableCategory[]>([]);
     const [processes, setProcesses] = useState<PurificationProcess[]>([]);
@@ -135,22 +133,6 @@ const Purification: React.FC = () => {
         
         setPurifyForm({
             count: p.purifyCount.toString(),
-            date: dateStr,
-            purifierId: p.purifierId || 0,
-            isWeightFull: p.isWeightFull
-        });
-        setShowPurifyModal(true);
-    };
-
-    const handleEditRecord = (p: PurifiedRecord) => {
-        setEditingRecord(p);
-        setEditingProcess(null);
-        setSelectedCategory(null);
-        
-        const dateStr = p.date ? (p.date.includes('T') ? p.date.slice(0, 16) : p.date + 'T00:00') : getMyanmarNow();
-        
-        setPurifyForm({
-            count: p.count.toString(),
             date: dateStr,
             purifierId: p.purifierId || 0,
             isWeightFull: p.isWeightFull
