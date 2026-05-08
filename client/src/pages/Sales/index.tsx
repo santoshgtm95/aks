@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { useAuth } from '../../context/AuthContext';
 import { salesAPI, productsAPI } from '../../services/api';
+import { useNotification } from '../../context/NotificationContext';
 import type { Sale, Product, CreateSaleDto } from '../../types';
 import { Trash2 } from 'lucide-react';
 import { formatDateTime, getMyanmarNow, combineDateWithMyanmarTime } from '../../utils/format';
@@ -10,6 +11,7 @@ const PAGE_CATEGORY = 'Sales';
 
 const Sales: React.FC = () => {
     const { hasPermission } = useAuth();
+    const { showAlert, showConfirm } = useNotification();
     const [sales, setSales] = useState<Sale[]>([]);
     const [products, setProducts] = useState<Product[]>([]);
     const [loading, setLoading] = useState(true);
@@ -87,21 +89,23 @@ const Sales: React.FC = () => {
             });
             loadData();
         } catch (error: any) {
-            alert(error.response?.data?.message || 'Failed to create sale');
+            showAlert('Error', error.response?.data?.message || 'Failed to create sale', 'error');
         }
     };
     
-    const handleDeleteSale = async (id: number) => {
-        if (!window.confirm('Are you sure you want to delete this sale record? Product weight will be restored.')) {
-            return;
-        }
-
-        try {
-            await salesAPI.delete(id);
-            loadData();
-        } catch (error: any) {
-            alert(error.response?.data?.message || 'Failed to delete sale');
-        }
+    const handleDeleteSale = (id: number) => {
+        showConfirm(
+            'Confirm Delete',
+            'Are you sure you want to delete this sale record? Product weight will be restored.',
+            async () => {
+                try {
+                    await salesAPI.delete(id);
+                    loadData();
+                } catch (error: any) {
+                    showAlert('Error', error.response?.data?.message || 'Failed to delete sale', 'error');
+                }
+            }
+        );
     };
 
     const getRemainingAfterSale = () => {

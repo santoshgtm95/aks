@@ -31,6 +31,7 @@ export interface Product {
   currency: string;
   remainingWeight: number;
   isActive: boolean;
+  isUsed: boolean;
   warehouseId?: number;
   warehouseName?: string;
 }

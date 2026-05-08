@@ -53,7 +53,9 @@ public class ProductsController : ControllerBase
                 RemainingWeight = p.RemainingWeight,
                 IsActive = p.IsActive,
                 WarehouseId = p.WarehouseId,
-                WarehouseName = p.Warehouse != null ? p.Warehouse.Name : null
+                WarehouseName = p.Warehouse != null ? p.Warehouse.Name : null,
+                IsUsed = _context.Sales.Any(s => s.ProductId == p.Id && s.DeleteFlg == 0) || 
+                         _context.ProcessingRecords.Any(pr => pr.ProductId == p.Id && pr.DeleteFlg == 0)
             })
             .ToListAsync();
 
@@ -78,7 +80,9 @@ public class ProductsController : ControllerBase
                 RemainingWeight = p.RemainingWeight,
                 IsActive = p.IsActive,
                 WarehouseId = p.WarehouseId,
-                WarehouseName = p.Warehouse != null ? p.Warehouse.Name : null
+                WarehouseName = p.Warehouse != null ? p.Warehouse.Name : null,
+                IsUsed = _context.Sales.Any(s => s.ProductId == p.Id && s.DeleteFlg == 0) || 
+                         _context.ProcessingRecords.Any(pr => pr.ProductId == p.Id && pr.DeleteFlg == 0)
             })
             .FirstOrDefaultAsync();
 

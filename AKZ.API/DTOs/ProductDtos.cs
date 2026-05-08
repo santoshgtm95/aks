@@ -14,6 +14,7 @@ public class ProductDto
     public bool IsActive { get; set; }
     public int? WarehouseId { get; set; }
     public string? WarehouseName { get; set; }
+    public bool IsUsed { get; set; }
 }
 
 public class CreateProductDto

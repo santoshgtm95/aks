@@ -3,6 +3,7 @@ import { useAuth } from '../../context/AuthContext';
 import { productsAPI, warehousesAPI } from '../../services/api';
 import type { Product, CreateProductDto, Warehouse as WarehouseType } from '../../types';
 import Modal from '../../components/Modal';
+import { useNotification } from '../../context/NotificationContext';
 import { formatDateTime, getMyanmarNow, combineDateWithMyanmarTime } from '../../utils/format';
 import './index.css';
 
@@ -23,6 +24,8 @@ const Inventory: React.FC = () => {
         currency: 'MMK',
         warehouseId: undefined,
     });
+
+    const { showAlert, showConfirm } = useNotification();
 
     useEffect(() => {
         if (user?.warehouseId) {
@@ -103,7 +106,7 @@ const Inventory: React.FC = () => {
     const handleEdit = (product: Product) => {
         setEditingId(product.id);
         setFormData({
-            date: new Date(product.date).toISOString().slice(0, 16),
+            date: product.date.split('T')[0],
             packages: product.packages,
             marker: product.marker,
             unit: product.unit,
@@ -118,17 +121,21 @@ const Inventory: React.FC = () => {
         setIsEditModalOpen(true);
     };
 
-    const handleDelete = async (id: number) => {
-        if (window.confirm('Are you sure you want to delete this product?')) {
-            try {
-                await productsAPI.delete(id);
-                loadData();
-            } catch (error: any) {
-                const message = error.response?.data?.message || 'Failed to delete product';
-                alert(message);
-                console.error('Failed to delete product:', error);
+    const handleDelete = (id: number) => {
+        showConfirm(
+            'Confirm Delete',
+            'Are you sure you want to delete this product?',
+            async () => {
+                try {
+                    await productsAPI.delete(id);
+                    loadData();
+                } catch (error: any) {
+                    const message = error.response?.data?.message || 'Failed to delete product';
+                    showAlert('Error', message, 'error');
+                    console.error('Failed to delete product:', error);
+                }
             }
-        }
+        );
     };
 
     if (loading) {
@@ -502,7 +509,13 @@ const Inventory: React.FC = () => {
                                                 </button>
                                             )}
                                             {hasPermission('Inventory.Delete') && (
-                                                <button className="btn-icon btn-icon-danger" onClick={() => handleDelete(product.id)} title="Delete">
+                                                <button 
+                                                    className={`btn-icon btn-icon-danger ${product.isUsed ? 'disabled' : ''}`} 
+                                                    onClick={() => !product.isUsed && handleDelete(product.id)} 
+                                                    title={product.isUsed ? "Cannot delete: This product has sales or processing records" : "Delete"}
+                                                    disabled={product.isUsed}
+                                                    style={product.isUsed ? { opacity: 0.5, cursor: 'not-allowed' } : {}}
+                                                >
                                                     🗑️
                                                 </button>
                                             )}

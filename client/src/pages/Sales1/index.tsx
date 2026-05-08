@@ -19,11 +19,13 @@ import {
   X,
   Save,
 } from "lucide-react";
-import { formatDateTime } from "../../utils/format";
+import { combineDateWithMyanmarTime, formatDateTime } from "../../utils/format";
+import { useNotification } from "../../context/NotificationContext";
 import "./index.css";
 
 const Sales1: React.FC = () => {
   const { hasPermission } = useAuth();
+  const { showAlert, showConfirm } = useNotification();
   const [products, setProducts] = useState<Product[]>([]);
   const [workers, setWorkers] = useState<Worker[]>([]);
   const [records, setRecords] = useState<ProcessingRecord[]>([]);
@@ -509,24 +511,25 @@ const Sales1: React.FC = () => {
       await loadData();
     } catch (error) {
       console.error("Failed to update record:", error);
-      alert("မှတ်တမ်း ပြင်ဆင်ရာတွင် အမှားဖြစ်သည်");
+      showAlert("Error", "မှတ်တမ်း ပြင်ဆင်ရာတွင် အမှားဖြစ်သည်", "error");
     }
   };
 
   const handleDeleteRecord = async (record: ProcessingRecord) => {
-    if (
-      !confirm(
-        `မှတ်တမ်း (${record.productMarker}) ကို ဖျက်မည်လား?\nဤလုပ်ဆောင်ချက်ကို ပြောင်းပြန်ဆောင်ရွက်၍ မရပါ။`,
-      )
-    )
-      return;
-    try {
-      await processingAPI.delete(record.id);
-      await loadData();
-    } catch (error) {
-      console.error("Failed to delete record:", error);
-      alert("မှတ်တမ်း ဖျက်ရာတွင် အမှားဖြစ်သည်");
-    }
+    showConfirm(
+      "Confirm Delete",
+      `မှတ်တမ်း (${record.productMarker}) ကို ဖျက်မည်လား?\nဤလုပ်ဆောင်ချက်ကို ပြောင်းပြန်ဆောင်ရွက်၍ မရပါ။`,
+      async () => {
+        try {
+          await processingAPI.delete(record.id);
+          await loadData();
+          showAlert("Success", "မှတ်တမ်းကို အောင်မြင်စွာ ဖျက်ပြီးပါပြီ", "success");
+        } catch (error) {
+          console.error("Failed to delete record:", error);
+          showAlert("Error", "မှတ်တမ်း ဖျက်ရာတွင် အမှားဖြစ်သည်", "error");
+        }
+      }
+    );
   };
 
   // ──────────────────────────────────────────────────────────────────────────
@@ -542,7 +545,7 @@ const Sales1: React.FC = () => {
       setWorkers(workersData);
     } catch (error) {
       console.error("Failed to register worker:", error);
-      alert("Failed to register worker");
+      showAlert("Error", "Failed to register worker", "error");
     }
   };
 
@@ -617,10 +620,10 @@ const Sales1: React.FC = () => {
       setSelectedProductId(null);
 
       loadData();
-      alert("Record saved successfully!");
+      showAlert("Success", "Record saved successfully!", "success");
     } catch (error) {
       console.error("Failed to save record:", error);
-      alert("Failed to save record");
+      showAlert("Error", "Failed to save record", "error");
     }
   };
 
@@ -660,12 +663,16 @@ const Sales1: React.FC = () => {
                     className="btn-repair"
                     onClick={(e) => {
                       e.stopPropagation();
-                      if (window.confirm("Reset this product weight to 0?")) {
-                        productsAPI.update(product.id, {
-                          ...product,
-                          remainingWeight: 0,
-                        }).then(() => loadData());
-                      }
+                      showConfirm(
+                        "Reset Weight",
+                        "Reset this product weight to 0?",
+                        () => {
+                          productsAPI.update(product.id, {
+                            ...product,
+                            remainingWeight: 0,
+                          }).then(() => loadData());
+                        }
+                      );
                     }}
                   >
                     Reset to 0

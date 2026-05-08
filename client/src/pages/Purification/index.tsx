@@ -1,5 +1,7 @@
 import React, { useEffect, useState } from 'react';
+import { useAuth } from '../../context/AuthContext';
 import { purificationAPI, purifiersAPI } from '../../services/api';
+import { useNotification } from '../../context/NotificationContext';
 import type { AvailableCategory, PurificationProcess, PurifiedRecord, Purifier } from '../../types';
 import { Package, Send, History, Loader2, Search, User, Settings, X, Pencil, Trash2 } from 'lucide-react';
 import PurifierManagement from '../PurifierManagement';
@@ -7,6 +9,8 @@ import { formatDateTime, getMyanmarNow, combineDateWithMyanmarTime } from '../..
 import './index.css';
 
 const Purification: React.FC = () => {
+    const { hasPermission } = useAuth();
+    const { showAlert, showConfirm } = useNotification();
     const [availableCategories, setAvailableCategories] = useState<AvailableCategory[]>([]);
     const [processes, setProcesses] = useState<PurificationProcess[]>([]);
     const [purifiedRecords, setPurifiedRecords] = useState<PurifiedRecord[]>([]);
@@ -86,30 +90,40 @@ const Purification: React.FC = () => {
         }
     };
 
-    const handleDelete = async (id: number) => {
-        if (!window.confirm('ဤမှတ်တမ်းကို ဖျက်ရန် သေချာပါသလား?')) return;
-        try {
-            await purificationAPI.delete(id);
-            await loadData();
-        } catch (error) {
-            console.error('Delete failed:', error);
-            alert('ဖျက်၍ မရပါ');
-        }
+    const handleDelete = (id: number) => {
+        showConfirm(
+            'အတည်ပြုရန်',
+            'ဤမှတ်တမ်းကို ဖျက်ရန် သေချာပါသလား?',
+            async () => {
+                try {
+                    await purificationAPI.delete(id);
+                    await loadData();
+                } catch (error) {
+                    console.error('Delete failed:', error);
+                    showAlert('Error', 'ဖျက်၍ မရပါ', 'error');
+                }
+            }
+        );
     };
 
     const handleClosePurifierManagement = () => {
         setShowPurifierManagement(false);
         loadData(); // Refresh purifiers list
     };
-    const handleDeleteRecord = async (id: number) => {
-        if (!window.confirm('ဤမှတ်တမ်းကို ဖျက်ရန် သေချာပါသလား?')) return;
-        try {
-            await purificationAPI.deletePurifiedRecord(id);
-            await loadData();
-        } catch (error) {
-            console.error('Delete failed:', error);
-            alert('ဖျက်၍ မရပါ');
-        }
+    const handleDeleteRecord = (id: number) => {
+        showConfirm(
+            'အတည်ပြုရန်',
+            'ဤမှတ်တမ်းကို ဖျက်ရန် သေချာပါသလား?',
+            async () => {
+                try {
+                    await purificationAPI.deletePurifiedRecord(id);
+                    await loadData();
+                } catch (error) {
+                    console.error('Delete failed:', error);
+                    showAlert('Error', 'ဖျက်၍ မရပါ', 'error');
+                }
+            }
+        );
     };
 
     const handleEditClick = (p: PurificationProcess) => {
@@ -206,7 +220,7 @@ const Purification: React.FC = () => {
         } catch (error: any) {
             console.error('Submit failed:', error);
             const msg = error.response?.data?.message || 'အဆင်မပြေပါ (လက်ကျန် မလုံလောက်ခြင်း ဖြစ်နိုင်သည်)';
-            alert(msg);
+            showAlert('Error', msg, 'error');
         }
     };
     
