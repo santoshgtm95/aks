@@ -1,7 +1,5 @@
-AKZ.API/bin/Debug/net9.0/AKZ.API.dll
-AKZ.API/bin/Debug/net9.0/AKZ.API.exe
-AKZ.API/bin/Debug/net9.0/AKZ.API.pdb
-AKZ.API/obj/Debug/net9.0/AKZ.API.AssemblyInfo.cs
+AKZ.API/bin
+AKZ.API/obj
 AKZ.API/obj/Debug/net9.0/AKZ.API.AssemblyInfoInputs.cache
 AKZ.API/obj/Debug/net9.0/AKZ.API.dll
 AKZ.API/obj/Debug/net9.0/AKZ.API.pdb
@@ -12,3 +10,4 @@ AKZ.API/obj/Debug/net9.0/rjsmrazor.dswa.cache.json
 AKZ.API/obj/Debug/net9.0/ref/AKZ.API.dll
 AKZ.API/obj/Debug/net9.0/refint/AKZ.API.dll
 .vs
+.vs/AKZ
