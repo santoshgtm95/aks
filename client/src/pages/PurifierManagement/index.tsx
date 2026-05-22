@@ -1,10 +1,12 @@
 import React, { useEffect, useState } from 'react';
 import { purifiersAPI, warehousesAPI } from '../../services/api';
+import { useAuth } from '../../context/AuthContext';
 import type { Purifier, Warehouse, CreatePurifierDto, UpdatePurifierDto } from '../../types';
 import { UserPlus, Pencil, Trash2, X, Save, Users, Warehouse as WarehouseIcon } from 'lucide-react';
 import './index.css';
 
 const PurifierManagement: React.FC = () => {
+    const { hasPermission } = useAuth();
     const [purifiers, setPurifiers] = useState<Purifier[]>([]);
     const [warehouses, setWarehouses] = useState<Warehouse[]>([]);
     const [loading, setLoading] = useState(true);
@@ -96,10 +98,12 @@ const PurifierManagement: React.FC = () => {
                         <p>Manage purifiers and their assigned warehouses</p>
                     </div>
                 </div>
-                <button className="btn btn-primary" onClick={() => setShowModal(true)}>
-                    <UserPlus size={20} />
-                    Register Purifier
-                </button>
+                {hasPermission('Warehouse.Create') && (
+                    <button className="btn btn-primary" onClick={() => setShowModal(true)}>
+                        <UserPlus size={20} />
+                        Register Purifier
+                    </button>
+                )}
             </div>
 
             <div className="card">
@@ -130,12 +134,16 @@ const PurifierManagement: React.FC = () => {
                                     </td>
                                     <td style={{ textAlign: 'right' }}>
                                         <div style={{ display: 'flex', gap: '8px', justifyContent: 'flex-end' }}>
-                                            <button className="btn-icon" onClick={() => handleEdit(purifier)}>
-                                                <Pencil size={18} />
-                                            </button>
-                                            <button className="btn-icon text-danger" onClick={() => handleDelete(purifier.id)}>
-                                                <Trash2 size={18} />
-                                            </button>
+                                            {hasPermission('Warehouse.Edit') && (
+                                                <button className="btn-icon" onClick={() => handleEdit(purifier)}>
+                                                    <Pencil size={18} />
+                                                </button>
+                                            )}
+                                            {hasPermission('Warehouse.Delete') && (
+                                                <button className="btn-icon text-danger" onClick={() => handleDelete(purifier.id)}>
+                                                    <Trash2 size={18} />
+                                                </button>
+                                            )}
                                         </div>
                                     </td>
                                 </tr>

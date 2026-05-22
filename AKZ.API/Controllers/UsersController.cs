@@ -38,11 +38,12 @@ public class UsersController : ControllerBase
                 RoleName = u.Role.Name,
                 WarehouseId = u.WarehouseId,
                 WarehouseName = u.Warehouse != null ? u.Warehouse.Name : null,
-                Permissions = _context.UserPermissions
-                    .Where(up => up.UserId == u.Id)
-                    .Select(up => up.Permission.Name)
-                    .Union(u.Role.RolePermissions.Select(rp => rp.Permission.Name))
-                    .ToList()
+                Permissions = _context.UserPermissions.Any(up => up.UserId == u.Id)
+                    ? _context.UserPermissions
+                        .Where(up => up.UserId == u.Id && up.IsGranted)
+                        .Select(up => up.Permission.Name)
+                        .ToList()
+                    : u.Role.RolePermissions.Select(rp => rp.Permission.Name).ToList()
             })
             .ToListAsync();
 
@@ -68,11 +69,12 @@ public class UsersController : ControllerBase
                 RoleName = u.Role.Name,
                 WarehouseId = u.WarehouseId,
                 WarehouseName = u.Warehouse != null ? u.Warehouse.Name : null,
-                Permissions = _context.UserPermissions
-                    .Where(up => up.UserId == u.Id)
-                    .Select(up => up.Permission.Name)
-                    .Union(u.Role.RolePermissions.Select(rp => rp.Permission.Name))
-                    .ToList()
+                Permissions = _context.UserPermissions.Any(up => up.UserId == u.Id)
+                    ? _context.UserPermissions
+                        .Where(up => up.UserId == u.Id && up.IsGranted)
+                        .Select(up => up.Permission.Name)
+                        .ToList()
+                    : u.Role.RolePermissions.Select(rp => rp.Permission.Name).ToList()
 
             })
             .FirstOrDefaultAsync();
@@ -132,6 +134,8 @@ public class UsersController : ControllerBase
             .Select(rp => rp.Permission.Name)
             .ToListAsync();
 
+        var effectivePermissions = userPermissions.Any() ? userPermissions : rolePermissions;
+
         var userDto = new UserDto
         {
             Id = user.Id,
@@ -140,7 +144,7 @@ public class UsersController : ControllerBase
             Email = user.Email,
             PhoneNumber = user.PhoneNumber,
             RoleName = (await _context.Roles.FindAsync(user.RoleId))?.Name ?? "",
-            Permissions = userPermissions.Union(rolePermissions).ToList()
+            Permissions = effectivePermissions
         };
 
         return CreatedAtAction(nameof(GetUser), new { id = user.Id }, userDto);

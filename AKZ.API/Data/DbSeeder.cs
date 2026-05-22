@@ -1,4 +1,5 @@
 using AKZ.API.Models;
+using Microsoft.EntityFrameworkCore;
 using BCrypt.Net;
 
 namespace AKZ.API.Data;
@@ -18,6 +19,28 @@ public static class DbSeeder
                 new Role { Name = "Warehouse Manager", Description = "Manage warehouse and inventory" }
             };
             context.Roles.AddRange(initialRoles);
+            context.SaveChanges();
+        }
+
+        // Rename legacy Sales3 permissions if they exist
+        var legacyPermissions = context.Permissions.Where(p => p.Name.StartsWith("Sales3.")).ToList();
+        var existingPermissionNames = context.Permissions.Select(p => p.Name).ToList();
+        
+        if (legacyPermissions.Any())
+        {
+            foreach (var p in legacyPermissions)
+            {
+                var newName = p.Name.Replace("Sales3.", "Refinement.");
+                if (existingPermissionNames.Contains(newName))
+                {
+                    // If target already exists, just remove the old one (or keep it if it has no role links, but safer to delete)
+                    context.Permissions.Remove(p);
+                }
+                else
+                {
+                    p.Name = newName;
+                }
+            }
             context.SaveChanges();
         }
 
@@ -65,10 +88,10 @@ public static class DbSeeder
             new Permission { Name = "Sales2.Edit", Description = "Edit Sales2 records" },
             new Permission { Name = "Sales2.Delete", Description = "Delete Sales2 records" },
 
-            new Permission { Name = "Sales3.View", Description = "View Sales3 records" },
-            new Permission { Name = "Sales3.Create", Description = "Create Sales3 records" },
-            new Permission { Name = "Sales3.Edit", Description = "Edit Sales3 records" },
-            new Permission { Name = "Sales3.Delete", Description = "Delete Sales3 records" },
+            new Permission { Name = "Refinement.View", Description = "View Refinement records" },
+            new Permission { Name = "Refinement.Create", Description = "Create Refinement records" },
+            new Permission { Name = "Refinement.Edit", Description = "Edit Refinement records" },
+            new Permission { Name = "Refinement.Delete", Description = "Delete Refinement records" },
 
             new Permission { Name = "Sales4.View", Description = "View Sales4 records" },
             new Permission { Name = "Sales4.Create", Description = "Create Sales4 records" },
@@ -117,7 +140,7 @@ public static class DbSeeder
         // Manager (Base Seed)
         if (roles.TryGetValue("Manager", out var managerRole))
         {
-            string[] managerPerms = { "Dashboard.View", "Inventory.View", "Inventory.Create", "Inventory.Edit", "Inventory.Delete", "Warehouse.View", "Sales.View", "Sales1.View", "Sales2.View", "Sales3.View", "Sales4.View", "Sales5.View", "Sales6.View", "Staff.View" };
+            string[] managerPerms = { "Dashboard.View", "Inventory.View", "Inventory.Create", "Inventory.Edit", "Inventory.Delete", "Warehouse.View", "Sales.View", "Sales1.View", "Sales2.View", "Refinement.View", "Sales4.View", "Sales5.View", "Sales6.View", "Staff.View" };
             foreach (var pName in managerPerms)
             {
                 if (perms.TryGetValue(pName, out var p) && !existingRolePerms.Any(rp => rp.RoleId == managerRole.Id && rp.PermissionId == p.Id))
@@ -130,13 +153,24 @@ public static class DbSeeder
         // Seller (Base Seed)
         if (roles.TryGetValue("Seller", out var sellerRole))
         {
-            string[] sellerPerms = { "Dashboard.View", "Inventory.View", "Sales.View", "Sales.Create", "Sales1.View", "Sales1.Create", "Sales2.View", "Sales2.Create", "Sales3.View", "Sales3.Create", "Sales4.View", "Sales4.Create", "Sales5.View", "Sales5.Create", "Sales6.View", "Sales6.Create" };
+            string[] sellerPerms = { "Dashboard.View", "Inventory.View", "Sales.View", "Sales.Create", "Sales1.View", "Sales1.Create", "Sales2.View", "Sales2.Create" };
             foreach (var pName in sellerPerms)
             {
                 if (perms.TryGetValue(pName, out var p) && !existingRolePerms.Any(rp => rp.RoleId == sellerRole.Id && rp.PermissionId == p.Id))
                 {
                     newRolePermissions.Add(new RolePermission { RoleId = sellerRole.Id, PermissionId = p.Id });
                 }
+            }
+            // Explicitly remove unwanted permissions if they were previously assigned
+            string[] permsToRemove = { "Refinement.View", "Refinement.Create", "Sales4.View", "Sales4.Create", "Sales5.View", "Sales5.Create", "Sales6.View", "Sales6.Create" };
+            var unwantedRPs = context.RolePermissions
+                .Include(rp => rp.Permission)
+                .Where(rp => rp.RoleId == sellerRole.Id && permsToRemove.Contains(rp.Permission!.Name))
+                .ToList();
+            if (unwantedRPs.Any())
+            {
+                context.RolePermissions.RemoveRange(unwantedRPs);
+                context.SaveChanges();
             }
         }
 

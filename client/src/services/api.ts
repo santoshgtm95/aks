@@ -1,5 +1,5 @@
 import axios from 'axios';
-import type { LoginRequest, LoginResponse, Product, CreateProductDto, Sale, CreateSaleDto, DashboardStats, User, CreateUserDto, UpdateUserDto, Role, ProcessingRecord, CreateProcessingRecordDto, Worker, Warehouse, CreateWarehouseDto, UpdateWarehouseDto, PurificationProcess, CreatePurificationProcessDto, AvailableCategory, Purifier, CreatePurifierDto, UpdatePurifierDto, PurifiedRecord } from '../types';
+import type { LoginRequest, LoginResponse, Product, CreateProductDto, Sale, CreateSaleDto, DashboardStats, User, CreateUserDto, UpdateUserDto, Role, ProcessingRecord, CreateProcessingRecordDto, Worker, Warehouse, CreateWarehouseDto, UpdateWarehouseDto, PurificationProcess, CreatePurificationProcessDto, AvailableCategory, Purifier, CreatePurifierDto, UpdatePurifierDto, PurifiedRecord, AvailablePurifiedCategory, RefinementProcess, RefinementRecord, CreateRefinementProcessDto } from '../types';
 
 const API_BASE_URL = '/api';
 
@@ -242,6 +242,37 @@ export const purifiersAPI = {
     },
     delete: async (id: number): Promise<void> => {
         await api.delete(`/purifiers/${id}`);
+    },
+};
+
+export const refinementAPI = {
+    getAvailableCategories: async (): Promise<AvailablePurifiedCategory[]> => {
+        const response = await api.get<AvailablePurifiedCategory[]>('/refinement/available-categories');
+        return response.data;
+    },
+    getAll: async (): Promise<RefinementProcess[]> => {
+        const response = await api.get<RefinementProcess[]>('/refinement');
+        return response.data;
+    },
+    getRefinementRecords: async (): Promise<RefinementRecord[]> => {
+        const response = await api.get<RefinementRecord[]>('/refinement/refinement-records');
+        return response.data;
+    },
+    create: async (data: CreateRefinementProcessDto): Promise<RefinementProcess> => {
+        const response = await api.post<RefinementProcess>('/refinement', data);
+        return response.data;
+    },
+    update: async (id: number, data: CreateRefinementProcessDto): Promise<void> => {
+        await api.put(`/refinement/${id}`, data);
+    },
+    delete: async (id: number): Promise<void> => {
+        await api.delete(`/refinement/${id}`);
+    },
+    updateRefinementRecord: async (id: number, data: CreateRefinementProcessDto): Promise<void> => {
+        await api.put(`/refinement/refinement-records/${id}`, data);
+    },
+    deleteRefinementRecord: async (id: number): Promise<void> => {
+        await api.delete(`/refinement/refinement-records/${id}`);
     },
 };
 

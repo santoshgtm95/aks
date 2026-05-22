@@ -293,3 +293,53 @@ export interface UpdatePurifierDto {
   warehouseId: number;
   isActive: boolean;
 }
+
+export interface AvailablePurifiedCategory {
+  purifiedRecordId: number;
+  productMarker: string;
+  category: string;
+  remainingCount: number;
+  remainingWeight: number;
+  unitWeight: number;
+  warehouseName?: string;
+  warehouseId?: number;
+}
+
+export interface RefinementProcess {
+  id: number;
+  date: string;
+  purifiedRecordId: number;
+  productMarker: string;
+  category: string;
+  count: number;
+  weight: number;
+  remainingCountAfter: number;
+  remainingWeightAfter: number;
+  warehouseName?: string;
+  purifierId?: number;
+  purifierName?: string;
+}
+
+export interface RefinementRecord {
+  id: number;
+  date: string;
+  purifiedRecordId: number;
+  productMarker: string;
+  category: string;
+  count: number;
+  weight: number;
+  lostWeight: number;
+  warehouseName?: string;
+  purifierId?: number;
+  purifierName?: string;
+}
+
+export interface CreateRefinementProcessDto {
+  date: string;
+  purifiedRecordId: number;
+  category: string;
+  count: number;
+  weight: number;
+  lostWeight: number;
+  purifierId?: number;
+}

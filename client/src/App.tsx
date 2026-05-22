@@ -14,7 +14,7 @@ import PermissionManagement from './pages/PermissionManagement/index';
 import Sales1 from './pages/Sales1/index';
 import Purification from './pages/Purification/index';
 import PurifierManagement from './pages/PurifierManagement/index';
-import Sales3 from './pages/Sales3/index';
+import Refinement from './pages/Refinement/index';
 import Sales4 from './pages/Sales4/index';
 import Sales5 from './pages/Sales5/index';
 import Sales6 from './pages/Sales6/index';
@@ -111,10 +111,10 @@ const App: React.FC = () => {
               } 
             />
             <Route 
-              path="sales3" 
+              path="refinement" 
               element={
-                <ProtectedRoute permission="Sales3.View">
-                  <Sales3 />
+                <ProtectedRoute permission="Refinement.View">
+                  <Refinement />
                 </ProtectedRoute>
               } 
             />

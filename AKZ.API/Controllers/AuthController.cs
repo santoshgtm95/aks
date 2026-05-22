@@ -44,11 +44,13 @@ public class AuthController : ControllerBase
             .Select(rp => rp.Permission.Name);
 
         var userSpecificPermissions = await _context.UserPermissions
-            .Where(up => up.UserId == user.Id)
+            .Where(up => up.UserId == user.Id && up.IsGranted)
             .Select(up => up.Permission.Name)
             .ToListAsync();
 
-        var permissions = rolePermissions.Union(userSpecificPermissions).ToList();
+        var permissions = userSpecificPermissions.Any() 
+            ? userSpecificPermissions 
+            : rolePermissions.ToList();
 
         var token = _jwtService.GenerateToken(user, permissions);
 

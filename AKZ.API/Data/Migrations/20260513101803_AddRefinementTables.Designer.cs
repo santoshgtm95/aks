@@ -4,16 +4,19 @@ using AKZ.API.Data;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 #nullable disable
 
-namespace AKZ.API.Migrations
+namespace AKZ.API.Data.Migrations
 {
     [DbContext(typeof(AKZDbContext))]
-    partial class AKZDbContextModelSnapshot : ModelSnapshot
+    [Migration("20260513101803_AddRefinementTables")]
+    partial class AddRefinementTables
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -550,6 +553,9 @@ namespace AKZ.API.Migrations
                     b.Property<int>("DeleteFlg")
                         .HasColumnType("int");
 
+                    b.Property<bool>("IsWeightFull")
+                        .HasColumnType("bit");
+
                     b.Property<int>("PurifiedRecordId")
                         .HasColumnType("int");
 
@@ -615,8 +621,8 @@ namespace AKZ.API.Migrations
                     b.Property<int>("DeleteFlg")
                         .HasColumnType("int");
 
-                    b.Property<decimal>("LostWeight")
-                        .HasColumnType("decimal(18,4)");
+                    b.Property<bool>("IsWeightFull")
+                        .HasColumnType("bit");
 
                     b.Property<int>("PurifiedRecordId")
                         .HasColumnType("int");

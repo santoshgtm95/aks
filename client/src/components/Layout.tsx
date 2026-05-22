@@ -80,7 +80,7 @@ const Layout: React.FC = () => {
                             onClick={closeMobileMenu}
                         >
                             <ShoppingCart className="nav-icon" size={24} />
-                            အပွရောင်းစာရင်း
+                            Raw Material Sale List
                         </Link>
                     )}
 
@@ -91,7 +91,7 @@ const Layout: React.FC = () => {
                             onClick={closeMobileMenu}
                         >
                             <ShoppingCart className="nav-icon" size={24} />
-                            အပွရွေးစာရင်း
+                            Mess-Labour List
                         </Link>
                     )}
 
@@ -106,14 +106,14 @@ const Layout: React.FC = () => {
                         </Link>
                     )}
 
-                    {(hasPermission('Sales3.View') || hasPermission('Sales3.Create')) && (
+                    {(hasPermission('Refinement.View') || hasPermission('Refinement.Create')) && (
                         <Link
-                            to="/sales3"
-                            className={`nav-item ${isActive('/sales3') ? 'active' : ''}`}
+                            to="/refinement"
+                            className={`nav-item ${isActive('/refinement') ? 'active' : ''}`}
                             onClick={closeMobileMenu}
                         >
                             <ShoppingCart className="nav-icon" size={24} />
-                            ခါးစီး/အကြမ်းရိုက်စာရင်း
+                            Girdle-bush List
                         </Link>
                     )}
 
@@ -124,7 +124,7 @@ const Layout: React.FC = () => {
                             onClick={closeMobileMenu}
                         >
                             <ShoppingCart className="nav-icon" size={24} />
-                            အချောဆွဲစာရင်း
+                            Single & Double Drawn List
                         </Link>
                     )}
 
@@ -146,7 +146,7 @@ const Layout: React.FC = () => {
                             onClick={closeMobileMenu}
                         >
                             <ShoppingCart className="nav-icon" size={24} />
-                            Export စာရင်း
+                            Export List
                         </Link>
                     )}
 

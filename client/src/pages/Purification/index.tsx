@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { purificationAPI, purifiersAPI } from '../../services/api';
+import { useAuth } from '../../context/AuthContext';
 import { useNotification } from '../../context/NotificationContext';
 import type { AvailableCategory, PurificationProcess, PurifiedRecord, Purifier } from '../../types';
 import { Package, Send, History, Loader2, Search, User, Settings, X, Pencil, Trash2 } from 'lucide-react';
@@ -8,6 +9,7 @@ import { formatDateTime, getMyanmarNow, combineDateWithMyanmarTime } from '../..
 import './index.css';
 
 const Purification: React.FC = () => {
+    const { hasPermission } = useAuth();
     const { showAlert, showConfirm } = useNotification();
     const [availableCategories, setAvailableCategories] = useState<AvailableCategory[]>([]);
     const [processes, setProcesses] = useState<PurificationProcess[]>([]);
@@ -415,12 +417,16 @@ const Purification: React.FC = () => {
                                                 </td>
                                                 <td style={{ textAlign: 'right' }}>
                                                     <div style={{ display: 'flex', gap: '8px', justifyContent: 'flex-end' }}>
-                                                        <button className="btn-icon" onClick={(e) => { e.stopPropagation(); handleEditClick(p); }}>
-                                                            <Pencil size={16} />
-                                                        </button>
-                                                        <button className="btn-icon text-danger" onClick={(e) => { e.stopPropagation(); handleDelete(p.id); }}>
-                                                            <Trash2 size={16} />
-                                                        </button>
+                                                        {hasPermission('Sales2.Edit') && (
+                                                            <button className="btn-icon" onClick={(e) => { e.stopPropagation(); handleEditClick(p); }}>
+                                                                <Pencil size={16} />
+                                                            </button>
+                                                        )}
+                                                        {hasPermission('Sales2.Delete') && (
+                                                            <button className="btn-icon text-danger" onClick={(e) => { e.stopPropagation(); handleDelete(p.id); }}>
+                                                                <Trash2 size={16} />
+                                                            </button>
+                                                        )}
                                                     </div>
                                                 </td>
                                             </tr>
@@ -466,9 +472,11 @@ const Purification: React.FC = () => {
                                                 </td>
                                                 <td style={{ textAlign: 'right' }}>
                                                     <div style={{ display: 'flex', gap: '8px', justifyContent: 'flex-end' }}>
-                                                        <button className="btn-icon text-danger" onClick={(e) => { e.stopPropagation(); handleDeleteRecord(p.id); }}>
-                                                            <Trash2 size={16} />
-                                                        </button>
+                                                        {hasPermission('Sales2.Delete') && (
+                                                            <button className="btn-icon text-danger" onClick={(e) => { e.stopPropagation(); handleDeleteRecord(p.id); }}>
+                                                                <Trash2 size={16} />
+                                                            </button>
+                                                        )}
                                                     </div>
                                                 </td>
                                             </tr>

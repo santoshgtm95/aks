@@ -26,6 +26,8 @@ public class AKZDbContext : DbContext
     public DbSet<PurificationProcess> PurificationProcesses { get; set; }
     public DbSet<Purifier> Purifiers { get; set; }
     public DbSet<PurifiedRecord> PurifiedRecords { get; set; }
+    public DbSet<RefinementProcess> RefinementProcesses { get; set; }
+    public DbSet<RefinementRecord> RefinementRecords { get; set; }
 
     public override Task<int> SaveChangesAsync(CancellationToken cancellationToken = default)
     {
@@ -168,5 +170,37 @@ public class AKZDbContext : DbContext
             .HasForeignKey(p => p.PurifierId)
             .OnDelete(DeleteBehavior.Restrict);
         modelBuilder.Entity<PurifiedRecord>().HasQueryFilter(e => e.DeleteFlg == 0);
+        modelBuilder.Entity<RefinementProcess>().HasQueryFilter(e => e.DeleteFlg == 0);
+        modelBuilder.Entity<RefinementRecord>().HasQueryFilter(e => e.DeleteFlg == 0);
+
+        modelBuilder.Entity<RefinementProcess>()
+            .HasOne(r => r.PurifiedRecord)
+            .WithMany()
+            .HasForeignKey(r => r.PurifiedRecordId)
+            .OnDelete(DeleteBehavior.Restrict);
+
+        modelBuilder.Entity<RefinementProcess>()
+            .HasOne(r => r.Purifier)
+            .WithMany()
+            .HasForeignKey(r => r.PurifierId)
+            .OnDelete(DeleteBehavior.Restrict);
+
+        modelBuilder.Entity<RefinementRecord>()
+            .HasOne(r => r.PurifiedRecord)
+            .WithMany()
+            .HasForeignKey(r => r.PurifiedRecordId)
+            .OnDelete(DeleteBehavior.Restrict);
+
+        modelBuilder.Entity<RefinementRecord>()
+            .HasOne(r => r.Purifier)
+            .WithMany()
+            .HasForeignKey(r => r.PurifierId)
+            .OnDelete(DeleteBehavior.Restrict);
+
+        modelBuilder.Entity<RefinementRecord>()
+            .HasOne(r => r.RefinementProcess)
+            .WithMany(p => p.RefinementRecords)
+            .HasForeignKey(r => r.RefinementProcessId)
+            .OnDelete(DeleteBehavior.Restrict);
     }
 }

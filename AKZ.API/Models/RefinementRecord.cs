@@ -3,8 +3,8 @@ using System.ComponentModel.DataAnnotations.Schema;
 
 namespace AKZ.API.Models;
 
-[Table("PurifiedRecords")]
-public class PurifiedRecord : BaseEntity
+[Table("RefinementRecords")]
+public class RefinementRecord : BaseEntity
 {
     [Key]
     public int Id { get; set; }
@@ -12,10 +12,10 @@ public class PurifiedRecord : BaseEntity
     [Required]
     public DateTime Date { get; set; }
 
-    public int ProcessingRecordId { get; set; }
+    public int PurifiedRecordId { get; set; }
 
-    [ForeignKey("ProcessingRecordId")]
-    public ProcessingRecord ProcessingRecord { get; set; } = null!;
+    [ForeignKey("PurifiedRecordId")]
+    public PurifiedRecord PurifiedRecord { get; set; } = null!;
 
     [Required]
     public string Category { get; set; } = string.Empty;
@@ -30,14 +30,15 @@ public class PurifiedRecord : BaseEntity
     [ForeignKey("PurifierId")]
     public Purifier? Purifier { get; set; }
 
-    public bool IsWeightFull { get; set; } = true;
-    
-    public int? PurificationProcessId { get; set; }
-    
-    [ForeignKey("PurificationProcessId")]
-    public PurificationProcess? PurificationProcess { get; set; }
+    [Column(TypeName = "decimal(18,4)")]
+    public decimal LostWeight { get; set; }
 
-    // Remaining stock of purified hair for further processing (Refinement, etc.)
+    public int? RefinementProcessId { get; set; }
+
+    [ForeignKey("RefinementProcessId")]
+    public RefinementProcess? RefinementProcess { get; set; }
+
+    // Remaining stock after this record for further downstream use
     public int RemainingCount { get; set; }
 
     [Column(TypeName = "decimal(18,4)")]
