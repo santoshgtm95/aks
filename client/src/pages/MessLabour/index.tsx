@@ -1478,340 +1478,124 @@ const MessLabour: React.FC = () => {
             if (e.target === e.currentTarget) setViewingRecord(null);
           }}
         >
-          <div className="modal-content" style={{ maxWidth: "650px" }}>
-            <div className="edit-modal-header">
-              <h2 className="modal-title">
-                Record Details —{" "}
-                <span style={{ color: "var(--primary)" }}>
-                  {viewingRecord.productMarker}
-                </span>
-              </h2>
-              <button
-                className="modal-close-btn"
-                onClick={() => setViewingRecord(null)}
-              >
+          <div className="vm-modal">
+            {/* Header */}
+            <div className="vm-header">
+              <div className="vm-header-left">
+                <div className="vm-header-icon">
+                  <Package size={22} />
+                </div>
+                <div>
+                  <p className="vm-header-pre">Record Details</p>
+                  <h2 className="vm-header-title">{viewingRecord.productMarker}</h2>
+                </div>
+              </div>
+              <button className="vm-close-btn" onClick={() => setViewingRecord(null)}>
                 <X size={20} />
               </button>
             </div>
 
-            <div className="edit-modal-body" style={{ padding: "20px" }}>
-              <div
-                style={{
-                  display: "grid",
-                  gridTemplateColumns: "1fr 1fr",
-                  gap: "20px",
-                  marginBottom: "24px",
-                  background: "#f8fafc",
-                  padding: "16px",
-                  borderRadius: "8px",
-                  border: "1px solid #e2e8f0",
-                }}
-              >
-                <div>
-                  <p
-                    className="form-label"
-                    style={{ marginBottom: "4px", fontSize: "13px" }}
-                  >
-                    Date
-                  </p>
-                  <p
-                    style={{
-                      fontWeight: 600,
-                      fontSize: "16px",
-                      color: "var(--text)",
-                    }}
-                  >
-                    {formatDateTime(viewingRecord.date)}
-                  </p>
+            {/* Main Stats Grid */}
+            <div className="vm-stats-grid">
+              <div className="vm-stat-card">
+                <span className="vm-stat-label">Date</span>
+                <span className="vm-stat-value">{formatDateTime(viewingRecord.date)}</span>
+              </div>
+              <div className="vm-stat-card vm-stat-span-2">
+                <span className="vm-stat-label">Workers</span>
+                <span className="vm-stat-value">{viewingRecord.workerNames || "---"}</span>
+              </div>
+              <div className="vm-stat-card">
+                <span className="vm-stat-label">Unit Weight</span>
+                <span className="vm-stat-value">{viewingRecord.unitWeight.toFixed(4)} viss</span>
+              </div>
+            </div>
+
+            {/* Remaining Stock Highlight */}
+            <div className="vm-highlights">
+              <div className="vm-highlight-box highlight-blue">
+                <div className="vm-hl-label">Remaining Count</div>
+                <div className="vm-hl-value">
+                  {viewingRecord.remainingCount} <span className="vm-hl-unit">bundles</span>
                 </div>
-                <div>
-                  <p
-                    className="form-label"
-                    style={{ marginBottom: "4px", fontSize: "13px" }}
-                  >
-                    Workers
-                  </p>
-                  <p
-                    style={{
-                      fontWeight: 600,
-                      fontSize: "16px",
-                      color: "var(--text)",
-                    }}
-                  >
-                    {viewingRecord.workerNames}
-                  </p>
+                <div className="vm-hl-desc">of {viewingRecord.count} original packages</div>
+              </div>
+              <div className="vm-highlight-box highlight-green">
+                <div className="vm-hl-label">Remaining Weight</div>
+                <div className="vm-hl-value">
+                  {viewingRecord.remainingWeight.toFixed(4)} <span className="vm-hl-unit">viss</span>
                 </div>
-                <div>
-                  <p
-                    className="form-label"
-                    style={{ marginBottom: "4px", fontSize: "13px" }}
-                  >
-                    Total Count
-                  </p>
-                  <p
-                    style={{
-                      fontWeight: 600,
-                      fontSize: "16px",
-                      color: "var(--text)",
-                    }}
-                  >
-                    {viewingRecord.count}
-                  </p>
-                </div>
-                <div>
-                  <p
-                    className="form-label"
-                    style={{ marginBottom: "4px", fontSize: "13px" }}
-                  >
-                    Remaining Count
-                  </p>
-                  <p
-                    style={{
-                      fontWeight: 600,
-                      fontSize: "16px",
-                      color: "var(--text)",
-                    }}
-                  >
-                    {viewingRecord.remainingCount}
-                  </p>
-                </div>
-                <div>
-                  <p
-                    className="form-label"
-                    style={{ marginBottom: "4px", fontSize: "13px" }}
-                  >
-                    Unit Weight
-                  </p>
-                  <p
-                    style={{
-                      fontWeight: 600,
-                      fontSize: "16px",
-                      color: "var(--text)",
-                    }}
-                  >
-                    {viewingRecord.unitWeight.toFixed(4)}
-                  </p>
-                </div>
-                <div>
-                  <p
-                    className="form-label"
-                    style={{ marginBottom: "4px", fontSize: "13px" }}
-                  >
-                    Remaining Weight
-                  </p>
-                  <p
-                    style={{
-                      fontWeight: 600,
-                      fontSize: "16px",
-                      color: "var(--text)",
-                    }}
-                  >
-                    {viewingRecord.remainingWeight.toFixed(4)} viss
-                  </p>
+                <div className="vm-hl-desc">weight available for sales</div>
+              </div>
+            </div>
+
+            <div className="vm-body">
+              {/* Category Details */}
+              <div className="vm-section">
+                <p className="vm-section-title">
+                  <Scissors size={15} /> Categorized Distribution
+                </p>
+                <div className="vm-cat-grid">
+                  {(
+                    [
+                      { count: viewingRecord.redCount,          weight: viewingRecord.redWeight,          label: "Red",          cls: "vm-cat-red"    },
+                      { count: viewingRecord.whiteCount,        weight: viewingRecord.whiteWeight,        label: "White",        cls: "vm-cat-white"  },
+                      { count: viewingRecord.specialCount,      weight: viewingRecord.specialWeight,      label: "Simple",       cls: "vm-cat-special"},
+                      { count: viewingRecord.naturalCount,      weight: viewingRecord.naturalWeight,      label: "Natural",      cls: "vm-cat-natural"},
+                      { count: viewingRecord.naturalWhiteCount, weight: viewingRecord.naturalWhiteWeight, label: "Nat. White",   cls: "vm-cat-nwhite" },
+                      { count: viewingRecord.naturalRedCount,   weight: viewingRecord.naturalRedWeight,   label: "Nat. Red",     cls: "vm-cat-nred"   },
+                      { count: viewingRecord.shortCutCount,     weight: viewingRecord.shortCutWeight,     label: "Short Cut",    cls: "vm-cat-scut"   },
+                      { count: viewingRecord.artificialCount,   weight: viewingRecord.artificialWeight,   label: "Artificial",   cls: "vm-cat-art"    },
+                      { count: viewingRecord.shortCount,        weight: viewingRecord.shortWeight,        label: "Short",        cls: "vm-cat-short"  },
+                    ] as const
+                  )
+                    .filter((cat) => cat.count > 0)
+                    .map(({ count, weight, label, cls }) => (
+                      <div key={label} className={`vm-cat-card ${cls}`}>
+                        <span className="vm-cat-label">{label}</span>
+                        <span className="vm-cat-count">{count} bundles</span>
+                        <span className="vm-cat-weight">{weight.toFixed(3)} viss</span>
+                      </div>
+                    ))}
+                  {viewingRecord.redCount === 0 &&
+                    viewingRecord.whiteCount === 0 &&
+                    viewingRecord.specialCount === 0 &&
+                    viewingRecord.naturalCount === 0 &&
+                    viewingRecord.naturalWhiteCount === 0 &&
+                    viewingRecord.naturalRedCount === 0 &&
+                    viewingRecord.shortCutCount === 0 &&
+                    viewingRecord.artificialCount === 0 &&
+                    viewingRecord.shortCount === 0 && (
+                      <div className="vm-empty-cats">
+                        No bundles were sorted into categories.
+                      </div>
+                    )}
                 </div>
               </div>
+            </div>
 
-              <h3
-                className="section-label"
-                style={{ marginBottom: "16px", fontSize: "16px" }}
-              >
-                Categories Details
-              </h3>
-              <div
-                style={{
-                  display: "flex",
-                  gap: "8px",
-                  flexWrap: "wrap",
-                  marginBottom: "24px",
-                }}
-              >
-                {viewingRecord.redCount > 0 && (
-                  <span
-                    className="card-badge"
-                    style={{
-                      color: "#c53030",
-                      background: "#fff5f5",
-                      border: "1px solid #fc8181",
-                      padding: "8px 12px",
-                      fontSize: "14px",
-                    }}
-                  >
-                    Red: {viewingRecord.redCount} (
-                    {viewingRecord.redWeight.toFixed(3)}v)
-                  </span>
-                )}
-                {viewingRecord.whiteCount > 0 && (
-                  <span
-                    className="card-badge"
-                    style={{
-                      color: "#4a5568",
-                      background: "#f7fafc",
-                      border: "1px solid #cbd5e0",
-                      padding: "8px 12px",
-                      fontSize: "14px",
-                    }}
-                  >
-                    White: {viewingRecord.whiteCount} (
-                    {viewingRecord.whiteWeight.toFixed(3)}v)
-                  </span>
-                )}
-                {viewingRecord.specialCount > 0 && (
-                  <span
-                    className="card-badge"
-                    style={{
-                      color: "#6b46c1",
-                      background: "#faf5ff",
-                      border: "1px solid #b794f4",
-                      padding: "8px 12px",
-                      fontSize: "14px",
-                    }}
-                  >
-                    Simple: {viewingRecord.specialCount} (
-                    {viewingRecord.specialWeight.toFixed(3)}v)
-                  </span>
-                )}
-                {viewingRecord.naturalCount > 0 && (
-                  <span
-                    className="card-badge"
-                    style={{
-                      color: "#276749",
-                      background: "#f0fff4",
-                      border: "1px solid #68d391",
-                      padding: "8px 12px",
-                      fontSize: "14px",
-                    }}
-                  >
-                    Natural: {viewingRecord.naturalCount} (
-                    {viewingRecord.naturalWeight.toFixed(3)}v)
-                  </span>
-                )}
-                {viewingRecord.naturalWhiteCount > 0 && (
-                  <span
-                    className="card-badge"
-                    style={{
-                      color: "#2b6cb0",
-                      background: "#ebf8ff",
-                      border: "1px solid #63b3ed",
-                      padding: "8px 12px",
-                      fontSize: "14px",
-                    }}
-                  >
-                    N.White: {viewingRecord.naturalWhiteCount} (
-                    {viewingRecord.naturalWhiteWeight.toFixed(3)}v)
-                  </span>
-                )}
-                {viewingRecord.naturalRedCount > 0 && (
-                  <span
-                    className="card-badge"
-                    style={{
-                      color: "#c05621",
-                      background: "#fff8f1",
-                      border: "1px solid #f6ad55",
-                      padding: "8px 12px",
-                      fontSize: "14px",
-                    }}
-                  >
-                    N.Red: {viewingRecord.naturalRedCount} (
-                    {viewingRecord.naturalRedWeight.toFixed(3)}v)
-                  </span>
-                )}
-                {viewingRecord.shortCutCount > 0 && (
-                  <span
-                    className="card-badge"
-                    style={{
-                      color: "#975a16",
-                      background: "#fffff0",
-                      border: "1px solid #f6e05e",
-                      padding: "8px 12px",
-                      fontSize: "14px",
-                    }}
-                  >
-                    S.Cut: {viewingRecord.shortCutCount} (
-                    {viewingRecord.shortCutWeight.toFixed(3)}v)
-                  </span>
-                )}
-                {viewingRecord.artificialCount > 0 && (
-                  <span
-                    className="card-badge"
-                    style={{
-                      color: "#702459",
-                      background: "#fdf2f8",
-                      border: "1px solid #d6bcfa",
-                      padding: "8px 12px",
-                      fontSize: "14px",
-                    }}
-                  >
-                    Art: {viewingRecord.artificialCount} (
-                    {viewingRecord.artificialWeight.toFixed(3)}v)
-                  </span>
-                )}
-                {viewingRecord.shortCount > 0 && (
-                  <span
-                    className="card-badge"
-                    style={{
-                      color: "#92400e",
-                      background: "#fef3c7",
-                      border: "1px solid #f59e0b",
-                      padding: "8px 12px",
-                      fontSize: "14px",
-                    }}
-                  >
-                    Short: {viewingRecord.shortCount} (
-                    {viewingRecord.shortWeight.toFixed(3)}v)
-                  </span>
-                )}
-              </div>
-
-              <div
-                style={{
-                  display: "flex",
-                  justifyContent: "space-between",
-                  borderTop: "1px solid #e2e8f0",
-                  paddingTop: "20px",
-                  alignItems: "center",
-                }}
-              >
-                <span
-                  style={{
-                    fontSize: "16px",
-                    fontWeight: 600,
-                    color: "var(--text)",
-                  }}
-                >
-                  Total Weight:{" "}
-                  <strong
-                    style={{
-                      color: "var(--primary)",
-                      fontSize: "20px",
-                      marginLeft: "8px",
-                    }}
-                  >
-                    {viewingRecord.totalWeight.toFixed(4)}
-                  </strong>{" "}
-                  viss
-                </span>
-                <span
-                  style={{
-                    fontSize: "16px",
-                    fontWeight: 600,
-                    color: "var(--text)",
-                  }}
-                >
-                  Difference:{" "}
-                  <strong
-                    className={
-                      Math.abs(viewingRecord.difference) > 0.1
-                        ? "text-danger"
-                        : "text-success"
-                    }
-                    style={{ fontSize: "20px", marginLeft: "8px" }}
-                  >
-                    {viewingRecord.difference > 0 ? "+" : ""}
-                    {viewingRecord.difference.toFixed(4)}
-                  </strong>{" "}
-                  viss
+            {/* Bottom Total Alert Bar */}
+            <div className="vm-totals-bar">
+              <div className="vm-total-item">
+                <span className="vm-total-label">Total Weight</span>
+                <span className="vm-total-value">
+                  {viewingRecord.totalWeight.toFixed(4)} <span className="vm-total-unit">viss</span>
                 </span>
               </div>
+              <div className="vm-total-item" style={{ alignItems: "flex-end" }}>
+                <span className="vm-total-label">Weight Difference</span>
+                <span className={`vm-total-diff ${viewingRecord.difference > 0.1 || viewingRecord.difference < -0.1 ? "diff-error" : "diff-success"}`}>
+                  {viewingRecord.difference > 0 ? "+" : ""}
+                  {viewingRecord.difference.toFixed(4)} viss
+                </span>
+              </div>
+            </div>
+
+            {/* Footer */}
+            <div className="vm-footer">
+              <button className="vm-btn-close" onClick={() => setViewingRecord(null)}>
+                Close Details
+              </button>
             </div>
           </div>
         </div>
