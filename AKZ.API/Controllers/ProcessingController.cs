@@ -159,7 +159,7 @@ public class ProcessingController : ControllerBase
 
         _context.ProcessingRecords.Add(record);
 
-        // DATA FROM SALES1 IS IN VISS. 
+        // DATA FROM MESS-LABOUR IS IN VISS. 
         // If product unit is KG, convert Viss to KG before updating Products table.
         string productUnit = (product.Unit ?? "").ToLower().Trim();
         bool isProductKg = productUnit.Contains("kg") || productUnit.Contains("kilogram");

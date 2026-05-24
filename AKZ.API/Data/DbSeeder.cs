@@ -44,6 +44,27 @@ public static class DbSeeder
             context.SaveChanges();
         }
 
+        // Rename legacy MessLabour permissions
+        var legacyMessLabourPermissions = context.Permissions.Where(p => p.Name.StartsWith("MessLabour.")).ToList();
+        var existingPermNames2 = context.Permissions.Select(p => p.Name).ToList();
+
+        if (legacyMessLabourPermissions.Any())
+        {
+            foreach (var p in legacyMessLabourPermissions)
+            {
+                var newName = p.Name.Replace("Sales1.", "MessLabour.");
+                if (existingPermNames2.Contains(newName))
+                {
+                    context.Permissions.Remove(p);
+                }
+                else
+                {
+                    p.Name = newName;
+                }
+            }
+            context.SaveChanges();
+        }
+
         // Seed Permissions
         var allPermissions = new List<Permission>
         {
@@ -77,11 +98,11 @@ public static class DbSeeder
             new Permission { Name = "Sales.Edit", Description = "Edit Sales records" },
             new Permission { Name = "Sales.Delete", Description = "Delete Sales records" },
 
-            // Sales 1-6
-            new Permission { Name = "Sales1.View", Description = "View Sales1 records" },
-            new Permission { Name = "Sales1.Create", Description = "Create Sales1 records" },
-            new Permission { Name = "Sales1.Edit", Description = "Edit Sales1 records" },
-            new Permission { Name = "Sales1.Delete", Description = "Delete Sales1 records" },
+            // Mess-Labour
+            new Permission { Name = "MessLabour.View", Description = "View Mess-Labour records" },
+            new Permission { Name = "MessLabour.Create", Description = "Create Mess-Labour records" },
+            new Permission { Name = "MessLabour.Edit", Description = "Edit Mess-Labour records" },
+            new Permission { Name = "MessLabour.Delete", Description = "Delete Mess-Labour records" },
 
             new Permission { Name = "Sales2.View", Description = "View Sales2 records" },
             new Permission { Name = "Sales2.Create", Description = "Create Sales2 records" },
@@ -140,7 +161,7 @@ public static class DbSeeder
         // Manager (Base Seed)
         if (roles.TryGetValue("Manager", out var managerRole))
         {
-            string[] managerPerms = { "Dashboard.View", "Inventory.View", "Inventory.Create", "Inventory.Edit", "Inventory.Delete", "Warehouse.View", "Sales.View", "Sales1.View", "Sales2.View", "Refinement.View", "Sales4.View", "Sales5.View", "Sales6.View", "Staff.View" };
+            string[] managerPerms = { "Dashboard.View", "Inventory.View", "Inventory.Create", "Inventory.Edit", "Inventory.Delete", "Warehouse.View", "Sales.View", "MessLabour.View", "Sales2.View", "Refinement.View", "Sales4.View", "Sales5.View", "Sales6.View", "Staff.View" };
             foreach (var pName in managerPerms)
             {
                 if (perms.TryGetValue(pName, out var p) && !existingRolePerms.Any(rp => rp.RoleId == managerRole.Id && rp.PermissionId == p.Id))
@@ -153,7 +174,7 @@ public static class DbSeeder
         // Seller (Base Seed)
         if (roles.TryGetValue("Seller", out var sellerRole))
         {
-            string[] sellerPerms = { "Dashboard.View", "Inventory.View", "Sales.View", "Sales.Create", "Sales1.View", "Sales1.Create", "Sales2.View", "Sales2.Create" };
+            string[] sellerPerms = { "Dashboard.View", "Inventory.View", "Sales.View", "Sales.Create", "MessLabour.View", "MessLabour.Create", "Sales2.View", "Sales2.Create" };
             foreach (var pName in sellerPerms)
             {
                 if (perms.TryGetValue(pName, out var p) && !existingRolePerms.Any(rp => rp.RoleId == sellerRole.Id && rp.PermissionId == p.Id))

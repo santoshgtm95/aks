@@ -37,6 +37,11 @@ const Purification: React.FC = () => {
         loadData();
     }, []);
 
+    const filteredAvailable = availableCategories.filter(a =>
+        a.productMarker?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        a.warehouseName?.toLowerCase().includes(searchTerm.toLowerCase())
+    );
+
     const handleInputChance = (recordId: number, category: string, value: string) => {
         const key = `${recordId}-${category}`;
         setInputCounts(prev => ({ ...prev, [key]: value }));
@@ -48,8 +53,8 @@ const Purification: React.FC = () => {
         const count = parseInt(countStr);
         const purifierId = selectedPurifiers[key];
 
-        if (!count || count <= 0) return alert('ပမာဏ မှန်ကန်စွာ ထည့်သွင်းပါ');
-        if (!purifierId) return alert('Purifier ရွေးချယ်ပါ');
+        if (!count || count <= 0) return showAlert('Validation', 'Please enter a valid count', 'error');
+        if (!purifierId) return showAlert('Validation', 'Please select a purifier', 'error');
 
         setSubmitting(key);
         try {
@@ -59,13 +64,13 @@ const Purification: React.FC = () => {
                 category: avail.category,
                 purifyCount: count,
                 purifierId: purifierId,
-                isWeightFull: true // Default for inline
+                isWeightFull: true
             });
             await loadData();
             setInputCounts(prev => ({ ...prev, [key]: '' }));
         } catch (error) {
             console.error('Purification failed:', error);
-            alert('အဆင်မပြေပါ');
+            showAlert('Error', 'Purification failed', 'error');
         } finally {
             setSubmitting(null);
         }
@@ -92,15 +97,15 @@ const Purification: React.FC = () => {
 
     const handleDelete = (id: number) => {
         showConfirm(
-            'အတည်ပြုရန်',
-            'ဤမှတ်တမ်းကို ဖျက်ရန် သေချာပါသလား?',
+            'Confirm Delete',
+            'Are you sure you want to delete this record?',
             async () => {
                 try {
                     await purificationAPI.delete(id);
                     await loadData();
                 } catch (error) {
                     console.error('Delete failed:', error);
-                    showAlert('Error', 'ဖျက်၍ မရပါ', 'error');
+                    showAlert('Error', 'Failed to delete record', 'error');
                 }
             }
         );
@@ -108,19 +113,20 @@ const Purification: React.FC = () => {
 
     const handleClosePurifierManagement = () => {
         setShowPurifierManagement(false);
-        loadData(); // Refresh purifiers list
+        loadData();
     };
+
     const handleDeleteRecord = (id: number) => {
         showConfirm(
-            'အတည်ပြုရန်',
-            'ဤမှတ်တမ်းကို ဖျက်ရန် သေချာပါသလား?',
+            'Confirm Delete',
+            'Are you sure you want to delete this record?',
             async () => {
                 try {
                     await purificationAPI.deletePurifiedRecord(id);
                     await loadData();
                 } catch (error) {
                     console.error('Delete failed:', error);
-                    showAlert('Error', 'ဖျက်၍ မရပါ', 'error');
+                    showAlert('Error', 'Failed to delete record', 'error');
                 }
             }
         );
@@ -130,9 +136,9 @@ const Purification: React.FC = () => {
         setEditingProcess(p);
         setEditingRecord(null);
         setSelectedCategory(null);
-        
+
         const dateStr = p.date ? (p.date.includes('T') ? p.date.slice(0, 16) : p.date + 'T00:00') : getMyanmarNow();
-        
+
         setPurifyForm({
             count: p.purifyCount.toString(),
             date: dateStr,
@@ -145,27 +151,23 @@ const Purification: React.FC = () => {
     const handleSubmitPurify = async (e: React.FormEvent) => {
         e.preventDefault();
         const count = parseInt(purifyForm.count);
-        if (!count || count <= 0) return alert('ပမာဏ မှန်ကန်စွာ ထည့်သွင်းပါ');
-        if (!purifyForm.purifierId) return alert('Purifier ရွေးချယ်ပါ');
+        if (!count || count <= 0) return showAlert('Validation', 'Please enter a valid bundle count', 'error');
+        if (!purifyForm.purifierId) return showAlert('Validation', 'Please select a purifier', 'error');
 
-        // Validation
         if (selectedCategory) {
             if (count > selectedCategory.remainingCount) {
-                alert(`လက်ကျန်ပမာဏ (${selectedCategory.remainingCount}) ထက် မကျော်ရပါ`);
+                showAlert('Validation', `Cannot exceed remaining count (${selectedCategory.remainingCount})`, 'error');
                 return;
             }
         } else if (editingProcess || editingRecord) {
             const procId = editingProcess?.processingRecordId || editingRecord?.processingRecordId;
             const cat = editingProcess?.category || editingRecord?.category;
             const currentRecordCount = editingProcess?.purifyCount || editingRecord?.count || 0;
-            
-            // Find the current available stock for this bag/category
             const avail = availableCategories.find(a => a.processingRecordId === procId && a.category === cat);
             const currentStockInBag = avail?.remainingCount || 0;
-            
             const maxAllowed = currentStockInBag + currentRecordCount;
             if (count > maxAllowed) {
-                alert(`လက်ကျန်ပမာဏ (${maxAllowed}) ထက် မကျော်ရပါ`);
+                showAlert('Validation', `Cannot exceed available count (${maxAllowed})`, 'error');
                 return;
             }
         }
@@ -203,34 +205,33 @@ const Purification: React.FC = () => {
             await loadData();
         } catch (error: any) {
             console.error('Submit failed:', error);
-            const msg = error.response?.data?.message || 'အဆင်မပြေပါ (လက်ကျန် မလုံလောက်ခြင်း ဖြစ်နိုင်သည်)';
-            showAlert('Error', msg, 'error');
+            showAlert('Error', error?.response?.data?.message || 'Failed to save record', 'error');
         }
     };
-    
-    const filteredAvailable = availableCategories.filter(a => 
-        a.productMarker.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        a.category.toLowerCase().includes(searchTerm.toLowerCase())
-    );
 
     if (loading) {
-        return <div className="spinner"></div>;
+        return (
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '60vh', gap: '12px', color: '#64748b' }}>
+                <Loader2 className="animate-spin" size={28} />
+                <span style={{ fontSize: '16px', fontWeight: 500 }}>Loading purification data...</span>
+            </div>
+        );
     }
 
     return (
         <div className="processing-container fade-in">
             {/* Left Sidebar: Available Categories for Purification */}
-            <aside className="product-sidebar" style={{ width: '400px' }}>
+            <aside className="product-sidebar">
                 <h2 className="sidebar-title">
                     <Package size={20} />
-                    ဖွရန် အိတ်တစ်ခု ရွေးချယ်ပေးပါ
+                    Select Category to Purify
                 </h2>
 
                 <div className="search-box">
                     <Search size={18} style={{ position: 'absolute', left: '14px', top: '50%', transform: 'translateY(-50%)', color: '#94a3b8' }} />
                     <input
                         type="text"
-                        placeholder="အိတ်အမှတ် ရှာဖွေရန်..."
+                        placeholder="Search bag marker..."
                         className="form-input"
                         value={searchTerm}
                         onChange={(e) => setSearchTerm(e.target.value)}
@@ -239,45 +240,44 @@ const Purification: React.FC = () => {
 
                 <div className="product-list" style={{ maxHeight: 'calc(100vh - 200px)', overflowY: 'auto', paddingRight: '4px' }}>
                     {filteredAvailable.length === 0 ? (
-                        <div style={{ padding: '20px', textAlign: 'center', color: '#94a3b8' }}>
-                            {searchTerm ? 'ရှာမတွေ့ပါ' : 'ရွေးချယ်စရာ မရှိသေးပါ'}
+                        <div className="sidebar-empty-state">
+                            {searchTerm ? 'No matching bags found' : 'No available bags for purification'}
                         </div>
                     ) : (
                         filteredAvailable.map((avail) => {
                             const key = `${avail.processingRecordId}-${avail.category}`;
                             return (
-                                <div key={key} className="product-card" style={{ cursor: 'default' }}>
+                                <div key={key} className="product-card premium-sidebar-card">
                                     <div className="card-header">
                                         <div style={{ display: 'flex', flexDirection: 'column' }}>
                                             <span className="card-marker">{avail.productMarker}</span>
-                                            <span style={{ fontSize: '11px', color: '#3b82f6', fontWeight: 600 }}> {avail.warehouseName || '---'}</span>
+                                            <span className="card-subtext">{avail.warehouseName || '---'}</span>
                                         </div>
                                         <span className={`card-badge category-${avail.category.toLowerCase().replace('.', '')}`}>
                                             {avail.category}
                                         </span>
                                     </div>
-                                    <div className="card-details" style={{ marginBottom: '12px', display: 'flex', justifyContent: 'space-between' }}>
+                                    <div className="card-details" style={{ marginBottom: '14px', display: 'flex', justifyContent: 'space-between' }}>
                                         <div>
-                                            <div style={{ fontSize: '11px', color: '#64748b', textTransform: 'uppercase', letterSpacing: '0.5px' }}>လက်ကျန်</div>
-                                            <div style={{ fontWeight: 700, fontSize: '16px', color: '#0f172a' }}>
-                                                {avail.remainingCount} <span style={{ fontSize: '12px', fontWeight: 500 }}>ထုပ်</span> / {avail.remainingWeight.toFixed(3)} <span style={{ fontSize: '12px', fontWeight: 500 }}>v</span>
+                                            <div className="sidebar-details-label">Remaining</div>
+                                            <div className="sidebar-details-value">
+                                                {avail.remainingCount} <span className="sidebar-details-unit">bundles</span> / {avail.remainingWeight.toFixed(3)} <span className="sidebar-details-unit">viss</span>
                                             </div>
                                         </div>
                                         <div style={{ textAlign: 'right' }}>
-                                            <div style={{ fontSize: '11px', color: '#64748b', textTransform: 'uppercase', letterSpacing: '0.5px' }}>Unit Wt</div>
-                                            <div style={{ fontWeight: 600, color: '#3b82f6' }}>{avail.unitWeight.toFixed(4)}</div>
+                                            <div className="sidebar-details-label">Unit Wt</div>
+                                            <div className="sidebar-details-value" style={{ color: '#3b82f6' }}>{avail.unitWeight.toFixed(4)}</div>
                                         </div>
                                     </div>
 
                                     <div className="purifier-selection" style={{ marginBottom: '12px' }}>
-                                        <div style={{ fontSize: '11px', color: '#64748b', textTransform: 'uppercase', letterSpacing: '0.5px', marginBottom: '4px' }}>Purifier</div>
-                                        <select 
-                                            className="form-select" 
-                                            style={{ width: '100%', padding: '6px 12px', borderRadius: '8px', fontSize: '13px' }}
+                                        <div className="sidebar-details-label" style={{ marginBottom: '4px' }}>Purifier</div>
+                                        <select
+                                            className="sidebar-select"
                                             value={selectedPurifiers[key] || ''}
                                             onChange={(e) => setSelectedPurifiers(prev => ({ ...prev, [key]: parseInt(e.target.value) }))}
                                         >
-                                            <option value="">-- Purifier ရွေးပါ --</option>
+                                            <option value="">-- Select Purifier --</option>
                                             {purifiers
                                                 .filter(p => p.warehouseId === avail.warehouseId && p.isActive)
                                                 .map(p => (
@@ -290,21 +290,19 @@ const Purification: React.FC = () => {
                                     <div className="purify-input-group" style={{ display: 'flex', gap: '8px', borderTop: '1px solid #f1f5f9', paddingTop: '12px' }}>
                                         <input
                                             type="number"
-                                            placeholder="ထုပ်အရေအတွက်"
-                                            className="form-input"
-                                            style={{ padding: '8px 12px', borderRadius: '8px', flex: 1 }}
+                                            placeholder="Bundle count"
+                                            className="sidebar-input"
                                             value={inputCounts[key] || ''}
                                             onChange={(e) => handleInputChance(avail.processingRecordId, avail.category, e.target.value)}
                                             min="1"
                                             max={avail.remainingCount}
                                         />
                                         <button
-                                            className="btn btn-primary"
-                                            style={{ padding: '8px', borderRadius: '8px' }}
+                                            className="sidebar-btn-send"
                                             onClick={() => handlePurify(avail)}
                                             disabled={submitting === key}
                                         >
-                                            {submitting === key ? <Loader2 className="animate-spin" size={20} /> : <Send size={20} />}
+                                            {submitting === key ? <Loader2 className="animate-spin" size={16} /> : <Send size={16} />}
                                         </button>
                                     </div>
                                 </div>
@@ -314,7 +312,7 @@ const Purification: React.FC = () => {
                 </div>
             </aside>
 
-            {/* Main Content: Purification History */}
+            {/* Main Content: Purification History / Purified Stock */}
             <main className="processing-main">
                 <div className="record-details-view fade-in">
                     <div className="main-header">
@@ -322,61 +320,54 @@ const Purification: React.FC = () => {
                             <div className="icon-box" style={{ background: '#eff6ff', padding: '12px', borderRadius: '12px' }}>
                                 <History size={32} className="text-primary" />
                             </div>
-                            <div style={{ display: 'flex', gap: '24px', alignItems: 'flex-end' }}>
-                                <div 
+                            <div className="premium-tabs">
+                                <div
+                                    className={`premium-tab ${activeTab === 'history' ? 'active' : ''}`}
                                     onClick={() => setActiveTab('history')}
-                                    style={{ 
-                                        cursor: 'pointer', borderBottom: activeTab === 'history' ? '3px solid #3b82f6' : '3px solid transparent',
-                                        paddingBottom: '8px', transition: 'all 0.2s'
-                                    }}
                                 >
-                                    <h1 style={{ fontSize: '24px', color: activeTab === 'history' ? '#0f172a' : '#94a3b8', margin: 0 }}>Purification မှတ်တမ်းများ</h1>
-                                    <p className="header-subtitle" style={{ display: activeTab === 'history' ? 'block' : 'none' }}>လုပ်ဆောင်မှုမှတ်တမ်း</p>
+                                    <h1>Purification History</h1>
+                                    <p className="header-subtitle">Process log of raw hair bundles</p>
                                 </div>
-                                <div 
+                                <div
+                                    className={`premium-tab ${activeTab === 'stock' ? 'active' : ''}`}
                                     onClick={() => setActiveTab('stock')}
-                                    style={{ 
-                                        cursor: 'pointer', borderBottom: activeTab === 'stock' ? '3px solid #10b981' : '3px solid transparent',
-                                        paddingBottom: '8px', transition: 'all 0.2s'
-                                    }}
                                 >
-                                    <h1 style={{ fontSize: '24px', color: activeTab === 'stock' ? '#0f172a' : '#94a3b8', margin: 0 }}>ဖွပြီးမှတ်တမ်း</h1>
-                                    <p className="header-subtitle" style={{ display: activeTab === 'stock' ? 'block' : 'none' }}>Inventory စာရင်း</p>
+                                    <h1>Purified Stock</h1>
+                                    <p className="header-subtitle">Inventory of purified bundles</p>
                                 </div>
                             </div>
                         </div>
-                        <button 
-                            className="btn btn-secondary" 
-                            style={{ display: 'flex', alignItems: 'center', gap: '8px', borderRadius: '10px' }}
+                        <button
+                            className="btn-manage-purifiers"
                             onClick={() => setShowPurifierManagement(true)}
                         >
-                            <Settings size={18} />
-                            Purifier စာရင်းစီမံရန်
+                            <Settings size={16} />
+                            Manage Purifiers
                         </button>
                     </div>
 
-                    <div className="table-responsive" style={{ background: '#f8fafc', padding: '1px', borderRadius: '16px', overflow: 'hidden' }}>
-                        <table className="data-table" style={{ background: 'white' }}>
+                    <div className="table-responsive premium-table-card">
+                        <table className="data-table">
                             <thead>
                                 {activeTab === 'history' ? (
                                     <tr>
-                                        <th>နေ့စွဲ</th>
-                                        <th>အိတ်အမှတ်</th>
-                                        <th>အမျိုးအစား</th>
-                                        <th>ထုပ်အရေအတွက်</th>
-                                        <th>အလေးချိန် (viss)</th>
+                                        <th>Date</th>
+                                        <th>Bag Marker</th>
+                                        <th>Category</th>
+                                        <th>Bundle Count</th>
+                                        <th>Weight (viss)</th>
                                         <th>Purifier</th>
                                         <th style={{ textAlign: 'right' }}>Actions</th>
                                     </tr>
                                 ) : (
                                     <tr>
-                                        <th>နေ့စွဲ</th>
-                                        <th>အိတ်အမှတ်</th>
-                                        <th>အမျိုးအစား</th>
-                                        <th>ထုပ်အရေအတွက် (Output)</th>
-                                        <th>အလေးချိန် (Output)</th>
+                                        <th>Date</th>
+                                        <th>Bag Marker</th>
+                                        <th>Category</th>
+                                        <th>Purified Count</th>
+                                        <th>Weight (Output)</th>
                                         <th>Purifier</th>
-                                        <th>အလေးချိန်အခြေအနေ</th>
+                                        <th>Weight Status</th>
                                         <th style={{ textAlign: 'right' }}>Actions</th>
                                     </tr>
                                 )}
@@ -388,7 +379,7 @@ const Purification: React.FC = () => {
                                             <td colSpan={7} style={{ textAlign: 'center', padding: '60px', color: '#94a3b8' }}>
                                                 <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '12px' }}>
                                                     <History size={48} style={{ opacity: 0.2 }} />
-                                                    <span>မှတ်တမ်း မရှိသေးပါ</span>
+                                                    <span>No purification processes registered yet</span>
                                                 </div>
                                             </td>
                                         </tr>
@@ -406,25 +397,23 @@ const Purification: React.FC = () => {
                                                     </span>
                                                 </td>
                                                 <td style={{ fontWeight: 800, color: '#0f172a', fontSize: '15px' }}>{p.purifyCount}</td>
-                                                <td style={{ fontWeight: 500 }}>{p.purifyWeight.toFixed(3)}</td>
+                                                <td style={{ fontWeight: 600, color: '#334155' }}>{p.purifyWeight.toFixed(3)}</td>
                                                 <td>
-                                                    <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
-                                                        <div style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '13px' }}>
-                                                            <User size={14} style={{ color: '#64748b' }} />
-                                                            {p.purifierName || '---'}
-                                                        </div>
+                                                    <div style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '13px', fontWeight: 500 }}>
+                                                        <User size={14} style={{ color: '#64748b' }} />
+                                                        {p.purifierName || '---'}
                                                     </div>
                                                 </td>
                                                 <td style={{ textAlign: 'right' }}>
-                                                    <div style={{ display: 'flex', gap: '8px', justifyContent: 'flex-end' }}>
+                                                    <div style={{ display: 'flex', gap: '8px', justifyContent: 'flex-end' }} onClick={(e) => e.stopPropagation()}>
                                                         {hasPermission('Sales2.Edit') && (
-                                                            <button className="btn-icon" onClick={(e) => { e.stopPropagation(); handleEditClick(p); }}>
-                                                                <Pencil size={16} />
+                                                            <button className="rec-action-btn edit-btn" onClick={() => handleEditClick(p)}>
+                                                                <Pencil size={14} />
                                                             </button>
                                                         )}
                                                         {hasPermission('Sales2.Delete') && (
-                                                            <button className="btn-icon text-danger" onClick={(e) => { e.stopPropagation(); handleDelete(p.id); }}>
-                                                                <Trash2 size={16} />
+                                                            <button className="rec-action-btn delete-btn" onClick={() => handleDelete(p.id)}>
+                                                                <Trash2 size={14} />
                                                             </button>
                                                         )}
                                                     </div>
@@ -438,7 +427,7 @@ const Purification: React.FC = () => {
                                             <td colSpan={8} style={{ textAlign: 'center', padding: '60px', color: '#94a3b8' }}>
                                                 <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '12px' }}>
                                                     <Package size={48} style={{ opacity: 0.2 }} />
-                                                    <span>ဖွပြီးမှတ်တမ်း မရှိသေးပါ</span>
+                                                    <span>No purified stock inventory registered yet</span>
                                                 </div>
                                             </td>
                                         </tr>
@@ -456,25 +445,25 @@ const Purification: React.FC = () => {
                                                     </span>
                                                 </td>
                                                 <td style={{ fontWeight: 800, color: '#10b981', fontSize: '15px' }}>{p.count}</td>
-                                                <td style={{ fontWeight: 500 }}>{p.weight.toFixed(3)}</td>
+                                                <td style={{ fontWeight: 600, color: '#334155' }}>{p.weight.toFixed(3)}</td>
                                                 <td>
-                                                    <div style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '13px' }}>
+                                                    <div style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '13px', fontWeight: 500 }}>
                                                         <User size={14} style={{ color: '#64748b' }} />
                                                         {p.purifierName || '---'}
                                                     </div>
                                                 </td>
                                                 <td>
                                                     {p.isWeightFull ? (
-                                                        <span style={{ padding: '4px 10px', background: '#dcfce7', color: '#15803d', borderRadius: '12px', fontSize: '11px', fontWeight: 700 }}>ပြည့်</span>
+                                                        <span className="weight-status-badge status-full">Full</span>
                                                     ) : (
-                                                        <span style={{ padding: '4px 10px', background: '#fee2e2', color: '#b91c1c', borderRadius: '12px', fontSize: '11px', fontWeight: 700 }}>မပြည့်</span>
+                                                        <span className="weight-status-badge status-short">Short</span>
                                                     )}
                                                 </td>
                                                 <td style={{ textAlign: 'right' }}>
                                                     <div style={{ display: 'flex', gap: '8px', justifyContent: 'flex-end' }}>
                                                         {hasPermission('Sales2.Delete') && (
-                                                            <button className="btn-icon text-danger" onClick={(e) => { e.stopPropagation(); handleDeleteRecord(p.id); }}>
-                                                                <Trash2 size={16} />
+                                                            <button className="rec-action-btn delete-btn" onClick={() => handleDeleteRecord(p.id)}>
+                                                                <Trash2 size={14} />
                                                             </button>
                                                         )}
                                                     </div>
@@ -489,154 +478,159 @@ const Purification: React.FC = () => {
                 </div>
             </main>
 
+            {/* Purifier Management Modal */}
             {showPurifierManagement && (
-                <div className="modal-overlay" style={{ zIndex: 1100 }}>
-                    <div className="modal-content" style={{ maxWidth: '1000px', width: '95%', background: 'white', borderRadius: '20px', padding: '20px', position: 'relative', maxHeight: '90vh', overflowY: 'auto' }}>
-                        <button 
-                            className="btn-icon" 
-                            style={{ position: 'absolute', right: '20px', top: '20px', zIndex: 10 }}
+                <div className="modal-overlay" style={{ zIndex: 1100 }} onClick={handleClosePurifierManagement}>
+                    <div className="purifier-manager-modal" onClick={(e) => e.stopPropagation()}>
+                        <button
+                            className="pm-close-btn"
+                            style={{ position: 'absolute', right: '24px', top: '24px', zIndex: 10 }}
                             onClick={handleClosePurifierManagement}
                         >
-                            <X size={24} />
+                            <X size={20} />
                         </button>
                         <PurifierManagement />
                     </div>
                 </div>
             )}
 
+            {/* Purify / Edit Modal */}
             {showPurifyModal && (selectedCategory || editingProcess || editingRecord) && (
-                <div className="modal-overlay" style={{ zIndex: 1200 }}>
-                    <div className="modal-content premium-purify-modal" style={{ maxWidth: '480px', width: '95%', background: 'white', borderRadius: '24px', padding: '32px', boxShadow: '0 25px 50px -12px rgba(0,0,0,0.25)' }}>
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '24px' }}>
-                            <div style={{ background: '#ecfdf5', padding: '10px', borderRadius: '12px' }}>
-                                <Send size={24} style={{ color: '#059669' }} />
+                <div
+                    className="modal-overlay"
+                    style={{ zIndex: 1200 }}
+                    onClick={() => setShowPurifyModal(false)}
+                >
+                    <div className="pm-modal" onClick={(e) => e.stopPropagation()}>
+                        {/* Header */}
+                        <div className="pm-header">
+                            <div className="pm-header-left">
+                                <div className="pm-header-icon">
+                                    <Send size={20} />
+                                </div>
+                                <div>
+                                    <p className="pm-header-pre">Purification Process</p>
+                                    <h2 className="pm-header-title">
+                                        {editingProcess || editingRecord ? 'Edit Process Record' : 'Record Purified Bundles'}
+                                    </h2>
+                                </div>
                             </div>
-                            <h2 style={{ fontSize: '20px', fontWeight: 700, color: '#0f172a', margin: 0 }}>
-                                {editingProcess || editingRecord ? 'ဖွပြီးမှတ်တမ်း ပြင်ဆင်ရန်' : 'ဖွပြီးအထုပ်များစာရင်းသွင်းရန်'}
-                            </h2>
+                            <button className="pm-close-btn" onClick={() => setShowPurifyModal(false)}>
+                                <X size={20} />
+                            </button>
                         </div>
 
-                        <div style={{ background: '#f8fafc', padding: '20px', borderRadius: '18px', marginBottom: '24px', border: '1px solid #f1f5f9' }}>
-                            <div style={{ fontSize: '13px', color: '#64748b', marginBottom: '4px', fontWeight: 500 }}>ပြုလုပ်သည့် မူရံ</div>
-                            <div style={{ fontSize: '18px', fontWeight: 800, color: '#0f172a', marginBottom: '12px' }}>
-                                {selectedCategory?.warehouseName || editingProcess?.warehouseName || editingRecord?.warehouseName || '---'}
+                        {/* Info Bar */}
+                        <div className="pm-info-bar">
+                            <div className="pm-info-chip">
+                                <span className="pm-info-label">Warehouse</span>
+                                <span className="pm-info-value">{selectedCategory?.warehouseName || editingProcess?.warehouseName || editingRecord?.warehouseName || '---'}</span>
                             </div>
-                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                                <div style={{ fontSize: '14px', color: '#475569' }}>
-                                    အပွထုပ်အသုတ် ID: <span style={{ fontWeight: 600 }}>{selectedCategory?.productMarker || editingProcess?.productMarker || editingRecord?.productMarker}</span>
-                                </div>
-                                <span style={{ background: '#fef9c3', color: '#854d0e', padding: '4px 10px', borderRadius: '8px', fontSize: '12px', fontWeight: 700 }}>
-                                    {editingRecord ? editingRecord.count : (editingProcess ? editingProcess.purifyCount : selectedCategory?.remainingCount)} ကျန်
+                            <div className="pm-info-chip">
+                                <span className="pm-info-label">Bag Marker</span>
+                                <span className="pm-info-value">{selectedCategory?.productMarker || editingProcess?.productMarker || editingRecord?.productMarker}</span>
+                            </div>
+                            <div className="pm-info-chip">
+                                <span className="pm-info-label">Bundle Count</span>
+                                <span className="pm-info-value" style={{ color: '#ea580c' }}>
+                                    {editingRecord ? editingRecord.count : (editingProcess ? editingProcess.purifyCount : selectedCategory?.remainingCount)} bundles
                                 </span>
                             </div>
                         </div>
 
-                        <form onSubmit={handleSubmitPurify}>
-                            <div className="form-group" style={{ marginBottom: '20px' }}>
-                                <label className="form-label" style={{ fontSize: '14px', fontWeight: 600, color: '#334155', marginBottom: '8px', display: 'block' }}>ဆံပင်ဖွသူ</label>
-                                <div style={{ 
-                                    height: '48px', 
-                                    borderRadius: '12px', 
-                                    background: '#f1f5f9', 
-                                    display: 'flex', 
-                                    alignItems: 'center', 
-                                    padding: '0 16px',
-                                    fontSize: '15px',
-                                    fontWeight: 600,
-                                    color: '#334155',
-                                    border: '1px solid #e2e8f0'
-                                }}>
-                                    {purifiers.find(p => p.id === purifyForm.purifierId)?.name || '---'}
-                                </div>
+                        <form onSubmit={handleSubmitPurify} className="pm-body">
+                            {/* Purifier */}
+                            <div className="pm-form-group">
+                                <label className="pm-form-label">Hair Purifier</label>
+                                <select
+                                    className="pm-form-control"
+                                    value={purifyForm.purifierId || ''}
+                                    onChange={(e) => setPurifyForm(prev => ({ ...prev, purifierId: parseInt(e.target.value) }))}
+                                    required
+                                >
+                                    <option value="">-- Select Purifier --</option>
+                                    {purifiers
+                                        .filter(p => p.isActive)
+                                        .map(p => (
+                                            <option key={p.id} value={p.id}>{p.name}</option>
+                                        ))
+                                    }
+                                </select>
                             </div>
 
-                            <div className="form-group" style={{ marginBottom: '20px' }}>
-                                <label className="form-label" style={{ fontSize: '14px', fontWeight: 600, color: '#334155', marginBottom: '8px', display: 'block' }}>အမျိုးအစား</label>
-                                <div style={{ 
-                                    height: '48px', 
-                                    borderRadius: '12px', 
-                                    background: '#f8fafc', 
-                                    display: 'flex', 
-                                    alignItems: 'center', 
-                                    padding: '0 16px',
-                                    fontSize: '15px',
-                                    fontWeight: 700,
-                                    color: '#0f172a',
-                                    border: '1px solid #e2e8f0'
-                                }}>
+                            {/* Category Display */}
+                            <div className="pm-form-group">
+                                <label className="pm-form-label">Category</label>
+                                <div className="pm-readonly-box">
                                     <span className={`card-badge category-${(selectedCategory?.category || editingProcess?.category || editingRecord?.category || '').toLowerCase().replace('.', '')}`} style={{ margin: 0 }}>
                                         {selectedCategory?.category || editingProcess?.category || editingRecord?.category}
                                     </span>
                                 </div>
                             </div>
 
-                            <div className="form-group" style={{ marginBottom: '20px' }}>
-                                <label className="form-label" style={{ fontSize: '14px', fontWeight: 600, color: '#334155', marginBottom: '8px', display: 'block' }}>ဖွပြီးသော အပွထုပ်အရေအတွက်</label>
-                                <input 
-                                    type="number" 
-                                    className="form-control" 
-                                    style={{ height: '48px', borderRadius: '12px', fontSize: '16px', fontWeight: 600 }}
-                                    placeholder="0"
+                            {/* Purified Count Input */}
+                            <div className="pm-form-group">
+                                <label className="pm-form-label">Purified Bundle Count</label>
+                                <input
+                                    type="number"
+                                    className="pm-form-control"
+                                    placeholder="Enter bundle count"
                                     value={purifyForm.count}
                                     onChange={(e) => setPurifyForm(prev => ({ ...prev, count: e.target.value }))}
-                                    required 
+                                    required
+                                    min="1"
                                 />
                             </div>
 
-                            <div className="form-group" style={{ marginBottom: '28px' }}>
-                                <label className="form-label" style={{ fontSize: '14px', fontWeight: 600, color: '#334155', marginBottom: '12px', display: 'block' }}>ပေါင်ချိန် စစ်ဆေးခြင်း</label>
-                                <div style={{ display: 'flex', gap: '12px' }}>
-                                    <button 
+                            {/* Weight Status */}
+                            <div className="pm-form-group">
+                                <label className="pm-form-label">Weight Status Verification</label>
+                                <div className="pm-toggle-row">
+                                    <button
                                         type="button"
-                                        style={{ 
-                                            flex: 1, height: '44px', borderRadius: '10px', border: purifyForm.isWeightFull ? 'none' : '1.5px solid #e2e8f0',
-                                            background: purifyForm.isWeightFull ? '#dcfce7' : 'white', color: purifyForm.isWeightFull ? '#15803d' : '#64748b',
-                                            fontWeight: 700, cursor: 'pointer', transition: 'all 0.2s'
-                                        }}
+                                        className={`pm-toggle-btn toggle-full ${purifyForm.isWeightFull ? 'active' : ''}`}
                                         onClick={() => setPurifyForm(prev => ({ ...prev, isWeightFull: true }))}
                                     >
-                                        ပြည့်
+                                        Full Weight
                                     </button>
-                                    <button 
+                                    <button
                                         type="button"
-                                        style={{ 
-                                            flex: 1, height: '44px', borderRadius: '10px', border: !purifyForm.isWeightFull ? 'none' : '1.5px solid #e2e8f0',
-                                            background: !purifyForm.isWeightFull ? '#fee2e2' : 'white', color: !purifyForm.isWeightFull ? '#b91c1c' : '#64748b',
-                                            fontWeight: 700, cursor: 'pointer', transition: 'all 0.2s'
-                                        }}
+                                        className={`pm-toggle-btn toggle-short ${!purifyForm.isWeightFull ? 'active' : ''}`}
                                         onClick={() => setPurifyForm(prev => ({ ...prev, isWeightFull: false }))}
                                     >
-                                        မပြည့် (ပိတ်သာမပြည့်)
+                                        Short Weight
                                     </button>
                                 </div>
                             </div>
 
-                            <div className="form-group" style={{ marginBottom: '20px' }}>
-                                <label className="form-label" style={{ fontSize: '14px', fontWeight: 600, color: '#334155', marginBottom: '8px', display: 'block' }}>နေ့စွဲ</label>
-                                <input 
-                                    type="date" 
-                                    className="form-control" 
-                                    style={{ height: '48px', borderRadius: '12px', fontSize: '15px' }}
+                            {/* Date */}
+                            <div className="pm-form-group">
+                                <label className="pm-form-label">Date</label>
+                                <input
+                                    type="date"
+                                    className="pm-form-control"
                                     value={purifyForm.date.split('T')[0]}
                                     onChange={(e) => setPurifyForm(prev => ({ ...prev, date: e.target.value }))}
-                                    required 
+                                    required
                                 />
                             </div>
 
-                            <button 
-                                type="submit" 
-                                className="btn btn-primary" 
-                                style={{ width: '100%', height: '54px', borderRadius: '16px', fontSize: '18px', fontWeight: 700, background: '#10b981', border: 'none', marginBottom: '16px' }}
-                            >
-                                {editingRecord || editingProcess ? 'ပြင်ဆင်မည်' : 'စာရင်းသွင်းမည်'}
-                            </button>
-                            <button 
-                                type="button" 
-                                style={{ width: '100%', background: 'none', border: 'none', color: '#94a3b8', fontSize: '15px', cursor: 'pointer', fontWeight: 500 }}
-                                onClick={() => setShowPurifyModal(false)}
-                            >
-                                မလုပ်တော့ပါ
-                            </button>
+                            {/* Footer Actions */}
+                            <div className="pm-footer">
+                                <button
+                                    type="button"
+                                    className="pm-btn-cancel"
+                                    onClick={() => setShowPurifyModal(false)}
+                                >
+                                    <X size={15} /> Cancel
+                                </button>
+                                <button
+                                    type="submit"
+                                    className="pm-btn-save"
+                                >
+                                    <Send size={15} /> {editingRecord || editingProcess ? 'Save Changes' : 'Submit Process'}
+                                </button>
+                            </div>
                         </form>
                     </div>
                 </div>
