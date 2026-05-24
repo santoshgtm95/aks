@@ -654,7 +654,7 @@ const MessLabour: React.FC = () => {
       <aside className="product-sidebar">
         <h2 className="sidebar-title">
           <Package size={20} />
-          အပွရွေးရန် အိတ်တစ်ခု ရွေးချယ်ပေးပါ
+          Select a bag to sort
         </h2>
         <div className="product-list">
           {products.map((product) => (
@@ -721,10 +721,9 @@ const MessLabour: React.FC = () => {
           <div className="header-title">
             <Scissors size={32} className="text-primary" />
             <div>
-              <h1>အလုပ်ခွင်</h1>
+              <h1>Mess-Labour</h1>
               <p className="header-subtitle">
-                အိတ်အိတ်အမှတ်/နံပါတ်:{" "}
-                <strong>{selectedProduct?.marker || "---"}</strong>
+                Bag Marker: <strong>{selectedProduct?.marker || "---"}</strong>
                 {selectedProduct &&
                   selectedProduct.remainingWeight <= 0.0001 && (
                     <span className="status-badge used"> (Used)</span>
@@ -734,7 +733,7 @@ const MessLabour: React.FC = () => {
           </div>
           {selectedProduct && (
             <div className="original-weight-box">
-              <p className="weight-label">မူရင်း အလေးချိန်</p>
+              <p className="weight-label">Original Weight</p>
               <p className="weight-value">
                 {selectedProduct.remainingWeight.toFixed(4)}
                 <span className="weight-unit">{selectedProduct.unit}</span>
@@ -755,7 +754,7 @@ const MessLabour: React.FC = () => {
             {/* 1. Staff Selection */}
             <section className="form-section">
               <div className="section-header">
-                <h3 className="section-label">၁. အပွရွေးးသူများအမည်</h3>
+                <h3 className="section-label">1. Worker Names</h3>
                 <button
                   type="button"
                   className="btn-add-worker"
@@ -781,57 +780,71 @@ const MessLabour: React.FC = () => {
 
             {/* 2. Count & Unit Weight */}
             <section className="form-section">
-              <div className="input-row">
-                <div>
-                  <h3 className="section-label">၂. ရိုးရိုး(အပုတုတ်)</h3>
-                  <div className="form-group">
-                    <label className="form-label">Count (ထုပ်)</label>
-                    <input
-                      type="number"
-                      name="count"
-                      min="0"
-                      className="box-input"
-                      style={{
-                        padding: "10px 16px",
-                        background: "#f8fafc",
-                        borderRadius: "8px",
-                        fontSize: "24px",
-                        fontWeight: "700",
-                        color: "var(--primary)",
-                        border: "1px solid var(--border)",
-                        width: "100%",
-                      }}
-                      value={formData.count || ""}
-                      readOnly
-                      placeholder="0"
-                    />
+              <h3 className="section-label" style={{ marginBottom: "16px" }}>2. Count &amp; Unit Weight</h3>
+              <div className="count-unit-cards">
+                {/* Count Card */}
+                <div className="cu-card cu-card-count">
+                  <div className="cu-card-icon">
+                    <Package size={22} />
+                  </div>
+                  <div className="cu-card-body">
+                    <label className="cu-label">Total Count</label>
+                    <div className="cu-value-wrapper">
+                      <input
+                        type="number"
+                        name="count"
+                        min="0"
+                        className="cu-input"
+                        value={formData.count || ""}
+                        readOnly
+                        placeholder="0"
+                      />
+                      <span className="cu-unit">bundles</span>
+                    </div>
+                    <p className="cu-hint">Auto-calculated from remaining weight ÷ unit weight</p>
                   </div>
                 </div>
-                <div style={{ marginTop: "35px" }}>
-                  <div className="form-group">
-                    <label className="form-label">Unit Weight (viss)</label>
-                    <div style={{ position: "relative" }}>
+
+                {/* Unit Weight Card */}
+                <div className="cu-card cu-card-weight">
+                  <div className="cu-card-icon">
+                    <Calculator size={22} />
+                  </div>
+                  <div className="cu-card-body">
+                    <label className="cu-label">Unit Weight</label>
+                    <div className="cu-value-wrapper">
                       <input
                         type="number"
                         name="unitWeight"
                         step="0.000001"
                         min="0"
-                        className="box-input"
-                        style={{
-                          padding: "10px 16px",
-                          background: "#f8fafc",
-                          borderRadius: "8px",
-                          fontSize: "24px",
-                          fontWeight: "700",
-                          color: "var(--primary)",
-                          border: "1px solid var(--border)",
-                          width: "100%",
-                        }}
+                        className="cu-input"
                         value={formData.unitWeight || ""}
                         onChange={handleInputChange}
                         placeholder="0.0000"
                       />
+                      <span className="cu-unit">viss</span>
                     </div>
+                    <p className="cu-hint">Weight per bundle in viss</p>
+                  </div>
+                </div>
+
+                {/* Computed Total Weight */}
+                <div className="cu-card cu-card-total">
+                  <div className="cu-card-icon">
+                    <ArrowRight size={22} />
+                  </div>
+                  <div className="cu-card-body">
+                    <label className="cu-label">Total Weight</label>
+                    <div className="cu-value-wrapper">
+                      <span className="cu-computed">{totals.total.toFixed(4)}</span>
+                      <span className="cu-unit">viss</span>
+                    </div>
+                    {selectedProduct && (
+                      <p className="cu-hint" style={{ color: Math.abs(totals.diff) > 0.01 ? "#e53e3e" : "#38a169" }}>
+                        Diff: {totals.diff > 0 ? "+" : ""}{totals.diff.toFixed(4)} viss
+                      </p>
+                    )}
                   </div>
                 </div>
               </div>
@@ -839,7 +852,7 @@ const MessLabour: React.FC = () => {
 
             {/* 3. Categories */}
             <section className="form-section">
-              <h3 className="section-label">၃. အတိုအပြတ် နှင့် အလျော့တွက်</h3>
+              <h3 className="section-label">3. Short / Deduction Categories</h3>
               <div className="category-grid">
                 <div className="category-input-box box-red">
                   <span className="box-label label-red">red</span>
@@ -997,7 +1010,7 @@ const MessLabour: React.FC = () => {
               >
                 <div className="calc-left">
                   <Calculator size={24} />
-                  <span>အလေးချိန် ချိန်ကိုက်ခြင်း:</span>
+                  <span>Weight Balance:</span>
                   <span>
                     {totals.rwViss.toFixed(3)} -{" "}
                     {totals.categorizedWeight.toFixed(3)}
@@ -1034,7 +1047,7 @@ const MessLabour: React.FC = () => {
               >
                 <div className="calc-left">
                   <Calculator size={24} />
-                  <span>ကျန်ရှိသော အရေအတွက် (Count):</span>
+                  <span>Remaining Count:</span>
                   <span>
                     {formData.count} - {totals.catSum}
                   </span>
@@ -1054,8 +1067,8 @@ const MessLabour: React.FC = () => {
               }
             >
               {totals.diff < -(Number(formData.unitWeight) || 0) + 0.0001
-                ? "အလေးချိန် ကျော်လွန်နေပါသည်"
-                : "အတည်ပြုပြီး စာရင်းထည့်မည်"}
+                ? "Weight exceeded — cannot save"
+                : "Confirm & Save Record"}
               <ArrowRight size={20} />
             </button>
           </form>
@@ -1063,7 +1076,7 @@ const MessLabour: React.FC = () => {
 
         {/* History Table */}
         <div className="history-section">
-          <h2 className="card-title">လတ်တလော မှတ်တမ်းများ</h2>
+          <h2 className="card-title">Recent Records</h2>
           <div className="table-container">
             <table className="table">
               <thead>
@@ -1314,7 +1327,7 @@ const MessLabour: React.FC = () => {
             <div className="edit-modal-header">
               <h2 className="modal-title">
                 <Pencil size={18} />
-                မှတ်တမ်း ပြင်ဆင်မည် —{" "}
+                Edit Record —{" "}
                 <span style={{ color: "var(--primary)" }}>
                   {editingRecord.productMarker}
                 </span>
@@ -1331,7 +1344,7 @@ const MessLabour: React.FC = () => {
                   className="form-label"
                   style={{ display: "block", marginBottom: "8px" }}
                 >
-                  ၁. အပွရွေးးသူများအမည်
+                  1. Worker Names
                 </label>
                 <div
                   className="staff-grid"
@@ -1361,7 +1374,7 @@ const MessLabour: React.FC = () => {
                   className="category-input-box box-red"
                   style={{ padding: "12px", gap: "6px" }}
                 >
-                  <span className="box-label label-red">အနီ (ထုပ်)</span>
+                  <span className="box-label label-red">Red (Bundles)</span>
                   <input
                     type="number"
                     name="red"
@@ -1380,7 +1393,7 @@ const MessLabour: React.FC = () => {
                   className="category-input-box box-white"
                   style={{ padding: "12px", gap: "6px" }}
                 >
-                  <span className="box-label label-white">အဖြူ (ထုပ်)</span>
+                  <span className="box-label label-white">White (Bundles)</span>
                   <input
                     type="number"
                     name="white"
@@ -1399,7 +1412,9 @@ const MessLabour: React.FC = () => {
                   className="category-input-box box-special"
                   style={{ padding: "12px", gap: "6px" }}
                 >
-                  <span className="box-label label-special">ရှယ် (ထုပ်)</span>
+                  <span className="box-label label-special">
+                    Simple (Bundles)
+                  </span>
                   <input
                     type="number"
                     name="special"
@@ -1420,7 +1435,9 @@ const MessLabour: React.FC = () => {
                   className="category-input-box box-natural"
                   style={{ padding: "12px", gap: "6px" }}
                 >
-                  <span className="box-label label-natural">သဘာဝ (ထုပ်)</span>
+                  <span className="box-label label-natural">
+                    Natural (Bundles)
+                  </span>
                   <input
                     type="number"
                     name="natural"
@@ -1442,7 +1459,7 @@ const MessLabour: React.FC = () => {
                   style={{ padding: "12px", gap: "6px" }}
                 >
                   <span className="box-label label-natural-white">
-                    သဘာဝဖြူ (ထုပ်)
+                    Natural White (Bundles)
                   </span>
                   <input
                     type="number"
@@ -1465,7 +1482,7 @@ const MessLabour: React.FC = () => {
                   style={{ padding: "12px", gap: "6px" }}
                 >
                   <span className="box-label label-natural-red">
-                    သဘာဝနီ (ထုပ်)
+                    Natural Red (Bundles)
                   </span>
                   <input
                     type="number"
@@ -1488,7 +1505,7 @@ const MessLabour: React.FC = () => {
                   style={{ padding: "12px", gap: "6px" }}
                 >
                   <span className="box-label label-shortcut">
-                    အတိုဖြတ် (ထုပ်)
+                    Short Cut (Bundles)
                   </span>
                   <input
                     type="number"
@@ -1511,7 +1528,7 @@ const MessLabour: React.FC = () => {
                   style={{ padding: "12px", gap: "6px" }}
                 >
                   <span className="box-label label-artificial">
-                    တုပ်ကုန် (ထုပ်)
+                    Artificial (Bundles)
                   </span>
                   <input
                     type="number"
@@ -1533,7 +1550,7 @@ const MessLabour: React.FC = () => {
                   className="category-input-box box-short"
                   style={{ padding: "12px", gap: "6px" }}
                 >
-                  <span className="box-label label-short">အတို (ထုပ်)</span>
+                  <span className="box-label label-short">Short (Bundles)</span>
                   <input
                     type="number"
                     name="short"
@@ -1614,11 +1631,10 @@ const MessLabour: React.FC = () => {
                         }}
                       >
                         <span>
-                          ကျန်ရှိသော အရေအတွက် (Rem. Count):{" "}
-                          <strong>{remainingCount}</strong>
+                          Remaining Count: <strong>{remainingCount}</strong>
                         </span>
                         <span>
-                          ကျန်ရှိသော အလေးချိန် (Rem. Weight):{" "}
+                          Remaining Weight:{" "}
                           <strong>
                             {remainingWeight.toFixed(4)}{" "}
                             {isKg
@@ -1638,7 +1654,7 @@ const MessLabour: React.FC = () => {
                 <X size={14} /> Cancel
               </button>
               <button className="btn btn-primary" onClick={handleEditSave}>
-                <Save size={14} /> သိမ်းဆည်းမည်
+                <Save size={14} /> Save Changes
               </button>
             </div>
           </div>
@@ -1656,7 +1672,7 @@ const MessLabour: React.FC = () => {
           <div className="modal-content" style={{ maxWidth: "650px" }}>
             <div className="edit-modal-header">
               <h2 className="modal-title">
-                မှတ်တမ်း အသေးစိတ် —{" "}
+                Record Details —{" "}
                 <span style={{ color: "var(--primary)" }}>
                   {viewingRecord.productMarker}
                 </span>
@@ -1687,7 +1703,7 @@ const MessLabour: React.FC = () => {
                     className="form-label"
                     style={{ marginBottom: "4px", fontSize: "13px" }}
                   >
-                    ရက်စွဲ (Date)
+                    Date
                   </p>
                   <p
                     style={{
@@ -1704,7 +1720,7 @@ const MessLabour: React.FC = () => {
                     className="form-label"
                     style={{ marginBottom: "4px", fontSize: "13px" }}
                   >
-                    အပွရွေးသူများ (Workers)
+                    Workers
                   </p>
                   <p
                     style={{
@@ -1721,7 +1737,7 @@ const MessLabour: React.FC = () => {
                     className="form-label"
                     style={{ marginBottom: "4px", fontSize: "13px" }}
                   >
-                    စုစုပေါင်း ထုပ် (Total Count)
+                    Total Count
                   </p>
                   <p
                     style={{
@@ -1738,7 +1754,7 @@ const MessLabour: React.FC = () => {
                     className="form-label"
                     style={{ marginBottom: "4px", fontSize: "13px" }}
                   >
-                    ကျန်ရှိ ထုပ် (Rem. Count)
+                    Remaining Count
                   </p>
                   <p
                     style={{
@@ -1772,7 +1788,7 @@ const MessLabour: React.FC = () => {
                     className="form-label"
                     style={{ marginBottom: "4px", fontSize: "13px" }}
                   >
-                    ကျန်ရှိ အလေးချိန် (Rem. Weight)
+                    Remaining Weight
                   </p>
                   <p
                     style={{
