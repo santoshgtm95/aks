@@ -1282,35 +1282,81 @@ const MessLabour: React.FC = () => {
 
       {/* Worker Registration Modal */}
       {showWorkerModal && (
-        <div className="modal-overlay">
-          <div className="modal-content">
-            <h2 className="modal-title">Register New Worker</h2>
-            <form onSubmit={handleRegisterWorker}>
-              <div className="form-group">
-                <label className="form-label">Worker Name</label>
-                <input
-                  type="text"
-                  className="form-control"
-                  value={newWorkerName}
-                  onChange={(e) => setNewWorkerName(e.target.value)}
-                  placeholder="Enter worker name"
-                  required
-                  autoFocus
-                />
+        <div
+          className="modal-overlay"
+          onClick={(e) => {
+            if (e.target === e.currentTarget) setShowWorkerModal(false);
+          }}
+        >
+          <div className="rw-modal">
+            {/* Header */}
+            <div className="rw-header">
+              <div className="rw-header-left">
+                <div className="rw-header-icon">
+                  <Users size={20} />
+                </div>
+                <div>
+                  <h2 className="rw-header-title">Worker Directory</h2>
+                  <p className="rw-header-pre">Manage and register workers</p>
+                </div>
               </div>
-              <div className="modal-actions">
-                <button
-                  type="button"
-                  className="btn btn-ghost"
-                  onClick={() => setShowWorkerModal(false)}
-                >
-                  Cancel
-                </button>
-                <button type="submit" className="btn btn-primary">
-                  Register
-                </button>
+              <button className="rw-close-btn" onClick={() => setShowWorkerModal(false)}>
+                <X size={20} />
+              </button>
+            </div>
+
+            <div className="rw-body">
+              {/* Left Panel: Register Form */}
+              <div className="rw-panel rw-form-panel">
+                <h3 className="rw-panel-title">Add New Worker</h3>
+                <form onSubmit={handleRegisterWorker} className="rw-form">
+                  <div className="rw-form-group">
+                    <label className="rw-form-label">Worker Name</label>
+                    <input
+                      type="text"
+                      className="rw-form-control"
+                      value={newWorkerName}
+                      onChange={(e) => setNewWorkerName(e.target.value)}
+                      placeholder="e.g. Aung Aung"
+                      required
+                      autoFocus
+                    />
+                  </div>
+                  <div className="rw-form-actions">
+                    <button type="submit" className="rw-btn-submit">
+                      <Plus size={15} /> Add to Directory
+                    </button>
+                  </div>
+                </form>
               </div>
-            </form>
+
+              {/* Divider */}
+              <div className="rw-panel-divider" />
+
+              {/* Right Panel: Registered List */}
+              <div className="rw-panel rw-list-panel">
+                <div className="rw-list-header">
+                  <h3 className="rw-panel-title">Registered List</h3>
+                  <span className="rw-count-badge">{workers.length} Total</span>
+                </div>
+                <div className="rw-workers-scroll">
+                  {workers.length === 0 ? (
+                    <div className="rw-empty-state">No workers registered yet.</div>
+                  ) : (
+                    <div className="rw-workers-list">
+                      {workers.map((worker) => (
+                        <div key={worker.id} className="rw-worker-card">
+                          <div className="rw-worker-avatar">
+                            {worker.name.charAt(0).toUpperCase()}
+                          </div>
+                          <span className="rw-worker-name">{worker.name}</span>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              </div>
+            </div>
           </div>
         </div>
       )}
