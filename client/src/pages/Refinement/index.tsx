@@ -3,7 +3,7 @@ import { refinementAPI, purifiersAPI } from '../../services/api';
 import { useAuth } from '../../context/AuthContext';
 import { useNotification } from '../../context/NotificationContext';
 import type { AvailablePurifiedCategory, RefinementProcess, RefinementRecord, Purifier } from '../../types';
-import { Package, Send, History, Loader2, Search, User, X, Pencil, Trash2 } from 'lucide-react';
+import { Package, Send, History, Loader2, Search, User, Pencil, Trash2 } from 'lucide-react';
 import { formatDateTime, getMyanmarNow, combineDateWithMyanmarTime } from '../../utils/format';
 import '../Purification/index.css';
 
@@ -80,8 +80,6 @@ const Refinement: React.FC = () => {
         const lostWeight = parseFloat(form.lostWeight) || 0;
         if (!weight || weight <= 0) return showAlert('Error', 'အလေးချိန် မှန်ကန်စွာ ထည့်သွင်းပါ', 'error');
         if (!form.purifierId) return showAlert('Error', 'Refinement Worker ရွေးချယ်ပါ', 'error');
-
-        const remainingWeight = editingRecord ? editingRecord.weight : editingProcess ? editingProcess.weight : selectedCategory?.remainingWeight || 0;
 
         if (selectedCategory && weight > selectedCategory.remainingWeight) {
             showAlert('Error', `လက်ကျန်အလေးချိန် (${selectedCategory.remainingWeight.toFixed(3)}) ထက် မကျော်ရပါ`, 'error');

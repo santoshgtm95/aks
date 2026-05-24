@@ -1323,343 +1323,152 @@ const MessLabour: React.FC = () => {
             if (e.target === e.currentTarget) closeEditModal();
           }}
         >
-          <div className="modal-content edit-modal-content">
-            <div className="edit-modal-header">
-              <h2 className="modal-title">
-                <Pencil size={18} />
-                Edit Record —{" "}
-                <span style={{ color: "var(--primary)" }}>
-                  {editingRecord.productMarker}
-                </span>
-              </h2>
-              <button className="modal-close-btn" onClick={closeEditModal}>
+          <div className="em-modal">
+            {/* Header */}
+            <div className="em-header">
+              <div className="em-header-left">
+                <div className="em-header-icon">
+                  <Pencil size={20} />
+                </div>
+                <div>
+                  <p className="em-header-pre">Edit Record</p>
+                  <h2 className="em-header-title">{editingRecord.productMarker}</h2>
+                </div>
+              </div>
+              <button className="em-close-btn" onClick={closeEditModal}>
                 <X size={20} />
               </button>
             </div>
 
-            <div className="edit-modal-body">
+            {/* Info bar */}
+            <div className="em-info-bar">
+              <div className="em-info-chip">
+                <span className="em-info-label">Unit Weight</span>
+                <span className="em-info-value">{editingRecord.unitWeight.toFixed(4)} viss</span>
+              </div>
+              <div className="em-info-chip">
+                <span className="em-info-label">Total Count</span>
+                <span className="em-info-value">{getOriginalTotalCount(editingRecord)} bundles</span>
+              </div>
+              <div className="em-info-chip">
+                <span className="em-info-label">Date</span>
+                <span className="em-info-value">{formatDateTime(editingRecord.date)}</span>
+              </div>
+            </div>
+
+            <div className="em-body">
               {/* Worker Selection */}
-              <div className="form-group" style={{ marginBottom: "20px" }}>
-                <label
-                  className="form-label"
-                  style={{ display: "block", marginBottom: "8px" }}
-                >
-                  1. Worker Names
-                </label>
-                <div
-                  className="staff-grid"
-                  style={{
-                    gridTemplateColumns:
-                      "repeat(auto-fill, minmax(120px, 1fr))",
-                    gap: "8px",
-                  }}
-                >
+              <div className="em-section">
+                <p className="em-section-title">
+                  <Users size={15} /> Worker Names
+                </p>
+                <div className="em-worker-grid">
                   {workers.map((worker) => (
                     <div
                       key={worker.id}
-                      className={`staff-chip ${editFormData.selectedStaff.includes(worker.name) ? "selected" : ""}`}
+                      className={`em-worker-chip ${editFormData.selectedStaff.includes(worker.name) ? "em-worker-selected" : ""}`}
                       onClick={() => toggleEditStaff(worker.name)}
-                      style={{ padding: "8px 12px", fontSize: "14px" }}
                     >
-                      <Users size={14} />
+                      <Users size={13} />
                       {worker.name}
                     </div>
                   ))}
                 </div>
               </div>
 
-              {/* Category counts */}
-              <div className="edit-category-grid">
-                <div
-                  className="category-input-box box-red"
-                  style={{ padding: "12px", gap: "6px" }}
-                >
-                  <span className="box-label label-red">Red (Bundles)</span>
-                  <input
-                    type="number"
-                    name="red"
-                    className="box-input"
-                    value={editFormData.red || ""}
-                    onChange={handleEditInputChange}
-                    placeholder="0"
-                    min="0"
-                    max={getEditFieldMax("red")}
-                  />
-                  <span className="box-weight-hint hint-red">
-                    {(editFormData.red * editingRecord.unitWeight).toFixed(3)}
-                  </span>
-                </div>
-                <div
-                  className="category-input-box box-white"
-                  style={{ padding: "12px", gap: "6px" }}
-                >
-                  <span className="box-label label-white">White (Bundles)</span>
-                  <input
-                    type="number"
-                    name="white"
-                    className="box-input"
-                    value={editFormData.white || ""}
-                    onChange={handleEditInputChange}
-                    placeholder="0"
-                    min="0"
-                    max={getEditFieldMax("white")}
-                  />
-                  <span className="box-weight-hint hint-white">
-                    {(editFormData.white * editingRecord.unitWeight).toFixed(3)}
-                  </span>
-                </div>
-                <div
-                  className="category-input-box box-special"
-                  style={{ padding: "12px", gap: "6px" }}
-                >
-                  <span className="box-label label-special">
-                    Simple (Bundles)
-                  </span>
-                  <input
-                    type="number"
-                    name="special"
-                    className="box-input"
-                    value={editFormData.special || ""}
-                    onChange={handleEditInputChange}
-                    placeholder="0"
-                    min="0"
-                    max={getEditFieldMax("special")}
-                  />
-                  <span className="box-weight-hint hint-special">
-                    {(editFormData.special * editingRecord.unitWeight).toFixed(
-                      3,
-                    )}
-                  </span>
-                </div>
-                <div
-                  className="category-input-box box-natural"
-                  style={{ padding: "12px", gap: "6px" }}
-                >
-                  <span className="box-label label-natural">
-                    Natural (Bundles)
-                  </span>
-                  <input
-                    type="number"
-                    name="natural"
-                    className="box-input"
-                    value={editFormData.natural || ""}
-                    onChange={handleEditInputChange}
-                    placeholder="0"
-                    min="0"
-                    max={getEditFieldMax("natural")}
-                  />
-                  <span className="box-weight-hint hint-natural">
-                    {(editFormData.natural * editingRecord.unitWeight).toFixed(
-                      3,
-                    )}
-                  </span>
-                </div>
-                <div
-                  className="category-input-box box-natural-white"
-                  style={{ padding: "12px", gap: "6px" }}
-                >
-                  <span className="box-label label-natural-white">
-                    Natural White (Bundles)
-                  </span>
-                  <input
-                    type="number"
-                    name="naturalWhite"
-                    className="box-input"
-                    value={editFormData.naturalWhite || ""}
-                    onChange={handleEditInputChange}
-                    placeholder="0"
-                    min="0"
-                    max={getEditFieldMax("naturalWhite")}
-                  />
-                  <span className="box-weight-hint hint-natural-white">
-                    {(
-                      editFormData.naturalWhite * editingRecord.unitWeight
-                    ).toFixed(3)}
-                  </span>
-                </div>
-                <div
-                  className="category-input-box box-natural-red"
-                  style={{ padding: "12px", gap: "6px" }}
-                >
-                  <span className="box-label label-natural-red">
-                    Natural Red (Bundles)
-                  </span>
-                  <input
-                    type="number"
-                    name="naturalRed"
-                    className="box-input"
-                    value={editFormData.naturalRed || ""}
-                    onChange={handleEditInputChange}
-                    placeholder="0"
-                    min="0"
-                    max={getEditFieldMax("naturalRed")}
-                  />
-                  <span className="box-weight-hint hint-natural-red">
-                    {(
-                      editFormData.naturalRed * editingRecord.unitWeight
-                    ).toFixed(3)}
-                  </span>
-                </div>
-                <div
-                  className="category-input-box box-shortcut"
-                  style={{ padding: "12px", gap: "6px" }}
-                >
-                  <span className="box-label label-shortcut">
-                    Short Cut (Bundles)
-                  </span>
-                  <input
-                    type="number"
-                    name="shortCut"
-                    className="box-input"
-                    value={editFormData.shortCut || ""}
-                    onChange={handleEditInputChange}
-                    placeholder="0"
-                    min="0"
-                    max={getEditFieldMax("shortCut")}
-                  />
-                  <span className="box-weight-hint hint-shortcut">
-                    {(editFormData.shortCut * editingRecord.unitWeight).toFixed(
-                      3,
-                    )}
-                  </span>
-                </div>
-                <div
-                  className="category-input-box box-artificial"
-                  style={{ padding: "12px", gap: "6px" }}
-                >
-                  <span className="box-label label-artificial">
-                    Artificial (Bundles)
-                  </span>
-                  <input
-                    type="number"
-                    name="artificial"
-                    className="box-input"
-                    value={editFormData.artificial || ""}
-                    onChange={handleEditInputChange}
-                    placeholder="0"
-                    min="0"
-                    max={getEditFieldMax("artificial")}
-                  />
-                  <span className="box-weight-hint hint-artificial">
-                    {(
-                      editFormData.artificial * editingRecord.unitWeight
-                    ).toFixed(3)}
-                  </span>
-                </div>
-                <div
-                  className="category-input-box box-short"
-                  style={{ padding: "12px", gap: "6px" }}
-                >
-                  <span className="box-label label-short">Short (Bundles)</span>
-                  <input
-                    type="number"
-                    name="short"
-                    className="box-input"
-                    value={editFormData.short || ""}
-                    onChange={handleEditInputChange}
-                    placeholder="0"
-                    min="0"
-                    max={getEditFieldMax("short")}
-                  />
-                  <span className="box-weight-hint hint-short">
-                    {(editFormData.short * editingRecord.unitWeight).toFixed(3)}
-                  </span>
+              {/* Category Inputs */}
+              <div className="em-section">
+                <p className="em-section-title">
+                  <Scissors size={15} /> Category Bundles
+                </p>
+                <div className="em-cat-grid">
+                  {(
+                    [
+                      { name: "red",          label: "Red",          cls: "em-cat-red"    },
+                      { name: "white",        label: "White",        cls: "em-cat-white"  },
+                      { name: "special",      label: "Simple",       cls: "em-cat-special"},
+                      { name: "natural",      label: "Natural",      cls: "em-cat-natural"},
+                      { name: "naturalWhite", label: "Nat. White",   cls: "em-cat-nwhite" },
+                      { name: "naturalRed",   label: "Nat. Red",     cls: "em-cat-nred"   },
+                      { name: "shortCut",     label: "Short Cut",    cls: "em-cat-scut"   },
+                      { name: "artificial",   label: "Artificial",   cls: "em-cat-art"    },
+                      { name: "short",        label: "Short",        cls: "em-cat-short"  },
+                    ] as const
+                  ).map(({ name, label, cls }) => (
+                    <div key={name} className={`em-cat-card ${cls}`}>
+                      <span className="em-cat-label">{label}</span>
+                      <input
+                        type="number"
+                        name={name}
+                        className="em-cat-input"
+                        value={(editFormData as any)[name] || ""}
+                        onChange={handleEditInputChange}
+                        placeholder="0"
+                        min="0"
+                        max={getEditFieldMax(name as any)}
+                      />
+                      <span className="em-cat-weight">
+                        {((editFormData as any)[name] * editingRecord.unitWeight).toFixed(3)} v
+                      </span>
+                    </div>
+                  ))}
                 </div>
               </div>
 
               {/* Summary */}
-              <div
-                className="edit-summary"
-                style={{
-                  display: "flex",
-                  flexDirection: "column",
-                  gap: "8px",
-                  width: "100%",
-                }}
-              >
-                {(() => {
-                  const uw = editingRecord.unitWeight || 1;
+              {(() => {
+                const uw = editingRecord.unitWeight || 1;
+                const originalTotal = getOriginalTotalCount(editingRecord);
+                const catSum =
+                  (editFormData.red || 0) + (editFormData.white || 0) +
+                  (editFormData.special || 0) + (editFormData.natural || 0) +
+                  (editFormData.naturalWhite || 0) + (editFormData.naturalRed || 0) +
+                  (editFormData.shortCut || 0) + (editFormData.artificial || 0) +
+                  (editFormData.short || 0);
+                const remainingCount = originalTotal - catSum;
+                const remainingWeight = remainingCount * uw;
+                const productForEdit = products.find((p) => p.id === editingRecord.productId);
+                const isKg = productForEdit?.unit?.toLowerCase() === "kg" || productForEdit?.unit?.toLowerCase() === "kilogram";
 
-                  const originalTotal = getOriginalTotalCount(editingRecord);
-
-                  const catSum =
-                    (editFormData.red || 0) +
-                    (editFormData.white || 0) +
-                    (editFormData.special || 0) +
-                    (editFormData.natural || 0) +
-                    (editFormData.naturalWhite || 0) +
-                    (editFormData.naturalRed || 0) +
-                    (editFormData.shortCut || 0) +
-                    (editFormData.artificial || 0) +
-                    (editFormData.short || 0);
-
-                  const remainingCount = originalTotal - catSum;
-                  const remainingWeight = remainingCount * uw;
-
-                  const productForEdit = products.find(
-                    (p) => p.id === editingRecord.productId,
-                  );
-                  const isKg =
-                    productForEdit?.unit?.toLowerCase() === "kg" ||
-                    productForEdit?.unit?.toLowerCase() === "kilogram";
-
-                  return (
-                    <>
-                      <div
-                        style={{
-                          display: "flex",
-                          justifyContent: "space-between",
-                          alignItems: "center",
-                          width: "100%",
-                        }}
-                      >
-                        <span>
-                          Unit Weight: <strong>{uw.toFixed(4)}</strong>
-                        </span>
-                        <span>
-                          Orig. Total Count: <strong>{originalTotal}</strong>
-                        </span>
-                      </div>
-                      <div
-                        style={{
-                          display: "flex",
-                          justifyContent: "space-between",
-                          alignItems: "center",
-                          width: "100%",
-                          borderTop: "1px solid #e2e8f0",
-                          paddingTop: "8px",
-                        }}
-                      >
-                        <span>
-                          Remaining Count: <strong>{remainingCount}</strong>
-                        </span>
-                        <span>
-                          Remaining Weight:{" "}
-                          <strong>
-                            {remainingWeight.toFixed(4)}{" "}
-                            {isKg
-                              ? `(${(remainingWeight / 1.62).toFixed(4)} kg)`
-                              : "viss"}
-                          </strong>
-                        </span>
-                      </div>
-                    </>
-                  );
-                })()}
-              </div>
+                return (
+                  <div className="em-summary-bar">
+                    <div className="em-sum-chip em-sum-count">
+                      <span className="em-sum-label">Remaining Count</span>
+                      <span className="em-sum-val">{remainingCount}</span>
+                      <span className="em-sum-sub">bundles</span>
+                    </div>
+                    <div className="em-sum-divider" />
+                    <div className="em-sum-chip em-sum-weight">
+                      <span className="em-sum-label">Remaining Weight</span>
+                      <span className="em-sum-val">{remainingWeight.toFixed(4)}</span>
+                      <span className="em-sum-sub">
+                        viss{isKg ? ` (${(remainingWeight / 1.62).toFixed(4)} kg)` : ""}
+                      </span>
+                    </div>
+                    <div className="em-sum-divider" />
+                    <div className="em-sum-chip em-sum-sorted">
+                      <span className="em-sum-label">Sorted</span>
+                      <span className="em-sum-val">{catSum}</span>
+                      <span className="em-sum-sub">of {originalTotal}</span>
+                    </div>
+                  </div>
+                );
+              })()}
             </div>
 
-            <div className="modal-actions">
-              <button className="btn btn-ghost" onClick={closeEditModal}>
-                <X size={14} /> Cancel
+            {/* Footer */}
+            <div className="em-footer">
+              <button className="em-btn-cancel" onClick={closeEditModal}>
+                <X size={15} /> Cancel
               </button>
-              <button className="btn btn-primary" onClick={handleEditSave}>
-                <Save size={14} /> Save Changes
+              <button className="em-btn-save" onClick={handleEditSave}>
+                <Save size={15} /> Save Changes
               </button>
             </div>
           </div>
         </div>
       )}
+
 
       {/* ─── View Record Modal ─────────────────────────────────────── */}
       {viewingRecord && (
