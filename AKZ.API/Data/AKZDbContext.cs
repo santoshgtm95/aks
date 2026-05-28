@@ -28,6 +28,8 @@ public class AKZDbContext : DbContext
     public DbSet<PurifiedRecord> PurifiedRecords { get; set; }
     public DbSet<RefinementProcess> RefinementProcesses { get; set; }
     public DbSet<RefinementRecord> RefinementRecords { get; set; }
+    public DbSet<SingleDoubleDrawnRecord> SingleDoubleDrawnRecords { get; set; }
+    public DbSet<SemiExportRecord> SemiExportRecords { get; set; }
 
     public override Task<int> SaveChangesAsync(CancellationToken cancellationToken = default)
     {
@@ -172,11 +174,25 @@ public class AKZDbContext : DbContext
         modelBuilder.Entity<PurifiedRecord>().HasQueryFilter(e => e.DeleteFlg == 0);
         modelBuilder.Entity<RefinementProcess>().HasQueryFilter(e => e.DeleteFlg == 0);
         modelBuilder.Entity<RefinementRecord>().HasQueryFilter(e => e.DeleteFlg == 0);
+        modelBuilder.Entity<SingleDoubleDrawnRecord>().HasQueryFilter(e => e.DeleteFlg == 0);
+        modelBuilder.Entity<SemiExportRecord>().HasQueryFilter(e => e.DeleteFlg == 0);
 
         modelBuilder.Entity<RefinementProcess>()
             .HasOne(r => r.PurifiedRecord)
             .WithMany()
             .HasForeignKey(r => r.PurifiedRecordId)
+            .OnDelete(DeleteBehavior.Restrict);
+
+        modelBuilder.Entity<SingleDoubleDrawnRecord>()
+            .HasOne(s => s.RefinementRecord)
+            .WithMany()
+            .HasForeignKey(s => s.RefinementRecordId)
+            .OnDelete(DeleteBehavior.Restrict);
+
+        modelBuilder.Entity<SemiExportRecord>()
+            .HasOne(s => s.SingleDoubleDrawnRecord)
+            .WithMany()
+            .HasForeignKey(s => s.SingleDoubleDrawnRecordId)
             .OnDelete(DeleteBehavior.Restrict);
 
         modelBuilder.Entity<RefinementProcess>()

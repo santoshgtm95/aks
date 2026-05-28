@@ -4,16 +4,19 @@ using AKZ.API.Data;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 #nullable disable
 
-namespace AKZ.API.Migrations
+namespace AKZ.API.Data.Migrations
 {
     [DbContext(typeof(AKZDbContext))]
-    partial class AKZDbContextModelSnapshot : ModelSnapshot
+    [Migration("20260528140750_AddSemiExportRecordsTable")]
+    partial class AddSemiExportRecordsTable
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -862,9 +865,6 @@ namespace AKZ.API.Migrations
                     b.Property<decimal>("Price10")
                         .HasColumnType("decimal(18,4)");
 
-                    b.Property<decimal>("Price10B")
-                        .HasColumnType("decimal(18,4)");
-
                     b.Property<decimal>("Price12")
                         .HasColumnType("decimal(18,4)");
 
@@ -892,16 +892,7 @@ namespace AKZ.API.Migrations
                     b.Property<decimal>("Price28")
                         .HasColumnType("decimal(18,4)");
 
-                    b.Property<decimal>("Price6")
-                        .HasColumnType("decimal(18,4)");
-
-                    b.Property<decimal>("Price7")
-                        .HasColumnType("decimal(18,4)");
-
                     b.Property<decimal>("Price8")
-                        .HasColumnType("decimal(18,4)");
-
-                    b.Property<decimal>("Price9")
                         .HasColumnType("decimal(18,4)");
 
                     b.Property<decimal>("PriceB")

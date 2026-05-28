@@ -23,7 +23,8 @@ const Refinement: React.FC = () => {
     const [selectedCategory, setSelectedCategory] = useState<AvailablePurifiedCategory | null>(null);
     const [editingProcess, setEditingProcess] = useState<RefinementProcess | null>(null);
     const [editingRecord, setEditingRecord] = useState<RefinementRecord | null>(null);
-    const [form, setForm] = useState({ weight: '', lostWeight: '', purifierId: 0, date: getMyanmarNow() });
+    const [form, setForm] = useState({ weight: '', spoilageWeight: '', returnWeight: '', purifierId: 0, date: getMyanmarNow() });
+    const [validationError, setValidationError] = useState<string | null>(null);
 
     useEffect(() => { loadData(); }, []);
 
@@ -86,19 +87,37 @@ const Refinement: React.FC = () => {
     const handleEditProcess = (p: RefinementProcess) => {
         setEditingProcess(p); setEditingRecord(null); setSelectedCategory(null);
         const dateStr = p.date ? (p.date.includes('T') ? p.date.slice(0, 16) : p.date + 'T00:00') : getMyanmarNow();
-        setForm({ weight: p.weight.toString(), lostWeight: '0', date: dateStr, purifierId: p.purifierId || 0 });
+        setForm({ weight: '', spoilageWeight: '', returnWeight: '', date: dateStr, purifierId: p.purifierId || 0 });
+        setValidationError(null);
         setShowModal(true);
     };
 
     const handleSubmitModal = async (e: React.FormEvent) => {
         e.preventDefault();
-        const weight = parseFloat(form.weight);
-        const lostWeight = parseFloat(form.lostWeight) || 0;
-        if (!weight || weight <= 0) return showAlert('Validation', 'Please enter a valid weight', 'error');
-        if (!form.purifierId) return showAlert('Validation', 'Please select a refinement worker', 'error');
+        setValidationError(null);
+        const weight = parseFloat(form.weight) || 0;
+        const spoilageWeight = parseFloat(form.spoilageWeight) || 0;
+        const returnWeight = parseFloat(form.returnWeight) || 0;
+        const available = editingRecord?.weight ?? editingProcess?.weight ?? selectedCategory?.remainingWeight ?? 0;
+        const lostWeight = Math.max(0, available - weight - spoilageWeight - returnWeight);
+        if (!weight || weight <= 0) {
+            setValidationError('Please enter a valid weight');
+            return;
+        }
+        if (!form.purifierId) {
+            setValidationError('Please select a refinement worker');
+            return;
+        }
+
+        if (weight + spoilageWeight + returnWeight > available) {
+            setValidationError(
+                `Total weights (Output + Spoilage + Return = ${(weight + spoilageWeight + returnWeight).toFixed(3)}) cannot exceed Available weight (${available.toFixed(3)} viss)`
+            );
+            return;
+        }
 
         if (selectedCategory && weight > selectedCategory.remainingWeight) {
-            showAlert('Validation', `Cannot exceed remaining weight (${selectedCategory.remainingWeight.toFixed(3)} viss)`, 'error');
+            setValidationError(`Cannot exceed remaining weight (${selectedCategory.remainingWeight.toFixed(3)} viss)`);
             return;
         }
         try {
@@ -109,12 +128,15 @@ const Refinement: React.FC = () => {
                 count: 0,
                 weight,
                 lostWeight,
+                spoilageWeight,
+                returnWeight,
                 purifierId: form.purifierId
             };
             if (editingProcess) await refinementAPI.update(editingProcess.id, dto);
             else if (editingRecord) await refinementAPI.updateRefinementRecord(editingRecord.id, dto);
             else await refinementAPI.create(dto);
             setShowModal(false);
+            setValidationError(null);
             await loadData();
         } catch (e: any) {
             showAlert('Error', e.response?.data?.message || 'Failed to save record', 'error');
@@ -284,6 +306,8 @@ const Refinement: React.FC = () => {
                                         <th>Category</th>
                                         <th>Output Weight</th>
                                         <th>Lost Weight</th>
+                                        <th>Spoilage Weight</th>
+                                        <th>Return Weight</th>
                                         <th>Refinement Worker</th>
                                         <th className="rf-th-right">Actions</th>
                                     </tr>
@@ -336,7 +360,7 @@ const Refinement: React.FC = () => {
                                 ) : (
                                     refinementRecords.length === 0 ? (
                                         <tr>
-                                            <td colSpan={7} className="rf-empty-row">
+                                            <td colSpan={9} className="rf-empty-row">
                                                 <Package size={44} className="rf-empty-icon" />
                                                 <span>No refined stock records yet</span>
                                             </td>
@@ -355,6 +379,8 @@ const Refinement: React.FC = () => {
                                             </td>
                                             <td className="rf-td-weight rf-green">{p.weight.toFixed(3)}</td>
                                             <td className="rf-td-lost">{p.lostWeight.toFixed(3)}</td>
+                                            <td className="rf-td-lost" style={{ color: '#ea580c' }}>{p.spoilageWeight.toFixed(3)}</td>
+                                            <td className="rf-td-weight" style={{ color: '#3b82f6' }}>{p.returnWeight.toFixed(3)}</td>
                                             <td>
                                                 <div className="rf-worker-cell">
                                                     <User size={13} />
@@ -381,7 +407,7 @@ const Refinement: React.FC = () => {
 
             {/* ── EDIT / CREATE MODAL ── */}
             {showModal && (editingProcess || editingRecord || selectedCategory) && (
-                <div className="rf-overlay" onClick={() => setShowModal(false)}>
+                <div className="rf-overlay" onClick={() => { setShowModal(false); setValidationError(null); }}>
                     <div className="rf-modal" onClick={e => e.stopPropagation()}>
 
                         {/* Modal Header */}
@@ -397,7 +423,7 @@ const Refinement: React.FC = () => {
                                     </h2>
                                 </div>
                             </div>
-                            <button className="rf-modal-close" onClick={() => setShowModal(false)}>
+                            <button className="rf-modal-close" onClick={() => { setShowModal(false); setValidationError(null); }}>
                                 <X size={18} />
                             </button>
                         </div>
@@ -438,7 +464,10 @@ const Refinement: React.FC = () => {
                                 <select
                                     className="rf-form-control"
                                     value={form.purifierId}
-                                    onChange={e => setForm(prev => ({ ...prev, purifierId: parseInt(e.target.value) }))}
+                                    onChange={e => {
+                                        setValidationError(null);
+                                        setForm(prev => ({ ...prev, purifierId: parseInt(e.target.value) }));
+                                    }}
                                     required
                                 >
                                     <option value={0}>-- Select Worker --</option>
@@ -448,7 +477,7 @@ const Refinement: React.FC = () => {
                                 </select>
                             </div>
 
-                            {/* Weight Fields */}
+                            {/* Weight Fields - Row 1: Output Weight + Spoilage Weight */}
                             <div className="rf-form-row">
                                 <div className="rf-form-group">
                                     <label className="rf-form-label">Output Weight</label>
@@ -459,27 +488,73 @@ const Refinement: React.FC = () => {
                                             className="rf-form-control"
                                             placeholder="0.000"
                                             value={form.weight}
-                                            onChange={e => setForm(prev => ({ ...prev, weight: e.target.value }))}
+                                            onChange={e => {
+                                                setValidationError(null);
+                                                setForm(prev => ({ ...prev, weight: e.target.value }));
+                                            }}
                                             required
                                         />
                                         <span className="rf-input-unit">viss</span>
                                     </div>
                                 </div>
                                 <div className="rf-form-group">
-                                    <label className="rf-form-label">Lost Weight</label>
+                                    <label className="rf-form-label">Spoilage Weight</label>
                                     <div className="rf-input-unit-wrap">
                                         <input
                                             type="number"
                                             step="0.001"
-                                            className="rf-form-control rf-input-danger"
+                                            className="rf-form-control"
                                             placeholder="0.000"
-                                            value={form.lostWeight}
-                                            onChange={e => setForm(prev => ({ ...prev, lostWeight: e.target.value }))}
+                                            value={form.spoilageWeight}
+                                            onChange={e => {
+                                                setValidationError(null);
+                                                setForm(prev => ({ ...prev, spoilageWeight: e.target.value }));
+                                            }}
                                         />
-                                        <span className="rf-input-unit rf-unit-red">viss</span>
+                                        <span className="rf-input-unit">viss</span>
                                     </div>
                                 </div>
                             </div>
+
+                            {/* Weight Fields - Row 2: Return Weight (editable) + Lost Weight (auto) */}
+                            {(() => {
+                                const available = editingRecord?.weight ?? editingProcess?.weight ?? selectedCategory?.remainingWeight ?? 0;
+                                const computedLost = Math.max(0, available - (parseFloat(form.weight) || 0) - (parseFloat(form.spoilageWeight) || 0) - (parseFloat(form.returnWeight) || 0));
+                                return (
+                                    <div className="rf-form-row">
+                                        <div className="rf-form-group">
+                                            <label className="rf-form-label">Return Weight</label>
+                                            <div className="rf-input-unit-wrap">
+                                                <input
+                                                    type="number"
+                                                    step="0.001"
+                                                    className="rf-form-control"
+                                                    placeholder="0.000"
+                                                    value={form.returnWeight}
+                                                    onChange={e => {
+                                                        setValidationError(null);
+                                                        setForm(prev => ({ ...prev, returnWeight: e.target.value }));
+                                                    }}
+                                                />
+                                                <span className="rf-input-unit">viss</span>
+                                            </div>
+                                        </div>
+                                        <div className="rf-form-group">
+                                            <label className="rf-form-label" style={{ color: '#ef4444' }}>Lost Weight <span style={{ fontSize: '9px', fontWeight: 400, color: '#94a3b8', textTransform: 'none' }}>(auto)</span></label>
+                                            <div className="rf-input-unit-wrap">
+                                                <input
+                                                    type="number"
+                                                    readOnly
+                                                    className="rf-form-control"
+                                                    style={{ background: '#fef2f2', color: '#ef4444', fontWeight: 700, cursor: 'not-allowed', borderColor: '#fecaca' }}
+                                                    value={computedLost.toFixed(3)}
+                                                />
+                                                <span className="rf-input-unit rf-unit-red">viss</span>
+                                            </div>
+                                        </div>
+                                    </div>
+                                );
+                            })()}
 
                             {/* Date */}
                             <div className="rf-form-group">
@@ -488,14 +563,17 @@ const Refinement: React.FC = () => {
                                     type="date"
                                     className="rf-form-control"
                                     value={form.date.split('T')[0]}
-                                    onChange={e => setForm(prev => ({ ...prev, date: e.target.value }))}
+                                    onChange={e => {
+                                        setValidationError(null);
+                                        setForm(prev => ({ ...prev, date: e.target.value }));
+                                    }}
                                     required
                                 />
                             </div>
 
                             {/* Footer */}
                             <div className="rf-modal-footer">
-                                <button type="button" className="rf-btn-cancel" onClick={() => setShowModal(false)}>
+                                <button type="button" className="rf-btn-cancel" onClick={() => { setShowModal(false); setValidationError(null); }}>
                                     <X size={15} /> Cancel
                                 </button>
                                 <button type="submit" className="rf-btn-save">
@@ -503,6 +581,11 @@ const Refinement: React.FC = () => {
                                     {editingRecord || editingProcess ? 'Save Changes' : 'Submit Record'}
                                 </button>
                             </div>
+                            {validationError && (
+                                <div className="rf-modal-error-msg">
+                                    {validationError}
+                                </div>
+                            )}
                         </form>
                     </div>
                 </div>

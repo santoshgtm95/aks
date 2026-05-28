@@ -29,6 +29,8 @@ public class RefinementRecordDto
     public int? PurifierId { get; set; }
     public string PurifierName { get; set; } = string.Empty;
     public decimal LostWeight { get; set; }
+    public decimal SpoilageWeight { get; set; }
+    public decimal ReturnWeight { get; set; }
 }
 
 public class CreateRefinementProcessDto
@@ -40,6 +42,8 @@ public class CreateRefinementProcessDto
     public int? PurifierId { get; set; }
     public decimal Weight { get; set; }
     public decimal LostWeight { get; set; }
+    public decimal SpoilageWeight { get; set; }
+    public decimal ReturnWeight { get; set; }
 }
 
 public class AvailablePurifiedCategoryDto

@@ -114,7 +114,7 @@ public class RefinementController : ControllerBase
             decimal totalAssigned = r.Weight;
             decimal totalConsumed = r.RefinementRecords
                 .Where(rr => rr.DeleteFlg == 0)
-                .Sum(rr => rr.Weight + rr.LostWeight);
+                .Sum(rr => rr.Weight + rr.LostWeight + rr.SpoilageWeight + rr.ReturnWeight);
 
             decimal remainingWeight = totalAssigned - totalConsumed;
             if (remainingWeight <= 0.001m) continue;
@@ -189,7 +189,9 @@ public class RefinementController : ControllerBase
                 WarehouseName = warehouseName,
                 PurifierId = r.PurifierId,
                 PurifierName = r.Purifier?.Name ?? "",
-                LostWeight = r.LostWeight
+                LostWeight = r.LostWeight,
+                SpoilageWeight = r.SpoilageWeight,
+                ReturnWeight = r.ReturnWeight
             });
         }
 
@@ -282,6 +284,8 @@ public class RefinementController : ControllerBase
             Count = count,
             Weight = dto.Weight,
             LostWeight = dto.LostWeight,
+            SpoilageWeight = dto.SpoilageWeight,
+            ReturnWeight = dto.ReturnWeight,
             RemainingCount = count,
             RemainingWeight = dto.Weight,
             PurifierId = dto.PurifierId,
@@ -333,6 +337,8 @@ public class RefinementController : ControllerBase
         record.Count = count;
         record.Weight = dto.Weight;
         record.LostWeight = dto.LostWeight;
+        record.SpoilageWeight = dto.SpoilageWeight;
+        record.ReturnWeight = dto.ReturnWeight;
         record.RemainingCount = count;
         record.RemainingWeight = dto.Weight;
         record.PurifierId = dto.PurifierId;

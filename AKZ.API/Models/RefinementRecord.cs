@@ -33,6 +33,12 @@ public class RefinementRecord : BaseEntity
     [Column(TypeName = "decimal(18,4)")]
     public decimal LostWeight { get; set; }
 
+    [Column(TypeName = "decimal(18,4)")]
+    public decimal SpoilageWeight { get; set; }
+
+    [Column(TypeName = "decimal(18,4)")]
+    public decimal ReturnWeight { get; set; }
+
     public int? RefinementProcessId { get; set; }
 
     [ForeignKey("RefinementProcessId")]

@@ -80,7 +80,7 @@ const PermissionManagement: React.FC = () => {
         { title: 'Mess-Labour List', prefix: 'MessLabour.' },
         { title: 'Purification', prefix: 'Sales2.' },
         { title: 'Girdle-bush List', prefix: 'Refinement.' },
-        { title: 'Single & Double Drawn List', prefix: 'Sales4.' },
+        { title: 'Single & Double Drawn List', prefix: 'SingleDoubleDrawn.' },
         { title: 'Semi Export', prefix: 'Sales5.' },
         { title: 'Export List', prefix: 'Sales6.' },
         { title: 'Warehouse', prefix: 'Warehouse.' },

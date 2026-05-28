@@ -4,16 +4,19 @@ using AKZ.API.Data;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 #nullable disable
 
-namespace AKZ.API.Migrations
+namespace AKZ.API.Data.Migrations
 {
     [DbContext(typeof(AKZDbContext))]
-    partial class AKZDbContextModelSnapshot : ModelSnapshot
+    [Migration("20260527135356_AddSpoilageAndReturnWeightsToRefinementRecord")]
+    partial class AddSpoilageAndReturnWeightsToRefinementRecord
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -832,210 +835,6 @@ namespace AKZ.API.Migrations
                     b.ToTable("Sales");
                 });
 
-            modelBuilder.Entity("AKZ.API.Models.SemiExportRecord", b =>
-                {
-                    b.Property<int>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("int");
-
-                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
-
-                    b.Property<string>("CreateBy")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<DateTime>("CreateDate")
-                        .HasColumnType("datetime2");
-
-                    b.Property<DateTime>("Date")
-                        .HasColumnType("datetime2");
-
-                    b.Property<string>("DeleteBy")
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<DateTime?>("DeleteDate")
-                        .HasColumnType("datetime2");
-
-                    b.Property<int>("DeleteFlg")
-                        .HasColumnType("int");
-
-                    b.Property<decimal>("Price10")
-                        .HasColumnType("decimal(18,4)");
-
-                    b.Property<decimal>("Price10B")
-                        .HasColumnType("decimal(18,4)");
-
-                    b.Property<decimal>("Price12")
-                        .HasColumnType("decimal(18,4)");
-
-                    b.Property<decimal>("Price14")
-                        .HasColumnType("decimal(18,4)");
-
-                    b.Property<decimal>("Price16")
-                        .HasColumnType("decimal(18,4)");
-
-                    b.Property<decimal>("Price18")
-                        .HasColumnType("decimal(18,4)");
-
-                    b.Property<decimal>("Price20")
-                        .HasColumnType("decimal(18,4)");
-
-                    b.Property<decimal>("Price22")
-                        .HasColumnType("decimal(18,4)");
-
-                    b.Property<decimal>("Price24")
-                        .HasColumnType("decimal(18,4)");
-
-                    b.Property<decimal>("Price26")
-                        .HasColumnType("decimal(18,4)");
-
-                    b.Property<decimal>("Price28")
-                        .HasColumnType("decimal(18,4)");
-
-                    b.Property<decimal>("Price6")
-                        .HasColumnType("decimal(18,4)");
-
-                    b.Property<decimal>("Price7")
-                        .HasColumnType("decimal(18,4)");
-
-                    b.Property<decimal>("Price8")
-                        .HasColumnType("decimal(18,4)");
-
-                    b.Property<decimal>("Price9")
-                        .HasColumnType("decimal(18,4)");
-
-                    b.Property<decimal>("PriceB")
-                        .HasColumnType("decimal(18,4)");
-
-                    b.Property<decimal>("PriceLeftover")
-                        .HasColumnType("decimal(18,4)");
-
-                    b.Property<decimal>("PriceSpoil")
-                        .HasColumnType("decimal(18,4)");
-
-                    b.Property<string>("Remark")
-                        .IsRequired()
-                        .HasMaxLength(500)
-                        .HasColumnType("nvarchar(500)");
-
-                    b.Property<int>("SingleDoubleDrawnRecordId")
-                        .HasColumnType("int");
-
-                    b.Property<string>("UpdateBy")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<DateTime>("UpdateDate")
-                        .HasColumnType("datetime2");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("SingleDoubleDrawnRecordId");
-
-                    b.ToTable("SemiExportRecords");
-                });
-
-            modelBuilder.Entity("AKZ.API.Models.SingleDoubleDrawnRecord", b =>
-                {
-                    b.Property<int>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("int");
-
-                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
-
-                    b.Property<string>("CreateBy")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<DateTime>("CreateDate")
-                        .HasColumnType("datetime2");
-
-                    b.Property<DateTime>("Date")
-                        .HasColumnType("datetime2");
-
-                    b.Property<string>("DeleteBy")
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<DateTime?>("DeleteDate")
-                        .HasColumnType("datetime2");
-
-                    b.Property<int>("DeleteFlg")
-                        .HasColumnType("int");
-
-                    b.Property<decimal>("LostWeight")
-                        .HasColumnType("decimal(18,4)");
-
-                    b.Property<int>("RefinementRecordId")
-                        .HasColumnType("int");
-
-                    b.Property<decimal>("ReturnWeight")
-                        .HasColumnType("decimal(18,4)");
-
-                    b.Property<decimal>("Size10")
-                        .HasColumnType("decimal(18,4)");
-
-                    b.Property<decimal>("Size10B")
-                        .HasColumnType("decimal(18,4)");
-
-                    b.Property<decimal>("Size12")
-                        .HasColumnType("decimal(18,4)");
-
-                    b.Property<decimal>("Size14")
-                        .HasColumnType("decimal(18,4)");
-
-                    b.Property<decimal>("Size16")
-                        .HasColumnType("decimal(18,4)");
-
-                    b.Property<decimal>("Size18")
-                        .HasColumnType("decimal(18,4)");
-
-                    b.Property<decimal>("Size20")
-                        .HasColumnType("decimal(18,4)");
-
-                    b.Property<decimal>("Size22")
-                        .HasColumnType("decimal(18,4)");
-
-                    b.Property<decimal>("Size24")
-                        .HasColumnType("decimal(18,4)");
-
-                    b.Property<decimal>("Size26")
-                        .HasColumnType("decimal(18,4)");
-
-                    b.Property<decimal>("Size28")
-                        .HasColumnType("decimal(18,4)");
-
-                    b.Property<decimal>("Size6")
-                        .HasColumnType("decimal(18,4)");
-
-                    b.Property<decimal>("Size7")
-                        .HasColumnType("decimal(18,4)");
-
-                    b.Property<decimal>("Size8")
-                        .HasColumnType("decimal(18,4)");
-
-                    b.Property<decimal>("Size9")
-                        .HasColumnType("decimal(18,4)");
-
-                    b.Property<decimal>("SizeBar")
-                        .HasColumnType("decimal(18,4)");
-
-                    b.Property<decimal>("SpoilageWeight")
-                        .HasColumnType("decimal(18,4)");
-
-                    b.Property<string>("UpdateBy")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<DateTime>("UpdateDate")
-                        .HasColumnType("datetime2");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("RefinementRecordId");
-
-                    b.ToTable("SingleDoubleDrawnRecords");
-                });
-
             modelBuilder.Entity("AKZ.API.Models.User", b =>
                 {
                     b.Property<int>("Id")
@@ -1414,28 +1213,6 @@ namespace AKZ.API.Migrations
                     b.Navigation("Product");
 
                     b.Navigation("Seller");
-                });
-
-            modelBuilder.Entity("AKZ.API.Models.SemiExportRecord", b =>
-                {
-                    b.HasOne("AKZ.API.Models.SingleDoubleDrawnRecord", "SingleDoubleDrawnRecord")
-                        .WithMany()
-                        .HasForeignKey("SingleDoubleDrawnRecordId")
-                        .OnDelete(DeleteBehavior.Restrict)
-                        .IsRequired();
-
-                    b.Navigation("SingleDoubleDrawnRecord");
-                });
-
-            modelBuilder.Entity("AKZ.API.Models.SingleDoubleDrawnRecord", b =>
-                {
-                    b.HasOne("AKZ.API.Models.RefinementRecord", "RefinementRecord")
-                        .WithMany()
-                        .HasForeignKey("RefinementRecordId")
-                        .OnDelete(DeleteBehavior.Restrict)
-                        .IsRequired();
-
-                    b.Navigation("RefinementRecord");
                 });
 
             modelBuilder.Entity("AKZ.API.Models.User", b =>

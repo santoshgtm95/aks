@@ -20,7 +20,7 @@ import MessLabour from "./pages/MessLabour/index";
 import Purification from "./pages/Purification/index";
 import PurifierManagement from "./pages/PurifierManagement/index";
 import Refinement from "./pages/Refinement/index";
-import Sales4 from "./pages/Sales4/index";
+import SingleDoubleDrawn from "./pages/SingleDoubleDrawn/index";
 import Sales5 from "./pages/Sales5/index";
 import Sales6 from "./pages/Sales6/index";
 
@@ -127,10 +127,10 @@ const App: React.FC = () => {
                 }
               />
               <Route
-                path="sales4"
+                path="single-double-drawn"
                 element={
-                  <ProtectedRoute permission="Sales4.View">
-                    <Sales4 />
+                  <ProtectedRoute permission="SingleDoubleDrawn.View">
+                    <SingleDoubleDrawn />
                   </ProtectedRoute>
                 }
               />

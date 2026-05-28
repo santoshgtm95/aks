@@ -276,4 +276,38 @@ export const refinementAPI = {
     },
 };
 
+export const singleDoubleDrawnAPI = {
+    getAll: async (refinementRecordId?: number): Promise<SingleDoubleDrawnRecord[]> => {
+        const response = await api.get<SingleDoubleDrawnRecord[]>('/singledoubledrawn', {
+            params: refinementRecordId ? { refinementRecordId } : {}
+        });
+        return response.data;
+    },
+    create: async (data: CreateSingleDoubleDrawnRecordDto): Promise<SingleDoubleDrawnRecord> => {
+        const response = await api.post<SingleDoubleDrawnRecord>('/singledoubledrawn', data);
+        return response.data;
+    },
+    delete: async (id: number): Promise<void> => {
+        await api.delete(`/singledoubledrawn/${id}`);
+    }
+};
+
+export const semiExportAPI = {
+    getAll: async (): Promise<SemiExportRecord[]> => {
+        const response = await api.get<SemiExportRecord[]>('/semiexport');
+        return response.data;
+    },
+    getBySingleDoubleDrawn: async (id: number): Promise<SemiExportRecord | null> => {
+        const response = await api.get<SemiExportRecord | null>(`/semiexport/by-singledoubledrawn/${id}`);
+        return response.data;
+    },
+    upsert: async (data: UpsertSemiExportRecordDto): Promise<SemiExportRecord> => {
+        const response = await api.post<SemiExportRecord>('/semiexport', data);
+        return response.data;
+    },
+    delete: async (id: number): Promise<void> => {
+        await api.delete(`/semiexport/${id}`);
+    }
+};
+
 export default api;

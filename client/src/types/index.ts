@@ -329,6 +329,8 @@ export interface RefinementRecord {
   count: number;
   weight: number;
   lostWeight: number;
+  spoilageWeight: number;
+  returnWeight: number;
   warehouseName?: string;
   purifierId?: number;
   purifierName?: string;
@@ -341,5 +343,110 @@ export interface CreateRefinementProcessDto {
   count: number;
   weight: number;
   lostWeight: number;
+  spoilageWeight?: number;
+  returnWeight?: number;
   purifierId?: number;
+}
+
+export interface SingleDoubleDrawnRecord {
+  id: number;
+  date: string;
+  refinementRecordId: number;
+  refinementRecordMarker?: string;
+  refinementRecordCategory?: string;
+  refinementRecordWarehouseName?: string;
+  size6: number;
+  size7: number;
+  size8: number;
+  size9: number;
+  size10: number;
+  size10B: number;
+  size12: number;
+  size14: number;
+  size16: number;
+  size18: number;
+  size20: number;
+  size22: number;
+  size24: number;
+  size26: number;
+  size28: number;
+  sizeBar: number;
+  lostWeight: number;
+  spoilageWeight: number;
+  returnWeight: number;
+}
+
+export interface CreateSingleDoubleDrawnRecordDto {
+  date: string;
+  refinementRecordId: number;
+  size6: number;
+  size7: number;
+  size8: number;
+  size9: number;
+  size10: number;
+  size10B: number;
+  size12: number;
+  size14: number;
+  size16: number;
+  size18: number;
+  size20: number;
+  size22: number;
+  size24: number;
+  size26: number;
+  size28: number;
+  sizeBar: number;
+  lostWeight: number;
+  spoilageWeight: number;
+  returnWeight: number;
+}
+
+export interface SemiExportRecord {
+  id: number;
+  date: string;
+  singleDoubleDrawnRecordId: number;
+  refinementRecordMarker: string;
+  refinementRecordCategory: string;
+  refinementRecordWarehouseName: string;
+  priceB: number;
+  price28: number;
+  price26: number;
+  price24: number;
+  price22: number;
+  price20: number;
+  price18: number;
+  price16: number;
+  price14: number;
+  price12: number;
+  price10B: number;
+  price10: number;
+  price9: number;
+  price8: number;
+  price7: number;
+  price6: number;
+  priceLeftover: number;
+  priceSpoil: number;
+  remark: string;
+}
+
+export interface UpsertSemiExportRecordDto {
+  singleDoubleDrawnRecordId: number;
+  priceB: number;
+  price28: number;
+  price26: number;
+  price24: number;
+  price22: number;
+  price20: number;
+  price18: number;
+  price16: number;
+  price14: number;
+  price12: number;
+  price10B: number;
+  price10: number;
+  price9: number;
+  price8: number;
+  price7: number;
+  price6: number;
+  priceLeftover: number;
+  priceSpoil: number;
+  remark: string;
 }
