@@ -374,6 +374,26 @@ export interface SingleDoubleDrawnRecord {
   lostWeight: number;
   spoilageWeight: number;
   returnWeight: number;
+  price6: number;
+  price7: number;
+  price8: number;
+  price9: number;
+  price10: number;
+  price10B: number;
+  price12: number;
+  price14: number;
+  price16: number;
+  price18: number;
+  price20: number;
+  price22: number;
+  price24: number;
+  price26: number;
+  price28: number;
+  priceBar: number;
+  spoilageSize: number;
+  returnSize: number;
+  priceSpoilageSize: number;
+  priceReturnSize: number;
 }
 
 export interface CreateSingleDoubleDrawnRecordDto {
@@ -398,6 +418,26 @@ export interface CreateSingleDoubleDrawnRecordDto {
   lostWeight: number;
   spoilageWeight: number;
   returnWeight: number;
+  price6: number;
+  price7: number;
+  price8: number;
+  price9: number;
+  price10: number;
+  price10B: number;
+  price12: number;
+  price14: number;
+  price16: number;
+  price18: number;
+  price20: number;
+  price22: number;
+  price24: number;
+  price26: number;
+  price28: number;
+  priceBar: number;
+  spoilageSize: number;
+  returnSize: number;
+  priceSpoilageSize: number;
+  priceReturnSize: number;
 }
 
 export interface SemiExportRecord {

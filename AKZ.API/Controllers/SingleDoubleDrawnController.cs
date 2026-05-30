@@ -96,7 +96,31 @@ public class SingleDoubleDrawnController : ControllerBase
                 // Weight tracking
                 LostWeight = r.LostWeight == 0 && r.RefinementRecord != null ? r.RefinementRecord.LostWeight : r.LostWeight,
                 SpoilageWeight = r.SpoilageWeight == 0 && r.RefinementRecord != null ? r.RefinementRecord.SpoilageWeight : r.SpoilageWeight,
-                ReturnWeight = r.ReturnWeight == 0 && r.RefinementRecord != null ? r.RefinementRecord.ReturnWeight : r.ReturnWeight
+                ReturnWeight = r.ReturnWeight == 0 && r.RefinementRecord != null ? r.RefinementRecord.ReturnWeight : r.ReturnWeight,
+
+                // Prices mapping
+                Price6 = r.Price6,
+                Price7 = r.Price7,
+                Price8 = r.Price8,
+                Price9 = r.Price9,
+                Price10 = r.Price10,
+                Price10B = r.Price10B,
+                Price12 = r.Price12,
+                Price14 = r.Price14,
+                Price16 = r.Price16,
+                Price18 = r.Price18,
+                Price20 = r.Price20,
+                Price22 = r.Price22,
+                Price24 = r.Price24,
+                Price26 = r.Price26,
+                Price28 = r.Price28,
+                PriceBar = r.PriceBar,
+
+                // Spoilage and Return sizes
+                SpoilageSize = r.SpoilageSize,
+                ReturnSize = r.ReturnSize,
+                PriceSpoilageSize = r.PriceSpoilageSize,
+                PriceReturnSize = r.PriceReturnSize
             });
         }
 
@@ -117,6 +141,27 @@ public class SingleDoubleDrawnController : ControllerBase
         if (refinementRecord == null)
         {
             return BadRequest(new { message = "Refined Stock record not found" });
+        }
+
+        // Validate: for any size weight > 0, price must be > 0
+        if ((dto.Size6 > 0 && dto.Price6 <= 0) ||
+            (dto.Size7 > 0 && dto.Price7 <= 0) ||
+            (dto.Size8 > 0 && dto.Price8 <= 0) ||
+            (dto.Size9 > 0 && dto.Price9 <= 0) ||
+            (dto.Size10 > 0 && dto.Price10 <= 0) ||
+            (dto.Size10B > 0 && dto.Price10B <= 0) ||
+            (dto.Size12 > 0 && dto.Price12 <= 0) ||
+            (dto.Size14 > 0 && dto.Price14 <= 0) ||
+            (dto.Size16 > 0 && dto.Price16 <= 0) ||
+            (dto.Size18 > 0 && dto.Price18 <= 0) ||
+            (dto.Size20 > 0 && dto.Price20 <= 0) ||
+            (dto.Size22 > 0 && dto.Price22 <= 0) ||
+            (dto.Size24 > 0 && dto.Price24 <= 0) ||
+            (dto.Size26 > 0 && dto.Price26 <= 0) ||
+            (dto.Size28 > 0 && dto.Price28 <= 0) ||
+            (dto.SizeBar > 0 && dto.PriceBar <= 0))
+        {
+            return BadRequest(new { message = "Price is required for all entered size weights." });
         }
 
         var record = new SingleDoubleDrawnRecord
@@ -147,7 +192,31 @@ public class SingleDoubleDrawnController : ControllerBase
             // Weight tracking
             LostWeight = refinementRecord.LostWeight,
             SpoilageWeight = refinementRecord.SpoilageWeight,
-            ReturnWeight = refinementRecord.ReturnWeight
+            ReturnWeight = refinementRecord.ReturnWeight,
+
+            // Prices
+            Price6 = dto.Price6,
+            Price7 = dto.Price7,
+            Price8 = dto.Price8,
+            Price9 = dto.Price9,
+            Price10 = dto.Price10,
+            Price10B = dto.Price10B,
+            Price12 = dto.Price12,
+            Price14 = dto.Price14,
+            Price16 = dto.Price16,
+            Price18 = dto.Price18,
+            Price20 = dto.Price20,
+            Price22 = dto.Price22,
+            Price24 = dto.Price24,
+            Price26 = dto.Price26,
+            Price28 = dto.Price28,
+            PriceBar = dto.PriceBar,
+
+            // Spoilage and Return sizes
+            SpoilageSize = dto.SpoilageSize,
+            ReturnSize = dto.ReturnSize,
+            PriceSpoilageSize = dto.PriceSpoilageSize,
+            PriceReturnSize = dto.PriceReturnSize
         };
 
         _context.SingleDoubleDrawnRecords.Add(record);
@@ -197,7 +266,31 @@ public class SingleDoubleDrawnController : ControllerBase
             // Weight tracking
             LostWeight = record.LostWeight,
             SpoilageWeight = record.SpoilageWeight,
-            ReturnWeight = record.ReturnWeight
+            ReturnWeight = record.ReturnWeight,
+
+            // Prices
+            Price6 = record.Price6,
+            Price7 = record.Price7,
+            Price8 = record.Price8,
+            Price9 = record.Price9,
+            Price10 = record.Price10,
+            Price10B = record.Price10B,
+            Price12 = record.Price12,
+            Price14 = record.Price14,
+            Price16 = record.Price16,
+            Price18 = record.Price18,
+            Price20 = record.Price20,
+            Price22 = record.Price22,
+            Price24 = record.Price24,
+            Price26 = record.Price26,
+            Price28 = record.Price28,
+            PriceBar = record.PriceBar,
+
+            // Spoilage and Return sizes
+            SpoilageSize = record.SpoilageSize,
+            ReturnSize = record.ReturnSize,
+            PriceSpoilageSize = record.PriceSpoilageSize,
+            PriceReturnSize = record.PriceReturnSize
         };
 
         return Ok(resultDto);

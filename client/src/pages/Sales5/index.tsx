@@ -1,72 +1,67 @@
 import React, { useEffect, useState, useMemo } from "react";
 import { useAuth } from "../../context/AuthContext";
-import { singleDoubleDrawnAPI, semiExportAPI } from "../../services/api";
-import type { SingleDoubleDrawnRecord, SemiExportRecord } from "../../types";
+import { singleDoubleDrawnAPI, semiExportAPI, productsAPI, salesAPI } from "../../services/api";
+import type { SingleDoubleDrawnRecord, SemiExportRecord, Product, Sale } from "../../types";
 import {
   Package,
   Search,
   Sparkles,
-  Send,
   DollarSign,
   Trash2,
   FileText,
   CheckCircle,
+  ChevronDown,
+  ChevronUp,
+  Scale,
+  AlertTriangle,
+  RotateCcw,
 } from "lucide-react";
 import { formatDateTime } from "../../utils/format";
 import "./index.css";
+
+interface GroupedMarker {
+  markerName: string;
+  records: SingleDoubleDrawnRecord[];
+  combinedWeight: number;
+  date: string;
+  warehouseNames: string[];
+}
 
 const Sales5: React.FC = () => {
   const { hasPermission } = useAuth();
   const [sddRecords, setSddRecords] = useState<SingleDoubleDrawnRecord[]>([]);
   const [savedExports, setSavedExports] = useState<SemiExportRecord[]>([]);
+  const [products, setProducts] = useState<Product[]>([]);
+  const [sales, setSales] = useState<Sale[]>([]);
   const [loading, setLoading] = useState(true);
-  const [selectedSddId, setSelectedSddId] = useState<number | null>(null);
+  const [selectedMarker, setSelectedMarker] = useState<string | null>(null);
   const [searchTerm, setSearchTerm] = useState("");
   const [formError, setFormError] = useState("");
-  const [saving, setSaving] = useState(false);
-  const [remark, setRemark] = useState("");
+  const [, setSaving] = useState(false);
 
-  const [prices, setPrices] = useState({
-    priceB: 0,
-    price28: 0,
-    price26: 0,
-    price24: 0,
-    price22: 0,
-    price20: 0,
-    price18: 0,
-    price16: 0,
-    price14: 0,
-    price12: 0,
-    price10B: 0,
-    price10: 0,
-    price9: 0,
-    price8: 0,
-    price7: 0,
-    price6: 0,
-    priceLeftover: 0,
-    priceSpoil: 0,
-  });
+  const [recordRemarks, setRecordRemarks] = useState<Record<number, string>>(
+    {},
+  );
+  const [expandedRecords, setExpandedRecords] = useState<
+    Record<number, boolean>
+  >({});
 
   useEffect(() => {
     loadData();
   }, []);
 
-  useEffect(() => {
-    if (selectedSddId) {
-      loadSelectedSemiExport(selectedSddId);
-    } else {
-      resetForm();
-    }
-  }, [selectedSddId]);
-
   const loadData = async () => {
     try {
-      const [sddData, exportData] = await Promise.all([
+      const [sddData, exportData, productsData, salesData] = await Promise.all([
         singleDoubleDrawnAPI.getAll(),
         semiExportAPI.getAll(),
+        productsAPI.getAll(true),
+        salesAPI.getAll("Sales"),
       ]);
       setSddRecords(sddData);
       setSavedExports(exportData);
+      setProducts(productsData);
+      setSales(salesData);
     } catch (error) {
       console.error("Failed to load data:", error);
     } finally {
@@ -74,253 +69,98 @@ const Sales5: React.FC = () => {
     }
   };
 
-  const loadSelectedSemiExport = async (id: number) => {
-    try {
-      const record = await semiExportAPI.getBySingleDoubleDrawn(id);
-      if (record) {
-        setPrices({
-          priceB: record.priceB,
-          price28: record.price28,
-          price26: record.price26,
-          price24: record.price24,
-          price22: record.price22,
-          price20: record.price20,
-          price18: record.price18,
-          price16: record.price16,
-          price14: record.price14,
-          price12: record.price12,
-          price10B: record.price10B,
-          price10: record.price10,
-          price9: record.price9,
-          price8: record.price8,
-          price7: record.price7,
-          price6: record.price6,
-          priceLeftover: record.priceLeftover,
-          priceSpoil: record.priceSpoil,
-        });
-        setRemark(record.remark);
-      } else {
-        resetForm();
-      }
-    } catch (e) {
-      console.error("Failed to load semi export record:", e);
-      resetForm();
+  const selectedRecords = useMemo(() => {
+    if (!selectedMarker) return [];
+    return sddRecords.filter(
+      (r) => r.refinementRecordMarker === selectedMarker,
+    );
+  }, [sddRecords, selectedMarker]);
+
+  // Find product for selected marker
+  const selectedProduct = useMemo(() => {
+    if (!selectedMarker) return null;
+    return products.find((p) => p.marker === selectedMarker);
+  }, [products, selectedMarker]);
+
+  // Find sales for selected marker
+  const selectedProductSales = useMemo(() => {
+    if (!selectedMarker) return [];
+    return sales.filter(
+      (s) => s.productMarker === selectedMarker || s.marker === selectedMarker
+    );
+  }, [sales, selectedMarker]);
+
+  // Compute metrics for selected marker
+  const selectedMarkerStats = useMemo(() => {
+    if (!selectedMarker) return null;
+
+    // 1. Original weight in inventory
+    const originalWeight = selectedProduct ? selectedProduct.weight : 0;
+    const unit = selectedProduct ? selectedProduct.unit : "viss";
+
+    // 2. Weight sold in Raw Material Sales
+    const weightSoldRawMaterial = selectedProductSales.reduce(
+      (sum, s) => sum + s.weight,
+      0
+    );
+
+    // 3. Remaining weight after selling in Raw Material Sales
+    const remainingWeightAfterSales = originalWeight - weightSoldRawMaterial;
+
+    // 4. Sum of Lost Weight of all colors
+    const sumLostWeight = selectedRecords.reduce(
+      (sum, r) => sum + (r.lostWeight || 0),
+      0
+    );
+
+    // 5. Sum of Spoilage Weight of all colors (including Two Inches Spoilage)
+    const sumSpoilageWeight = selectedRecords.reduce(
+      (sum, r) => sum + (r.spoilageWeight || 0) + (r.spoilageSize || 0),
+      0
+    );
+
+    // 6. Sum of Return Weight of all colors (including Two Inches Return)
+    const sumReturnWeight = selectedRecords.reduce(
+      (sum, r) => sum + (r.returnWeight || 0) + (r.returnSize || 0),
+      0
+    );
+
+    return {
+      originalWeight,
+      weightSoldRawMaterial,
+      remainingWeightAfterSales,
+      sumLostWeight,
+      sumSpoilageWeight,
+      sumReturnWeight,
+      unit,
+    };
+  }, [selectedMarker, selectedProduct, selectedProductSales, selectedRecords]);
+
+  useEffect(() => {
+    if (selectedMarker) {
+      const newRemarks: Record<number, string> = {};
+      const newExpanded: Record<number, boolean> = {};
+
+      selectedRecords.forEach((record) => {
+        const saved = savedExports.find(
+          (x) => x.singleDoubleDrawnRecordId === record.id,
+        );
+        if (saved) {
+          newRemarks[record.id] = saved.remark || "";
+        } else {
+          newRemarks[record.id] = "";
+        }
+        // Collapse all by default
+        newExpanded[record.id] = false;
+      });
+
+      setRecordRemarks(newRemarks);
+      setExpandedRecords(newExpanded);
+    } else {
+      setRecordRemarks({});
+      setExpandedRecords({});
     }
-  };
-
-  const resetForm = () => {
-    setPrices({
-      priceB: 0,
-      price28: 0,
-      price26: 0,
-      price24: 0,
-      price22: 0,
-      price20: 0,
-      price18: 0,
-      price16: 0,
-      price14: 0,
-      price12: 0,
-      price10B: 0,
-      price10: 0,
-      price9: 0,
-      price8: 0,
-      price7: 0,
-      price6: 0,
-      priceLeftover: 0,
-      priceSpoil: 0,
-    });
-    setRemark("");
-    setFormError("");
-  };
-
-  const selectedRecord = useMemo(
-    () => sddRecords.find((r) => r.id === selectedSddId),
-    [sddRecords, selectedSddId],
-  );
-
-  // Filter sidebar list
-  const filteredRecords = useMemo(() => {
-    return sddRecords.filter((r) => {
-      const search = searchTerm.toLowerCase();
-      const marker = (r.refinementRecordMarker || "").toLowerCase();
-      const category = (r.refinementRecordCategory || "").toLowerCase();
-      const warehouse = (r.refinementRecordWarehouseName || "").toLowerCase();
-      const dateStr = r.date
-        ? new Date(r.date).toLocaleDateString().toLowerCase()
-        : "";
-
-      return (
-        marker.includes(search) ||
-        category.includes(search) ||
-        warehouse.includes(search) ||
-        dateStr.includes(search)
-      );
-    });
-  }, [sddRecords, searchTerm]);
-
-  // Calculate grouped weights for the selected record
-  const calculations = useMemo(() => {
-    if (!selectedRecord) return null;
-
-    const wB = selectedRecord.sizeBar || 0;
-    const w28 = selectedRecord.size28 || 0;
-    const w26 = selectedRecord.size26 || 0;
-    const w24 = selectedRecord.size24 || 0;
-    const w22 = selectedRecord.size22 || 0;
-    const w20 = selectedRecord.size20 || 0;
-    const w18 = selectedRecord.size18 || 0;
-    const w16 = selectedRecord.size16 || 0;
-    const w14 = selectedRecord.size14 || 0;
-    const w12 = selectedRecord.size12 || 0;
-    const w10B = selectedRecord.size10B || 0;
-    const w10 = selectedRecord.size10 || 0;
-    const w9 = selectedRecord.size9 || 0;
-    const w8 = selectedRecord.size8 || 0;
-    const w7 = selectedRecord.size7 || 0;
-    const w6 = selectedRecord.size6 || 0;
-    const wLeftover = selectedRecord.returnWeight || 0;
-    const wSpoil = selectedRecord.spoilageWeight || 0;
-    const wLoss = selectedRecord.lostWeight || 0;
-
-    const totalWeight =
-      wB +
-      w28 +
-      w26 +
-      w24 +
-      w22 +
-      w20 +
-      w18 +
-      w16 +
-      w14 +
-      w12 +
-      w10B +
-      w10 +
-      w9 +
-      w8 +
-      w7 +
-      w6 +
-      wLeftover +
-      wSpoil;
-    const denominator = totalWeight - wLoss > 0 ? totalWeight - wLoss : 1;
-
-    return {
-      wB,
-      w28,
-      w26,
-      w24,
-      w22,
-      w20,
-      w18,
-      w16,
-      w14,
-      w12,
-      w10B,
-      w10,
-      w9,
-      w8,
-      w7,
-      w6,
-      wLeftover,
-      wSpoil,
-      wLoss,
-      totalWeight,
-      denominator,
-    };
-  }, [selectedRecord]);
-
-  const handlePriceChange = (field: keyof typeof prices, val: string) => {
-    const numVal = val === "" ? 0 : parseFloat(val);
-    setPrices((prev) => ({
-      ...prev,
-      [field]: numVal >= 0 ? numVal : 0,
-    }));
-  };
-
-  // Calculate row Amounts
-  const rowAmounts = useMemo(() => {
-    if (!calculations) return null;
-    const {
-      wB,
-      w28,
-      w26,
-      w24,
-      w22,
-      w20,
-      w18,
-      w16,
-      w14,
-      w12,
-      w10B,
-      w10,
-      w9,
-      w8,
-      w7,
-      w6,
-      wLeftover,
-      wSpoil,
-    } = calculations;
-
-    const amtB = wB * prices.priceB;
-    const amt28 = w28 * prices.price28;
-    const amt26 = w26 * prices.price26;
-    const amt24 = w24 * prices.price24;
-    const amt22 = w22 * prices.price22;
-    const amt20 = w20 * prices.price20;
-    const amt18 = w18 * prices.price18;
-    const amt16 = w16 * prices.price16;
-    const amt14 = w14 * prices.price14;
-    const amt12 = w12 * prices.price12;
-    const amt10B = w10B * prices.price10B;
-    const amt10 = w10 * prices.price10;
-    const amt9 = w9 * prices.price9;
-    const amt8 = w8 * prices.price8;
-    const amt7 = w7 * prices.price7;
-    const amt6 = w6 * prices.price6;
-    const amtLeftover = wLeftover * prices.priceLeftover;
-    const amtSpoil = wSpoil * prices.priceSpoil;
-
-    const totalAmount =
-      amtB +
-      amt28 +
-      amt26 +
-      amt24 +
-      amt22 +
-      amt20 +
-      amt18 +
-      amt16 +
-      amt14 +
-      amt12 +
-      amt10B +
-      amt10 +
-      amt9 +
-      amt8 +
-      amt7 +
-      amt6 +
-      amtLeftover +
-      amtSpoil;
-
-    return {
-      amtB,
-      amt28,
-      amt26,
-      amt24,
-      amt22,
-      amt20,
-      amt18,
-      amt16,
-      amt14,
-      amt12,
-      amt10B,
-      amt10,
-      amt9,
-      amt8,
-      amt7,
-      amt6,
-      amtLeftover,
-      amtSpoil,
-      totalAmount,
-    };
-  }, [calculations, prices]);
+  }, [selectedMarker, selectedRecords, savedExports]);
 
   // Calculate the total sorted weights for sidebar display
   const getSortedTotal = (record: SingleDoubleDrawnRecord) => {
@@ -344,40 +184,276 @@ const Sales5: React.FC = () => {
     );
   };
 
-  const handleSave = async (e: React.FormEvent) => {
+  const groupedRecords = useMemo(() => {
+    const groups: Record<string, GroupedMarker> = {};
+    sddRecords.forEach((record) => {
+      const marker = record.refinementRecordMarker || "---";
+      if (!groups[marker]) {
+        groups[marker] = {
+          markerName: marker,
+          records: [],
+          combinedWeight: 0,
+          date: record.date,
+          warehouseNames: [],
+        };
+      }
+      groups[marker].records.push(record);
+      groups[marker].combinedWeight += getSortedTotal(record);
+      if (
+        record.date &&
+        new Date(record.date) > new Date(groups[marker].date)
+      ) {
+        groups[marker].date = record.date;
+      }
+      if (
+        record.refinementRecordWarehouseName &&
+        !groups[marker].warehouseNames.includes(
+          record.refinementRecordWarehouseName,
+        )
+      ) {
+        groups[marker].warehouseNames.push(
+          record.refinementRecordWarehouseName,
+        );
+      }
+    });
+    return Object.values(groups);
+  }, [sddRecords]);
+
+  // Filter sidebar list
+  const filteredGroupedRecords = useMemo(() => {
+    return groupedRecords.filter((g) => {
+      const search = searchTerm.toLowerCase();
+      const marker = g.markerName.toLowerCase();
+      const warehouses = g.warehouseNames.map((w) => w.toLowerCase()).join(" ");
+      const dateStr = g.date
+        ? new Date(g.date).toLocaleDateString().toLowerCase()
+        : "";
+      const categories = g.records
+        .map((r) => (r.refinementRecordCategory || "").toLowerCase())
+        .join(" ");
+
+      return (
+        marker.includes(search) ||
+        warehouses.includes(search) ||
+        dateStr.includes(search) ||
+        categories.includes(search)
+      );
+    });
+  }, [groupedRecords, searchTerm]);
+
+  // Calculate grouped weights for each record in the selected marker
+  const recordCalculations = useMemo(() => {
+    const calcs: Record<number, any> = {};
+    selectedRecords.forEach((record) => {
+      const wB = record.sizeBar || 0;
+      const w28 = record.size28 || 0;
+      const w26 = record.size26 || 0;
+      const w24 = record.size24 || 0;
+      const w22 = record.size22 || 0;
+      const w20 = record.size20 || 0;
+      const w18 = record.size18 || 0;
+      const w16 = record.size16 || 0;
+      const w14 = record.size14 || 0;
+      const w12 = record.size12 || 0;
+      const w10B = record.size10B || 0;
+      const w10 = record.size10 || 0;
+      const w9 = record.size9 || 0;
+      const w8 = record.size8 || 0;
+      const w7 = record.size7 || 0;
+      const w6 = record.size6 || 0;
+      const wLeftover = record.returnWeight || 0;
+      const wSpoil = record.spoilageWeight || 0;
+      const wLoss = record.lostWeight || 0;
+
+      const totalWeight =
+        wB +
+        w28 +
+        w26 +
+        w24 +
+        w22 +
+        w20 +
+        w18 +
+        w16 +
+        w14 +
+        w12 +
+        w10B +
+        w10 +
+        w9 +
+        w8 +
+        w7 +
+        w6 +
+        wLeftover +
+        wSpoil;
+      const denominator = totalWeight - wLoss > 0 ? totalWeight - wLoss : 1;
+
+      calcs[record.id] = {
+        wB,
+        w28,
+        w26,
+        w24,
+        w22,
+        w20,
+        w18,
+        w16,
+        w14,
+        w12,
+        w10B,
+        w10,
+        w9,
+        w8,
+        w7,
+        w6,
+        wLeftover,
+        wSpoil,
+        wLoss,
+        totalWeight,
+        denominator,
+      };
+    });
+    return calcs;
+  }, [selectedRecords]);
+
+  const handleRecordRemarkChange = (recordId: number, val: string) => {
+    setRecordRemarks((prev) => ({
+      ...prev,
+      [recordId]: val,
+    }));
+  };
+
+  const toggleRecordExpanded = (recordId: number) => {
+    setExpandedRecords((prev) => ({
+      ...prev,
+      [recordId]: !prev[recordId],
+    }));
+  };
+
+  // Calculate row Amounts for each record
+  const recordAmounts = useMemo(() => {
+    const amts: Record<number, any> = {};
+    selectedRecords.forEach((record) => {
+      const calculations = recordCalculations[record.id];
+      if (!calculations) return;
+
+      const {
+        wB,
+        w28,
+        w26,
+        w24,
+        w22,
+        w20,
+        w18,
+        w16,
+        w14,
+        w12,
+        w10B,
+        w10,
+        w9,
+        w8,
+        w7,
+        w6,
+        wLeftover,
+        wSpoil,
+      } = calculations;
+
+      const amtB = wB * (record.priceBar || 0);
+      const amt28 = w28 * (record.price28 || 0);
+      const amt26 = w26 * (record.price26 || 0);
+      const amt24 = w24 * (record.price24 || 0);
+      const amt22 = w22 * (record.price22 || 0);
+      const amt20 = w20 * (record.price20 || 0);
+      const amt18 = w18 * (record.price18 || 0);
+      const amt16 = w16 * (record.price16 || 0);
+      const amt14 = w14 * (record.price14 || 0);
+      const amt12 = w12 * (record.price12 || 0);
+      const amt10B = w10B * (record.price10B || 0);
+      const amt10 = w10 * (record.price10 || 0);
+      const amt9 = w9 * (record.price9 || 0);
+      const amt8 = w8 * (record.price8 || 0);
+      const amt7 = w7 * (record.price7 || 0);
+      const amt6 = w6 * (record.price6 || 0);
+      const amtLeftover = wLeftover * (record.priceReturnSize || 0);
+      const amtSpoil = wSpoil * (record.priceSpoilageSize || 0);
+
+      const totalAmount =
+        amtB +
+        amt28 +
+        amt26 +
+        amt24 +
+        amt22 +
+        amt20 +
+        amt18 +
+        amt16 +
+        amt14 +
+        amt12 +
+        amt10B +
+        amt10 +
+        amt9 +
+        amt8 +
+        amt7 +
+        amt6 +
+        amtLeftover +
+        amtSpoil;
+
+      amts[record.id] = {
+        amtB,
+        amt28,
+        amt26,
+        amt24,
+        amt22,
+        amt20,
+        amt18,
+        amt16,
+        amt14,
+        amt12,
+        amt10B,
+        amt10,
+        amt9,
+        amt8,
+        amt7,
+        amt6,
+        amtLeftover,
+        amtSpoil,
+        totalAmount,
+      };
+    });
+    return amts;
+  }, [selectedRecords, recordCalculations]);
+
+  const handleSaveRecord = async (e: React.FormEvent, recordId: number) => {
     e.preventDefault();
-    if (!selectedSddId) return;
+    const record = selectedRecords.find((r) => r.id === recordId);
+    const remarkState = recordRemarks[recordId] || "";
+    if (!record) return;
+
     setSaving(true);
     setFormError("");
 
     try {
       const dto = {
-        singleDoubleDrawnRecordId: selectedSddId,
-        priceB: prices.priceB,
-        price28: prices.price28,
-        price26: prices.price26,
-        price24: prices.price24,
-        price22: prices.price22,
-        price20: prices.price20,
-        price18: prices.price18,
-        price16: prices.price16,
-        price14: prices.price14,
-        price12: prices.price12,
-        price10B: prices.price10B,
-        price10: prices.price10,
-        price9: prices.price9,
-        price8: prices.price8,
-        price7: prices.price7,
-        price6: prices.price6,
-        priceLeftover: prices.priceLeftover,
-        priceSpoil: prices.priceSpoil,
-        remark,
+        singleDoubleDrawnRecordId: recordId,
+        priceB: record.priceBar,
+        price28: record.price28,
+        price26: record.price26,
+        price24: record.price24,
+        price22: record.price22,
+        price20: record.price20,
+        price18: record.price18,
+        price16: record.price16,
+        price14: record.price14,
+        price12: record.price12,
+        price10B: record.price10B,
+        price10: record.price10,
+        price9: record.price9,
+        price8: record.price8,
+        price7: record.price7,
+        price6: record.price6,
+        priceLeftover: record.priceReturnSize,
+        priceSpoil: record.priceSpoilageSize,
+        remark: remarkState,
       };
 
       await semiExportAPI.upsert(dto);
       await loadData();
-      // Clear selection after saving
-      setSelectedSddId(null);
     } catch (err) {
       console.error("Failed to save export prices:", err);
       setFormError("Failed to save Semi Export transaction. Please try again.");
@@ -451,7 +527,7 @@ const Sales5: React.FC = () => {
           className="product-list"
           style={{ maxHeight: "calc(100vh - 220px)", overflowY: "auto" }}
         >
-          {filteredRecords.length === 0 ? (
+          {filteredGroupedRecords.length === 0 ? (
             <div
               style={{
                 textAlign: "center",
@@ -463,22 +539,23 @@ const Sales5: React.FC = () => {
               No sorted batches found
             </div>
           ) : (
-            filteredRecords.map((record) => {
-              const totalSorted = getSortedTotal(record);
-              const isSaved = savedExports.some(
-                (x) => x.singleDoubleDrawnRecordId === record.id,
-              );
+            filteredGroupedRecords.map((group) => {
+              const savedCount = group.records.filter((r) =>
+                savedExports.some((x) => x.singleDoubleDrawnRecordId === r.id),
+              ).length;
+              const isFullySaved = savedCount === group.records.length;
+              const isPartiallySaved =
+                savedCount > 0 && savedCount < group.records.length;
+
               return (
                 <div
-                  key={record.id}
-                  className={`product-card ${selectedSddId === record.id ? "selected" : ""}`}
-                  onClick={() => setSelectedSddId(record.id)}
+                  key={group.markerName}
+                  className={`product-card ${selectedMarker === group.markerName ? "selected" : ""}`}
+                  onClick={() => setSelectedMarker(group.markerName)}
                 >
                   <div className="card-header">
                     <div style={{ display: "flex", flexDirection: "column" }}>
-                      <span className="card-marker">
-                        {record.refinementRecordMarker || "---"}
-                      </span>
+                      <span className="card-marker">{group.markerName}</span>
                       <span
                         style={{
                           fontSize: "11px",
@@ -487,7 +564,7 @@ const Sales5: React.FC = () => {
                           marginTop: "2px",
                         }}
                       >
-                        {record.refinementRecordWarehouseName || "---"}
+                        {group.warehouseNames.join(", ") || "---"}
                       </span>
                     </div>
                     <div
@@ -497,7 +574,7 @@ const Sales5: React.FC = () => {
                         alignItems: "center",
                       }}
                     >
-                      {isSaved && (
+                      {isFullySaved && (
                         <span
                           style={{
                             background: "#d1fae5",
@@ -514,27 +591,67 @@ const Sales5: React.FC = () => {
                           <CheckCircle size={10} /> Saved
                         </span>
                       )}
-                      <span
-                        className={`rf-badge category-${(record.refinementRecordCategory || "").toLowerCase().replace(".", "")}`}
-                      >
-                        {record.refinementRecordCategory}
-                      </span>
+                      {isPartiallySaved && (
+                        <span
+                          style={{
+                            background: "#fef3c7",
+                            color: "#92400e",
+                            fontSize: "10.0px",
+                            padding: "2px 6px",
+                            borderRadius: "4px",
+                            fontWeight: "bold",
+                            display: "inline-flex",
+                            alignItems: "center",
+                            gap: "3px",
+                          }}
+                        >
+                          Saved ({savedCount}/{group.records.length})
+                        </span>
+                      )}
                     </div>
                   </div>
-                  <div className="card-details">
-                    <span>
-                      Sorted:{" "}
-                      <strong style={{ color: "#059669" }}>
-                        {totalSorted.toFixed(3)}
-                      </strong>{" "}
-                      viss
-                    </span>
-                    <span>
-                      Date:{" "}
-                      <span style={{ color: "#475569", fontWeight: 500 }}>
-                        {new Date(record.date).toLocaleDateString()}
+                  <div
+                    className="card-details"
+                    style={{ flexDirection: "column", gap: "4px" }}
+                  >
+                    <div
+                      style={{
+                        display: "flex",
+                        justifyContent: "space-between",
+                      }}
+                    >
+                      <span>
+                        Total Sorted:{" "}
+                        <strong style={{ color: "#059669" }}>
+                          {group.combinedWeight.toFixed(3)}
+                        </strong>{" "}
+                        viss
                       </span>
-                    </span>
+                      <span>
+                        Date:{" "}
+                        <span style={{ color: "#475569", fontWeight: 500 }}>
+                          {new Date(group.date).toLocaleDateString()}
+                        </span>
+                      </span>
+                    </div>
+                    <div
+                      style={{
+                        display: "flex",
+                        gap: "4px",
+                        flexWrap: "wrap",
+                        marginTop: "4px",
+                      }}
+                    >
+                      {group.records.map((r) => (
+                        <span
+                          key={r.id}
+                          className={`rf-badge category-${(r.refinementRecordCategory || "").toLowerCase().replace(".", "")}`}
+                          style={{ fontSize: "9px", padding: "1px 4px" }}
+                        >
+                          {r.refinementRecordCategory}
+                        </span>
+                      ))}
+                    </div>
                   </div>
                 </div>
               );
@@ -545,7 +662,7 @@ const Sales5: React.FC = () => {
 
       {/* Right Main Content */}
       <main className="processing-main">
-        {selectedRecord && calculations && rowAmounts ? (
+        {selectedMarker && selectedRecords.length > 0 ? (
           <div
             style={{ display: "flex", flexDirection: "column", height: "100%" }}
           >
@@ -575,7 +692,7 @@ const Sales5: React.FC = () => {
                       color: "#0f172a",
                     }}
                   >
-                    Semi Export (Simi Export) Pricing
+                    Semi Export
                   </h1>
                   <p
                     className="header-subtitle"
@@ -586,520 +703,714 @@ const Sales5: React.FC = () => {
                       fontWeight: "500",
                     }}
                   >
-                    Sorted Record:{" "}
-                    <strong>{selectedRecord.refinementRecordMarker}</strong> (
-                    {selectedRecord.refinementRecordCategory}) • Warehouse:{" "}
+                    Marker: <strong>{selectedMarker}</strong> • Warehouse(s):{" "}
                     <strong>
-                      {selectedRecord.refinementRecordWarehouseName || "---"}
+                      {Array.from(
+                        new Set(
+                          selectedRecords
+                            .map((r) => r.refinementRecordWarehouseName)
+                            .filter(Boolean),
+                        ),
+                      ).join(", ") || "---"}
                     </strong>
                   </p>
+            </div>
+          </div>
+        </div>
+
+            {/* Stats Dashboard Grid */}
+            {selectedMarkerStats && (
+              <div className="stats-grid">
+                {/* 1. Original Weight */}
+                <div className="stat-card">
+                  <div className="stat-header">
+                    <span className="stat-title">Original Weight</span>
+                    <div className="stat-icon-wrapper" style={{ backgroundColor: "#eff6ff", color: "#2563eb" }}>
+                      <Scale size={16} />
+                    </div>
+                  </div>
+                  <div>
+                    <h3 className="stat-value">
+                      {selectedMarkerStats.originalWeight.toFixed(2)}
+                    </h3>
+                    <span className="stat-footer">{selectedMarkerStats.unit} in Inventory</span>
+                  </div>
+                </div>
+
+                {/* 2. Weight Sold in Raw Material Sales */}
+                <div className="stat-card">
+                  <div className="stat-header">
+                    <span className="stat-title">Weight Sold</span>
+                    <div className="stat-icon-wrapper" style={{ backgroundColor: "#fef2f2", color: "#ef4444" }}>
+                      <Scale size={16} />
+                    </div>
+                  </div>
+                  <div>
+                    <h3 className="stat-value">
+                      {selectedMarkerStats.weightSoldRawMaterial.toFixed(2)}
+                    </h3>
+                    <span className="stat-footer">{selectedMarkerStats.unit} in Raw Material Sales</span>
+                  </div>
+                </div>
+
+                {/* 3. Remaining Weight after Sales */}
+                <div className="stat-card">
+                  <div className="stat-header">
+                    <span className="stat-title">Remaining Weight</span>
+                    <div className="stat-icon-wrapper" style={{ backgroundColor: "#ecfdf5", color: "#10b981" }}>
+                      <Scale size={16} />
+                    </div>
+                  </div>
+                  <div>
+                    <h3 className="stat-value">
+                      {selectedMarkerStats.remainingWeightAfterSales.toFixed(2)}
+                    </h3>
+                    <span className="stat-footer">{selectedMarkerStats.unit} after Raw Material Sales</span>
+                  </div>
+                </div>
+
+                {/* 4. Sum of Lost Weight of all colors */}
+                <div className="stat-card">
+                  <div className="stat-header">
+                    <span className="stat-title">Sum of Lost Weight</span>
+                    <div className="stat-icon-wrapper" style={{ backgroundColor: "#fffbeb", color: "#d97706" }}>
+                      <AlertTriangle size={16} />
+                    </div>
+                  </div>
+                  <div>
+                    <h3 className="stat-value">
+                      {selectedMarkerStats.sumLostWeight.toFixed(3)}
+                    </h3>
+                    <span className="stat-footer">viss across all colors</span>
+                  </div>
+                </div>
+
+                {/* 5. Sum of Spoilage Weight of all colors */}
+                <div className="stat-card">
+                  <div className="stat-header">
+                    <span className="stat-title">Sum of Spoilage Weight</span>
+                    <div className="stat-icon-wrapper" style={{ backgroundColor: "#faf5ff", color: "#8b5cf6" }}>
+                      <AlertTriangle size={16} />
+                    </div>
+                  </div>
+                  <div>
+                    <h3 className="stat-value">
+                      {selectedMarkerStats.sumSpoilageWeight.toFixed(3)}
+                    </h3>
+                    <span className="stat-footer">viss (incl. Two Inches Spoilage)</span>
+                  </div>
+                </div>
+
+                {/* 6. Sum of Return Weight of all colors */}
+                <div className="stat-card">
+                  <div className="stat-header">
+                    <span className="stat-title">Sum of Return Weight</span>
+                    <div className="stat-icon-wrapper" style={{ backgroundColor: "#f0fdf4", color: "#15803d" }}>
+                      <RotateCcw size={16} />
+                    </div>
+                  </div>
+                  <div>
+                    <h3 className="stat-value">
+                      {selectedMarkerStats.sumReturnWeight.toFixed(3)}
+                    </h3>
+                    <span className="stat-footer">viss (incl. Two Inches Return)</span>
+                  </div>
                 </div>
               </div>
-            </div>
+            )}
 
-            {/* Excel Spreadsheet like Pricing Table */}
-            <form onSubmit={handleSave}>
-              <div
-                className="table-container"
-                style={{
-                  border: "1.5px solid #e2e8f0",
-                  borderRadius: "12px",
-                  overflow: "hidden",
-                  background: "white",
-                  marginBottom: "24px",
-                }}
-              >
-                <table
-                  className="table"
-                  style={{
-                    width: "100%",
-                    borderCollapse: "collapse",
-                    textAlign: "left",
-                    fontSize: "14px",
-                  }}
-                >
-                  <thead>
-                    <tr
+            <div
+              style={{ display: "flex", flexDirection: "column", gap: "24px" }}
+            >
+              {selectedRecords.map((record) => {
+                const calculations = recordCalculations[record.id];
+                const rowAmounts = recordAmounts[record.id];
+                const remarkState = recordRemarks[record.id] || "";
+                const isExpanded = expandedRecords[record.id];
+                const isSaved = savedExports.some(
+                  (x) => x.singleDoubleDrawnRecordId === record.id,
+                );
+
+                if (!calculations || !rowAmounts) return null;
+
+                return (
+                  <div
+                    key={record.id}
+                    style={{
+                      background: "white",
+                      border: "1.5px solid #e2e8f0",
+                      borderRadius: "16px",
+                      overflow: "hidden",
+                      boxShadow: "0 4px 6px rgba(0, 0, 0, 0.02)",
+                    }}
+                  >
+                    {/* Record Header */}
+                    <div
                       style={{
+                        padding: "16px 24px",
                         background: "#f8fafc",
                         borderBottom: "1.5px solid #e2e8f0",
+                        display: "flex",
+                        justifyContent: "space-between",
+                        alignItems: "center",
+                        cursor: "pointer",
                       }}
+                      onClick={() => toggleRecordExpanded(record.id)}
                     >
-                      <th
+                      <div
                         style={{
-                          padding: "12px 20px",
-                          fontWeight: "700",
-                          color: "#475569",
+                          display: "flex",
+                          alignItems: "center",
+                          gap: "12px",
                         }}
                       >
-                        SIZE
-                      </th>
-                      <th
-                        style={{
-                          padding: "12px 20px",
-                          fontWeight: "700",
-                          color: "#475569",
-                          textAlign: "right",
-                        }}
-                      >
-                        WEIGHT (viss)
-                      </th>
-                      <th
-                        style={{
-                          padding: "12px 20px",
-                          fontWeight: "700",
-                          color: "#475569",
-                          width: "160px",
-                        }}
-                      >
-                        BUY PRICES
-                      </th>
-                      <th
-                        style={{
-                          padding: "12px 20px",
-                          fontWeight: "700",
-                          color: "#475569",
-                          textAlign: "right",
-                        }}
-                      >
-                        AMOUNT
-                      </th>
-                      <th
-                        style={{
-                          padding: "12px 20px",
-                          fontWeight: "700",
-                          color: "#475569",
-                          textAlign: "right",
-                          width: "110px",
-                        }}
-                      >
-                        AVG %
-                      </th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {/* Dynamic Rows mapping sizes */}
-                    {[
-                      {
-                        label: "B",
-                        key: "priceB",
-                        w: calculations.wB,
-                        amt: rowAmounts.amtB,
-                      },
-                      {
-                        label: "28",
-                        key: "price28",
-                        w: calculations.w28,
-                        amt: rowAmounts.amt28,
-                      },
-                      {
-                        label: "26",
-                        key: "price26",
-                        w: calculations.w26,
-                        amt: rowAmounts.amt26,
-                      },
-                      {
-                        label: "24",
-                        key: "price24",
-                        w: calculations.w24,
-                        amt: rowAmounts.amt24,
-                      },
-                      {
-                        label: "22",
-                        key: "price22",
-                        w: calculations.w22,
-                        amt: rowAmounts.amt22,
-                      },
-                      {
-                        label: "20",
-                        key: "price20",
-                        w: calculations.w20,
-                        amt: rowAmounts.amt20,
-                      },
-                      {
-                        label: "18",
-                        key: "price18",
-                        w: calculations.w18,
-                        amt: rowAmounts.amt18,
-                      },
-                      {
-                        label: "16",
-                        key: "price16",
-                        w: calculations.w16,
-                        amt: rowAmounts.amt16,
-                      },
-                      {
-                        label: "14",
-                        key: "price14",
-                        w: calculations.w14,
-                        amt: rowAmounts.amt14,
-                      },
-                      {
-                        label: "12",
-                        key: "price12",
-                        w: calculations.w12,
-                        amt: rowAmounts.amt12,
-                      },
-                      {
-                        label: "10B",
-                        key: "price10B",
-                        w: calculations.w10B,
-                        amt: rowAmounts.amt10B,
-                      },
-                      {
-                        label: "10",
-                        key: "price10",
-                        w: calculations.w10,
-                        amt: rowAmounts.amt10,
-                      },
-                      {
-                        label: "9",
-                        key: "price9",
-                        w: calculations.w9,
-                        amt: rowAmounts.amt9,
-                      },
-                      {
-                        label: "8",
-                        key: "price8",
-                        w: calculations.w8,
-                        amt: rowAmounts.amt8,
-                      },
-                      {
-                        label: "7",
-                        key: "price7",
-                        w: calculations.w7,
-                        amt: rowAmounts.amt7,
-                      },
-                      {
-                        label: "6",
-                        key: "price6",
-                        w: calculations.w6,
-                        amt: rowAmounts.amt6,
-                      },
-                      {
-                        label: "Leftover",
-                        key: "priceLeftover",
-                        w: calculations.wLeftover,
-                        amt: rowAmounts.amtLeftover,
-                      },
-                      {
-                        label: "Spoil",
-                        key: "priceSpoil",
-                        w: calculations.wSpoil,
-                        amt: rowAmounts.amtSpoil,
-                      },
-                    ].map((row, index) => {
-                      const avgPercent =
-                        (row.w / calculations.denominator) * 100;
-                      const isSpoil = row.label === "Spoil";
-                      return (
-                        <tr
-                          key={row.label}
+                        <span
+                          className={`rf-badge category-${(record.refinementRecordCategory || "").toLowerCase().replace(".", "")}`}
+                          style={{ fontSize: "12px", padding: "4px 10px" }}
+                        >
+                          {record.refinementRecordCategory}
+                        </span>
+                        <span
                           style={{
-                            borderBottom: "1px solid #f1f5f9",
-                            background: index % 2 === 0 ? "white" : "#fdfdfd",
+                            fontSize: "14px",
+                            color: "#64748b",
+                            fontWeight: 600,
                           }}
                         >
-                          <td
+                          Sorted Weight:{" "}
+                          <strong style={{ color: "#0f172a" }}>
+                            {calculations.totalWeight.toFixed(3)}
+                          </strong>{" "}
+                          viss
+                        </span>
+                        <span
+                          style={{
+                            fontSize: "14px",
+                            color: "#64748b",
+                            fontWeight: 600,
+                          }}
+                        >
+                          • Date:{" "}
+                          <strong style={{ color: "#0f172a" }}>
+                            {new Date(record.date).toLocaleDateString()}
+                          </strong>
+                        </span>
+                        <span
+                          style={{
+                            fontSize: "14px",
+                            color: "#64748b",
+                            fontWeight: 600,
+                          }}
+                        >
+                          • Total Amount:{" "}
+                          <strong style={{ color: "#2563eb" }}>
+                            {rowAmounts.totalAmount.toLocaleString(undefined, {
+                              minimumFractionDigits: 2,
+                              maximumFractionDigits: 2,
+                            })}
+                          </strong>{" "}
+                          MMK
+                        </span>
+                        <span
+                          style={{
+                            fontSize: "14px",
+                            color: "#64748b",
+                            fontWeight: 600,
+                          }}
+                        >
+                          • Loss Weight:{" "}
+                          <strong style={{ color: "#b45309" }}>
+                            {calculations.wLoss.toFixed(3)}
+                          </strong>{" "}
+                          viss
+                        </span>
+                      </div>
+                      <div
+                        style={{
+                          display: "flex",
+                          alignItems: "center",
+                          gap: "12px",
+                        }}
+                      >
+                        {isSaved && (
+                          <span
                             style={{
-                              padding: "10px 20px",
-                              fontWeight: "700",
-                              color: "#1e293b",
+                              background: "#d1fae5",
+                              color: "#065f46",
+                              fontSize: "11px",
+                              padding: "4px 8px",
+                              borderRadius: "6px",
+                              fontWeight: "bold",
+                              display: "inline-flex",
+                              alignItems: "center",
+                              gap: "3px",
                             }}
                           >
-                            {row.label}
-                          </td>
-                          <td
+                            <CheckCircle size={12} /> Saved
+                          </span>
+                        )}
+                        {isExpanded ? (
+                          <ChevronUp size={20} />
+                        ) : (
+                          <ChevronDown size={20} />
+                        )}
+                      </div>
+                    </div>
+
+                    {/* Record Body (Expanded Content) */}
+                    {isExpanded && (
+                      <form
+                        onSubmit={(e) => handleSaveRecord(e, record.id)}
+                        style={{ padding: "24px" }}
+                      >
+                        <div
+                          className="table-container"
+                          style={{
+                            border: "1.5px solid #e2e8f0",
+                            borderRadius: "12px",
+                            overflow: "hidden",
+                            background: "white",
+                            marginBottom: "20px",
+                          }}
+                        >
+                          <table
+                            className="table"
                             style={{
-                              padding: "10px 20px",
-                              textAlign: "right",
-                              fontWeight: "500",
-                              color: "#475569",
+                              width: "100%",
+                              borderCollapse: "collapse",
+                              textAlign: "left",
+                              fontSize: "14px",
                             }}
                           >
-                            {row.w.toFixed(3)}
-                          </td>
-                          <td style={{ padding: "8px 20px" }}>
-                            {isSpoil ? (
-                              <div
+                            <thead>
+                              <tr
                                 style={{
-                                  padding: "8px 12px",
-                                  fontSize: "14px",
-                                  color: "#94a3b8",
-                                  fontWeight: 600,
                                   background: "#f8fafc",
-                                  borderRadius: "8px",
-                                  border: "1px solid #e2e8f0",
-                                  textAlign: "center",
+                                  borderBottom: "1.5px solid #e2e8f0",
                                 }}
                               >
-                                0
-                              </div>
-                            ) : (
-                              <input
-                                type="number"
-                                value={
-                                  prices[row.key as keyof typeof prices] || ""
-                                }
-                                onChange={(e) =>
-                                  handlePriceChange(
-                                    row.key as keyof typeof prices,
-                                    e.target.value,
-                                  )
-                                }
-                                placeholder="0"
+                                <th
+                                  style={{
+                                    padding: "10px 16px",
+                                    fontWeight: "700",
+                                    color: "#475569",
+                                  }}
+                                >
+                                  SIZE
+                                </th>
+                                <th
+                                  style={{
+                                    padding: "10px 16px",
+                                    fontWeight: "700",
+                                    color: "#475569",
+                                    textAlign: "right",
+                                  }}
+                                >
+                                  WEIGHT (viss)
+                                </th>
+                                <th
+                                  style={{
+                                    padding: "10px 16px",
+                                    fontWeight: "700",
+                                    color: "#475569",
+                                    width: "160px",
+                                  }}
+                                >
+                                  BUY PRICES
+                                </th>
+                                <th
+                                  style={{
+                                    padding: "10px 16px",
+                                    fontWeight: "700",
+                                    color: "#475569",
+                                    textAlign: "right",
+                                  }}
+                                >
+                                  AMOUNT
+                                </th>
+                                <th
+                                  style={{
+                                    padding: "10px 16px",
+                                    fontWeight: "700",
+                                    color: "#475569",
+                                    textAlign: "right",
+                                    width: "110px",
+                                  }}
+                                >
+                                  AVG %
+                                </th>
+                              </tr>
+                            </thead>
+                            <tbody>
+                              {[
+                                {
+                                  label: "B",
+                                  w: calculations.wB,
+                                  price: record.priceBar,
+                                  amt: rowAmounts.amtB,
+                                },
+                                {
+                                  label: "28",
+                                  w: calculations.w28,
+                                  price: record.price28,
+                                  amt: rowAmounts.amt28,
+                                },
+                                {
+                                  label: "26",
+                                  w: calculations.w26,
+                                  price: record.price26,
+                                  amt: rowAmounts.amt26,
+                                },
+                                {
+                                  label: "24",
+                                  w: calculations.w24,
+                                  price: record.price24,
+                                  amt: rowAmounts.amt24,
+                                },
+                                {
+                                  label: "22",
+                                  w: calculations.w22,
+                                  price: record.price22,
+                                  amt: rowAmounts.amt22,
+                                },
+                                {
+                                  label: "20",
+                                  w: calculations.w20,
+                                  price: record.price20,
+                                  amt: rowAmounts.amt20,
+                                },
+                                {
+                                  label: "18",
+                                  w: calculations.w18,
+                                  price: record.price18,
+                                  amt: rowAmounts.amt18,
+                                },
+                                {
+                                  label: "16",
+                                  w: calculations.w16,
+                                  price: record.price16,
+                                  amt: rowAmounts.amt16,
+                                },
+                                {
+                                  label: "14",
+                                  w: calculations.w14,
+                                  price: record.price14,
+                                  amt: rowAmounts.amt14,
+                                },
+                                {
+                                  label: "12",
+                                  w: calculations.w12,
+                                  price: record.price12,
+                                  amt: rowAmounts.amt12,
+                                },
+                                {
+                                  label: "10B",
+                                  w: calculations.w10B,
+                                  price: record.price10B,
+                                  amt: rowAmounts.amt10B,
+                                },
+                                {
+                                  label: "10",
+                                  w: calculations.w10,
+                                  price: record.price10,
+                                  amt: rowAmounts.amt10,
+                                },
+                                {
+                                  label: "9",
+                                  w: calculations.w9,
+                                  price: record.price9,
+                                  amt: rowAmounts.amt9,
+                                },
+                                {
+                                  label: "8",
+                                  w: calculations.w8,
+                                  price: record.price8,
+                                  amt: rowAmounts.amt8,
+                                },
+                                {
+                                  label: "7",
+                                  w: calculations.w7,
+                                  price: record.price7,
+                                  amt: rowAmounts.amt7,
+                                },
+                                {
+                                  label: "6",
+                                  w: calculations.w6,
+                                  price: record.price6,
+                                  amt: rowAmounts.amt6,
+                                },
+                                {
+                                  label: "Leftover",
+                                  w: calculations.wLeftover,
+                                  price: record.priceReturnSize,
+                                  amt: rowAmounts.amtLeftover,
+                                },
+                                {
+                                  label: "Spoil",
+                                  w: calculations.wSpoil,
+                                  price: record.priceSpoilageSize,
+                                  amt: rowAmounts.amtSpoil,
+                                },
+                              ]
+                                .filter((row) => row.w > 0)
+                                .map((row, index) => {
+                                  const avgPercent =
+                                    (row.w / calculations.denominator) * 100;
+                                  return (
+                                    <tr
+                                      key={row.label}
+                                      style={{
+                                        borderBottom: "1px solid #f1f5f9",
+                                        background:
+                                          index % 2 === 0 ? "white" : "#fdfdfd",
+                                      }}
+                                    >
+                                      <td
+                                        style={{
+                                          padding: "8px 16px",
+                                          fontWeight: "700",
+                                          color: "#1e293b",
+                                        }}
+                                      >
+                                        {row.label}
+                                      </td>
+                                      <td
+                                        style={{
+                                          padding: "8px 16px",
+                                          textAlign: "right",
+                                          fontWeight: "500",
+                                          color: "#475569",
+                                        }}
+                                      >
+                                        {row.w.toFixed(3)}
+                                      </td>
+                                      <td
+                                        style={{
+                                          padding: "8px 16px",
+                                          textAlign: "right",
+                                          fontWeight: "600",
+                                          color: "#0f172a",
+                                        }}
+                                      >
+                                        {(row.price || 0).toLocaleString()}
+                                      </td>
+                                      <td
+                                        style={{
+                                          padding: "8px 16px",
+                                          textAlign: "right",
+                                          fontWeight: "700",
+                                          color: "#0f172a",
+                                        }}
+                                      >
+                                        {row.amt.toFixed(2)}
+                                      </td>
+                                      <td
+                                        style={{
+                                          padding: "8px 16px",
+                                          textAlign: "right",
+                                          fontWeight: "600",
+                                          color: "#64748b",
+                                        }}
+                                      >
+                                        {avgPercent.toFixed(2)}%
+                                      </td>
+                                    </tr>
+                                  );
+                                })}
+
+                              {/* TOTAL ROW */}
+                              <tr
                                 style={{
-                                  width: "100%",
-                                  padding: "8px 12px",
-                                  borderRadius: "8px",
-                                  border: "1.5px solid #cbd5e1",
-                                  fontSize: "13.5px",
-                                  fontWeight: "600",
-                                  color: "#0f172a",
-                                  outline: "none",
-                                  transition: "border-color 0.2s",
-                                  boxSizing: "border-box",
+                                  background: "#f8fafc",
+                                  borderTop: "2px solid #cbd5e1",
+                                  borderBottom: "2.5px double #cbd5e1",
                                 }}
-                                onFocus={(e) =>
-                                  e.target.value === "0" &&
-                                  (e.target.value = "")
-                                }
-                                onBlur={(e) =>
-                                  e.target.value === "" &&
-                                  handlePriceChange(
-                                    row.key as keyof typeof prices,
-                                    "0",
-                                  )
-                                }
-                              />
-                            )}
-                          </td>
-                          <td
+                              >
+                                <td
+                                  style={{
+                                    padding: "10px 16px",
+                                    fontWeight: "800",
+                                    color: "#0f172a",
+                                  }}
+                                >
+                                  TOTAL
+                                </td>
+                                <td
+                                  style={{
+                                    padding: "10px 16px",
+                                    textAlign: "right",
+                                    fontWeight: "800",
+                                    color: "#0f172a",
+                                  }}
+                                >
+                                  {calculations.totalWeight.toFixed(3)}
+                                </td>
+                                <td style={{ padding: "10px 16px" }}></td>
+                                <td
+                                  style={{
+                                    padding: "10px 16px",
+                                    textAlign: "right",
+                                    fontWeight: "800",
+                                    color: "#2563eb",
+                                  }}
+                                >
+                                  {rowAmounts.totalAmount.toFixed(2)}
+                                </td>
+                                <td
+                                  style={{
+                                    padding: "10px 16px",
+                                    textAlign: "right",
+                                    fontWeight: "800",
+                                    color: "#475569",
+                                  }}
+                                >
+                                  {(
+                                    (calculations.totalWeight /
+                                      calculations.denominator) *
+                                    100
+                                  ).toFixed(2)}
+                                  %
+                                </td>
+                              </tr>
+
+                              {/* LOSS ROW */}
+                              <tr
+                                style={{
+                                  borderBottom: "1px solid #e2e8f0",
+                                  background: "#fffbeb",
+                                }}
+                              >
+                                <td
+                                  style={{
+                                    padding: "8px 16px",
+                                    fontWeight: "700",
+                                    color: "#b45309",
+                                  }}
+                                >
+                                  Loss
+                                </td>
+                                <td
+                                  style={{
+                                    padding: "8px 16px",
+                                    textAlign: "right",
+                                    fontWeight: "700",
+                                    color: "#b45309",
+                                  }}
+                                >
+                                  {calculations.wLoss.toFixed(3)}
+                                </td>
+                                <td style={{ padding: "8px 16px" }}></td>
+                                <td style={{ padding: "8px 16px" }}></td>
+                                <td
+                                  style={{
+                                    padding: "8px 16px",
+                                    textAlign: "right",
+                                    fontWeight: "700",
+                                    color: "#b45309",
+                                  }}
+                                >
+                                  {(
+                                    (calculations.wLoss /
+                                      calculations.denominator) *
+                                    100
+                                  ).toFixed(2)}
+                                  %
+                                </td>
+                              </tr>
+                            </tbody>
+                          </table>
+                        </div>
+
+                        {/* Remark section */}
+                        <div
+                          className="remark-section"
+                          style={{
+                            background: "#f8fafc",
+                            padding: "16px 20px",
+                            borderRadius: "12px",
+                            border: "1.5px solid #e2e8f0",
+                            marginBottom: "20px",
+                          }}
+                        >
+                          <label
                             style={{
-                              padding: "10px 20px",
-                              textAlign: "right",
+                              display: "flex",
+                              alignItems: "center",
+                              gap: "8px",
+                              fontSize: "13.5px",
                               fontWeight: "700",
-                              color: "#0f172a",
+                              color: "#334155",
+                              marginBottom: "6px",
                             }}
                           >
-                            {row.amt.toFixed(2)}
-                          </td>
-                          <td
+                            <FileText size={15} /> REMARK:
+                          </label>
+                          <textarea
+                            value={remarkState}
+                            onChange={(e) =>
+                              handleRecordRemarkChange(
+                                record.id,
+                                e.target.value,
+                              )
+                            }
+                            placeholder="Enter remark here..."
+                            rows={2}
                             style={{
-                              padding: "10px 20px",
-                              textAlign: "right",
-                              fontWeight: "600",
-                              color: "#64748b",
+                              width: "100%",
+                              padding: "8px 12px",
+                              borderRadius: "8px",
+                              border: "1.5px solid #cbd5e1",
+                              fontSize: "13px",
+                              color: "#0f172a",
+                              outline: "none",
+                              resize: "vertical",
+                              boxSizing: "border-box",
                             }}
-                          >
-                            {avgPercent.toFixed(2)}%
-                          </td>
-                        </tr>
-                      );
-                    })}
+                          />
+                        </div>
+                      </form>
+                    )}
+                  </div>
+                );
+              })}
+            </div>
 
-                    {/* TOTAL ROW */}
-                    <tr
-                      style={{
-                        background: "#f8fafc",
-                        borderTop: "2px solid #cbd5e1",
-                        borderBottom: "2.5px double #cbd5e1",
-                      }}
-                    >
-                      <td
-                        style={{
-                          padding: "12px 20px",
-                          fontWeight: "800",
-                          color: "#0f172a",
-                        }}
-                      >
-                        TOTAL
-                      </td>
-                      <td
-                        style={{
-                          padding: "12px 20px",
-                          textAlign: "right",
-                          fontWeight: "800",
-                          color: "#0f172a",
-                        }}
-                      >
-                        {calculations.totalWeight.toFixed(3)}
-                      </td>
-                      <td style={{ padding: "12px 20px" }}></td>
-                      <td
-                        style={{
-                          padding: "12px 20px",
-                          textAlign: "right",
-                          fontWeight: "800",
-                          color: "#2563eb",
-                        }}
-                      >
-                        {rowAmounts.totalAmount.toFixed(2)}
-                      </td>
-                      <td
-                        style={{
-                          padding: "12px 20px",
-                          textAlign: "right",
-                          fontWeight: "800",
-                          color: "#475569",
-                        }}
-                      >
-                        {(
-                          (calculations.totalWeight /
-                            calculations.denominator) *
-                          100
-                        ).toFixed(2)}
-                        %
-                      </td>
-                    </tr>
-
-                    {/* LOSS ROW */}
-                    <tr
-                      style={{
-                        borderBottom: "1px solid #e2e8f0",
-                        background: "#fffbeb",
-                      }}
-                    >
-                      <td
-                        style={{
-                          padding: "10px 20px",
-                          fontWeight: "700",
-                          color: "#b45309",
-                        }}
-                      >
-                        Loss
-                      </td>
-                      <td
-                        style={{
-                          padding: "10px 20px",
-                          textAlign: "right",
-                          fontWeight: "700",
-                          color: "#b45309",
-                        }}
-                      >
-                        {calculations.wLoss.toFixed(3)}
-                      </td>
-                      <td style={{ padding: "10px 20px" }}></td>
-                      <td style={{ padding: "10px 20px" }}></td>
-                      <td
-                        style={{
-                          padding: "10px 20px",
-                          textAlign: "right",
-                          fontWeight: "700",
-                          color: "#b45309",
-                        }}
-                      >
-                        {(
-                          (calculations.wLoss / calculations.denominator) *
-                          100
-                        ).toFixed(2)}
-                        %
-                      </td>
-                    </tr>
-                  </tbody>
-                </table>
-              </div>
-
-              {/* Remark section */}
-              <div
-                className="remark-section"
+            {/* Cancel marker button */}
+            <div
+              style={{
+                display: "flex",
+                justifyContent: "flex-end",
+                marginTop: "24px",
+              }}
+            >
+              <button
+                type="button"
+                onClick={() => setSelectedMarker(null)}
+                className="btn btn-secondary"
                 style={{
-                  background: "#f8fafc",
-                  padding: "20px",
-                  borderRadius: "12px",
-                  border: "1.5px solid #e2e8f0",
-                  marginBottom: "24px",
+                  padding: "10px 24px",
+                  borderRadius: "10px",
+                  fontWeight: 600,
+                  cursor: "pointer",
                 }}
               >
-                <label
-                  style={{
-                    display: "flex",
-                    alignItems: "center",
-                    gap: "8px",
-                    fontSize: "14px",
-                    fontWeight: "700",
-                    color: "#334155",
-                    marginBottom: "8px",
-                  }}
-                >
-                  <FileText size={16} /> REMARK:
-                </label>
-                <textarea
-                  value={remark}
-                  onChange={(e) => setRemark(e.target.value)}
-                  placeholder="Enter remark here..."
-                  rows={2}
-                  style={{
-                    width: "100%",
-                    padding: "10px 12px",
-                    borderRadius: "8px",
-                    border: "1.5px solid #cbd5e1",
-                    fontSize: "13.5px",
-                    color: "#0f172a",
-                    outline: "none",
-                    resize: "vertical",
-                    boxSizing: "border-box",
-                  }}
-                />
-              </div>
+                Close Marker View
+              </button>
+            </div>
 
-              {/* Actions */}
-              <div style={{ display: "flex", gap: "16px" }}>
-                <button
-                  type="submit"
-                  disabled={saving}
-                  className="submit-btn"
-                  style={{
-                    flex: 1,
-                    padding: "14px",
-                    background: "linear-gradient(135deg, #2563eb, #1d4ed8)",
-                    color: "white",
-                    border: "none",
-                    borderRadius: "10px",
-                    fontSize: "15px",
-                    fontWeight: "700",
-                    cursor: saving ? "not-allowed" : "pointer",
-                    display: "flex",
-                    alignItems: "center",
-                    justifyContent: "center",
-                    gap: "8px",
-                    boxShadow: "0 4px 12px rgba(37,99,235,0.2)",
-                    opacity: saving ? 0.7 : 1,
-                    transition: "all 0.3s ease",
-                  }}
-                >
-                  <Send size={16} />{" "}
-                  {saving ? "Saving..." : "Save Semi Export Details"}
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setSelectedSddId(null)}
-                  className="btn btn-secondary"
-                  style={{
-                    padding: "0 24px",
-                    borderRadius: "10px",
-                    fontWeight: 600,
-                    cursor: "pointer",
-                  }}
-                >
-                  Cancel
-                </button>
-              </div>
-
-              {formError && (
-                <p
-                  style={{
-                    color: "#ef4444",
-                    fontSize: "13px",
-                    fontWeight: 600,
-                    marginTop: "10px",
-                    textAlign: "center",
-                  }}
-                >
-                  {formError}
-                </p>
-              )}
-            </form>
+            {formError && (
+              <p
+                style={{
+                  color: "#ef4444",
+                  fontSize: "13px",
+                  fontWeight: 600,
+                  marginTop: "10px",
+                  textAlign: "center",
+                }}
+              >
+                {formError}
+              </p>
+            )}
           </div>
         ) : (
           // Placeholder when no selection + Global History

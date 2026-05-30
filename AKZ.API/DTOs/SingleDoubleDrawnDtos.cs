@@ -35,6 +35,30 @@ public class SingleDoubleDrawnRecordDto
     public decimal LostWeight { get; set; }
     public decimal SpoilageWeight { get; set; }
     public decimal ReturnWeight { get; set; }
+
+    // Pricing for each size
+    public decimal Price6 { get; set; }
+    public decimal Price7 { get; set; }
+    public decimal Price8 { get; set; }
+    public decimal Price9 { get; set; }
+    public decimal Price10 { get; set; }
+    public decimal Price10B { get; set; }
+    public decimal Price12 { get; set; }
+    public decimal Price14 { get; set; }
+    public decimal Price16 { get; set; }
+    public decimal Price18 { get; set; }
+    public decimal Price20 { get; set; }
+    public decimal Price22 { get; set; }
+    public decimal Price24 { get; set; }
+    public decimal Price26 { get; set; }
+    public decimal Price28 { get; set; }
+    public decimal PriceBar { get; set; }
+
+    // Two Inches Spoilage and Return sizes
+    public decimal SpoilageSize { get; set; }
+    public decimal ReturnSize { get; set; }
+    public decimal PriceSpoilageSize { get; set; }
+    public decimal PriceReturnSize { get; set; }
 }
 
 public class CreateSingleDoubleDrawnRecordDto
@@ -66,4 +90,28 @@ public class CreateSingleDoubleDrawnRecordDto
     public decimal LostWeight { get; set; }
     public decimal SpoilageWeight { get; set; }
     public decimal ReturnWeight { get; set; }
+
+    // Pricing for each size
+    public decimal Price6 { get; set; }
+    public decimal Price7 { get; set; }
+    public decimal Price8 { get; set; }
+    public decimal Price9 { get; set; }
+    public decimal Price10 { get; set; }
+    public decimal Price10B { get; set; }
+    public decimal Price12 { get; set; }
+    public decimal Price14 { get; set; }
+    public decimal Price16 { get; set; }
+    public decimal Price18 { get; set; }
+    public decimal Price20 { get; set; }
+    public decimal Price22 { get; set; }
+    public decimal Price24 { get; set; }
+    public decimal Price26 { get; set; }
+    public decimal Price28 { get; set; }
+    public decimal PriceBar { get; set; }
+
+    // Two Inches Spoilage and Return sizes
+    public decimal SpoilageSize { get; set; }
+    public decimal ReturnSize { get; set; }
+    public decimal PriceSpoilageSize { get; set; }
+    public decimal PriceReturnSize { get; set; }
 }

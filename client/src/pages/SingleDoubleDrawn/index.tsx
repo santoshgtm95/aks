@@ -16,7 +16,7 @@ import {
 import { formatDateTime } from "../../utils/format";
 import "./index.css";
 
-// Helper: sum all 16 size fields of a SingleDoubleDrawnRecord
+// Helper: sum all size fields of a SingleDoubleDrawnRecord (including Spoilage and Return sizes)
 const sumRecordSizes = (r: SingleDoubleDrawnRecord): number =>
   r.size6 +
   r.size7 +
@@ -33,7 +33,98 @@ const sumRecordSizes = (r: SingleDoubleDrawnRecord): number =>
   r.size24 +
   r.size26 +
   r.size28 +
-  r.sizeBar;
+  r.sizeBar +
+  (r.spoilageSize ?? 0) +
+  (r.returnSize ?? 0);
+
+// Helper: calculate total MMK amount of a SingleDoubleDrawnRecord (sum of weight * price for all sizes)
+const calculateRecordTotalAmount = (r: SingleDoubleDrawnRecord): number =>
+  r.size6 * (r.price6 ?? 0) +
+  r.size7 * (r.price7 ?? 0) +
+  r.size8 * (r.price8 ?? 0) +
+  r.size9 * (r.price9 ?? 0) +
+  r.size10 * (r.price10 ?? 0) +
+  r.size10B * (r.price10B ?? 0) +
+  r.size12 * (r.price12 ?? 0) +
+  r.size14 * (r.price14 ?? 0) +
+  r.size16 * (r.price16 ?? 0) +
+  r.size18 * (r.price18 ?? 0) +
+  r.size20 * (r.price20 ?? 0) +
+  r.size22 * (r.price22 ?? 0) +
+  r.size24 * (r.price24 ?? 0) +
+  r.size26 * (r.price26 ?? 0) +
+  r.size28 * (r.price28 ?? 0) +
+  r.sizeBar * (r.priceBar ?? 0) +
+  (r.spoilageSize ?? 0) * (r.priceSpoilageSize ?? 0) +
+  (r.returnSize ?? 0) * (r.priceReturnSize ?? 0);
+
+const renderTwoInchesBadges = (record: SingleDoubleDrawnRecord) => {
+  const sizes = [
+    { label: '6"', val: record.size6, price: record.price6 },
+    { label: '7"', val: record.size7, price: record.price7 },
+    { label: '8"', val: record.size8, price: record.price8 },
+    { label: '9"', val: record.size9, price: record.price9 },
+    { label: '10"', val: record.size10, price: record.price10 },
+    { label: 'Spoilage', val: record.spoilageSize ?? 0, price: record.priceSpoilageSize ?? 0, isSpecial: true, color: '#ea580c', bg: '#fff7ed' },
+    { label: 'Return', val: record.returnSize ?? 0, price: record.priceReturnSize ?? 0, isSpecial: true, color: '#2563eb', bg: '#eff6ff' },
+  ];
+
+  return (
+    <div style={{ display: "flex", gap: "8px", flexWrap: "wrap" }}>
+      {sizes.map((s) => s.val > 0 && (
+        <span
+          key={s.label}
+          style={{
+            background: (s as any).bg ?? "#eff6ff",
+            color: (s as any).color ?? "#2563eb",
+            padding: "3px 8px",
+            borderRadius: "6px",
+            fontSize: "11.5px",
+            fontWeight: "700",
+          }}
+        >
+          {s.label}: {s.val.toFixed(3)} viss @ {(s.price ?? 0).toLocaleString()} MMK
+        </span>
+      ))}
+    </div>
+  );
+};
+
+const renderBToTenBadges = (record: SingleDoubleDrawnRecord) => {
+  const sizes = [
+    { label: '10B', val: record.size10B, price: record.price10B },
+    { label: '12"', val: record.size12, price: record.price12 },
+    { label: '14"', val: record.size14, price: record.price14 },
+    { label: '16"', val: record.size16, price: record.price16 },
+    { label: '18"', val: record.size18, price: record.price18 },
+    { label: '20"', val: record.size20, price: record.price20 },
+    { label: '22"', val: record.size22, price: record.price22 },
+    { label: '24"', val: record.size24, price: record.price24 },
+    { label: '26"', val: record.size26, price: record.price26 },
+    { label: '28"', val: record.size28, price: record.price28 },
+    { label: 'Bar', val: record.sizeBar, price: record.priceBar },
+  ];
+
+  return (
+    <div style={{ display: "flex", gap: "8px", flexWrap: "wrap" }}>
+      {sizes.map((s) => s.val > 0 && (
+        <span
+          key={s.label}
+          style={{
+            background: "#faf5ff",
+            color: "#8b5cf6",
+            padding: "3px 8px",
+            borderRadius: "6px",
+            fontSize: "11.5px",
+            fontWeight: "700",
+          }}
+        >
+          {s.label}: {s.val.toFixed(3)} viss @ {(s.price ?? 0).toLocaleString()} MMK
+        </span>
+      ))}
+    </div>
+  );
+};
 
 const SingleDoubleDrawn: React.FC = () => {
   const { hasPermission } = useAuth();
@@ -55,6 +146,15 @@ const SingleDoubleDrawn: React.FC = () => {
     size10: "",
   });
 
+  // Two Inches Category prices: 6, 7, 8, 9, 10
+  const [twoInchesPricesForm, setTwoInchesPricesForm] = useState({
+    price6: "",
+    price7: "",
+    price8: "",
+    price9: "",
+    price10: "",
+  });
+
   // B to Ten Category sizes: 10B, 12, 14, 16, 18, 20, 22, 24, 26, 28, Bar
   const [bToTenForm, setBToTenForm] = useState({
     size10B: "",
@@ -69,6 +169,27 @@ const SingleDoubleDrawn: React.FC = () => {
     size28: "",
     sizeBar: "",
   });
+
+  // B to Ten Category prices
+  const [bToTenPricesForm, setBToTenPricesForm] = useState({
+    price10B: "",
+    price12: "",
+    price14: "",
+    price16: "",
+    price18: "",
+    price20: "",
+    price22: "",
+    price24: "",
+    price26: "",
+    price28: "",
+    priceBar: "",
+  });
+
+  // Spoilage and Return sizes for Two Inches (weight + price)
+  const [spoilageSizeWeight, setSpoilageSizeWeight] = useState("");
+  const [spoilageSizePrice, setSpoilageSizePrice] = useState("");
+  const [returnSizeWeight, setReturnSizeWeight] = useState("");
+  const [returnSizePrice, setReturnSizePrice] = useState("");
 
   useEffect(() => {
     loadData();
@@ -110,7 +231,7 @@ const SingleDoubleDrawn: React.FC = () => {
     return savedTotalByRefinement[selectedRecordId] || 0;
   }, [selectedRecordId, savedTotalByRefinement]);
 
-  // Real-time current form total
+  // Real-time current form total (includes spoilage and return sizes)
   const currentFormTotal = useMemo(() => {
     const twoInchesTotal = Object.values(twoInchesForm).reduce(
       (sum, v) => sum + (parseFloat(v) || 0),
@@ -120,14 +241,59 @@ const SingleDoubleDrawn: React.FC = () => {
       (sum, v) => sum + (parseFloat(v) || 0),
       0,
     );
-    return twoInchesTotal + bToTenTotal;
-  }, [twoInchesForm, bToTenForm]);
+    const spoilageVal = parseFloat(spoilageSizeWeight) || 0;
+    const returnVal = parseFloat(returnSizeWeight) || 0;
+    return twoInchesTotal + bToTenTotal + spoilageVal + returnVal;
+  }, [twoInchesForm, bToTenForm, spoilageSizeWeight, returnSizeWeight]);
 
-  // Remaining weight = Output Weight - already saved - current form input
+  // Remaining weight = Output Weight - already saved - current form input (spoilage+return now included in currentFormTotal)
   const remainingWeight = useMemo(() => {
     if (!selectedRecord) return 0;
     return selectedRecord.weight - alreadySortedWeight - currentFormTotal;
   }, [selectedRecord, alreadySortedWeight, currentFormTotal]);
+
+  // Real-time current form total amount (sum of weights * prices)
+  const totalFormAmount = useMemo(() => {
+    let total = 0;
+    ["6", "7", "8", "9", "10"].forEach((size) => {
+      const w = parseFloat(twoInchesForm[`size${size}` as keyof typeof twoInchesForm]) || 0;
+      const p = parseFloat(twoInchesPricesForm[`price${size}` as keyof typeof twoInchesPricesForm]) || 0;
+      total += w * p;
+    });
+    [
+      "10B",
+      "12",
+      "14",
+      "16",
+      "18",
+      "20",
+      "22",
+      "24",
+      "26",
+      "28",
+      "Bar",
+    ].forEach((size) => {
+      const fieldName =
+        size === "10B"
+          ? "size10B"
+          : size === "Bar"
+            ? "sizeBar"
+            : `size${size}`;
+      const priceFieldName =
+        size === "10B"
+          ? "price10B"
+          : size === "Bar"
+            ? "priceBar"
+            : `price${size}`;
+      const w = parseFloat(bToTenForm[fieldName as keyof typeof bToTenForm]) || 0;
+      const p = parseFloat(bToTenPricesForm[priceFieldName as keyof typeof bToTenPricesForm]) || 0;
+      total += w * p;
+    });
+    // Include spoilage and return sizes
+    total += (parseFloat(spoilageSizeWeight) || 0) * (parseFloat(spoilageSizePrice) || 0);
+    total += (parseFloat(returnSizeWeight) || 0) * (parseFloat(returnSizePrice) || 0);
+    return total;
+  }, [twoInchesForm, twoInchesPricesForm, bToTenForm, bToTenPricesForm, spoilageSizeWeight, spoilageSizePrice, returnSizeWeight, returnSizePrice]);
 
   // Filter sidebar: hide fully sorted, apply search
   const filteredRecords = useMemo(() => {
@@ -152,10 +318,21 @@ const SingleDoubleDrawn: React.FC = () => {
     setTwoInchesForm((prev) => ({ ...prev, [name]: value }));
   };
 
+  const handleTwoInchesPriceChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const { name, value } = e.target;
+    setTwoInchesPricesForm((prev) => ({ ...prev, [name]: value }));
+  };
+
   const handleBToTenChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
     setBToTenForm((prev) => ({ ...prev, [name]: value }));
   };
+
+  const handleBToTenPriceChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const { name, value } = e.target;
+    setBToTenPricesForm((prev) => ({ ...prev, [name]: value }));
+  };
+
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -175,19 +352,89 @@ const SingleDoubleDrawn: React.FC = () => {
       return;
     }
 
+    // Validate: for any size with weight entered, price must also be entered and greater than 0
+    let priceMissing = false;
+    let missingSize = "";
+
+    // Check Two Inches
+    ["6", "7", "8", "9", "10"].forEach((size) => {
+      const wVal = parseFloat(twoInchesForm[`size${size}` as keyof typeof twoInchesForm]) || 0;
+      const pVal = parseFloat(twoInchesPricesForm[`price${size}` as keyof typeof twoInchesPricesForm]) || 0;
+      if (wVal > 0 && pVal <= 0) {
+        priceMissing = true;
+        missingSize = `Size ${size}`;
+      }
+    });
+
+    // Check spoilage and return sizes
+    if ((parseFloat(spoilageSizeWeight) || 0) > 0 && (parseFloat(spoilageSizePrice) || 0) <= 0) {
+      priceMissing = true;
+      missingSize = "Spoilage";
+    }
+    if ((parseFloat(returnSizeWeight) || 0) > 0 && (parseFloat(returnSizePrice) || 0) <= 0) {
+      priceMissing = true;
+      missingSize = "Return";
+    }
+
+    // Check B to Ten
+    [
+      "10B",
+      "12",
+      "14",
+      "16",
+      "18",
+      "20",
+      "22",
+      "24",
+      "26",
+      "28",
+      "Bar",
+    ].forEach((size) => {
+      const fieldName =
+        size === "10B"
+          ? "size10B"
+          : size === "Bar"
+            ? "sizeBar"
+            : `size${size}`;
+      const priceFieldName =
+        size === "10B"
+          ? "price10B"
+          : size === "Bar"
+            ? "priceBar"
+            : `price${size}`;
+      const wVal = parseFloat(bToTenForm[fieldName as keyof typeof bToTenForm]) || 0;
+      const pVal = parseFloat(bToTenPricesForm[priceFieldName as keyof typeof bToTenPricesForm]) || 0;
+      if (wVal > 0 && pVal <= 0) {
+        priceMissing = true;
+        missingSize = size === "Bar" ? "Size Bar" : `Size ${size}`;
+      }
+    });
+
+    if (priceMissing) {
+      setFormError(`Price is required for ${missingSize} because a weight has been entered.`);
+      return;
+    }
+
     try {
       const dto = {
         date: new Date().toISOString(),
         refinementRecordId: selectedRecordId,
 
-        // Two Inches
+        // Two Inches Weights
         size6: parseFloat(twoInchesForm.size6) || 0,
         size7: parseFloat(twoInchesForm.size7) || 0,
         size8: parseFloat(twoInchesForm.size8) || 0,
         size9: parseFloat(twoInchesForm.size9) || 0,
         size10: parseFloat(twoInchesForm.size10) || 0,
 
-        // B to Ten
+        // Two Inches Prices
+        price6: parseFloat(twoInchesPricesForm.price6) || 0,
+        price7: parseFloat(twoInchesPricesForm.price7) || 0,
+        price8: parseFloat(twoInchesPricesForm.price8) || 0,
+        price9: parseFloat(twoInchesPricesForm.price9) || 0,
+        price10: parseFloat(twoInchesPricesForm.price10) || 0,
+
+        // B to Ten Weights
         size10B: parseFloat(bToTenForm.size10B) || 0,
         size12: parseFloat(bToTenForm.size12) || 0,
         size14: parseFloat(bToTenForm.size14) || 0,
@@ -199,9 +446,29 @@ const SingleDoubleDrawn: React.FC = () => {
         size26: parseFloat(bToTenForm.size26) || 0,
         size28: parseFloat(bToTenForm.size28) || 0,
         sizeBar: parseFloat(bToTenForm.sizeBar) || 0,
+
+        // B to Ten Prices
+        price10B: parseFloat(bToTenPricesForm.price10B) || 0,
+        price12: parseFloat(bToTenPricesForm.price12) || 0,
+        price14: parseFloat(bToTenPricesForm.price14) || 0,
+        price16: parseFloat(bToTenPricesForm.price16) || 0,
+        price18: parseFloat(bToTenPricesForm.price18) || 0,
+        price20: parseFloat(bToTenPricesForm.price20) || 0,
+        price22: parseFloat(bToTenPricesForm.price22) || 0,
+        price24: parseFloat(bToTenPricesForm.price24) || 0,
+        price26: parseFloat(bToTenPricesForm.price26) || 0,
+        price28: parseFloat(bToTenPricesForm.price28) || 0,
+        priceBar: parseFloat(bToTenPricesForm.priceBar) || 0,
+
         lostWeight: selectedRecord.lostWeight || 0,
         spoilageWeight: selectedRecord.spoilageWeight || 0,
         returnWeight: selectedRecord.returnWeight || 0,
+
+        // Spoilage and Return sizes
+        spoilageSize: parseFloat(spoilageSizeWeight) || 0,
+        returnSize: parseFloat(returnSizeWeight) || 0,
+        priceSpoilageSize: parseFloat(spoilageSizePrice) || 0,
+        priceReturnSize: parseFloat(returnSizePrice) || 0,
       };
 
       await singleDoubleDrawnAPI.create(dto);
@@ -213,6 +480,13 @@ const SingleDoubleDrawn: React.FC = () => {
         size8: "",
         size9: "",
         size10: "",
+      });
+      setTwoInchesPricesForm({
+        price6: "",
+        price7: "",
+        price8: "",
+        price9: "",
+        price10: "",
       });
       setBToTenForm({
         size10B: "",
@@ -227,6 +501,23 @@ const SingleDoubleDrawn: React.FC = () => {
         size28: "",
         sizeBar: "",
       });
+      setBToTenPricesForm({
+        price10B: "",
+        price12: "",
+        price14: "",
+        price16: "",
+        price18: "",
+        price20: "",
+        price22: "",
+        price24: "",
+        price26: "",
+        price28: "",
+        priceBar: "",
+      });
+      setSpoilageSizeWeight("");
+      setSpoilageSizePrice("");
+      setReturnSizeWeight("");
+      setReturnSizePrice("");
       setFormError("");
       setSelectedRecordId(null);
 
@@ -482,80 +773,289 @@ const SingleDoubleDrawn: React.FC = () => {
             {/* Category Size forms (vertical layout) */}
             {hasPermission("SingleDoubleDrawn.Create") && (
               <form onSubmit={handleSubmit}>
-                <div className="categories-container">
+                <div className="categories-container" style={{ display: "flex", gap: "24px", flexDirection: "column" }}>
                   {/* Column 1: Two Inches Category (6,7,8,9,10) */}
                   <div className="category-column category-column-two">
-                    <h3 className="category-title">
+                    <h3 className="category-title" style={{ display: "flex", alignItems: "center", gap: "8px", fontSize: "16px", fontWeight: "700", marginBottom: "12px" }}>
                       <LayoutGrid size={18} style={{ color: "#2563eb" }} />
                       Two Inches Category
                     </h3>
-                    <div className="size-grid">
-                      {["6", "7", "8", "9", "10"].map((size) => (
-                        <div key={size} className="size-input-box">
-                          <label className="size-label">Size {size}</label>
-                          <input
-                            type="number"
-                            step="0.001"
-                            name={`size${size}`}
-                            className="size-input"
-                            placeholder="0.000"
-                            value={
-                              twoInchesForm[
-                                `size${size}` as keyof typeof twoInchesForm
-                              ]
-                            }
-                            onChange={handleTwoInchesChange}
-                          />
-                        </div>
-                      ))}
+                    <div className="table-container" style={{ border: "1.5px solid #e2e8f0", borderRadius: "12px", overflow: "hidden", background: "white" }}>
+                      <table className="table" style={{ width: "100%", borderCollapse: "collapse", textAlign: "left", fontSize: "13.5px" }}>
+                        <thead>
+                          <tr style={{ background: "#f8fafc", borderBottom: "1.5px solid #e2e8f0" }}>
+                            <th style={{ padding: "10px 16px", fontWeight: "700", color: "#475569" }}>SIZE</th>
+                            <th style={{ padding: "10px 16px", fontWeight: "700", color: "#475569", width: "160px" }}>WEIGHT (viss)</th>
+                            <th style={{ padding: "10px 16px", fontWeight: "700", color: "#475569", width: "160px" }}>PRICE (MMK)</th>
+                            <th style={{ padding: "10px 16px", fontWeight: "700", color: "#475569", textAlign: "right" }}>AMOUNT (MMK)</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {["6", "7", "8", "9", "10"].map((size) => {
+                            const weightVal = parseFloat(twoInchesForm[`size${size}` as keyof typeof twoInchesForm]) || 0;
+                            const priceVal = parseFloat(twoInchesPricesForm[`price${size}` as keyof typeof twoInchesPricesForm]) || 0;
+                            const amount = weightVal * priceVal;
+                            return (
+                              <tr key={size} style={{ borderBottom: "1px solid #f1f5f9" }}>
+                                <td style={{ padding: "10px 16px", fontWeight: "700", color: "#1e293b" }}>Size {size}</td>
+                                <td style={{ padding: "6px 16px" }}>
+                                  <input
+                                    type="number"
+                                    step="0.001"
+                                    name={`size${size}`}
+                                    placeholder="0.000"
+                                    value={twoInchesForm[`size${size}` as keyof typeof twoInchesForm]}
+                                    onChange={handleTwoInchesChange}
+                                    style={{
+                                      width: "100%",
+                                      padding: "8px 12px",
+                                      borderRadius: "8px",
+                                      border: "1.5px solid #cbd5e1",
+                                      fontSize: "13.5px",
+                                      fontWeight: "600",
+                                      outline: "none",
+                                      boxSizing: "border-box"
+                                    }}
+                                  />
+                                </td>
+                                <td style={{ padding: "6px 16px" }}>
+                                  <input
+                                    type="number"
+                                    name={`price${size}`}
+                                    placeholder="0"
+                                    value={twoInchesPricesForm[`price${size}` as keyof typeof twoInchesPricesForm]}
+                                    onChange={handleTwoInchesPriceChange}
+                                    style={{
+                                      width: "100%",
+                                      padding: "8px 12px",
+                                      borderRadius: "8px",
+                                      border: "1.5px solid #cbd5e1",
+                                      fontSize: "13.5px",
+                                      fontWeight: "600",
+                                      outline: "none",
+                                      boxSizing: "border-box"
+                                    }}
+                                  />
+                                </td>
+                                <td style={{ padding: "10px 16px", textAlign: "right", fontWeight: "700", color: "#0f172a" }}>
+                                  {amount > 0 ? amount.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 }) : "0.00"}
+                                </td>
+                              </tr>
+                            );
+                          })}
+                          
+                          {/* Spoilage row */}
+                          {(() => {
+                            const spoilageW = parseFloat(spoilageSizeWeight) || 0;
+                            const spoilageP = parseFloat(spoilageSizePrice) || 0;
+                            const spoilageAmt = spoilageW * spoilageP;
+                            return (
+                              <tr style={{ borderBottom: "1px solid #f1f5f9", background: "#fffaf8" }}>
+                                <td style={{ padding: "10px 16px", fontWeight: "700", color: "#ea580c" }}>Spoilage</td>
+                                <td style={{ padding: "6px 16px" }}>
+                                  <input
+                                    type="number"
+                                    step="0.001"
+                                    placeholder="0.000"
+                                    value={spoilageSizeWeight}
+                                    onChange={(e) => setSpoilageSizeWeight(e.target.value)}
+                                    style={{
+                                      width: "100%",
+                                      padding: "8px 12px",
+                                      borderRadius: "8px",
+                                      border: "1.5px solid #ffedd5",
+                                      fontSize: "13.5px",
+                                      fontWeight: "600",
+                                      outline: "none",
+                                      boxSizing: "border-box",
+                                      background: "#fff"
+                                    }}
+                                  />
+                                </td>
+                                <td style={{ padding: "6px 16px" }}>
+                                  <input
+                                    type="number"
+                                    step="1"
+                                    placeholder="0"
+                                    value={spoilageSizePrice}
+                                    onChange={(e) => setSpoilageSizePrice(e.target.value)}
+                                    style={{
+                                      width: "100%",
+                                      padding: "8px 12px",
+                                      borderRadius: "8px",
+                                      border: spoilageW > 0 && spoilageP <= 0 ? "1.5px solid #ef4444" : "1.5px solid #ffedd5",
+                                      fontSize: "13.5px",
+                                      fontWeight: "600",
+                                      outline: "none",
+                                      boxSizing: "border-box",
+                                      background: "#fff"
+                                    }}
+                                  />
+                                </td>
+                                <td style={{ padding: "10px 16px", textAlign: "right", fontWeight: "700", color: spoilageAmt > 0 ? "#ea580c" : "#cbd5e1", fontStyle: spoilageAmt > 0 ? "normal" : "italic" }}>
+                                  {spoilageAmt > 0 ? spoilageAmt.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 }) : "0.00"}
+                                </td>
+                              </tr>
+                            );
+                          })()}
+
+                          {/* Return row */}
+                          {(() => {
+                            const returnW = parseFloat(returnSizeWeight) || 0;
+                            const returnP = parseFloat(returnSizePrice) || 0;
+                            const returnAmt = returnW * returnP;
+                            return (
+                              <tr style={{ borderBottom: "1px solid #f1f5f9", background: "#f8fafc" }}>
+                                <td style={{ padding: "10px 16px", fontWeight: "700", color: "#2563eb" }}>Return</td>
+                                <td style={{ padding: "6px 16px" }}>
+                                  <input
+                                    type="number"
+                                    step="0.001"
+                                    placeholder="0.000"
+                                    value={returnSizeWeight}
+                                    onChange={(e) => setReturnSizeWeight(e.target.value)}
+                                    style={{
+                                      width: "100%",
+                                      padding: "8px 12px",
+                                      borderRadius: "8px",
+                                      border: "1.5px solid #dbeafe",
+                                      fontSize: "13.5px",
+                                      fontWeight: "600",
+                                      outline: "none",
+                                      boxSizing: "border-box",
+                                      background: "#fff"
+                                    }}
+                                  />
+                                </td>
+                                <td style={{ padding: "6px 16px" }}>
+                                  <input
+                                    type="number"
+                                    step="1"
+                                    placeholder="0"
+                                    value={returnSizePrice}
+                                    onChange={(e) => setReturnSizePrice(e.target.value)}
+                                    style={{
+                                      width: "100%",
+                                      padding: "8px 12px",
+                                      borderRadius: "8px",
+                                      border: returnW > 0 && returnP <= 0 ? "1.5px solid #ef4444" : "1.5px solid #dbeafe",
+                                      fontSize: "13.5px",
+                                      fontWeight: "600",
+                                      outline: "none",
+                                      boxSizing: "border-box",
+                                      background: "#fff"
+                                    }}
+                                  />
+                                </td>
+                                <td style={{ padding: "10px 16px", textAlign: "right", fontWeight: "700", color: returnAmt > 0 ? "#2563eb" : "#cbd5e1", fontStyle: returnAmt > 0 ? "normal" : "italic" }}>
+                                  {returnAmt > 0 ? returnAmt.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 }) : "0.00"}
+                                </td>
+                              </tr>
+                            );
+                          })()}
+                        </tbody>
+                      </table>
                     </div>
                   </div>
 
                   {/* Column 2: B to Ten Category (10,12,14,16,18,20,22,24,26,28,Bar) */}
                   <div className="category-column category-column-b">
-                    <h3 className="category-title">
-                      <LayoutGrid size={18} style={{ color: "#8b5cf6" }} />B to
-                      Ten Category
+                    <h3 className="category-title" style={{ display: "flex", alignItems: "center", gap: "8px", fontSize: "16px", fontWeight: "700", marginBottom: "12px" }}>
+                      <LayoutGrid size={18} style={{ color: "#8b5cf6" }} />
+                      B to Ten Category
                     </h3>
-                    <div className="size-grid">
-                      {[
-                        "10B",
-                        "12",
-                        "14",
-                        "16",
-                        "18",
-                        "20",
-                        "22",
-                        "24",
-                        "26",
-                        "28",
-                        "Bar",
-                      ].map((size) => {
-                        const fieldName =
-                          size === "10B"
-                            ? "size10B"
-                            : size === "Bar"
-                              ? "sizeBar"
-                              : `size${size}`;
-                        const displayLabel =
-                          size === "10B" ? "Size 10" : `Size ${size}`;
-                        return (
-                          <div key={size} className="size-input-box">
-                            <label className="size-label">{displayLabel}</label>
-                            <input
-                              type="number"
-                              step="0.001"
-                              name={fieldName}
-                              className="size-input"
-                              placeholder="0.000"
-                              value={
-                                bToTenForm[fieldName as keyof typeof bToTenForm]
-                              }
-                              onChange={handleBToTenChange}
-                            />
-                          </div>
-                        );
-                      })}
+                    <div className="table-container" style={{ border: "1.5px solid #e2e8f0", borderRadius: "12px", overflow: "hidden", background: "white" }}>
+                      <table className="table" style={{ width: "100%", borderCollapse: "collapse", textAlign: "left", fontSize: "13.5px" }}>
+                        <thead>
+                          <tr style={{ background: "#f8fafc", borderBottom: "1.5px solid #e2e8f0" }}>
+                            <th style={{ padding: "10px 16px", fontWeight: "700", color: "#475569" }}>SIZE</th>
+                            <th style={{ padding: "10px 16px", fontWeight: "700", color: "#475569", width: "160px" }}>WEIGHT (viss)</th>
+                            <th style={{ padding: "10px 16px", fontWeight: "700", color: "#475569", width: "160px" }}>PRICE (MMK)</th>
+                            <th style={{ padding: "10px 16px", fontWeight: "700", color: "#475569", textAlign: "right" }}>AMOUNT (MMK)</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {[
+                            "10B",
+                            "12",
+                            "14",
+                            "16",
+                            "18",
+                            "20",
+                            "22",
+                            "24",
+                            "26",
+                            "28",
+                            "Bar",
+                          ].map((size) => {
+                            const fieldName =
+                              size === "10B"
+                                ? "size10B"
+                                : size === "Bar"
+                                  ? "sizeBar"
+                                  : `size${size}`;
+                            const priceFieldName =
+                              size === "10B"
+                                ? "price10B"
+                                : size === "Bar"
+                                  ? "priceBar"
+                                  : `price${size}`;
+                            const displayLabel = size === "10B" ? "Size 10B" : `Size ${size}`;
+
+                            const weightVal = parseFloat(bToTenForm[fieldName as keyof typeof bToTenForm]) || 0;
+                            const priceVal = parseFloat(bToTenPricesForm[priceFieldName as keyof typeof bToTenPricesForm]) || 0;
+                            const amount = weightVal * priceVal;
+
+                            return (
+                              <tr key={size} style={{ borderBottom: "1px solid #f1f5f9" }}>
+                                <td style={{ padding: "10px 16px", fontWeight: "700", color: "#1e293b" }}>{displayLabel}</td>
+                                <td style={{ padding: "6px 16px" }}>
+                                  <input
+                                    type="number"
+                                    step="0.001"
+                                    name={fieldName}
+                                    placeholder="0.000"
+                                    value={bToTenForm[fieldName as keyof typeof bToTenForm]}
+                                    onChange={handleBToTenChange}
+                                    style={{
+                                      width: "100%",
+                                      padding: "8px 12px",
+                                      borderRadius: "8px",
+                                      border: "1.5px solid #cbd5e1",
+                                      fontSize: "13.5px",
+                                      fontWeight: "600",
+                                      outline: "none",
+                                      boxSizing: "border-box"
+                                    }}
+                                  />
+                                </td>
+                                <td style={{ padding: "6px 16px" }}>
+                                  <input
+                                    type="number"
+                                    name={priceFieldName}
+                                    placeholder="0"
+                                    value={bToTenPricesForm[priceFieldName as keyof typeof bToTenPricesForm]}
+                                    onChange={handleBToTenPriceChange}
+                                    style={{
+                                      width: "100%",
+                                      padding: "8px 12px",
+                                      borderRadius: "8px",
+                                      border: "1.5px solid #cbd5e1",
+                                      fontSize: "13.5px",
+                                      fontWeight: "600",
+                                      outline: "none",
+                                      boxSizing: "border-box"
+                                    }}
+                                  />
+                                </td>
+                                <td style={{ padding: "10px 16px", textAlign: "right", fontWeight: "700", color: "#0f172a" }}>
+                                  {amount > 0 ? amount.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 }) : "0.00"}
+                                </td>
+                              </tr>
+                            );
+                          })}
+                        </tbody>
+                      </table>
                     </div>
                   </div>
                 </div>
@@ -626,9 +1126,9 @@ const SingleDoubleDrawn: React.FC = () => {
                           fontWeight: 500,
                         }}
                       >
-                        Output: {selectedRecord.weight.toFixed(3)} — Already
-                        Saved: {alreadySortedWeight.toFixed(3)} — Current Input:{" "}
-                        {currentFormTotal.toFixed(3)}
+                        Output: {selectedRecord.weight.toFixed(3)} viss — Already
+                        Saved: {alreadySortedWeight.toFixed(3)} viss — Current Input:{" "}
+                        {currentFormTotal.toFixed(3)} viss — Total Amount: {totalFormAmount.toLocaleString()} MMK
                       </div>
                     </div>
                   </div>
@@ -802,6 +1302,16 @@ const SingleDoubleDrawn: React.FC = () => {
                           padding: "12px 16px",
                           fontWeight: "700",
                           color: "#475569",
+                          textAlign: "right",
+                        }}
+                      >
+                        Total Amount
+                      </th>
+                      <th
+                        style={{
+                          padding: "12px 16px",
+                          fontWeight: "700",
+                          color: "#475569",
                           textAlign: "center",
                         }}
                       >
@@ -815,7 +1325,7 @@ const SingleDoubleDrawn: React.FC = () => {
                     ).length === 0 ? (
                       <tr>
                         <td
-                          colSpan={7}
+                          colSpan={8}
                           style={{
                             padding: "24px",
                             textAlign: "center",
@@ -846,248 +1356,10 @@ const SingleDoubleDrawn: React.FC = () => {
                               {formatDateTime(record.date)}
                             </td>
                             <td style={{ padding: "12px 16px" }}>
-                              <div
-                                style={{
-                                  display: "flex",
-                                  gap: "8px",
-                                  flexWrap: "wrap",
-                                }}
-                              >
-                                {record.size6 > 0 && (
-                                  <span
-                                    style={{
-                                      background: "#eff6ff",
-                                      color: "#2563eb",
-                                      padding: "3px 8px",
-                                      borderRadius: "6px",
-                                      fontSize: "11.5px",
-                                      fontWeight: "700",
-                                    }}
-                                  >
-                                    6": {record.size6.toFixed(3)}
-                                  </span>
-                                )}
-                                {record.size7 > 0 && (
-                                  <span
-                                    style={{
-                                      background: "#eff6ff",
-                                      color: "#2563eb",
-                                      padding: "3px 8px",
-                                      borderRadius: "6px",
-                                      fontSize: "11.5px",
-                                      fontWeight: "700",
-                                    }}
-                                  >
-                                    7": {record.size7.toFixed(3)}
-                                  </span>
-                                )}
-                                {record.size8 > 0 && (
-                                  <span
-                                    style={{
-                                      background: "#eff6ff",
-                                      color: "#2563eb",
-                                      padding: "3px 8px",
-                                      borderRadius: "6px",
-                                      fontSize: "11.5px",
-                                      fontWeight: "700",
-                                    }}
-                                  >
-                                    8": {record.size8.toFixed(3)}
-                                  </span>
-                                )}
-                                {record.size9 > 0 && (
-                                  <span
-                                    style={{
-                                      background: "#eff6ff",
-                                      color: "#2563eb",
-                                      padding: "3px 8px",
-                                      borderRadius: "6px",
-                                      fontSize: "11.5px",
-                                      fontWeight: "700",
-                                    }}
-                                  >
-                                    9": {record.size9.toFixed(3)}
-                                  </span>
-                                )}
-                                {record.size10 > 0 && (
-                                  <span
-                                    style={{
-                                      background: "#eff6ff",
-                                      color: "#2563eb",
-                                      padding: "3px 8px",
-                                      borderRadius: "6px",
-                                      fontSize: "11.5px",
-                                      fontWeight: "700",
-                                    }}
-                                  >
-                                    10": {record.size10.toFixed(3)}
-                                  </span>
-                                )}
-                              </div>
+                              {renderTwoInchesBadges(record)}
                             </td>
                             <td style={{ padding: "12px 16px" }}>
-                              <div
-                                style={{
-                                  display: "flex",
-                                  gap: "8px",
-                                  flexWrap: "wrap",
-                                }}
-                              >
-                                {record.size10B > 0 && (
-                                  <span
-                                    style={{
-                                      background: "#faf5ff",
-                                      color: "#8b5cf6",
-                                      padding: "3px 8px",
-                                      borderRadius: "6px",
-                                      fontSize: "11.5px",
-                                      fontWeight: "700",
-                                    }}
-                                  >
-                                    10B: {record.size10B.toFixed(3)}
-                                  </span>
-                                )}
-                                {record.size12 > 0 && (
-                                  <span
-                                    style={{
-                                      background: "#faf5ff",
-                                      color: "#8b5cf6",
-                                      padding: "3px 8px",
-                                      borderRadius: "6px",
-                                      fontSize: "11.5px",
-                                      fontWeight: "700",
-                                    }}
-                                  >
-                                    12": {record.size12.toFixed(3)}
-                                  </span>
-                                )}
-                                {record.size14 > 0 && (
-                                  <span
-                                    style={{
-                                      background: "#faf5ff",
-                                      color: "#8b5cf6",
-                                      padding: "3px 8px",
-                                      borderRadius: "6px",
-                                      fontSize: "11.5px",
-                                      fontWeight: "700",
-                                    }}
-                                  >
-                                    14": {record.size14.toFixed(3)}
-                                  </span>
-                                )}
-                                {record.size16 > 0 && (
-                                  <span
-                                    style={{
-                                      background: "#faf5ff",
-                                      color: "#8b5cf6",
-                                      padding: "3px 8px",
-                                      borderRadius: "6px",
-                                      fontSize: "11.5px",
-                                      fontWeight: "700",
-                                    }}
-                                  >
-                                    16": {record.size16.toFixed(3)}
-                                  </span>
-                                )}
-                                {record.size18 > 0 && (
-                                  <span
-                                    style={{
-                                      background: "#faf5ff",
-                                      color: "#8b5cf6",
-                                      padding: "3px 8px",
-                                      borderRadius: "6px",
-                                      fontSize: "11.5px",
-                                      fontWeight: "700",
-                                    }}
-                                  >
-                                    18": {record.size18.toFixed(3)}
-                                  </span>
-                                )}
-                                {record.size20 > 0 && (
-                                  <span
-                                    style={{
-                                      background: "#faf5ff",
-                                      color: "#8b5cf6",
-                                      padding: "3px 8px",
-                                      borderRadius: "6px",
-                                      fontSize: "11.5px",
-                                      fontWeight: "700",
-                                    }}
-                                  >
-                                    20": {record.size20.toFixed(3)}
-                                  </span>
-                                )}
-                                {record.size22 > 0 && (
-                                  <span
-                                    style={{
-                                      background: "#faf5ff",
-                                      color: "#8b5cf6",
-                                      padding: "3px 8px",
-                                      borderRadius: "6px",
-                                      fontSize: "11.5px",
-                                      fontWeight: "700",
-                                    }}
-                                  >
-                                    22": {record.size22.toFixed(3)}
-                                  </span>
-                                )}
-                                {record.size24 > 0 && (
-                                  <span
-                                    style={{
-                                      background: "#faf5ff",
-                                      color: "#8b5cf6",
-                                      padding: "3px 8px",
-                                      borderRadius: "6px",
-                                      fontSize: "11.5px",
-                                      fontWeight: "700",
-                                    }}
-                                  >
-                                    24": {record.size24.toFixed(3)}
-                                  </span>
-                                )}
-                                {record.size26 > 0 && (
-                                  <span
-                                    style={{
-                                      background: "#faf5ff",
-                                      color: "#8b5cf6",
-                                      padding: "3px 8px",
-                                      borderRadius: "6px",
-                                      fontSize: "11.5px",
-                                      fontWeight: "700",
-                                    }}
-                                  >
-                                    26": {record.size26.toFixed(3)}
-                                  </span>
-                                )}
-                                {record.size28 > 0 && (
-                                  <span
-                                    style={{
-                                      background: "#faf5ff",
-                                      color: "#8b5cf6",
-                                      padding: "3px 8px",
-                                      borderRadius: "6px",
-                                      fontSize: "11.5px",
-                                      fontWeight: "700",
-                                    }}
-                                  >
-                                    28": {record.size28.toFixed(3)}
-                                  </span>
-                                )}
-                                {record.sizeBar > 0 && (
-                                  <span
-                                    style={{
-                                      background: "#faf5ff",
-                                      color: "#8b5cf6",
-                                      padding: "3px 8px",
-                                      borderRadius: "6px",
-                                      fontSize: "11.5px",
-                                      fontWeight: "700",
-                                    }}
-                                  >
-                                    Bar: {record.sizeBar.toFixed(3)}
-                                  </span>
-                                )}
-                              </div>
+                              {renderBToTenBadges(record)}
                             </td>
                             <td style={{ padding: "12px 16px" }}>
                               <span
@@ -1139,6 +1411,16 @@ const SingleDoubleDrawn: React.FC = () => {
                                   : "0.000"}{" "}
                                 viss
                               </span>
+                            </td>
+                            <td
+                              style={{
+                                padding: "12px 16px",
+                                textAlign: "right",
+                                fontWeight: "700",
+                                color: "#2563eb",
+                              }}
+                            >
+                              {calculateRecordTotalAmount(record).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })} MMK
                             </td>
                             <td
                               style={{
@@ -1317,6 +1599,16 @@ const SingleDoubleDrawn: React.FC = () => {
                           padding: "12px 16px",
                           fontWeight: "700",
                           color: "#475569",
+                          textAlign: "right",
+                        }}
+                      >
+                        Total Amount
+                      </th>
+                      <th
+                        style={{
+                          padding: "12px 16px",
+                          fontWeight: "700",
+                          color: "#475569",
                           textAlign: "center",
                         }}
                       >
@@ -1328,7 +1620,7 @@ const SingleDoubleDrawn: React.FC = () => {
                     {savedRecords.length === 0 ? (
                       <tr>
                         <td
-                          colSpan={8}
+                          colSpan={9}
                           style={{
                             padding: "24px",
                             textAlign: "center",
@@ -1390,248 +1682,10 @@ const SingleDoubleDrawn: React.FC = () => {
                             {formatDateTime(record.date)}
                           </td>
                           <td style={{ padding: "12px 16px" }}>
-                            <div
-                              style={{
-                                display: "flex",
-                                gap: "8px",
-                                flexWrap: "wrap",
-                              }}
-                            >
-                              {record.size6 > 0 && (
-                                <span
-                                  style={{
-                                    background: "#eff6ff",
-                                    color: "#2563eb",
-                                    padding: "3px 8px",
-                                    borderRadius: "6px",
-                                    fontSize: "11.5px",
-                                    fontWeight: "700",
-                                  }}
-                                >
-                                  6": {record.size6.toFixed(3)}
-                                </span>
-                              )}
-                              {record.size7 > 0 && (
-                                <span
-                                  style={{
-                                    background: "#eff6ff",
-                                    color: "#2563eb",
-                                    padding: "3px 8px",
-                                    borderRadius: "6px",
-                                    fontSize: "11.5px",
-                                    fontWeight: "700",
-                                  }}
-                                >
-                                  7": {record.size7.toFixed(3)}
-                                </span>
-                              )}
-                              {record.size8 > 0 && (
-                                <span
-                                  style={{
-                                    background: "#eff6ff",
-                                    color: "#2563eb",
-                                    padding: "3px 8px",
-                                    borderRadius: "6px",
-                                    fontSize: "11.5px",
-                                    fontWeight: "700",
-                                  }}
-                                >
-                                  8": {record.size8.toFixed(3)}
-                                </span>
-                              )}
-                              {record.size9 > 0 && (
-                                <span
-                                  style={{
-                                    background: "#eff6ff",
-                                    color: "#2563eb",
-                                    padding: "3px 8px",
-                                    borderRadius: "6px",
-                                    fontSize: "11.5px",
-                                    fontWeight: "700",
-                                  }}
-                                >
-                                  9": {record.size9.toFixed(3)}
-                                </span>
-                              )}
-                              {record.size10 > 0 && (
-                                <span
-                                  style={{
-                                    background: "#eff6ff",
-                                    color: "#2563eb",
-                                    padding: "3px 8px",
-                                    borderRadius: "6px",
-                                    fontSize: "11.5px",
-                                    fontWeight: "700",
-                                  }}
-                                >
-                                  10": {record.size10.toFixed(3)}
-                                </span>
-                              )}
-                            </div>
+                            {renderTwoInchesBadges(record)}
                           </td>
                           <td style={{ padding: "12px 16px" }}>
-                            <div
-                              style={{
-                                display: "flex",
-                                gap: "8px",
-                                flexWrap: "wrap",
-                              }}
-                            >
-                              {record.size10B > 0 && (
-                                <span
-                                  style={{
-                                    background: "#faf5ff",
-                                    color: "#8b5cf6",
-                                    padding: "3px 8px",
-                                    borderRadius: "6px",
-                                    fontSize: "11.5px",
-                                    fontWeight: "700",
-                                  }}
-                                >
-                                  10B: {record.size10B.toFixed(3)}
-                                </span>
-                              )}
-                              {record.size12 > 0 && (
-                                <span
-                                  style={{
-                                    background: "#faf5ff",
-                                    color: "#8b5cf6",
-                                    padding: "3px 8px",
-                                    borderRadius: "6px",
-                                    fontSize: "11.5px",
-                                    fontWeight: "700",
-                                  }}
-                                >
-                                  12": {record.size12.toFixed(3)}
-                                </span>
-                              )}
-                              {record.size14 > 0 && (
-                                <span
-                                  style={{
-                                    background: "#faf5ff",
-                                    color: "#8b5cf6",
-                                    padding: "3px 8px",
-                                    borderRadius: "6px",
-                                    fontSize: "11.5px",
-                                    fontWeight: "700",
-                                  }}
-                                >
-                                  14": {record.size14.toFixed(3)}
-                                </span>
-                              )}
-                              {record.size16 > 0 && (
-                                <span
-                                  style={{
-                                    background: "#faf5ff",
-                                    color: "#8b5cf6",
-                                    padding: "3px 8px",
-                                    borderRadius: "6px",
-                                    fontSize: "11.5px",
-                                    fontWeight: "700",
-                                  }}
-                                >
-                                  16": {record.size16.toFixed(3)}
-                                </span>
-                              )}
-                              {record.size18 > 0 && (
-                                <span
-                                  style={{
-                                    background: "#faf5ff",
-                                    color: "#8b5cf6",
-                                    padding: "3px 8px",
-                                    borderRadius: "6px",
-                                    fontSize: "11.5px",
-                                    fontWeight: "700",
-                                  }}
-                                >
-                                  18": {record.size18.toFixed(3)}
-                                </span>
-                              )}
-                              {record.size20 > 0 && (
-                                <span
-                                  style={{
-                                    background: "#faf5ff",
-                                    color: "#8b5cf6",
-                                    padding: "3px 8px",
-                                    borderRadius: "6px",
-                                    fontSize: "11.5px",
-                                    fontWeight: "700",
-                                  }}
-                                >
-                                  20": {record.size20.toFixed(3)}
-                                </span>
-                              )}
-                              {record.size22 > 0 && (
-                                <span
-                                  style={{
-                                    background: "#faf5ff",
-                                    color: "#8b5cf6",
-                                    padding: "3px 8px",
-                                    borderRadius: "6px",
-                                    fontSize: "11.5px",
-                                    fontWeight: "700",
-                                  }}
-                                >
-                                  22": {record.size22.toFixed(3)}
-                                </span>
-                              )}
-                              {record.size24 > 0 && (
-                                <span
-                                  style={{
-                                    background: "#faf5ff",
-                                    color: "#8b5cf6",
-                                    padding: "3px 8px",
-                                    borderRadius: "6px",
-                                    fontSize: "11.5px",
-                                    fontWeight: "700",
-                                  }}
-                                >
-                                  24": {record.size24.toFixed(3)}
-                                </span>
-                              )}
-                              {record.size26 > 0 && (
-                                <span
-                                  style={{
-                                    background: "#faf5ff",
-                                    color: "#8b5cf6",
-                                    padding: "3px 8px",
-                                    borderRadius: "6px",
-                                    fontSize: "11.5px",
-                                    fontWeight: "700",
-                                  }}
-                                >
-                                  26": {record.size26.toFixed(3)}
-                                </span>
-                              )}
-                              {record.size28 > 0 && (
-                                <span
-                                  style={{
-                                    background: "#faf5ff",
-                                    color: "#8b5cf6",
-                                    padding: "3px 8px",
-                                    borderRadius: "6px",
-                                    fontSize: "11.5px",
-                                    fontWeight: "700",
-                                  }}
-                                >
-                                  28": {record.size28.toFixed(3)}
-                                </span>
-                              )}
-                              {record.sizeBar > 0 && (
-                                <span
-                                  style={{
-                                    background: "#faf5ff",
-                                    color: "#8b5cf6",
-                                    padding: "3px 8px",
-                                    borderRadius: "6px",
-                                    fontSize: "11.5px",
-                                    fontWeight: "700",
-                                  }}
-                                >
-                                  Bar: {record.sizeBar.toFixed(3)}
-                                </span>
-                              )}
-                            </div>
+                            {renderBToTenBadges(record)}
                           </td>
                           <td style={{ padding: "12px 16px" }}>
                             <span
@@ -1683,6 +1737,16 @@ const SingleDoubleDrawn: React.FC = () => {
                                 : "0.000"}{" "}
                               viss
                             </span>
+                          </td>
+                          <td
+                            style={{
+                              padding: "12px 16px",
+                              textAlign: "right",
+                              fontWeight: "700",
+                              color: "#2563eb",
+                            }}
+                          >
+                            {calculateRecordTotalAmount(record).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })} MMK
                           </td>
                           <td
                             style={{

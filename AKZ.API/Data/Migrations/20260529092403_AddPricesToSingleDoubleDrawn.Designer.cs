@@ -4,16 +4,19 @@ using AKZ.API.Data;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 #nullable disable
 
-namespace AKZ.API.Migrations
+namespace AKZ.API.Data.Migrations
 {
     [DbContext(typeof(AKZDbContext))]
-    partial class AKZDbContextModelSnapshot : ModelSnapshot
+    [Migration("20260529092403_AddPricesToSingleDoubleDrawn")]
+    partial class AddPricesToSingleDoubleDrawn
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -1013,17 +1016,8 @@ namespace AKZ.API.Migrations
                     b.Property<decimal>("PriceBar")
                         .HasColumnType("decimal(18,4)");
 
-                    b.Property<decimal>("PriceReturnSize")
-                        .HasColumnType("decimal(18,4)");
-
-                    b.Property<decimal>("PriceSpoilageSize")
-                        .HasColumnType("decimal(18,4)");
-
                     b.Property<int>("RefinementRecordId")
                         .HasColumnType("int");
-
-                    b.Property<decimal>("ReturnSize")
-                        .HasColumnType("decimal(18,4)");
 
                     b.Property<decimal>("ReturnWeight")
                         .HasColumnType("decimal(18,4)");
@@ -1074,9 +1068,6 @@ namespace AKZ.API.Migrations
                         .HasColumnType("decimal(18,4)");
 
                     b.Property<decimal>("SizeBar")
-                        .HasColumnType("decimal(18,4)");
-
-                    b.Property<decimal>("SpoilageSize")
                         .HasColumnType("decimal(18,4)");
 
                     b.Property<decimal>("SpoilageWeight")
