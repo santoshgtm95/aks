@@ -29,6 +29,10 @@ public class Sale : BaseEntity
     [Column(TypeName = "decimal(18,2)")]
     public decimal Weight { get; set; }
 
+    // Plus/Minus weight for adjustment
+    [Column(TypeName = "decimal(18,2)")]
+    public decimal PlusMinusWeight { get; set; } = 0;
+
     [Required]
     [Column(TypeName = "decimal(18,2)")]
     public decimal Price { get; set; }

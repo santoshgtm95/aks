@@ -56,6 +56,7 @@ public class SalesController : ControllerBase
                 Marker = s.Marker,
                 Unit = s.Unit,
                 Weight = s.Weight,
+                PlusMinusWeight = s.PlusMinusWeight,
                 Price = s.Price,
                 Currency = s.Currency,
                 SellerId = s.SellerId,
@@ -86,6 +87,7 @@ public class SalesController : ControllerBase
                 Marker = s.Marker,
                 Unit = s.Unit,
                 Weight = s.Weight,
+                PlusMinusWeight = s.PlusMinusWeight,
                 Price = s.Price,
                 Currency = s.Currency,
                 SellerId = s.SellerId,
@@ -116,7 +118,8 @@ public class SalesController : ControllerBase
             return BadRequest(new { message = "Product not found" });
         }
 
-        if (product.RemainingWeight < dto.Weight)
+        decimal newRemaining = (product.Weight + dto.PlusMinusWeight) - dto.Weight;
+        if (newRemaining < 0)
         {
             return BadRequest(new { message = "Insufficient stock" });
         }
@@ -128,15 +131,16 @@ public class SalesController : ControllerBase
             Marker = dto.Marker,
             Unit = dto.Unit,
             Weight = dto.Weight,
+            PlusMinusWeight = dto.PlusMinusWeight,
             Price = dto.Price,
             Currency = dto.Currency,
             SellerId = userId,
-            TotalRemaining = product.RemainingWeight - dto.Weight,
+            TotalRemaining = newRemaining,
             Category = dto.Category
         };
 
         // Update product remaining weight
-        product.RemainingWeight -= dto.Weight;
+        product.RemainingWeight = newRemaining;
 
         _context.Sales.Add(sale);
         await _context.SaveChangesAsync();
@@ -155,6 +159,7 @@ public class SalesController : ControllerBase
             Marker = sale.Marker,
             Unit = sale.Unit,
             Weight = sale.Weight,
+            PlusMinusWeight = sale.PlusMinusWeight,
             Price = sale.Price,
             Currency = sale.Currency,
             SellerId = sale.SellerId,

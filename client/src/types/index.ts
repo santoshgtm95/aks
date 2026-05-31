@@ -74,6 +74,7 @@ export interface Sale {
   marker: string;
   unit: string;
   weight: number;
+  plusMinusWeight: number;
   price: number;
   currency: string;
   sellerId: number;
@@ -89,6 +90,7 @@ export interface CreateSaleDto {
   marker: string;
   unit: string;
   weight: number;
+  plusMinusWeight: number;
   price: number;
   currency: string;
   category: string;

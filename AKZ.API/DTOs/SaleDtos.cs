@@ -10,6 +10,8 @@ public class SaleDto
     public string Marker { get; set; } = string.Empty;
     public string Unit { get; set; } = string.Empty;
     public decimal Weight { get; set; }
+
+    public decimal PlusMinusWeight { get; set; }
     public decimal Price { get; set; }
     public string Currency { get; set; } = string.Empty;
     public int SellerId { get; set; }
@@ -25,6 +27,8 @@ public class CreateSaleDto
     public string Marker { get; set; } = string.Empty;
     public string Unit { get; set; } = string.Empty;
     public decimal Weight { get; set; }
+
+    public decimal PlusMinusWeight { get; set; }
     public decimal Price { get; set; }
     public string Currency { get; set; } = "MMK";
     public string Category { get; set; } = "General";

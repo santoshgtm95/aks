@@ -29,6 +29,7 @@ const Sales: React.FC = () => {
     price: 0,
     currency: "MMK",
     category: PAGE_CATEGORY,
+    plusMinusWeight: 0,
   });
 
   useEffect(() => {
@@ -85,6 +86,7 @@ const Sales: React.FC = () => {
     try {
       await salesAPI.create({
         ...formData,
+        plusMinusWeight: weightAdjustment,
         date: combineDateWithMyanmarTime(formData.date),
       });
       setFormData({
@@ -96,6 +98,7 @@ const Sales: React.FC = () => {
         price: 0,
         currency: "MMK",
         category: PAGE_CATEGORY,
+        plusMinusWeight: 0,
       });
       setWeightAdjustment(0);
       loadData();
@@ -208,11 +211,27 @@ const Sales: React.FC = () => {
                   }
                   placeholder="0"
                   style={{
-                    borderColor: weightAdjustment > 0 ? '#16a34a' : weightAdjustment < 0 ? '#dc2626' : undefined,
-                    backgroundColor: weightAdjustment > 0 ? '#f0fdf4' : weightAdjustment < 0 ? '#fef2f2' : undefined,
-                    color: weightAdjustment > 0 ? '#15803d' : weightAdjustment < 0 ? '#b91c1c' : undefined,
+                    borderColor:
+                      weightAdjustment > 0
+                        ? "#16a34a"
+                        : weightAdjustment < 0
+                          ? "#dc2626"
+                          : undefined,
+                    backgroundColor:
+                      weightAdjustment > 0
+                        ? "#f0fdf4"
+                        : weightAdjustment < 0
+                          ? "#fef2f2"
+                          : undefined,
+                    color:
+                      weightAdjustment > 0
+                        ? "#15803d"
+                        : weightAdjustment < 0
+                          ? "#b91c1c"
+                          : undefined,
                     fontWeight: weightAdjustment !== 0 ? 600 : undefined,
-                    transition: 'border-color 0.2s, background-color 0.2s, color 0.2s',
+                    transition:
+                      "border-color 0.2s, background-color 0.2s, color 0.2s",
                   }}
                 />
               </div>
@@ -328,6 +347,7 @@ const Sales: React.FC = () => {
                 <th>Date</th>
                 <th>Marker</th>
                 <th>Weight</th>
+                <th>+/- Weight</th>
                 <th>Price</th>
                 <th>Total</th>
                 <th>Seller</th>
@@ -348,6 +368,19 @@ const Sales: React.FC = () => {
                   </td>
                   <td>
                     {sale.weight} {sale.unit}
+                  </td>
+                  <td
+                    style={{
+                      color:
+                        sale.plusMinusWeight > 0
+                          ? "#15803d"
+                          : sale.plusMinusWeight < 0
+                            ? "#b91c1c"
+                            : undefined,
+                      fontWeight: sale.plusMinusWeight !== 0 ? 600 : undefined,
+                    }}
+                  >
+                    {sale.plusMinusWeight || 0}
                   </td>
                   <td>
                     {sale.price} {sale.currency}
