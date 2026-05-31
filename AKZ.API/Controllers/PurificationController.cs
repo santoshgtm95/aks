@@ -56,7 +56,7 @@ public class PurificationController : ControllerBase
             }
 
             // Helper to get actual remaining count by checking history
-            int GetActualRem(string cat, int originalCount) {
+            double GetActualRem(string cat, double originalCount) {
                 var used = history.Where(h => h.ProcessingRecordId == r.Id && h.Category.ToLower() == cat.ToLower()).Sum(h => h.PurifyCount);
                 return originalCount - used;
             }
@@ -66,9 +66,9 @@ public class PurificationController : ControllerBase
                 return originalWeight - usedWeight;
             }
 
-            void AddIfAvailable(string cat, int origCount, decimal origWeight) {
+            void AddIfAvailable(string cat, double origCount, decimal origWeight) {
                 if (origCount <= 0) return;
-                int actualRem = GetActualRem(cat, origCount);
+                double actualRem = GetActualRem(cat, origCount);
                 if (actualRem > 0) {
                     result.Add(new AvailableCategoryDto { 
                         ProcessingRecordId = r.Id, 
@@ -209,7 +209,7 @@ public class PurificationController : ControllerBase
         if (record == null) return BadRequest(new { message = "Processing record not found" });
 
         decimal purifyWeight = dto.PurifyCount * record.UnitWeight;
-        int remCount = 0;
+        double remCount = 0;
         decimal remWeight = 0;
 
         if (!ApplyInventory(record, dto.Category, dto.PurifyCount, purifyWeight, out remCount, out remWeight))
@@ -370,7 +370,7 @@ public class PurificationController : ControllerBase
         RevertInventory(procRecord, record.Category, record.Count, unitWeight);
 
         decimal newWeight = dto.PurifyCount * unitWeight;
-        int remCount = 0;
+        double remCount = 0;
         decimal remWeight = 0;
 
         if (!ApplyInventory(procRecord, dto.Category, dto.PurifyCount, newWeight, out remCount, out remWeight))
@@ -445,7 +445,7 @@ public class PurificationController : ControllerBase
         }
     }
 
-    private bool ApplyInventory(ProcessingRecord record, string category, int count, decimal weight, out int remCount, out decimal remWeight)
+    private bool ApplyInventory(ProcessingRecord record, string category, int count, decimal weight, out double remCount, out decimal remWeight)
     {
         remCount = 0;
         remWeight = 0;

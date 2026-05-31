@@ -10,7 +10,7 @@ public class PurificationProcessDto
     public string Category { get; set; } = string.Empty;
     public int PurifyCount { get; set; }
     public decimal PurifyWeight { get; set; }
-    public int RemainingCountAfter { get; set; }
+    public double RemainingCountAfter { get; set; }
     public decimal RemainingWeightAfter { get; set; }
     public int? PurifierId { get; set; }
     public string PurifierName { get; set; } = string.Empty;
@@ -49,7 +49,7 @@ public class AvailableCategoryDto
     public string ProductMarker { get; set; } = string.Empty;
     public string WarehouseName { get; set; } = string.Empty;
     public string Category { get; set; } = string.Empty;
-    public int RemainingCount { get; set; }
+    public double RemainingCount { get; set; }
     public decimal RemainingWeight { get; set; }
     public decimal UnitWeight { get; set; }
     public int? WarehouseId { get; set; }

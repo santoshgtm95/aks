@@ -25,7 +25,7 @@ public class PurificationProcess : BaseEntity
     [Column(TypeName = "decimal(18,4)")]
     public decimal PurifyWeight { get; set; }
 
-    public int RemainingCountAfter { get; set; }
+    public double RemainingCountAfter { get; set; }
 
     [Column(TypeName = "decimal(18,4)")]
     public decimal RemainingWeightAfter { get; set; }

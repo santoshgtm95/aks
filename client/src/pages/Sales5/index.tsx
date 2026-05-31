@@ -1,7 +1,17 @@
 import React, { useEffect, useState, useMemo } from "react";
 import { useAuth } from "../../context/AuthContext";
-import { singleDoubleDrawnAPI, semiExportAPI, productsAPI, salesAPI } from "../../services/api";
-import type { SingleDoubleDrawnRecord, SemiExportRecord, Product, Sale } from "../../types";
+import {
+  singleDoubleDrawnAPI,
+  semiExportAPI,
+  productsAPI,
+  salesAPI,
+} from "../../services/api";
+import type {
+  SingleDoubleDrawnRecord,
+  SemiExportRecord,
+  Product,
+  Sale,
+} from "../../types";
 import {
   Package,
   Search,
@@ -86,7 +96,7 @@ const Sales5: React.FC = () => {
   const selectedProductSales = useMemo(() => {
     if (!selectedMarker) return [];
     return sales.filter(
-      (s) => s.productMarker === selectedMarker || s.marker === selectedMarker
+      (s) => s.productMarker === selectedMarker || s.marker === selectedMarker,
     );
   }, [sales, selectedMarker]);
 
@@ -94,41 +104,82 @@ const Sales5: React.FC = () => {
   const selectedMarkerStats = useMemo(() => {
     if (!selectedMarker) return null;
 
-    // 1. Original weight in inventory
-    const originalWeight = selectedProduct ? selectedProduct.weight : 0;
     const unit = selectedProduct ? selectedProduct.unit : "viss";
+    const toViss = (v: number) => (unit === "kg" ? v / 1.633 : v);
+    const toKg = (v: number) => (unit === "kg" ? v : v * 1.633);
+
+    // 1. Original weight in inventory
+    const originalWeight = selectedProduct ? Number(selectedProduct.weight) : 0;
+    const originalWeightViss = toViss(originalWeight);
+    const originalWeightKg = toKg(originalWeight);
 
     // 2. Weight sold in Raw Material Sales
     const weightSoldRawMaterial = selectedProductSales.reduce(
-      (sum, s) => sum + s.weight,
-      0
+      (sum, s) => sum + Number(s.weight),
+      0,
     );
+    const weightSoldViss = toViss(weightSoldRawMaterial);
+    const weightSoldKg = toKg(weightSoldRawMaterial);
 
     // 3. Remaining weight after selling in Raw Material Sales
     const remainingWeightAfterSales = originalWeight - weightSoldRawMaterial;
+    const remainingAfterSalesViss = toViss(remainingWeightAfterSales);
+    const remainingAfterSalesKg = toKg(remainingWeightAfterSales);
 
-    // 4. Sum of Lost Weight of all colors
+    // 4. Sum of Lost Weight of all colors (viss)
     const sumLostWeight = selectedRecords.reduce(
       (sum, r) => sum + (r.lostWeight || 0),
-      0
+      0,
     );
 
-    // 5. Sum of Spoilage Weight of all colors (including Two Inches Spoilage)
+    // 5. Sum of Spoilage Weight of all colors including Two Inches Spoilage (viss)
     const sumSpoilageWeight = selectedRecords.reduce(
       (sum, r) => sum + (r.spoilageWeight || 0) + (r.spoilageSize || 0),
-      0
+      0,
     );
 
-    // 6. Sum of Return Weight of all colors (including Two Inches Return)
+    // 6. Sum of Return Weight of all colors including Two Inches Return (viss)
     const sumReturnWeight = selectedRecords.reduce(
       (sum, r) => sum + (r.returnWeight || 0) + (r.returnSize || 0),
-      0
+      0,
     );
 
+    // 7. Total Sorted Weight across all SDD records (viss)
+    const totalSortedWeight = selectedRecords.reduce((sum, r) => {
+      return (
+        sum +
+        (r.size6 || 0) +
+        (r.size7 || 0) +
+        (r.size8 || 0) +
+        (r.size9 || 0) +
+        (r.size10 || 0) +
+        (r.size10B || 0) +
+        (r.size12 || 0) +
+        (r.size14 || 0) +
+        (r.size16 || 0) +
+        (r.size18 || 0) +
+        (r.size20 || 0) +
+        (r.size22 || 0) +
+        (r.size24 || 0) +
+        (r.size26 || 0) +
+        (r.size28 || 0) +
+        (r.sizeBar || 0)
+      );
+    }, 0);
+
+    // 8. Remaining Unsorted (viss)
+    const remainingUnsorted =
+      remainingAfterSalesViss -
+      (totalSortedWeight + sumLostWeight + sumSpoilageWeight + sumReturnWeight);
+
     return {
-      originalWeight,
-      weightSoldRawMaterial,
-      remainingWeightAfterSales,
+      originalWeightViss,
+      originalWeightKg,
+      weightSoldViss,
+      weightSoldKg,
+      remainingAfterSalesViss,
+      remainingAfterSalesKg,
+      remainingUnsorted,
       sumLostWeight,
       sumSpoilageWeight,
       sumReturnWeight,
@@ -261,8 +312,8 @@ const Sales5: React.FC = () => {
       const w8 = record.size8 || 0;
       const w7 = record.size7 || 0;
       const w6 = record.size6 || 0;
-      const wLeftover = record.returnWeight || 0;
-      const wSpoil = record.spoilageWeight || 0;
+      const wLeftover = record.returnSize || 0;
+      const wSpoil = record.spoilageSize || 0;
       const wLoss = record.lostWeight || 0;
 
       const totalWeight =
@@ -714,9 +765,9 @@ const Sales5: React.FC = () => {
                       ).join(", ") || "---"}
                     </strong>
                   </p>
+                </div>
+              </div>
             </div>
-          </div>
-        </div>
 
             {/* Stats Dashboard Grid */}
             {selectedMarkerStats && (
@@ -725,15 +776,29 @@ const Sales5: React.FC = () => {
                 <div className="stat-card">
                   <div className="stat-header">
                     <span className="stat-title">Original Weight</span>
-                    <div className="stat-icon-wrapper" style={{ backgroundColor: "#eff6ff", color: "#2563eb" }}>
+                    <div
+                      className="stat-icon-wrapper"
+                      style={{ backgroundColor: "#eff6ff", color: "#2563eb" }}
+                    >
                       <Scale size={16} />
                     </div>
                   </div>
                   <div>
                     <h3 className="stat-value">
-                      {selectedMarkerStats.originalWeight.toFixed(2)}
+                      {selectedMarkerStats.originalWeightViss.toFixed(3)}{" "}
+                      <span
+                        style={{
+                          fontSize: "13px",
+                          fontWeight: 600,
+                          color: "#64748b",
+                        }}
+                      >
+                        viss
+                      </span>
                     </h3>
-                    <span className="stat-footer">{selectedMarkerStats.unit} in Inventory</span>
+                    <span className="stat-footer">
+                      = {selectedMarkerStats.originalWeightKg.toFixed(3)} kg
+                    </span>
                   </div>
                 </div>
 
@@ -741,15 +806,30 @@ const Sales5: React.FC = () => {
                 <div className="stat-card">
                   <div className="stat-header">
                     <span className="stat-title">Weight Sold</span>
-                    <div className="stat-icon-wrapper" style={{ backgroundColor: "#fef2f2", color: "#ef4444" }}>
+                    <div
+                      className="stat-icon-wrapper"
+                      style={{ backgroundColor: "#fef2f2", color: "#ef4444" }}
+                    >
                       <Scale size={16} />
                     </div>
                   </div>
                   <div>
                     <h3 className="stat-value">
-                      {selectedMarkerStats.weightSoldRawMaterial.toFixed(2)}
+                      {selectedMarkerStats.weightSoldViss.toFixed(3)}{" "}
+                      <span
+                        style={{
+                          fontSize: "13px",
+                          fontWeight: 600,
+                          color: "#64748b",
+                        }}
+                      >
+                        viss
+                      </span>
                     </h3>
-                    <span className="stat-footer">{selectedMarkerStats.unit} in Raw Material Sales</span>
+                    <span className="stat-footer">
+                      = {selectedMarkerStats.weightSoldKg.toFixed(3)} kg · Raw
+                      Material Sales
+                    </span>
                   </div>
                 </div>
 
@@ -757,15 +837,51 @@ const Sales5: React.FC = () => {
                 <div className="stat-card">
                   <div className="stat-header">
                     <span className="stat-title">Remaining Weight</span>
-                    <div className="stat-icon-wrapper" style={{ backgroundColor: "#ecfdf5", color: "#10b981" }}>
+                    <div
+                      className="stat-icon-wrapper"
+                      style={{ backgroundColor: "#ecfdf5", color: "#10b981" }}
+                    >
                       <Scale size={16} />
                     </div>
                   </div>
                   <div>
                     <h3 className="stat-value">
-                      {selectedMarkerStats.remainingWeightAfterSales.toFixed(2)}
+                      {selectedMarkerStats.remainingAfterSalesViss.toFixed(3)}{" "}
+                      <span
+                        style={{
+                          fontSize: "13px",
+                          fontWeight: 600,
+                          color: "#64748b",
+                        }}
+                      >
+                        viss
+                      </span>
                     </h3>
-                    <span className="stat-footer">{selectedMarkerStats.unit} after Raw Material Sales</span>
+                    <span className="stat-footer">
+                      = {selectedMarkerStats.remainingAfterSalesKg.toFixed(3)}{" "}
+                      kg · after Raw Material Sales
+                    </span>
+                  </div>
+                </div>
+
+                {/* 3b. Remaining Unsorted in Inventory */}
+                <div className="stat-card">
+                  <div className="stat-header">
+                    <span className="stat-title">Remaining Unsorted</span>
+                    <div
+                      className="stat-icon-wrapper"
+                      style={{ backgroundColor: "#f0f9ff", color: "#0284c7" }}
+                    >
+                      <Scale size={16} />
+                    </div>
+                  </div>
+                  <div>
+                    <h3 className="stat-value">
+                      {selectedMarkerStats.remainingUnsorted.toFixed(2)}
+                    </h3>
+                    <span className="stat-footer">
+                      viss remaining unsorted in Inventory
+                    </span>
                   </div>
                 </div>
 
@@ -773,7 +889,10 @@ const Sales5: React.FC = () => {
                 <div className="stat-card">
                   <div className="stat-header">
                     <span className="stat-title">Sum of Lost Weight</span>
-                    <div className="stat-icon-wrapper" style={{ backgroundColor: "#fffbeb", color: "#d97706" }}>
+                    <div
+                      className="stat-icon-wrapper"
+                      style={{ backgroundColor: "#fffbeb", color: "#d97706" }}
+                    >
                       <AlertTriangle size={16} />
                     </div>
                   </div>
@@ -789,7 +908,10 @@ const Sales5: React.FC = () => {
                 <div className="stat-card">
                   <div className="stat-header">
                     <span className="stat-title">Sum of Spoilage Weight</span>
-                    <div className="stat-icon-wrapper" style={{ backgroundColor: "#faf5ff", color: "#8b5cf6" }}>
+                    <div
+                      className="stat-icon-wrapper"
+                      style={{ backgroundColor: "#faf5ff", color: "#8b5cf6" }}
+                    >
                       <AlertTriangle size={16} />
                     </div>
                   </div>
@@ -797,7 +919,9 @@ const Sales5: React.FC = () => {
                     <h3 className="stat-value">
                       {selectedMarkerStats.sumSpoilageWeight.toFixed(3)}
                     </h3>
-                    <span className="stat-footer">viss (incl. Two Inches Spoilage)</span>
+                    <span className="stat-footer">
+                      viss (incl. Two Inches Spoilage)
+                    </span>
                   </div>
                 </div>
 
@@ -805,7 +929,10 @@ const Sales5: React.FC = () => {
                 <div className="stat-card">
                   <div className="stat-header">
                     <span className="stat-title">Sum of Return Weight</span>
-                    <div className="stat-icon-wrapper" style={{ backgroundColor: "#f0fdf4", color: "#15803d" }}>
+                    <div
+                      className="stat-icon-wrapper"
+                      style={{ backgroundColor: "#f0fdf4", color: "#15803d" }}
+                    >
                       <RotateCcw size={16} />
                     </div>
                   </div>
@@ -813,7 +940,9 @@ const Sales5: React.FC = () => {
                     <h3 className="stat-value">
                       {selectedMarkerStats.sumReturnWeight.toFixed(3)}
                     </h3>
-                    <span className="stat-footer">viss (incl. Two Inches Return)</span>
+                    <span className="stat-footer">
+                      viss (incl. Two Inches Return)
+                    </span>
                   </div>
                 </div>
               </div>

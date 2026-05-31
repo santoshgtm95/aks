@@ -88,9 +88,9 @@ const MessLabour: React.FC = () => {
         selectedProduct.unit?.toLowerCase() === "kg" ||
         selectedProduct.unit?.toLowerCase() === "kilogram";
       const rwViss = isKg
-        ? selectedProduct.remainingWeight * 1.62
+        ? selectedProduct.remainingWeight / 1.633
         : selectedProduct.remainingWeight;
-      const calcCount = Math.ceil(rwViss / Number(formData.unitWeight));
+      const calcCount = Number((rwViss / Number(formData.unitWeight)).toFixed(4));
       setFormData((prev) => ({ ...prev, count: calcCount.toString() }));
     } else {
       setFormData((prev) => ({ ...prev, count: "0" }));
@@ -227,7 +227,7 @@ const MessLabour: React.FC = () => {
       selectedProduct?.unit?.toLowerCase() === "kilogram";
     const rwViss = selectedProduct
       ? isKg
-        ? selectedProduct.remainingWeight * 1.62
+        ? selectedProduct.remainingWeight / 1.633
         : selectedProduct.remainingWeight
       : 0;
 
@@ -510,7 +510,7 @@ const MessLabour: React.FC = () => {
           productForEdit?.unit?.toLowerCase() === "kg" ||
           productForEdit?.unit?.toLowerCase() === "kilogram";
         return isEditProductKg
-          ? Number((normalWeight / 1.62).toFixed(4))
+          ? Number((normalWeight * 1.633).toFixed(4))
           : undefined;
       })(),
       difference: editingRecord.difference,
@@ -614,7 +614,7 @@ const MessLabour: React.FC = () => {
         remainingWeightKg:
           selectedProduct?.unit?.toLowerCase() === "kg" ||
           selectedProduct?.unit?.toLowerCase() === "kilogram"
-            ? Number((totals.remainingWeight / 1.62).toFixed(4))
+            ? Number((totals.remainingWeight * 1.633).toFixed(4))
             : undefined,
         difference: totals.diff,
       };
@@ -741,7 +741,7 @@ const MessLabour: React.FC = () => {
               {(selectedProduct.unit?.toLowerCase() === "kg" ||
                 selectedProduct.unit?.toLowerCase() === "kilogram") && (
                 <p className="weight-secondary-value">
-                  {(selectedProduct.remainingWeight * 1.62).toFixed(4)}
+                  {(selectedProduct.remainingWeight / 1.633).toFixed(4)}
                   <span className="weight-unit">viss</span>
                 </p>
               )}
@@ -1033,7 +1033,7 @@ const MessLabour: React.FC = () => {
                     marginBottom: "20px",
                   }}
                 >
-                  ({(totals.remainingWeight / 1.62).toFixed(4)} kg)
+                  ({(totals.remainingWeight * 1.633).toFixed(4)} kg)
                 </div>
               )}
 
@@ -1488,7 +1488,7 @@ const MessLabour: React.FC = () => {
                       <span className="em-sum-label">Remaining Weight</span>
                       <span className="em-sum-val">{remainingWeight.toFixed(4)}</span>
                       <span className="em-sum-sub">
-                        viss{isKg ? ` (${(remainingWeight / 1.62).toFixed(4)} kg)` : ""}
+                        viss{isKg ? ` (${(remainingWeight * 1.633).toFixed(4)} kg)` : ""}
                       </span>
                     </div>
                     <div className="em-sum-divider" />

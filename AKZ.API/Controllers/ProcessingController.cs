@@ -171,7 +171,7 @@ public class ProcessingController : ControllerBase
         // The UI calculates remaining as: rwViss - categorizedWeight
         // Therefore, we deduct categorizedWeight to match the UI's remaining weight exactly.
         decimal processedWeightInProductUnit = isProductKg 
-            ? categorizedWeight / 1.62m 
+            ? categorizedWeight * 1.633m 
             : categorizedWeight;
 
         // Update the Products table RemainingWeight
@@ -252,7 +252,7 @@ public class ProcessingController : ControllerBase
                                        record.ShortCutWeight + record.ArtificialWeight + record.ShortWeight;
 
         // Revert old weight deduction (convert Viss back to product unit)
-        decimal oldDeduction = isProductKg ? oldCategorizedWeight / 1.62m : oldCategorizedWeight;
+        decimal oldDeduction = isProductKg ? oldCategorizedWeight * 1.633m : oldCategorizedWeight;
         product.RemainingWeight += oldDeduction;
 
         decimal newCategorizedWeight = dto.RedWeight + dto.WhiteWeight + dto.SpecialWeight + 
@@ -260,7 +260,7 @@ public class ProcessingController : ControllerBase
                                        dto.ShortCutWeight + dto.ArtificialWeight + dto.ShortWeight;
 
         // Apply new weight deduction (convert new Viss to product unit)
-        decimal newDeduction = isProductKg ? newCategorizedWeight / 1.62m : newCategorizedWeight;
+        decimal newDeduction = isProductKg ? newCategorizedWeight * 1.633m : newCategorizedWeight;
         product.RemainingWeight -= newDeduction;
 
         record.Date = dto.Date;
@@ -356,7 +356,7 @@ public class ProcessingController : ControllerBase
                                        record.NaturalWeight + record.NaturalWhiteWeight + record.NaturalRedWeight + 
                                        record.ShortCutWeight + record.ArtificialWeight + record.ShortWeight;
 
-        decimal restoreWeight = isProductKg ? oldCategorizedWeight / 1.62m : oldCategorizedWeight;
+        decimal restoreWeight = isProductKg ? oldCategorizedWeight * 1.633m : oldCategorizedWeight;
 
         record.Product.RemainingWeight += restoreWeight;
 
