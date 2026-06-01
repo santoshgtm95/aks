@@ -18,6 +18,8 @@ import {
   Trash2,
   X,
   Save,
+  Search,
+  Sparkles,
 } from "lucide-react";
 import { combineDateWithMyanmarTime, formatDateTime } from "../../utils/format";
 import { useNotification } from "../../context/NotificationContext";
@@ -36,6 +38,17 @@ const MessLabour: React.FC = () => {
   const [selectedStaff, setSelectedStaff] = useState<string[]>([]);
   const [showWorkerModal, setShowWorkerModal] = useState(false);
   const [newWorkerName, setNewWorkerName] = useState("");
+  const [activeTab, setActiveTab] = useState<"processing" | "history">("processing");
+  const [searchTerm, setSearchTerm] = useState("");
+
+  const filteredProducts = useMemo(() => {
+    return products.filter((product) => {
+      return (
+        product.marker.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        (product.warehouseName || "").toLowerCase().includes(searchTerm.toLowerCase())
+      );
+    });
+  }, [products, searchTerm]);
 
   // Edit/View modal state
   const [editingRecord, setEditingRecord] = useState<ProcessingRecord | null>(
@@ -649,453 +662,324 @@ const MessLabour: React.FC = () => {
   if (loading) return <div className="spinner"></div>;
 
   return (
-    <div className="processing-container fade-in">
+    <div className="rf-container fade-in">
       {/* Left Sidebar: Product List */}
-      <aside className="product-sidebar">
-        <h2 className="sidebar-title">
-          <Package size={20} />
-          Select a bag to sort
-        </h2>
-        <div className="product-list">
-          {products.map((product) => (
-            <div
-              key={product.id}
-              className={`product-card ${selectedProductId === product.id ? "selected" : ""} ${product.remainingWeight <= 0.0001 ? "used" : ""}`}
-              onClick={() => setSelectedProductId(product.id)}
-            >
-              <div className="card-header">
-                <div style={{ display: "flex", flexDirection: "column" }}>
-                  <span className="card-marker">{product.marker}</span>
-                  <span
-                    style={{
-                      fontSize: "11px",
-                      color: "#64748b",
-                      fontWeight: 500,
-                    }}
-                  >
-                    {product.warehouseName}
+      <aside className="rf-sidebar">
+        <div className="rf-sidebar-header">
+          <Package size={18} />
+          <span>Select a bag to sort</span>
+        </div>
+
+        {/* Search in rf-sidebar */}
+        <div className="rf-search-box">
+          <Search size={16} className="rf-search-icon" />
+          <input
+            type="text"
+            placeholder="Search marker..."
+            className="rf-search-input"
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+          />
+        </div>
+
+        <div className="rf-card-list">
+          {filteredProducts.length === 0 ? (
+            <div className="rf-empty-sidebar">
+              No bags found
+            </div>
+          ) : (
+            filteredProducts.map((product) => (
+              <div
+                key={product.id}
+                className={`product-card ${selectedProductId === product.id ? "selected" : ""} ${product.remainingWeight <= 0.0001 ? "used" : ""}`}
+                onClick={() => {
+                  setSelectedProductId(product.id);
+                  setActiveTab("processing");
+                }}
+              >
+                <div className="card-header">
+                  <div style={{ display: "flex", flexDirection: "column" }}>
+                    <span className="card-marker">{product.marker}</span>
+                    <span style={{ fontSize: "11px", color: "#64748b", fontWeight: 500 }}>
+                      {product.warehouseName}
+                    </span>
+                  </div>
+                  <span className={`rf-badge ${product.remainingWeight <= 0.0001 ? "category-9r" : "category-natural"}`}>
+                    {product.remainingWeight <= 0.0001 ? "Used" : "New"}
                   </span>
                 </div>
-                <span
-                  className={`card-badge ${product.remainingWeight <= 0.0001 ? "badge-used" : ""}`}
-                >
-                  {product.remainingWeight <= 0.0001 ? "Used" : "New"}
-                </span>
+                <div className="card-details">
+                  <span>{product.packages} bundles</span>
+                  <span style={{ fontWeight: "700", color: product.remainingWeight <= 0.0001 ? "#94a3b8" : "#2563eb" }}>
+                    {product.remainingWeight.toFixed(4)} {product.unit}
+                  </span>
+                </div>
               </div>
-              <div className="card-details">
-                <span>{product.packages}</span>
-                <span className="card-weight">
-                  {product.remainingWeight.toFixed(4)} {product.unit}
-                </span>
-                {product.remainingWeight < 0 && (
-                  <button
-                    className="btn-repair"
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      showConfirm(
-                        "Reset Weight",
-                        "Reset this product weight to 0?",
-                        () => {
-                          productsAPI
-                            .update(product.id, {
-                              ...product,
-                              remainingWeight: 0,
-                            })
-                            .then(() => loadData());
-                        },
-                      );
-                    }}
-                  >
-                    Reset to 0
-                  </button>
-                )}
-              </div>
-            </div>
-          ))}
+            ))
+          )}
         </div>
       </aside>
 
-      {/* Main Content: Processing Form */}
-      <main className="processing-main">
-        <div className="main-header">
-          <div className="header-title">
-            <Scissors size={32} className="text-primary" />
-            <div>
-              <h1>Mess-Labour</h1>
-              <p className="header-subtitle">
-                Bag Marker: <strong>{selectedProduct?.marker || "---"}</strong>
-                {selectedProduct &&
-                  selectedProduct.remainingWeight <= 0.0001 && (
-                    <span className="status-badge used"> (Used)</span>
-                  )}
-              </p>
-            </div>
-          </div>
-          {selectedProduct && (
-            <div className="original-weight-box">
-              <p className="weight-label">Original Weight</p>
-              <p className="weight-value">
-                {selectedProduct.remainingWeight.toFixed(4)}
-                <span className="weight-unit">{selectedProduct.unit}</span>
-              </p>
-              {(selectedProduct.unit?.toLowerCase() === "kg" ||
-                selectedProduct.unit?.toLowerCase() === "kilogram") && (
-                <p className="weight-secondary-value">
-                  {(selectedProduct.remainingWeight / 1.633).toFixed(4)}
-                  <span className="weight-unit">viss</span>
-                </p>
-              )}
-            </div>
-          )}
-        </div>
-
-        {hasPermission("MessLabour.Create") && (
-          <form onSubmit={handleSubmit}>
-            {/* 1. Staff Selection */}
-            <section className="form-section">
-              <div className="section-header">
-                <h3 className="section-label">1. Worker Names</h3>
+      {/* Right Main Content */}
+      <main className="rf-main">
+        <div className="rf-main-card">
+          {/* Header & Tabs */}
+          <div className="rf-main-header">
+            <div className="rf-header-left">
+              <div className="rf-header-icon" style={{ background: "linear-gradient(135deg, #dbeafe, #eff6ff)", color: "#2563eb" }}>
+                <Scissors size={26} />
+              </div>
+              <div className="rf-tab-group">
                 <button
-                  type="button"
-                  className="btn-add-worker"
-                  onClick={() => setShowWorkerModal(true)}
+                  className={`rf-tab ${activeTab === "processing" ? "rf-tab-active rf-tab-green" : ""}`}
+                  onClick={() => setActiveTab("processing")}
                 >
-                  <Plus size={14} />
-                  Register Worker
+                  <span className="rf-tab-title">Processing</span>
+                  <span className="rf-tab-sub">Sort selected bag</span>
+                </button>
+                <button
+                  className={`rf-tab ${activeTab === "history" ? "rf-tab-active rf-tab-green" : ""}`}
+                  onClick={() => setActiveTab("history")}
+                >
+                  <span className="rf-tab-title">Mess-Labour History</span>
+                  <span className="rf-tab-sub">View recent records</span>
                 </button>
               </div>
-              <div className="staff-grid">
-                {workers.map((worker) => (
-                  <div
-                    key={worker.id}
-                    className={`staff-chip ${selectedStaff.includes(worker.name) ? "selected" : ""}`}
-                    onClick={() => toggleStaff(worker.name)}
-                  >
-                    <Users size={14} />
-                    {worker.name}
-                  </div>
-                ))}
-              </div>
-            </section>
-
-            {/* 2. Count & Unit Weight */}
-            <section className="form-section">
-              <h3 className="section-label" style={{ marginBottom: "16px" }}>2. Count &amp; Unit Weight</h3>
-              <div className="count-unit-cards">
-                {/* Count Card */}
-                <div className="cu-card cu-card-count">
-                  <div className="cu-card-icon">
-                    <Package size={22} />
-                  </div>
-                  <div className="cu-card-body">
-                    <label className="cu-label">Total Count</label>
-                    <div className="cu-value-wrapper">
-                      <input
-                        type="number"
-                        name="count"
-                        min="0"
-                        className="cu-input"
-                        value={formData.count || ""}
-                        readOnly
-                        placeholder="0"
-                      />
-                      <span className="cu-unit">bundles</span>
-                    </div>
-                    <p className="cu-hint">Auto-calculated from remaining weight ÷ unit weight</p>
-                  </div>
-                </div>
-
-                {/* Unit Weight Card */}
-                <div className="cu-card cu-card-weight">
-                  <div className="cu-card-icon">
-                    <Calculator size={22} />
-                  </div>
-                  <div className="cu-card-body">
-                    <label className="cu-label">Unit Weight</label>
-                    <div className="cu-value-wrapper">
-                      <input
-                        type="number"
-                        name="unitWeight"
-                        step="0.000001"
-                        min="0"
-                        className="cu-input"
-                        value={formData.unitWeight || ""}
-                        onChange={handleInputChange}
-                        placeholder="0.0000"
-                      />
-                      <span className="cu-unit">viss</span>
-                    </div>
-                    <p className="cu-hint">Weight per bundle in viss</p>
-                  </div>
-                </div>
-
-                {/* Computed Total Weight */}
-                <div className="cu-card cu-card-total">
-                  <div className="cu-card-icon">
-                    <ArrowRight size={22} />
-                  </div>
-                  <div className="cu-card-body">
-                    <label className="cu-label">Total Weight</label>
-                    <div className="cu-value-wrapper">
-                      <span className="cu-computed">{totals.total.toFixed(4)}</span>
-                      <span className="cu-unit">viss</span>
-                    </div>
-                    {selectedProduct && (
-                      <p className="cu-hint" style={{ color: Math.abs(totals.diff) > 0.01 ? "#e53e3e" : "#38a169" }}>
-                        Diff: {totals.diff > 0 ? "+" : ""}{totals.diff.toFixed(4)} viss
-                      </p>
-                    )}
-                  </div>
-                </div>
-              </div>
-            </section>
-
-            {/* 3. Categories */}
-            <section className="form-section">
-              <h3 className="section-label">3. Short / Deduction Categories</h3>
-              <div className="category-grid">
-                <div className="category-input-box box-red">
-                  <span className="box-label label-red">red</span>
-                  <input
-                    type="number"
-                    name="red"
-                    className="box-input"
-                    max={getFieldMax("red")}
-                    value={formData.red || ""}
-                    onChange={handleInputChange}
-                    placeholder="0"
-                  />
-                  <span className="box-weight-hint hint-red">
-                    {totals.redWeight.toFixed(3)} {"viss"}
-                  </span>
-                </div>
-                <div className="category-input-box box-white">
-                  <span className="box-label label-white">white</span>
-                  <input
-                    type="number"
-                    name="white"
-                    className="box-input"
-                    max={getFieldMax("white")}
-                    value={formData.white || ""}
-                    onChange={handleInputChange}
-                    placeholder="0"
-                  />
-                  <span className="box-weight-hint hint-white">
-                    {totals.whiteWeight.toFixed(3)} {"viss"}
-                  </span>
-                </div>
-                <div className="category-input-box box-special">
-                  <span className="box-label label-special">simple</span>
-                  <input
-                    type="number"
-                    name="special"
-                    className="box-input"
-                    max={getFieldMax("special")}
-                    value={formData.special || ""}
-                    onChange={handleInputChange}
-                    placeholder="0"
-                  />
-                  <span className="box-weight-hint hint-special">
-                    {totals.specialWeight.toFixed(3)} {"viss"}
-                  </span>
-                </div>
-                <div className="category-input-box box-natural">
-                  <span className="box-label label-natural">natural</span>
-                  <input
-                    type="number"
-                    name="natural"
-                    className="box-input"
-                    max={getFieldMax("natural")}
-                    value={formData.natural || ""}
-                    onChange={handleInputChange}
-                    placeholder="0"
-                  />
-                  <span className="box-weight-hint hint-natural">
-                    {totals.naturalWeight.toFixed(3)} {"viss"}
-                  </span>
-                </div>
-                <div className="category-input-box box-natural-white">
-                  <span className="box-label label-natural-white">
-                    natural white
-                  </span>
-                  <input
-                    type="number"
-                    name="naturalWhite"
-                    className="box-input"
-                    max={getFieldMax("naturalWhite")}
-                    value={formData.naturalWhite || ""}
-                    onChange={handleInputChange}
-                    placeholder="0"
-                  />
-                  <span className="box-weight-hint hint-natural-white">
-                    {totals.naturalWhiteWeight.toFixed(3)} {"viss"}
-                  </span>
-                </div>
-                <div className="category-input-box box-natural-red">
-                  <span className="box-label label-natural-red">
-                    natural red
-                  </span>
-                  <input
-                    type="number"
-                    name="naturalRed"
-                    className="box-input"
-                    max={getFieldMax("naturalRed")}
-                    value={formData.naturalRed || ""}
-                    onChange={handleInputChange}
-                    placeholder="0"
-                  />
-                  <span className="box-weight-hint hint-natural-red">
-                    {totals.naturalRedWeight.toFixed(3)} {"viss"}
-                  </span>
-                </div>
-                <div className="category-input-box box-shortcut">
-                  <span className="box-label label-shortcut">short cut</span>
-                  <input
-                    type="number"
-                    name="shortCut"
-                    className="box-input"
-                    max={getFieldMax("shortCut")}
-                    value={formData.shortCut || ""}
-                    onChange={handleInputChange}
-                    placeholder="0"
-                  />
-                  <span className="box-weight-hint hint-shortcut">
-                    {totals.shortCutWeight.toFixed(3)} {"viss"}
-                  </span>
-                </div>
-                <div className="category-input-box box-artificial">
-                  <span className="box-label label-artificial">artificial</span>
-                  <input
-                    type="number"
-                    name="artificial"
-                    className="box-input"
-                    max={getFieldMax("artificial")}
-                    value={formData.artificial || ""}
-                    onChange={handleInputChange}
-                    placeholder="0"
-                  />
-                  <span className="box-weight-hint hint-artificial">
-                    {totals.artificialWeight.toFixed(3)} {"viss"}
-                  </span>
-                </div>
-                <div className="category-input-box box-short">
-                  <span className="box-label label-short">short</span>
-                  <input
-                    type="number"
-                    name="short"
-                    className="box-input"
-                    max={getFieldMax("short")}
-                    value={formData.short || ""}
-                    onChange={handleInputChange}
-                    placeholder="0"
-                  />
-                  <span className="box-weight-hint hint-short">
-                    {totals.shortWeight.toFixed(3)} {"viss"}
-                  </span>
-                </div>
-              </div>
-            </section>
-
-            {/* Summary & Verification */}
-            <div className="summary-section">
-              <div
-                className="summary-calc"
-                style={{
-                  marginBottom:
-                    selectedProduct?.unit?.toLowerCase() === "kg" ||
-                    selectedProduct?.unit?.toLowerCase() === "kilogram"
-                      ? "4px"
-                      : "20px",
-                }}
-              >
-                <div className="calc-left">
-                  <Calculator size={24} />
-                  <span>Weight Balance:</span>
-                  <span>
-                    {totals.rwViss.toFixed(3)} -{" "}
-                    {totals.categorizedWeight.toFixed(3)}
-                  </span>
-                  <span>=</span>
-                </div>
-                <div className="calc-right">
-                  {totals.remainingWeight.toFixed(4)}
-                </div>
-              </div>
-              {(selectedProduct?.unit?.toLowerCase() === "kg" ||
-                selectedProduct?.unit?.toLowerCase() === "kilogram") && (
-                <div
-                  style={{
-                    display: "flex",
-                    justifyContent: "flex-end",
-                    color: "var(--gray)",
-                    fontSize: "18px",
-                    fontWeight: 600,
-                    marginBottom: "20px",
-                  }}
-                >
-                  ({(totals.remainingWeight * 1.633).toFixed(4)} kg)
-                </div>
-              )}
-
-              <div
-                className="summary-calc"
-                style={{
-                  marginTop: "12px",
-                  paddingTop: "12px",
-                  borderTop: "1px dashed var(--border)",
-                }}
-              >
-                <div className="calc-left">
-                  <Calculator size={24} />
-                  <span>Remaining Count:</span>
-                  <span>
-                    {formData.count} - {totals.catSum}
-                  </span>
-                  <span>=</span>
-                </div>
-                <div className="calc-right">{totals.remainingCount}</div>
-              </div>
             </div>
 
-            <button
-              type="submit"
-              className="submit-btn"
-              disabled={
-                !selectedProductId ||
-                selectedStaff.length === 0 ||
-                totals.diff < -(Number(formData.unitWeight) || 0) + 0.0001
-              }
-            >
-              {totals.diff < -(Number(formData.unitWeight) || 0) + 0.0001
-                ? "Weight exceeded — cannot save"
-                : "Confirm & Save Record"}
-              <ArrowRight size={20} />
-            </button>
-          </form>
-        )}
+            <div className="rf-header-badge">
+              <span className="rf-count-badge" style={{ background: "#dbeafe", color: "#2563eb", borderColor: "#bfdbfe" }}>
+                {activeTab === "processing"
+                  ? selectedProduct ? "Active Selection" : "No Selection"
+                  : `${records.length} records`
+                }
+              </span>
+            </div>
+          </div>
 
-        {/* History Table */}
-        <div className="history-section">
-          <h2 className="card-title">Recent Records</h2>
-          <div className="table-container">
-            <table className="table">
-              <thead>
-                <tr>
-                  <th>Date</th>
-                  <th>Marker</th>
-                  <th>Staff</th>
-                  <th>Categories</th>
-                  <th style={{ textAlign: "center" }}>Actions</th>
-                </tr>
-              </thead>
-              <tbody>
-                {records
-                  .filter(
-                    (r) =>
-                      !selectedProductId || r.productId === selectedProductId,
-                  )
-                  .slice(0, 10)
-                  .map((record) => (
+          {/* Tab Content */}
+          {activeTab === "processing" ? (
+            selectedProduct ? (
+              <div className="fade-in" style={{ display: "flex", flexDirection: "column", gap: "24px" }}>
+                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                  <div>
+                    <h2 style={{ fontSize: "20px", fontWeight: "800", color: "#0f172a", margin: 0 }}>Mess-Labour sorting</h2>
+                    <p style={{ fontSize: "13.5px", color: "#64748b", margin: "6px 0 0 0", fontWeight: "500" }}>
+                      Bag Marker: <strong>{selectedProduct.marker}</strong>
+                      {selectedProduct.remainingWeight <= 0.0001 && <span style={{ color: "#ea580c", fontWeight: "700" }}> (Used)</span>}
+                    </p>
+                  </div>
+                  <div style={{ background: "linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%)", borderRadius: "12px", padding: "10px 16px", border: "1.5px solid #e2e8f0", textAlign: "right" }}>
+                    <div style={{ fontSize: "10.5px", fontWeight: "700", color: "#94a3b8", textTransform: "uppercase", letterSpacing: "0.06em", marginBottom: "4px" }}>Original Weight</div>
+                    <div style={{ fontSize: "18px", fontWeight: "800", color: "#0f172a" }}>
+                      {selectedProduct.remainingWeight.toFixed(4)} <span style={{ fontSize: "12px", fontWeight: 600, color: "#64748b" }}>{selectedProduct.unit}</span>
+                    </div>
+                  </div>
+                </div>
+
+                <form onSubmit={handleSubmit} style={{ display: "flex", flexDirection: "column", gap: "20px" }}>
+                  {/* 1. Worker Names */}
+                  <section className="form-section">
+                    <div className="section-header" style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "12px" }}>
+                      <h3 className="section-label" style={{ margin: 0 }}>1. Worker Names</h3>
+                      {hasPermission("MessLabour.Create") && (
+                        <button
+                          type="button"
+                          className="btn-add-worker"
+                          onClick={() => setShowWorkerModal(true)}
+                          style={{ padding: "6px 12px", fontSize: "12.5px", fontWeight: "600", color: "#2563eb", background: "white", border: "1.5px solid #cbd5e1", borderRadius: "8px", cursor: "pointer" }}
+                        >
+                          + Add Worker
+                        </button>
+                      )}
+                    </div>
+                    <div className="staff-grid">
+                      {workers.map((worker) => (
+                        <div
+                          key={worker.id}
+                          className={`staff-chip ${selectedStaff.includes(worker.name) ? "selected" : ""}`}
+                          onClick={() => toggleStaff(worker.name)}
+                        >
+                          <Users size={14} />
+                          {worker.name}
+                        </div>
+                      ))}
+                    </div>
+                  </section>
+
+                  {/* 2. Count & Unit Weight */}
+                  <section className="form-section">
+                    <h3 className="section-label" style={{ marginBottom: "16px" }}>2. Count &amp; Unit Weight</h3>
+                    <div className="count-unit-cards">
+                      <div className="cu-card cu-card-count">
+                        <div className="cu-card-icon"><Package size={22} /></div>
+                        <div className="cu-card-body">
+                          <label className="cu-label">Total Count</label>
+                          <div className="cu-value-wrapper">
+                            <input type="number" name="count" min="0" className="cu-input" value={formData.count || ""} readOnly placeholder="0" />
+                            <span className="cu-unit">bundles</span>
+                          </div>
+                          <p className="cu-hint">Auto-calculated from remaining weight ÷ unit weight</p>
+                        </div>
+                      </div>
+                      <div className="cu-card cu-card-weight">
+                        <div className="cu-card-icon"><Calculator size={22} /></div>
+                        <div className="cu-card-body">
+                          <label className="cu-label">Unit Weight</label>
+                          <div className="cu-value-wrapper">
+                            <input type="number" name="unitWeight" step="0.000001" min="0" className="cu-input" value={formData.unitWeight || ""} onChange={handleInputChange} placeholder="0.0000" />
+                            <span className="cu-unit">viss</span>
+                          </div>
+                          <p className="cu-hint">Weight per bundle in viss</p>
+                        </div>
+                      </div>
+                      <div className="cu-card cu-card-total">
+                        <div className="cu-card-icon"><ArrowRight size={22} /></div>
+                        <div className="cu-card-body">
+                          <label className="cu-label">Total Weight</label>
+                          <div className="cu-value-wrapper">
+                            <span className="cu-computed">{totals.total.toFixed(4)}</span>
+                            <span className="cu-unit">viss</span>
+                          </div>
+                          {selectedProduct && (
+                            <p className="cu-hint" style={{ color: Math.abs(totals.diff) > 0.01 ? "#e53e3e" : "#38a169" }}>
+                              Diff: {totals.diff > 0 ? "+" : ""}{totals.diff.toFixed(4)} viss
+                            </p>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+                  </section>
+
+                  {/* 3. Categories */}
+                  <section className="form-section">
+                    <h3 className="section-label">3. Short / Deduction Categories</h3>
+                    <div className="category-grid">
+                      <div className="category-input-box box-red">
+                        <span className="box-label label-red">red</span>
+                        <input type="number" name="red" className="box-input" max={getFieldMax("red")} value={formData.red || ""} onChange={handleInputChange} placeholder="0" />
+                        <span className="box-weight-hint hint-red">{totals.redWeight.toFixed(3)} viss</span>
+                      </div>
+                      <div className="category-input-box box-white">
+                        <span className="box-label label-white">white</span>
+                        <input type="number" name="white" className="box-input" max={getFieldMax("white")} value={formData.white || ""} onChange={handleInputChange} placeholder="0" />
+                        <span className="box-weight-hint hint-white">{totals.whiteWeight.toFixed(3)} viss</span>
+                      </div>
+                      <div className="category-input-box box-special">
+                        <span className="box-label label-special">simple</span>
+                        <input type="number" name="special" className="box-input" max={getFieldMax("special")} value={formData.special || ""} onChange={handleInputChange} placeholder="0" />
+                        <span className="box-weight-hint hint-special">{totals.specialWeight.toFixed(3)} viss</span>
+                      </div>
+                      <div className="category-input-box box-natural">
+                        <span className="box-label label-natural">natural</span>
+                        <input type="number" name="natural" className="box-input" max={getFieldMax("natural")} value={formData.natural || ""} onChange={handleInputChange} placeholder="0" />
+                        <span className="box-weight-hint hint-natural">{totals.naturalWeight.toFixed(3)} viss</span>
+                      </div>
+                      <div className="category-input-box box-natural-white">
+                        <span className="box-label label-natural-white">natural white</span>
+                        <input type="number" name="naturalWhite" className="box-input" max={getFieldMax("naturalWhite")} value={formData.naturalWhite || ""} onChange={handleInputChange} placeholder="0" />
+                        <span className="box-weight-hint hint-natural-white">{totals.naturalWhiteWeight.toFixed(3)} viss</span>
+                      </div>
+                      <div className="category-input-box box-natural-red">
+                        <span className="box-label label-natural-red">natural red</span>
+                        <input type="number" name="naturalRed" className="box-input" max={getFieldMax("naturalRed")} value={formData.naturalRed || ""} onChange={handleInputChange} placeholder="0" />
+                        <span className="box-weight-hint hint-natural-red">{totals.naturalRedWeight.toFixed(3)} viss</span>
+                      </div>
+                      <div className="category-input-box box-shortcut">
+                        <span className="box-label label-shortcut">short cut</span>
+                        <input type="number" name="shortCut" className="box-input" max={getFieldMax("shortCut")} value={formData.shortCut || ""} onChange={handleInputChange} placeholder="0" />
+                        <span className="box-weight-hint hint-shortcut">{totals.shortCutWeight.toFixed(3)} viss</span>
+                      </div>
+                      <div className="category-input-box box-artificial">
+                        <span className="box-label label-artificial">artificial</span>
+                        <input type="number" name="artificial" className="box-input" max={getFieldMax("artificial")} value={formData.artificial || ""} onChange={handleInputChange} placeholder="0" />
+                        <span className="box-weight-hint hint-artificial">{totals.artificialWeight.toFixed(3)} viss</span>
+                      </div>
+                      <div className="category-input-box box-short">
+                        <span className="box-label label-short">short</span>
+                        <input type="number" name="short" className="box-input" max={getFieldMax("short")} value={formData.short || ""} onChange={handleInputChange} placeholder="0" />
+                        <span className="box-weight-hint hint-short">{totals.shortWeight.toFixed(3)} viss</span>
+                      </div>
+                    </div>
+                  </section>
+
+                  {/* Weight Balance Summary */}
+                  <div className="summary-section">
+                    <div className="summary-calc" style={{ marginBottom: selectedProduct?.unit?.toLowerCase() === "kg" || selectedProduct?.unit?.toLowerCase() === "kilogram" ? "4px" : "20px" }}>
+                      <div className="calc-left">
+                        <Calculator size={24} />
+                        <span>Weight Balance:</span>
+                        <span>{totals.rwViss.toFixed(3)} - {totals.categorizedWeight.toFixed(3)}</span>
+                        <span>=</span>
+                      </div>
+                      <div className="calc-right">{totals.remainingWeight.toFixed(4)}</div>
+                    </div>
+                    {(selectedProduct?.unit?.toLowerCase() === "kg" || selectedProduct?.unit?.toLowerCase() === "kilogram") && (
+                      <div style={{ display: "flex", justifyContent: "flex-end", color: "var(--gray)", fontSize: "18px", fontWeight: 600, marginBottom: "20px" }}>
+                        ({(totals.remainingWeight * 1.633).toFixed(4)} kg)
+                      </div>
+                    )}
+                    <div className="summary-calc" style={{ marginTop: "12px", paddingTop: "12px", borderTop: "1px dashed var(--border)" }}>
+                      <div className="calc-left">
+                        <Calculator size={24} />
+                        <span>Remaining Count:</span>
+                        <span>{formData.count} - {totals.catSum}</span>
+                        <span>=</span>
+                      </div>
+                      <div className="calc-right">{totals.remainingCount}</div>
+                    </div>
+                  </div>
+
+                  <button
+                    type="submit"
+                    className="submit-btn"
+                    disabled={!selectedProductId || selectedStaff.length === 0 || totals.diff < -(Number(formData.unitWeight) || 0) + 0.0001}
+                  >
+                    {totals.diff < -(Number(formData.unitWeight) || 0) + 0.0001
+                      ? "Weight exceeded — cannot save"
+                      : "Confirm & Save Record"}
+                    <ArrowRight size={20} />
+                  </button>
+                </form>
+              </div>
+            ) : (
+              <div className="rf-empty-state">
+                <Package size={48} style={{ color: "#cbd5e1", marginBottom: "16px" }} />
+                <p style={{ color: "#94a3b8", fontWeight: 600, fontSize: "15px" }}>No bag selected</p>
+                <p style={{ color: "#cbd5e1", fontSize: "13px" }}>Pick a bag from the sidebar to begin sorting</p>
+              </div>
+            )
+          ) : (
+            /* History Tab */
+            <div className="rf-table-wrap fade-in">
+              {selectedProduct && (
+                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "14px" }}>
+                  <span style={{ fontSize: "13px", color: "#64748b", fontWeight: 600 }}>
+                    Showing records for: <strong>{selectedProduct.marker}</strong>
+                  </span>
+                  <button
+                    onClick={() => setSelectedProductId(null)}
+                    style={{ fontSize: "12px", color: "#2563eb", background: "none", border: "1.5px solid #bfdbfe", borderRadius: "8px", padding: "4px 12px", cursor: "pointer", fontWeight: 600 }}
+                  >
+                    Clear Selection &amp; Show All
+                  </button>
+                </div>
+              )}
+              <table className="rf-table">
+                <thead>
+                  <tr>
+                    <th>Date</th>
+                    <th>Marker</th>
+                    <th>Staff</th>
+                    <th>Categories</th>
+                    <th style={{ textAlign: "center" }}>Actions</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {(selectedProductId
+                    ? records.filter((r) => r.productId === selectedProductId)
+                    : records
+                  ).map((record) => (
                     <tr
                       key={record.id}
                       onClick={() => setViewingRecord(record)}
@@ -1106,181 +990,53 @@ const MessLabour: React.FC = () => {
                       <td>{record.productMarker}</td>
                       <td>{record.workerNames}</td>
                       <td>
-                        <div
-                          style={{
-                            display: "flex",
-                            gap: "6px",
-                            flexWrap: "wrap",
-                            maxWidth: "450px",
-                          }}
-                        >
-                          {record.redCount > 0 && (
-                            <span
-                              className="card-badge"
-                              style={{
-                                color: "#c53030",
-                                background: "#fff5f5",
-                                border: "1px solid #fc8181",
-                              }}
+                        <div style={{ display: "flex", gap: "6px", flexWrap: "wrap", maxWidth: "450px" }}>
+                          {record.redCount > 0 && <span className="rf-badge category-red">Red: {record.redCount}</span>}
+                          {record.whiteCount > 0 && <span className="rf-badge category-white">White: {record.whiteCount}</span>}
+                          {record.specialCount > 0 && <span className="rf-badge category-special">Simple: {record.specialCount}</span>}
+                          {record.naturalCount > 0 && <span className="rf-badge category-natural">Natural: {record.naturalCount}</span>}
+                          {record.naturalWhiteCount > 0 && <span className="rf-badge category-9r">N.White: {record.naturalWhiteCount}</span>}
+                          {record.naturalRedCount > 0 && <span className="rf-badge category-red">N.Red: {record.naturalRedCount}</span>}
+                          {record.shortCutCount > 0 && <span className="rf-badge category-special">S.Cut: {record.shortCutCount}</span>}
+                          {record.artificialCount > 0 && <span className="rf-badge category-white">Artif: {record.artificialCount}</span>}
+                          {record.shortCount > 0 && <span className="rf-badge category-9r">Short: {record.shortCount}</span>}
+                        </div>
+                      </td>
+                      <td onClick={(e) => e.stopPropagation()}>
+                        <div style={{ display: "flex", gap: "6px", justifyContent: "center" }}>
+                          {hasPermission("MessLabour.Update") && (
+                            <button
+                              className="rf-action-btn rf-action-edit"
+                              onClick={(e) => { e.stopPropagation(); openEditModal(record); }}
+                              disabled={record.isLocked}
+                              style={{ cursor: record.isLocked ? "not-allowed" : "pointer" }}
                             >
-                              Red: {record.redCount}
-                            </span>
+                              <Pencil size={14} />
+                            </button>
                           )}
-                          {record.whiteCount > 0 && (
-                            <span
-                              className="card-badge"
-                              style={{
-                                color: "#4a5568",
-                                background: "#f7fafc",
-                                border: "1px solid #cbd5e0",
-                              }}
+                          {hasPermission("MessLabour.Delete") && (
+                            <button
+                              className="rf-action-btn rf-action-delete"
+                              onClick={(e) => { e.stopPropagation(); handleDeleteRecord(record); }}
+                              disabled={record.isLocked}
+                              style={{ cursor: record.isLocked ? "not-allowed" : "pointer" }}
                             >
-                              White: {record.whiteCount}
-                            </span>
-                          )}
-                          {record.specialCount > 0 && (
-                            <span
-                              className="card-badge"
-                              style={{
-                                color: "#6b46c1",
-                                background: "#faf5ff",
-                                border: "1px solid #b794f4",
-                              }}
-                            >
-                              Simple: {record.specialCount}
-                            </span>
-                          )}
-                          {record.naturalCount > 0 && (
-                            <span
-                              className="card-badge"
-                              style={{
-                                color: "#276749",
-                                background: "#f0fff4",
-                                border: "1px solid #68d391",
-                              }}
-                            >
-                              Natural: {record.naturalCount}
-                            </span>
-                          )}
-                          {record.naturalWhiteCount > 0 && (
-                            <span
-                              className="card-badge"
-                              style={{
-                                color: "#2b6cb0",
-                                background: "#ebf8ff",
-                                border: "1px solid #63b3ed",
-                              }}
-                            >
-                              N.White: {record.naturalWhiteCount}
-                            </span>
-                          )}
-                          {record.naturalRedCount > 0 && (
-                            <span
-                              className="card-badge"
-                              style={{
-                                color: "#c05621",
-                                background: "#fff8f1",
-                                border: "1px solid #f6ad55",
-                              }}
-                            >
-                              N.Red: {record.naturalRedCount}
-                            </span>
-                          )}
-                          {record.shortCutCount > 0 && (
-                            <span
-                              className="card-badge"
-                              style={{
-                                color: "#975a16",
-                                background: "#fffff0",
-                                border: "1px solid #f6e05e",
-                              }}
-                            >
-                              S.Cut: {record.shortCutCount}
-                            </span>
-                          )}
-                          {record.artificialCount > 0 && (
-                            <span
-                              className="card-badge"
-                              style={{
-                                color: "#702459",
-                                background: "#fdf2f8",
-                                border: "1px solid #d6bcfa",
-                              }}
-                            >
-                              Art: {record.artificialCount}
-                            </span>
-                          )}
-                          {record.shortCount > 0 && (
-                            <span
-                              className="card-badge"
-                              style={{
-                                color: "#92400e",
-                                background: "#fef3c7",
-                                border: "1px solid #f59e0b",
-                              }}
-                            >
-                              Short: {record.shortCount}
-                            </span>
+                              <Trash2 size={14} />
+                            </button>
                           )}
                         </div>
                       </td>
-                      <td style={{ textAlign: "center", whiteSpace: "nowrap" }}>
-                        {hasPermission("MessLabour.Edit") && (
-                          <button
-                            className={`rec-action-btn edit-btn ${record.isLocked ? "disabled" : ""}`}
-                            title={
-                              record.isLocked
-                                ? "purification တွင် အသုံးပြုထားသောကြောင့် ပြင်ဆင်၍မရပါ"
-                                : "ပြင်ဆင်မည်"
-                            }
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              if (record.isLocked) return;
-                              openEditModal(record);
-                            }}
-                            style={{
-                              opacity: record.isLocked ? 0.5 : 1,
-                              cursor: record.isLocked
-                                ? "not-allowed"
-                                : "pointer",
-                            }}
-                          >
-                            <Pencil size={14} />
-                          </button>
-                        )}
-                        {hasPermission("MessLabour.Delete") && (
-                          <button
-                            className={`rec-action-btn delete-btn ${record.isLocked ? "disabled" : ""}`}
-                            title={
-                              record.isLocked
-                                ? "purification တွင် အသုံးပြုထားသောကြောင့် ဖျက်၍မရပါ"
-                                : "ဖျက်မည်"
-                            }
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              if (record.isLocked) return;
-                              handleDeleteRecord(record);
-                            }}
-                            style={{
-                              opacity: record.isLocked ? 0.5 : 1,
-                              cursor: record.isLocked
-                                ? "not-allowed"
-                                : "pointer",
-                            }}
-                          >
-                            <Trash2 size={14} />
-                          </button>
-                        )}
-                      </td>
                     </tr>
                   ))}
-              </tbody>
-            </table>
-          </div>
+                </tbody>
+              </table>
+            </div>
+          )}
         </div>
       </main>
 
       {/* Worker Registration Modal */}
+
       {showWorkerModal && (
         <div
           className="modal-overlay"
