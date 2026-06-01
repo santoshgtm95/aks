@@ -19,7 +19,6 @@ import {
   X,
   Save,
   Search,
-  Sparkles,
 } from "lucide-react";
 import { combineDateWithMyanmarTime, formatDateTime } from "../../utils/format";
 import { useNotification } from "../../context/NotificationContext";
@@ -38,14 +37,18 @@ const MessLabour: React.FC = () => {
   const [selectedStaff, setSelectedStaff] = useState<string[]>([]);
   const [showWorkerModal, setShowWorkerModal] = useState(false);
   const [newWorkerName, setNewWorkerName] = useState("");
-  const [activeTab, setActiveTab] = useState<"processing" | "history">("processing");
+  const [activeTab, setActiveTab] = useState<"processing" | "history">(
+    "processing",
+  );
   const [searchTerm, setSearchTerm] = useState("");
 
   const filteredProducts = useMemo(() => {
     return products.filter((product) => {
       return (
         product.marker.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        (product.warehouseName || "").toLowerCase().includes(searchTerm.toLowerCase())
+        (product.warehouseName || "")
+          .toLowerCase()
+          .includes(searchTerm.toLowerCase())
       );
     });
   }, [products, searchTerm]);
@@ -103,7 +106,9 @@ const MessLabour: React.FC = () => {
       const rwViss = isKg
         ? selectedProduct.remainingWeight / 1.633
         : selectedProduct.remainingWeight;
-      const calcCount = Number((rwViss / Number(formData.unitWeight)).toFixed(4));
+      const calcCount = Number(
+        (rwViss / Number(formData.unitWeight)).toFixed(4),
+      );
       setFormData((prev) => ({ ...prev, count: calcCount.toString() }));
     } else {
       setFormData((prev) => ({ ...prev, count: "0" }));
@@ -684,9 +689,7 @@ const MessLabour: React.FC = () => {
 
         <div className="rf-card-list">
           {filteredProducts.length === 0 ? (
-            <div className="rf-empty-sidebar">
-              No bags found
-            </div>
+            <div className="rf-empty-sidebar">No bags found</div>
           ) : (
             filteredProducts.map((product) => (
               <div
@@ -700,17 +703,33 @@ const MessLabour: React.FC = () => {
                 <div className="card-header">
                   <div style={{ display: "flex", flexDirection: "column" }}>
                     <span className="card-marker">{product.marker}</span>
-                    <span style={{ fontSize: "11px", color: "#64748b", fontWeight: 500 }}>
+                    <span
+                      style={{
+                        fontSize: "11px",
+                        color: "#64748b",
+                        fontWeight: 500,
+                      }}
+                    >
                       {product.warehouseName}
                     </span>
                   </div>
-                  <span className={`rf-badge ${product.remainingWeight <= 0.0001 ? "category-9r" : "category-natural"}`}>
+                  <span
+                    className={`rf-badge ${product.remainingWeight <= 0.0001 ? "category-9r" : "category-natural"}`}
+                  >
                     {product.remainingWeight <= 0.0001 ? "Used" : "New"}
                   </span>
                 </div>
                 <div className="card-details">
                   <span>{product.packages} bundles</span>
-                  <span style={{ fontWeight: "700", color: product.remainingWeight <= 0.0001 ? "#94a3b8" : "#2563eb" }}>
+                  <span
+                    style={{
+                      fontWeight: "700",
+                      color:
+                        product.remainingWeight <= 0.0001
+                          ? "#94a3b8"
+                          : "#2563eb",
+                    }}
+                  >
                     {product.remainingWeight.toFixed(4)} {product.unit}
                   </span>
                 </div>
@@ -726,7 +745,13 @@ const MessLabour: React.FC = () => {
           {/* Header & Tabs */}
           <div className="rf-main-header">
             <div className="rf-header-left">
-              <div className="rf-header-icon" style={{ background: "linear-gradient(135deg, #dbeafe, #eff6ff)", color: "#2563eb" }}>
+              <div
+                className="rf-header-icon"
+                style={{
+                  background: "linear-gradient(135deg, #dbeafe, #eff6ff)",
+                  color: "#2563eb",
+                }}
+              >
                 <Scissors size={26} />
               </div>
               <div className="rf-tab-group">
@@ -748,11 +773,19 @@ const MessLabour: React.FC = () => {
             </div>
 
             <div className="rf-header-badge">
-              <span className="rf-count-badge" style={{ background: "#dbeafe", color: "#2563eb", borderColor: "#bfdbfe" }}>
+              <span
+                className="rf-count-badge"
+                style={{
+                  background: "#dbeafe",
+                  color: "#2563eb",
+                  borderColor: "#bfdbfe",
+                }}
+              >
                 {activeTab === "processing"
-                  ? selectedProduct ? "Active Selection" : "No Selection"
-                  : `${records.length} records`
-                }
+                  ? selectedProduct
+                    ? "Active Selection"
+                    : "No Selection"
+                  : `${records.length} records`}
               </span>
             </div>
           </div>
@@ -760,34 +793,129 @@ const MessLabour: React.FC = () => {
           {/* Tab Content */}
           {activeTab === "processing" ? (
             selectedProduct ? (
-              <div className="fade-in" style={{ display: "flex", flexDirection: "column", gap: "24px" }}>
-                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+              <div
+                className="fade-in"
+                style={{
+                  display: "flex",
+                  flexDirection: "column",
+                  gap: "24px",
+                }}
+              >
+                <div
+                  style={{
+                    display: "flex",
+                    justifyContent: "space-between",
+                    alignItems: "center",
+                  }}
+                >
                   <div>
-                    <h2 style={{ fontSize: "20px", fontWeight: "800", color: "#0f172a", margin: 0 }}>Mess-Labour sorting</h2>
-                    <p style={{ fontSize: "13.5px", color: "#64748b", margin: "6px 0 0 0", fontWeight: "500" }}>
+                    <h2
+                      style={{
+                        fontSize: "20px",
+                        fontWeight: "800",
+                        color: "#0f172a",
+                        margin: 0,
+                      }}
+                    >
+                      Mess-Labour sorting
+                    </h2>
+                    <p
+                      style={{
+                        fontSize: "13.5px",
+                        color: "#64748b",
+                        margin: "6px 0 0 0",
+                        fontWeight: "500",
+                      }}
+                    >
                       Bag Marker: <strong>{selectedProduct.marker}</strong>
-                      {selectedProduct.remainingWeight <= 0.0001 && <span style={{ color: "#ea580c", fontWeight: "700" }}> (Used)</span>}
+                      {selectedProduct.remainingWeight <= 0.0001 && (
+                        <span style={{ color: "#ea580c", fontWeight: "700" }}>
+                          {" "}
+                          (Used)
+                        </span>
+                      )}
                     </p>
                   </div>
-                  <div style={{ background: "linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%)", borderRadius: "12px", padding: "10px 16px", border: "1.5px solid #e2e8f0", textAlign: "right" }}>
-                    <div style={{ fontSize: "10.5px", fontWeight: "700", color: "#94a3b8", textTransform: "uppercase", letterSpacing: "0.06em", marginBottom: "4px" }}>Original Weight</div>
-                    <div style={{ fontSize: "18px", fontWeight: "800", color: "#0f172a" }}>
-                      {selectedProduct.remainingWeight.toFixed(4)} <span style={{ fontSize: "12px", fontWeight: 600, color: "#64748b" }}>{selectedProduct.unit}</span>
+                  <div
+                    style={{
+                      background:
+                        "linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%)",
+                      borderRadius: "12px",
+                      padding: "10px 16px",
+                      border: "1.5px solid #e2e8f0",
+                      textAlign: "right",
+                    }}
+                  >
+                    <div
+                      style={{
+                        fontSize: "10.5px",
+                        fontWeight: "700",
+                        color: "#94a3b8",
+                        textTransform: "uppercase",
+                        letterSpacing: "0.06em",
+                        marginBottom: "4px",
+                      }}
+                    >
+                      Original Weight
+                    </div>
+                    <div
+                      style={{
+                        fontSize: "18px",
+                        fontWeight: "800",
+                        color: "#0f172a",
+                      }}
+                    >
+                      {selectedProduct.remainingWeight.toFixed(4)}{" "}
+                      <span
+                        style={{
+                          fontSize: "12px",
+                          fontWeight: 600,
+                          color: "#64748b",
+                        }}
+                      >
+                        {selectedProduct.unit}
+                      </span>
                     </div>
                   </div>
                 </div>
 
-                <form onSubmit={handleSubmit} style={{ display: "flex", flexDirection: "column", gap: "20px" }}>
+                <form
+                  onSubmit={handleSubmit}
+                  style={{
+                    display: "flex",
+                    flexDirection: "column",
+                    gap: "20px",
+                  }}
+                >
                   {/* 1. Worker Names */}
                   <section className="form-section">
-                    <div className="section-header" style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "12px" }}>
-                      <h3 className="section-label" style={{ margin: 0 }}>1. Worker Names</h3>
+                    <div
+                      className="section-header"
+                      style={{
+                        display: "flex",
+                        justifyContent: "space-between",
+                        alignItems: "center",
+                        marginBottom: "12px",
+                      }}
+                    >
+                      <h3 className="section-label" style={{ margin: 0 }}>
+                        1. Worker Names
+                      </h3>
                       {hasPermission("MessLabour.Create") && (
                         <button
                           type="button"
                           className="btn-add-worker"
                           onClick={() => setShowWorkerModal(true)}
-                          style={{ padding: "6px 12px", fontSize: "12.5px", fontWeight: "600", color: "#2563eb", background: "white", border: "1.5px solid #cbd5e1", borderRadius: "8px", cursor: "pointer" }}
+                          style={{
+                            padding: "6px 12px",
+                            fontSize: "12.5px",
+                            fontWeight: "600",
+                            color: "#2563eb",
+                            background: "white",
+                            border: "1.5px solid #cbd5e1",
+                            borderRadius: "8px",
+                            cursor: "pointer",
+                          }}
                         >
                           + Add Worker
                         </button>
@@ -809,41 +937,82 @@ const MessLabour: React.FC = () => {
 
                   {/* 2. Count & Unit Weight */}
                   <section className="form-section">
-                    <h3 className="section-label" style={{ marginBottom: "16px" }}>2. Count &amp; Unit Weight</h3>
+                    <h3
+                      className="section-label"
+                      style={{ marginBottom: "16px" }}
+                    >
+                      2. Count &amp; Unit Weight
+                    </h3>
                     <div className="count-unit-cards">
                       <div className="cu-card cu-card-count">
-                        <div className="cu-card-icon"><Package size={22} /></div>
+                        <div className="cu-card-icon">
+                          <Package size={22} />
+                        </div>
                         <div className="cu-card-body">
                           <label className="cu-label">Total Count</label>
                           <div className="cu-value-wrapper">
-                            <input type="number" name="count" min="0" className="cu-input" value={formData.count || ""} readOnly placeholder="0" />
+                            <input
+                              type="number"
+                              name="count"
+                              min="0"
+                              className="cu-input"
+                              value={formData.count || ""}
+                              readOnly
+                              placeholder="0"
+                            />
                             <span className="cu-unit">bundles</span>
                           </div>
-                          <p className="cu-hint">Auto-calculated from remaining weight ÷ unit weight</p>
+                          <p className="cu-hint">
+                            Auto-calculated from remaining weight ÷ unit weight
+                          </p>
                         </div>
                       </div>
                       <div className="cu-card cu-card-weight">
-                        <div className="cu-card-icon"><Calculator size={22} /></div>
+                        <div className="cu-card-icon">
+                          <Calculator size={22} />
+                        </div>
                         <div className="cu-card-body">
                           <label className="cu-label">Unit Weight</label>
                           <div className="cu-value-wrapper">
-                            <input type="number" name="unitWeight" step="0.000001" min="0" className="cu-input" value={formData.unitWeight || ""} onChange={handleInputChange} placeholder="0.0000" />
+                            <input
+                              type="number"
+                              name="unitWeight"
+                              step="0.000001"
+                              min="0"
+                              className="cu-input"
+                              value={formData.unitWeight || ""}
+                              onChange={handleInputChange}
+                              placeholder="0.0000"
+                            />
                             <span className="cu-unit">viss</span>
                           </div>
                           <p className="cu-hint">Weight per bundle in viss</p>
                         </div>
                       </div>
                       <div className="cu-card cu-card-total">
-                        <div className="cu-card-icon"><ArrowRight size={22} /></div>
+                        <div className="cu-card-icon">
+                          <ArrowRight size={22} />
+                        </div>
                         <div className="cu-card-body">
                           <label className="cu-label">Total Weight</label>
                           <div className="cu-value-wrapper">
-                            <span className="cu-computed">{totals.total.toFixed(4)}</span>
+                            <span className="cu-computed">
+                              {totals.total.toFixed(4)}
+                            </span>
                             <span className="cu-unit">viss</span>
                           </div>
                           {selectedProduct && (
-                            <p className="cu-hint" style={{ color: Math.abs(totals.diff) > 0.01 ? "#e53e3e" : "#38a169" }}>
-                              Diff: {totals.diff > 0 ? "+" : ""}{totals.diff.toFixed(4)} viss
+                            <p
+                              className="cu-hint"
+                              style={{
+                                color:
+                                  Math.abs(totals.diff) > 0.01
+                                    ? "#e53e3e"
+                                    : "#38a169",
+                              }}
+                            >
+                              Diff: {totals.diff > 0 ? "+" : ""}
+                              {totals.diff.toFixed(4)} viss
                             </p>
                           )}
                         </div>
@@ -853,77 +1022,210 @@ const MessLabour: React.FC = () => {
 
                   {/* 3. Categories */}
                   <section className="form-section">
-                    <h3 className="section-label">3. Short / Deduction Categories</h3>
+                    <h3 className="section-label">
+                      3. Short / Deduction Categories
+                    </h3>
                     <div className="category-grid">
                       <div className="category-input-box box-red">
                         <span className="box-label label-red">red</span>
-                        <input type="number" name="red" className="box-input" max={getFieldMax("red")} value={formData.red || ""} onChange={handleInputChange} placeholder="0" />
-                        <span className="box-weight-hint hint-red">{totals.redWeight.toFixed(3)} viss</span>
+                        <input
+                          type="number"
+                          name="red"
+                          className="box-input"
+                          max={getFieldMax("red")}
+                          value={formData.red || ""}
+                          onChange={handleInputChange}
+                          placeholder="0"
+                        />
+                        <span className="box-weight-hint hint-red">
+                          {totals.redWeight.toFixed(3)} viss
+                        </span>
                       </div>
                       <div className="category-input-box box-white">
                         <span className="box-label label-white">white</span>
-                        <input type="number" name="white" className="box-input" max={getFieldMax("white")} value={formData.white || ""} onChange={handleInputChange} placeholder="0" />
-                        <span className="box-weight-hint hint-white">{totals.whiteWeight.toFixed(3)} viss</span>
+                        <input
+                          type="number"
+                          name="white"
+                          className="box-input"
+                          max={getFieldMax("white")}
+                          value={formData.white || ""}
+                          onChange={handleInputChange}
+                          placeholder="0"
+                        />
+                        <span className="box-weight-hint hint-white">
+                          {totals.whiteWeight.toFixed(3)} viss
+                        </span>
                       </div>
                       <div className="category-input-box box-special">
                         <span className="box-label label-special">simple</span>
-                        <input type="number" name="special" className="box-input" max={getFieldMax("special")} value={formData.special || ""} onChange={handleInputChange} placeholder="0" />
-                        <span className="box-weight-hint hint-special">{totals.specialWeight.toFixed(3)} viss</span>
+                        <input
+                          type="number"
+                          name="special"
+                          className="box-input"
+                          max={getFieldMax("special")}
+                          value={formData.special || ""}
+                          onChange={handleInputChange}
+                          placeholder="0"
+                        />
+                        <span className="box-weight-hint hint-special">
+                          {totals.specialWeight.toFixed(3)} viss
+                        </span>
                       </div>
                       <div className="category-input-box box-natural">
                         <span className="box-label label-natural">natural</span>
-                        <input type="number" name="natural" className="box-input" max={getFieldMax("natural")} value={formData.natural || ""} onChange={handleInputChange} placeholder="0" />
-                        <span className="box-weight-hint hint-natural">{totals.naturalWeight.toFixed(3)} viss</span>
+                        <input
+                          type="number"
+                          name="natural"
+                          className="box-input"
+                          max={getFieldMax("natural")}
+                          value={formData.natural || ""}
+                          onChange={handleInputChange}
+                          placeholder="0"
+                        />
+                        <span className="box-weight-hint hint-natural">
+                          {totals.naturalWeight.toFixed(3)} viss
+                        </span>
                       </div>
                       <div className="category-input-box box-natural-white">
-                        <span className="box-label label-natural-white">natural white</span>
-                        <input type="number" name="naturalWhite" className="box-input" max={getFieldMax("naturalWhite")} value={formData.naturalWhite || ""} onChange={handleInputChange} placeholder="0" />
-                        <span className="box-weight-hint hint-natural-white">{totals.naturalWhiteWeight.toFixed(3)} viss</span>
+                        <span className="box-label label-natural-white">
+                          natural white
+                        </span>
+                        <input
+                          type="number"
+                          name="naturalWhite"
+                          className="box-input"
+                          max={getFieldMax("naturalWhite")}
+                          value={formData.naturalWhite || ""}
+                          onChange={handleInputChange}
+                          placeholder="0"
+                        />
+                        <span className="box-weight-hint hint-natural-white">
+                          {totals.naturalWhiteWeight.toFixed(3)} viss
+                        </span>
                       </div>
                       <div className="category-input-box box-natural-red">
-                        <span className="box-label label-natural-red">natural red</span>
-                        <input type="number" name="naturalRed" className="box-input" max={getFieldMax("naturalRed")} value={formData.naturalRed || ""} onChange={handleInputChange} placeholder="0" />
-                        <span className="box-weight-hint hint-natural-red">{totals.naturalRedWeight.toFixed(3)} viss</span>
+                        <span className="box-label label-natural-red">
+                          natural red
+                        </span>
+                        <input
+                          type="number"
+                          name="naturalRed"
+                          className="box-input"
+                          max={getFieldMax("naturalRed")}
+                          value={formData.naturalRed || ""}
+                          onChange={handleInputChange}
+                          placeholder="0"
+                        />
+                        <span className="box-weight-hint hint-natural-red">
+                          {totals.naturalRedWeight.toFixed(3)} viss
+                        </span>
                       </div>
                       <div className="category-input-box box-shortcut">
-                        <span className="box-label label-shortcut">short cut</span>
-                        <input type="number" name="shortCut" className="box-input" max={getFieldMax("shortCut")} value={formData.shortCut || ""} onChange={handleInputChange} placeholder="0" />
-                        <span className="box-weight-hint hint-shortcut">{totals.shortCutWeight.toFixed(3)} viss</span>
+                        <span className="box-label label-shortcut">
+                          short cut
+                        </span>
+                        <input
+                          type="number"
+                          name="shortCut"
+                          className="box-input"
+                          max={getFieldMax("shortCut")}
+                          value={formData.shortCut || ""}
+                          onChange={handleInputChange}
+                          placeholder="0"
+                        />
+                        <span className="box-weight-hint hint-shortcut">
+                          {totals.shortCutWeight.toFixed(3)} viss
+                        </span>
                       </div>
                       <div className="category-input-box box-artificial">
-                        <span className="box-label label-artificial">artificial</span>
-                        <input type="number" name="artificial" className="box-input" max={getFieldMax("artificial")} value={formData.artificial || ""} onChange={handleInputChange} placeholder="0" />
-                        <span className="box-weight-hint hint-artificial">{totals.artificialWeight.toFixed(3)} viss</span>
+                        <span className="box-label label-artificial">
+                          artificial
+                        </span>
+                        <input
+                          type="number"
+                          name="artificial"
+                          className="box-input"
+                          max={getFieldMax("artificial")}
+                          value={formData.artificial || ""}
+                          onChange={handleInputChange}
+                          placeholder="0"
+                        />
+                        <span className="box-weight-hint hint-artificial">
+                          {totals.artificialWeight.toFixed(3)} viss
+                        </span>
                       </div>
                       <div className="category-input-box box-short">
                         <span className="box-label label-short">short</span>
-                        <input type="number" name="short" className="box-input" max={getFieldMax("short")} value={formData.short || ""} onChange={handleInputChange} placeholder="0" />
-                        <span className="box-weight-hint hint-short">{totals.shortWeight.toFixed(3)} viss</span>
+                        <input
+                          type="number"
+                          name="short"
+                          className="box-input"
+                          max={getFieldMax("short")}
+                          value={formData.short || ""}
+                          onChange={handleInputChange}
+                          placeholder="0"
+                        />
+                        <span className="box-weight-hint hint-short">
+                          {totals.shortWeight.toFixed(3)} viss
+                        </span>
                       </div>
                     </div>
                   </section>
 
                   {/* Weight Balance Summary */}
                   <div className="summary-section">
-                    <div className="summary-calc" style={{ marginBottom: selectedProduct?.unit?.toLowerCase() === "kg" || selectedProduct?.unit?.toLowerCase() === "kilogram" ? "4px" : "20px" }}>
+                    <div
+                      className="summary-calc"
+                      style={{
+                        marginBottom:
+                          selectedProduct?.unit?.toLowerCase() === "kg" ||
+                          selectedProduct?.unit?.toLowerCase() === "kilogram"
+                            ? "4px"
+                            : "20px",
+                      }}
+                    >
                       <div className="calc-left">
                         <Calculator size={24} />
                         <span>Weight Balance:</span>
-                        <span>{totals.rwViss.toFixed(3)} - {totals.categorizedWeight.toFixed(3)}</span>
+                        <span>
+                          {totals.rwViss.toFixed(3)} -{" "}
+                          {totals.categorizedWeight.toFixed(3)}
+                        </span>
                         <span>=</span>
                       </div>
-                      <div className="calc-right">{totals.remainingWeight.toFixed(4)}</div>
+                      <div className="calc-right">
+                        {totals.remainingWeight.toFixed(4)}
+                      </div>
                     </div>
-                    {(selectedProduct?.unit?.toLowerCase() === "kg" || selectedProduct?.unit?.toLowerCase() === "kilogram") && (
-                      <div style={{ display: "flex", justifyContent: "flex-end", color: "var(--gray)", fontSize: "18px", fontWeight: 600, marginBottom: "20px" }}>
+                    {(selectedProduct?.unit?.toLowerCase() === "kg" ||
+                      selectedProduct?.unit?.toLowerCase() === "kilogram") && (
+                      <div
+                        style={{
+                          display: "flex",
+                          justifyContent: "flex-end",
+                          color: "var(--gray)",
+                          fontSize: "18px",
+                          fontWeight: 600,
+                          marginBottom: "20px",
+                        }}
+                      >
                         ({(totals.remainingWeight * 1.633).toFixed(4)} kg)
                       </div>
                     )}
-                    <div className="summary-calc" style={{ marginTop: "12px", paddingTop: "12px", borderTop: "1px dashed var(--border)" }}>
+                    <div
+                      className="summary-calc"
+                      style={{
+                        marginTop: "12px",
+                        paddingTop: "12px",
+                        borderTop: "1px dashed var(--border)",
+                      }}
+                    >
                       <div className="calc-left">
                         <Calculator size={24} />
                         <span>Remaining Count:</span>
-                        <span>{formData.count} - {totals.catSum}</span>
+                        <span>
+                          {formData.count} - {totals.catSum}
+                        </span>
                         <span>=</span>
                       </div>
                       <div className="calc-right">{totals.remainingCount}</div>
@@ -933,7 +1235,11 @@ const MessLabour: React.FC = () => {
                   <button
                     type="submit"
                     className="submit-btn"
-                    disabled={!selectedProductId || selectedStaff.length === 0 || totals.diff < -(Number(formData.unitWeight) || 0) + 0.0001}
+                    disabled={
+                      !selectedProductId ||
+                      selectedStaff.length === 0 ||
+                      totals.diff < -(Number(formData.unitWeight) || 0) + 0.0001
+                    }
                   >
                     {totals.diff < -(Number(formData.unitWeight) || 0) + 0.0001
                       ? "Weight exceeded — cannot save"
@@ -944,22 +1250,58 @@ const MessLabour: React.FC = () => {
               </div>
             ) : (
               <div className="rf-empty-state">
-                <Package size={48} style={{ color: "#cbd5e1", marginBottom: "16px" }} />
-                <p style={{ color: "#94a3b8", fontWeight: 600, fontSize: "15px" }}>No bag selected</p>
-                <p style={{ color: "#cbd5e1", fontSize: "13px" }}>Pick a bag from the sidebar to begin sorting</p>
+                <Package
+                  size={48}
+                  style={{ color: "#cbd5e1", marginBottom: "16px" }}
+                />
+                <p
+                  style={{
+                    color: "#94a3b8",
+                    fontWeight: 600,
+                    fontSize: "15px",
+                  }}
+                >
+                  No bag selected
+                </p>
+                <p style={{ color: "#cbd5e1", fontSize: "13px" }}>
+                  Pick a bag from the sidebar to begin sorting
+                </p>
               </div>
             )
           ) : (
             /* History Tab */
             <div className="rf-table-wrap fade-in">
               {selectedProduct && (
-                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "14px" }}>
-                  <span style={{ fontSize: "13px", color: "#64748b", fontWeight: 600 }}>
-                    Showing records for: <strong>{selectedProduct.marker}</strong>
+                <div
+                  style={{
+                    display: "flex",
+                    justifyContent: "space-between",
+                    alignItems: "center",
+                    marginBottom: "14px",
+                  }}
+                >
+                  <span
+                    style={{
+                      fontSize: "13px",
+                      color: "#64748b",
+                      fontWeight: 600,
+                    }}
+                  >
+                    Showing records for:{" "}
+                    <strong>{selectedProduct.marker}</strong>
                   </span>
                   <button
                     onClick={() => setSelectedProductId(null)}
-                    style={{ fontSize: "12px", color: "#2563eb", background: "none", border: "1.5px solid #bfdbfe", borderRadius: "8px", padding: "4px 12px", cursor: "pointer", fontWeight: 600 }}
+                    style={{
+                      fontSize: "12px",
+                      color: "#2563eb",
+                      background: "none",
+                      border: "1.5px solid #bfdbfe",
+                      borderRadius: "8px",
+                      padding: "4px 12px",
+                      cursor: "pointer",
+                      fontWeight: 600,
+                    }}
                   >
                     Clear Selection &amp; Show All
                   </button>
@@ -990,26 +1332,82 @@ const MessLabour: React.FC = () => {
                       <td>{record.productMarker}</td>
                       <td>{record.workerNames}</td>
                       <td>
-                        <div style={{ display: "flex", gap: "6px", flexWrap: "wrap", maxWidth: "450px" }}>
-                          {record.redCount > 0 && <span className="rf-badge category-red">Red: {record.redCount}</span>}
-                          {record.whiteCount > 0 && <span className="rf-badge category-white">White: {record.whiteCount}</span>}
-                          {record.specialCount > 0 && <span className="rf-badge category-special">Simple: {record.specialCount}</span>}
-                          {record.naturalCount > 0 && <span className="rf-badge category-natural">Natural: {record.naturalCount}</span>}
-                          {record.naturalWhiteCount > 0 && <span className="rf-badge category-9r">N.White: {record.naturalWhiteCount}</span>}
-                          {record.naturalRedCount > 0 && <span className="rf-badge category-red">N.Red: {record.naturalRedCount}</span>}
-                          {record.shortCutCount > 0 && <span className="rf-badge category-special">S.Cut: {record.shortCutCount}</span>}
-                          {record.artificialCount > 0 && <span className="rf-badge category-white">Artif: {record.artificialCount}</span>}
-                          {record.shortCount > 0 && <span className="rf-badge category-9r">Short: {record.shortCount}</span>}
+                        <div
+                          style={{
+                            display: "flex",
+                            gap: "6px",
+                            flexWrap: "wrap",
+                            maxWidth: "450px",
+                          }}
+                        >
+                          {record.redCount > 0 && (
+                            <span className="rf-badge category-red">
+                              Red: {record.redCount}
+                            </span>
+                          )}
+                          {record.whiteCount > 0 && (
+                            <span className="rf-badge category-white">
+                              White: {record.whiteCount}
+                            </span>
+                          )}
+                          {record.specialCount > 0 && (
+                            <span className="rf-badge category-special">
+                              Simple: {record.specialCount}
+                            </span>
+                          )}
+                          {record.naturalCount > 0 && (
+                            <span className="rf-badge category-natural">
+                              Natural: {record.naturalCount}
+                            </span>
+                          )}
+                          {record.naturalWhiteCount > 0 && (
+                            <span className="rf-badge category-9r">
+                              N.White: {record.naturalWhiteCount}
+                            </span>
+                          )}
+                          {record.naturalRedCount > 0 && (
+                            <span className="rf-badge category-red">
+                              N.Red: {record.naturalRedCount}
+                            </span>
+                          )}
+                          {record.shortCutCount > 0 && (
+                            <span className="rf-badge category-special">
+                              S.Cut: {record.shortCutCount}
+                            </span>
+                          )}
+                          {record.artificialCount > 0 && (
+                            <span className="rf-badge category-white">
+                              Artif: {record.artificialCount}
+                            </span>
+                          )}
+                          {record.shortCount > 0 && (
+                            <span className="rf-badge category-9r">
+                              Short: {record.shortCount}
+                            </span>
+                          )}
                         </div>
                       </td>
                       <td onClick={(e) => e.stopPropagation()}>
-                        <div style={{ display: "flex", gap: "6px", justifyContent: "center" }}>
+                        <div
+                          style={{
+                            display: "flex",
+                            gap: "6px",
+                            justifyContent: "center",
+                          }}
+                        >
                           {hasPermission("MessLabour.Update") && (
                             <button
                               className="rf-action-btn rf-action-edit"
-                              onClick={(e) => { e.stopPropagation(); openEditModal(record); }}
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                openEditModal(record);
+                              }}
                               disabled={record.isLocked}
-                              style={{ cursor: record.isLocked ? "not-allowed" : "pointer" }}
+                              style={{
+                                cursor: record.isLocked
+                                  ? "not-allowed"
+                                  : "pointer",
+                              }}
                             >
                               <Pencil size={14} />
                             </button>
@@ -1017,9 +1415,16 @@ const MessLabour: React.FC = () => {
                           {hasPermission("MessLabour.Delete") && (
                             <button
                               className="rf-action-btn rf-action-delete"
-                              onClick={(e) => { e.stopPropagation(); handleDeleteRecord(record); }}
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                handleDeleteRecord(record);
+                              }}
                               disabled={record.isLocked}
-                              style={{ cursor: record.isLocked ? "not-allowed" : "pointer" }}
+                              style={{
+                                cursor: record.isLocked
+                                  ? "not-allowed"
+                                  : "pointer",
+                              }}
                             >
                               <Trash2 size={14} />
                             </button>
@@ -1056,7 +1461,10 @@ const MessLabour: React.FC = () => {
                   <p className="rw-header-pre">Manage and register workers</p>
                 </div>
               </div>
-              <button className="rw-close-btn" onClick={() => setShowWorkerModal(false)}>
+              <button
+                className="rw-close-btn"
+                onClick={() => setShowWorkerModal(false)}
+              >
                 <X size={20} />
               </button>
             </div>
@@ -1097,7 +1505,9 @@ const MessLabour: React.FC = () => {
                 </div>
                 <div className="rw-workers-scroll">
                   {workers.length === 0 ? (
-                    <div className="rw-empty-state">No workers registered yet.</div>
+                    <div className="rw-empty-state">
+                      No workers registered yet.
+                    </div>
                   ) : (
                     <div className="rw-workers-list">
                       {workers.map((worker) => (
@@ -1134,7 +1544,9 @@ const MessLabour: React.FC = () => {
                 </div>
                 <div>
                   <p className="em-header-pre">Edit Record</p>
-                  <h2 className="em-header-title">{editingRecord.productMarker}</h2>
+                  <h2 className="em-header-title">
+                    {editingRecord.productMarker}
+                  </h2>
                 </div>
               </div>
               <button className="em-close-btn" onClick={closeEditModal}>
@@ -1146,15 +1558,21 @@ const MessLabour: React.FC = () => {
             <div className="em-info-bar">
               <div className="em-info-chip">
                 <span className="em-info-label">Unit Weight</span>
-                <span className="em-info-value">{editingRecord.unitWeight.toFixed(4)} viss</span>
+                <span className="em-info-value">
+                  {editingRecord.unitWeight.toFixed(4)} viss
+                </span>
               </div>
               <div className="em-info-chip">
                 <span className="em-info-label">Total Count</span>
-                <span className="em-info-value">{getOriginalTotalCount(editingRecord)} bundles</span>
+                <span className="em-info-value">
+                  {getOriginalTotalCount(editingRecord)} bundles
+                </span>
               </div>
               <div className="em-info-chip">
                 <span className="em-info-label">Date</span>
-                <span className="em-info-value">{formatDateTime(editingRecord.date)}</span>
+                <span className="em-info-value">
+                  {formatDateTime(editingRecord.date)}
+                </span>
               </div>
             </div>
 
@@ -1186,15 +1604,39 @@ const MessLabour: React.FC = () => {
                 <div className="em-cat-grid">
                   {(
                     [
-                      { name: "red",          label: "Red",          cls: "em-cat-red"    },
-                      { name: "white",        label: "White",        cls: "em-cat-white"  },
-                      { name: "special",      label: "Simple",       cls: "em-cat-special"},
-                      { name: "natural",      label: "Natural",      cls: "em-cat-natural"},
-                      { name: "naturalWhite", label: "Nat. White",   cls: "em-cat-nwhite" },
-                      { name: "naturalRed",   label: "Nat. Red",     cls: "em-cat-nred"   },
-                      { name: "shortCut",     label: "Short Cut",    cls: "em-cat-scut"   },
-                      { name: "artificial",   label: "Artificial",   cls: "em-cat-art"    },
-                      { name: "short",        label: "Short",        cls: "em-cat-short"  },
+                      { name: "red", label: "Red", cls: "em-cat-red" },
+                      { name: "white", label: "White", cls: "em-cat-white" },
+                      {
+                        name: "special",
+                        label: "Simple",
+                        cls: "em-cat-special",
+                      },
+                      {
+                        name: "natural",
+                        label: "Natural",
+                        cls: "em-cat-natural",
+                      },
+                      {
+                        name: "naturalWhite",
+                        label: "Nat. White",
+                        cls: "em-cat-nwhite",
+                      },
+                      {
+                        name: "naturalRed",
+                        label: "Nat. Red",
+                        cls: "em-cat-nred",
+                      },
+                      {
+                        name: "shortCut",
+                        label: "Short Cut",
+                        cls: "em-cat-scut",
+                      },
+                      {
+                        name: "artificial",
+                        label: "Artificial",
+                        cls: "em-cat-art",
+                      },
+                      { name: "short", label: "Short", cls: "em-cat-short" },
                     ] as const
                   ).map(({ name, label, cls }) => (
                     <div key={name} className={`em-cat-card ${cls}`}>
@@ -1210,7 +1652,10 @@ const MessLabour: React.FC = () => {
                         max={getEditFieldMax(name as any)}
                       />
                       <span className="em-cat-weight">
-                        {((editFormData as any)[name] * editingRecord.unitWeight).toFixed(3)} v
+                        {(
+                          (editFormData as any)[name] * editingRecord.unitWeight
+                        ).toFixed(3)}{" "}
+                        v
                       </span>
                     </div>
                   ))}
@@ -1222,15 +1667,23 @@ const MessLabour: React.FC = () => {
                 const uw = editingRecord.unitWeight || 1;
                 const originalTotal = getOriginalTotalCount(editingRecord);
                 const catSum =
-                  (editFormData.red || 0) + (editFormData.white || 0) +
-                  (editFormData.special || 0) + (editFormData.natural || 0) +
-                  (editFormData.naturalWhite || 0) + (editFormData.naturalRed || 0) +
-                  (editFormData.shortCut || 0) + (editFormData.artificial || 0) +
+                  (editFormData.red || 0) +
+                  (editFormData.white || 0) +
+                  (editFormData.special || 0) +
+                  (editFormData.natural || 0) +
+                  (editFormData.naturalWhite || 0) +
+                  (editFormData.naturalRed || 0) +
+                  (editFormData.shortCut || 0) +
+                  (editFormData.artificial || 0) +
                   (editFormData.short || 0);
                 const remainingCount = originalTotal - catSum;
                 const remainingWeight = remainingCount * uw;
-                const productForEdit = products.find((p) => p.id === editingRecord.productId);
-                const isKg = productForEdit?.unit?.toLowerCase() === "kg" || productForEdit?.unit?.toLowerCase() === "kilogram";
+                const productForEdit = products.find(
+                  (p) => p.id === editingRecord.productId,
+                );
+                const isKg =
+                  productForEdit?.unit?.toLowerCase() === "kg" ||
+                  productForEdit?.unit?.toLowerCase() === "kilogram";
 
                 return (
                   <div className="em-summary-bar">
@@ -1242,9 +1695,14 @@ const MessLabour: React.FC = () => {
                     <div className="em-sum-divider" />
                     <div className="em-sum-chip em-sum-weight">
                       <span className="em-sum-label">Remaining Weight</span>
-                      <span className="em-sum-val">{remainingWeight.toFixed(4)}</span>
+                      <span className="em-sum-val">
+                        {remainingWeight.toFixed(4)}
+                      </span>
                       <span className="em-sum-sub">
-                        viss{isKg ? ` (${(remainingWeight * 1.633).toFixed(4)} kg)` : ""}
+                        viss
+                        {isKg
+                          ? ` (${(remainingWeight * 1.633).toFixed(4)} kg)`
+                          : ""}
                       </span>
                     </div>
                     <div className="em-sum-divider" />
@@ -1271,7 +1729,6 @@ const MessLabour: React.FC = () => {
         </div>
       )}
 
-
       {/* ─── View Record Modal ─────────────────────────────────────── */}
       {viewingRecord && (
         <div
@@ -1289,10 +1746,15 @@ const MessLabour: React.FC = () => {
                 </div>
                 <div>
                   <p className="vm-header-pre">Record Details</p>
-                  <h2 className="vm-header-title">{viewingRecord.productMarker}</h2>
+                  <h2 className="vm-header-title">
+                    {viewingRecord.productMarker}
+                  </h2>
                 </div>
               </div>
-              <button className="vm-close-btn" onClick={() => setViewingRecord(null)}>
+              <button
+                className="vm-close-btn"
+                onClick={() => setViewingRecord(null)}
+              >
                 <X size={20} />
               </button>
             </div>
@@ -1301,15 +1763,21 @@ const MessLabour: React.FC = () => {
             <div className="vm-stats-grid">
               <div className="vm-stat-card">
                 <span className="vm-stat-label">Date</span>
-                <span className="vm-stat-value">{formatDateTime(viewingRecord.date)}</span>
+                <span className="vm-stat-value">
+                  {formatDateTime(viewingRecord.date)}
+                </span>
               </div>
               <div className="vm-stat-card vm-stat-span-2">
                 <span className="vm-stat-label">Workers</span>
-                <span className="vm-stat-value">{viewingRecord.workerNames || "---"}</span>
+                <span className="vm-stat-value">
+                  {viewingRecord.workerNames || "---"}
+                </span>
               </div>
               <div className="vm-stat-card">
                 <span className="vm-stat-label">Unit Weight</span>
-                <span className="vm-stat-value">{viewingRecord.unitWeight.toFixed(4)} viss</span>
+                <span className="vm-stat-value">
+                  {viewingRecord.unitWeight.toFixed(4)} viss
+                </span>
               </div>
             </div>
 
@@ -1318,14 +1786,18 @@ const MessLabour: React.FC = () => {
               <div className="vm-highlight-box highlight-blue">
                 <div className="vm-hl-label">Remaining Count</div>
                 <div className="vm-hl-value">
-                  {viewingRecord.remainingCount} <span className="vm-hl-unit">bundles</span>
+                  {viewingRecord.remainingCount}{" "}
+                  <span className="vm-hl-unit">bundles</span>
                 </div>
-                <div className="vm-hl-desc">of {viewingRecord.count} original packages</div>
+                <div className="vm-hl-desc">
+                  of {viewingRecord.count} original packages
+                </div>
               </div>
               <div className="vm-highlight-box highlight-green">
                 <div className="vm-hl-label">Remaining Weight</div>
                 <div className="vm-hl-value">
-                  {viewingRecord.remainingWeight.toFixed(4)} <span className="vm-hl-unit">viss</span>
+                  {viewingRecord.remainingWeight.toFixed(4)}{" "}
+                  <span className="vm-hl-unit">viss</span>
                 </div>
                 <div className="vm-hl-desc">weight available for sales</div>
               </div>
@@ -1340,15 +1812,60 @@ const MessLabour: React.FC = () => {
                 <div className="vm-cat-grid">
                   {(
                     [
-                      { count: viewingRecord.redCount,          weight: viewingRecord.redWeight,          label: "Red",          cls: "vm-cat-red"    },
-                      { count: viewingRecord.whiteCount,        weight: viewingRecord.whiteWeight,        label: "White",        cls: "vm-cat-white"  },
-                      { count: viewingRecord.specialCount,      weight: viewingRecord.specialWeight,      label: "Simple",       cls: "vm-cat-special"},
-                      { count: viewingRecord.naturalCount,      weight: viewingRecord.naturalWeight,      label: "Natural",      cls: "vm-cat-natural"},
-                      { count: viewingRecord.naturalWhiteCount, weight: viewingRecord.naturalWhiteWeight, label: "Nat. White",   cls: "vm-cat-nwhite" },
-                      { count: viewingRecord.naturalRedCount,   weight: viewingRecord.naturalRedWeight,   label: "Nat. Red",     cls: "vm-cat-nred"   },
-                      { count: viewingRecord.shortCutCount,     weight: viewingRecord.shortCutWeight,     label: "Short Cut",    cls: "vm-cat-scut"   },
-                      { count: viewingRecord.artificialCount,   weight: viewingRecord.artificialWeight,   label: "Artificial",   cls: "vm-cat-art"    },
-                      { count: viewingRecord.shortCount,        weight: viewingRecord.shortWeight,        label: "Short",        cls: "vm-cat-short"  },
+                      {
+                        count: viewingRecord.redCount,
+                        weight: viewingRecord.redWeight,
+                        label: "Red",
+                        cls: "vm-cat-red",
+                      },
+                      {
+                        count: viewingRecord.whiteCount,
+                        weight: viewingRecord.whiteWeight,
+                        label: "White",
+                        cls: "vm-cat-white",
+                      },
+                      {
+                        count: viewingRecord.specialCount,
+                        weight: viewingRecord.specialWeight,
+                        label: "Simple",
+                        cls: "vm-cat-special",
+                      },
+                      {
+                        count: viewingRecord.naturalCount,
+                        weight: viewingRecord.naturalWeight,
+                        label: "Natural",
+                        cls: "vm-cat-natural",
+                      },
+                      {
+                        count: viewingRecord.naturalWhiteCount,
+                        weight: viewingRecord.naturalWhiteWeight,
+                        label: "Nat. White",
+                        cls: "vm-cat-nwhite",
+                      },
+                      {
+                        count: viewingRecord.naturalRedCount,
+                        weight: viewingRecord.naturalRedWeight,
+                        label: "Nat. Red",
+                        cls: "vm-cat-nred",
+                      },
+                      {
+                        count: viewingRecord.shortCutCount,
+                        weight: viewingRecord.shortCutWeight,
+                        label: "Short Cut",
+                        cls: "vm-cat-scut",
+                      },
+                      {
+                        count: viewingRecord.artificialCount,
+                        weight: viewingRecord.artificialWeight,
+                        label: "Artificial",
+                        cls: "vm-cat-art",
+                      },
+                      {
+                        count: viewingRecord.shortCount,
+                        weight: viewingRecord.shortWeight,
+                        label: "Short",
+                        cls: "vm-cat-short",
+                      },
                     ] as const
                   )
                     .filter((cat) => cat.count > 0)
@@ -1356,7 +1873,9 @@ const MessLabour: React.FC = () => {
                       <div key={label} className={`vm-cat-card ${cls}`}>
                         <span className="vm-cat-label">{label}</span>
                         <span className="vm-cat-count">{count} bundles</span>
-                        <span className="vm-cat-weight">{weight.toFixed(3)} viss</span>
+                        <span className="vm-cat-weight">
+                          {weight.toFixed(3)} viss
+                        </span>
                       </div>
                     ))}
                   {viewingRecord.redCount === 0 &&
@@ -1381,12 +1900,15 @@ const MessLabour: React.FC = () => {
               <div className="vm-total-item">
                 <span className="vm-total-label">Total Weight</span>
                 <span className="vm-total-value">
-                  {viewingRecord.totalWeight.toFixed(4)} <span className="vm-total-unit">viss</span>
+                  {viewingRecord.totalWeight.toFixed(4)}{" "}
+                  <span className="vm-total-unit">viss</span>
                 </span>
               </div>
               <div className="vm-total-item" style={{ alignItems: "flex-end" }}>
                 <span className="vm-total-label">Weight Difference</span>
-                <span className={`vm-total-diff ${viewingRecord.difference > 0.1 || viewingRecord.difference < -0.1 ? "diff-error" : "diff-success"}`}>
+                <span
+                  className={`vm-total-diff ${viewingRecord.difference > 0.1 || viewingRecord.difference < -0.1 ? "diff-error" : "diff-success"}`}
+                >
                   {viewingRecord.difference > 0 ? "+" : ""}
                   {viewingRecord.difference.toFixed(4)} viss
                 </span>
@@ -1395,7 +1917,10 @@ const MessLabour: React.FC = () => {
 
             {/* Footer */}
             <div className="vm-footer">
-              <button className="vm-btn-close" onClick={() => setViewingRecord(null)}>
+              <button
+                className="vm-btn-close"
+                onClick={() => setViewingRecord(null)}
+              >
                 Close Details
               </button>
             </div>

@@ -84,6 +84,7 @@ const Sales6: React.FC = () => {
         price: 0,
         currency: "MMK",
         category: PAGE_CATEGORY,
+        plusMinusWeight: 0,
       });
       loadData();
     } catch (error: any) {
