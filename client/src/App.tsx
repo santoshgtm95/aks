@@ -20,6 +20,7 @@ import MessLabour from "./pages/MessLabour/index";
 import Purification from "./pages/Purification/index";
 import PurifierManagement from "./pages/PurifierManagement/index";
 import Refinement from "./pages/Refinement/index";
+import RefinementWorkerManagement from "./pages/RefinementWorkerManagement/index";
 import SingleDoubleDrawn from "./pages/SingleDoubleDrawn/index";
 import Sales5 from "./pages/Sales5/index";
 import Sales6 from "./pages/Sales6/index";
@@ -123,6 +124,14 @@ const App: React.FC = () => {
                 element={
                   <ProtectedRoute permission="Refinement.View">
                     <Refinement />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="refinement-workers"
+                element={
+                  <ProtectedRoute permission="Warehouse.View">
+                    <RefinementWorkerManagement />
                   </ProtectedRoute>
                 }
               />

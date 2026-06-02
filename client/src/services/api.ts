@@ -23,6 +23,9 @@ import type {
   Purifier,
   CreatePurifierDto,
   UpdatePurifierDto,
+  RefinementWorker,
+  CreateRefinementWorkerDto,
+  UpdateRefinementWorkerDto,
   PurifiedRecord,
   AvailablePurifiedCategory,
   RefinementProcess,
@@ -271,6 +274,38 @@ export const purificationAPI = {
   },
   deletePurifiedRecord: async (id: number) => {
     await api.delete(`/purification/purified-records/${id}`);
+  },
+};
+
+// Refinement Workers API
+export const refinementWorkersAPI = {
+  getAll: async (): Promise<RefinementWorker[]> => {
+    const response = await api.get<RefinementWorker[]>("/refinementworkers");
+    return response.data;
+  },
+  getByWarehouse: async (warehouseId: number): Promise<RefinementWorker[]> => {
+    const response = await api.get<RefinementWorker[]>(
+      `/refinementworkers/warehouse/${warehouseId}`,
+    );
+    return response.data;
+  },
+  create: async (
+    data: CreateRefinementWorkerDto,
+  ): Promise<RefinementWorker> => {
+    const response = await api.post<RefinementWorker>(
+      "/refinementworkers",
+      data,
+    );
+    return response.data;
+  },
+  update: async (
+    id: number,
+    data: UpdateRefinementWorkerDto,
+  ): Promise<void> => {
+    await api.put(`/refinementworkers/${id}`, data);
+  },
+  delete: async (id: number): Promise<void> => {
+    await api.delete(`/refinementworkers/${id}`);
   },
 };
 

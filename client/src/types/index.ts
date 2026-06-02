@@ -277,6 +277,25 @@ export interface AvailableCategory {
   warehouseId?: number;
 }
 
+export interface RefinementWorker {
+  id: number;
+  name: string;
+  warehouseId: number;
+  warehouseName: string;
+  isActive: boolean;
+}
+
+export interface CreateRefinementWorkerDto {
+  name: string;
+  warehouseId: number;
+}
+
+export interface UpdateRefinementWorkerDto {
+  name: string;
+  warehouseId: number;
+  isActive: boolean;
+}
+
 export interface Purifier {
   id: number;
   name: string;
