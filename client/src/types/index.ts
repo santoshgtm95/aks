@@ -342,6 +342,7 @@ export interface RefinementProcess {
 }
 
 export interface RefinementRecord {
+  purifierName: string;
   id: number;
   date: string;
   purifiedRecordId: number;
