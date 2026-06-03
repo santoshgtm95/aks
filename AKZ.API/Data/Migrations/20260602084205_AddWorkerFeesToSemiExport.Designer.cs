@@ -4,16 +4,19 @@ using AKZ.API.Data;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 #nullable disable
 
-namespace AKZ.API.Migrations
+namespace AKZ.API.Data.Migrations
 {
     [DbContext(typeof(AKZDbContext))]
-    partial class AKZDbContextModelSnapshot : ModelSnapshot
+    [Migration("20260602084205_AddWorkerFeesToSemiExport")]
+    partial class AddWorkerFeesToSemiExport
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -299,6 +302,9 @@ namespace AKZ.API.Migrations
                         .HasColumnType("decimal(18,2)");
 
                     b.Property<decimal>("RemainingWeight")
+                        .HasColumnType("decimal(18,2)");
+
+                    b.Property<decimal>("SemiExportWorkerFees")
                         .HasColumnType("decimal(18,2)");
 
                     b.Property<string>("Unit")
@@ -910,6 +916,60 @@ namespace AKZ.API.Migrations
 
                     b.Property<int>("DeleteFlg")
                         .HasColumnType("int");
+
+                    b.Property<decimal>("Price10")
+                        .HasColumnType("decimal(18,4)");
+
+                    b.Property<decimal>("Price10B")
+                        .HasColumnType("decimal(18,4)");
+
+                    b.Property<decimal>("Price12")
+                        .HasColumnType("decimal(18,4)");
+
+                    b.Property<decimal>("Price14")
+                        .HasColumnType("decimal(18,4)");
+
+                    b.Property<decimal>("Price16")
+                        .HasColumnType("decimal(18,4)");
+
+                    b.Property<decimal>("Price18")
+                        .HasColumnType("decimal(18,4)");
+
+                    b.Property<decimal>("Price20")
+                        .HasColumnType("decimal(18,4)");
+
+                    b.Property<decimal>("Price22")
+                        .HasColumnType("decimal(18,4)");
+
+                    b.Property<decimal>("Price24")
+                        .HasColumnType("decimal(18,4)");
+
+                    b.Property<decimal>("Price26")
+                        .HasColumnType("decimal(18,4)");
+
+                    b.Property<decimal>("Price28")
+                        .HasColumnType("decimal(18,4)");
+
+                    b.Property<decimal>("Price6")
+                        .HasColumnType("decimal(18,4)");
+
+                    b.Property<decimal>("Price7")
+                        .HasColumnType("decimal(18,4)");
+
+                    b.Property<decimal>("Price8")
+                        .HasColumnType("decimal(18,4)");
+
+                    b.Property<decimal>("Price9")
+                        .HasColumnType("decimal(18,4)");
+
+                    b.Property<decimal>("PriceB")
+                        .HasColumnType("decimal(18,4)");
+
+                    b.Property<decimal>("PriceLeftover")
+                        .HasColumnType("decimal(18,4)");
+
+                    b.Property<decimal>("PriceSpoil")
+                        .HasColumnType("decimal(18,4)");
 
                     b.Property<string>("Remark")
                         .IsRequired()

@@ -61,25 +61,7 @@ public class SemiExportController : ControllerBase
                 RefinementRecordMarker = marker,
                 RefinementRecordCategory = category,
                 RefinementRecordWarehouseName = warehouseName,
-
-                PriceB = r.PriceB,
-                Price28 = r.Price28,
-                Price26 = r.Price26,
-                Price24 = r.Price24,
-                Price22 = r.Price22,
-                Price20 = r.Price20,
-                Price18 = r.Price18,
-                Price16 = r.Price16,
-                Price14 = r.Price14,
-                Price12 = r.Price12,
-                Price10B = r.Price10B,
-                Price10 = r.Price10,
-                Price9 = r.Price9,
-                Price8 = r.Price8,
-                Price7 = r.Price7,
-                Price6 = r.Price6,
-                PriceLeftover = r.PriceLeftover,
-                PriceSpoil = r.PriceSpoil,
+                WorkerFees = r.WorkerFees,
                 Remark = r.Remark
             });
         }
@@ -129,25 +111,7 @@ public class SemiExportController : ControllerBase
             RefinementRecordMarker = marker,
             RefinementRecordCategory = category,
             RefinementRecordWarehouseName = warehouseName,
-
-            PriceB = r.PriceB,
-            Price28 = r.Price28,
-            Price26 = r.Price26,
-            Price24 = r.Price24,
-            Price22 = r.Price22,
-            Price20 = r.Price20,
-            Price18 = r.Price18,
-            Price16 = r.Price16,
-            Price14 = r.Price14,
-            Price12 = r.Price12,
-            Price10B = r.Price10B,
-            Price10 = r.Price10,
-            Price9 = r.Price9,
-            Price8 = r.Price8,
-            Price7 = r.Price7,
-            Price6 = r.Price6,
-            PriceLeftover = r.PriceLeftover,
-            PriceSpoil = r.PriceSpoil,
+            WorkerFees = r.WorkerFees,
             Remark = r.Remark
         };
 
@@ -183,24 +147,7 @@ public class SemiExportController : ControllerBase
             _context.SemiExportRecords.Add(record);
         }
 
-        record.PriceB = dto.PriceB;
-        record.Price28 = dto.Price28;
-        record.Price26 = dto.Price26;
-        record.Price24 = dto.Price24;
-        record.Price22 = dto.Price22;
-        record.Price20 = dto.Price20;
-        record.Price18 = dto.Price18;
-        record.Price16 = dto.Price16;
-        record.Price14 = dto.Price14;
-        record.Price12 = dto.Price12;
-        record.Price10B = dto.Price10B;
-        record.Price10 = dto.Price10;
-        record.Price9 = dto.Price9;
-        record.Price8 = dto.Price8;
-        record.Price7 = dto.Price7;
-        record.Price6 = dto.Price6;
-        record.PriceLeftover = dto.PriceLeftover;
-        record.PriceSpoil = dto.PriceSpoil;
+        record.WorkerFees = dto.WorkerFees;
         record.Remark = dto.Remark;
 
         await _context.SaveChangesAsync();
@@ -229,25 +176,7 @@ public class SemiExportController : ControllerBase
             RefinementRecordMarker = marker,
             RefinementRecordCategory = category,
             RefinementRecordWarehouseName = warehouseName,
-
-            PriceB = record.PriceB,
-            Price28 = record.Price28,
-            Price26 = record.Price26,
-            Price24 = record.Price24,
-            Price22 = record.Price22,
-            Price20 = record.Price20,
-            Price18 = record.Price18,
-            Price16 = record.Price16,
-            Price14 = record.Price14,
-            Price12 = record.Price12,
-            Price10B = record.Price10B,
-            Price10 = record.Price10,
-            Price9 = record.Price9,
-            Price8 = record.Price8,
-            Price7 = record.Price7,
-            Price6 = record.Price6,
-            PriceLeftover = record.PriceLeftover,
-            PriceSpoil = record.PriceSpoil,
+            WorkerFees = record.WorkerFees,
             Remark = record.Remark
         };
 

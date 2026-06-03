@@ -468,46 +468,12 @@ export interface SemiExportRecord {
   refinementRecordMarker: string;
   refinementRecordCategory: string;
   refinementRecordWarehouseName: string;
-  priceB: number;
-  price28: number;
-  price26: number;
-  price24: number;
-  price22: number;
-  price20: number;
-  price18: number;
-  price16: number;
-  price14: number;
-  price12: number;
-  price10B: number;
-  price10: number;
-  price9: number;
-  price8: number;
-  price7: number;
-  price6: number;
-  priceLeftover: number;
-  priceSpoil: number;
+  workerFees: number;
   remark: string;
 }
 
 export interface UpsertSemiExportRecordDto {
   singleDoubleDrawnRecordId: number;
-  priceB: number;
-  price28: number;
-  price26: number;
-  price24: number;
-  price22: number;
-  price20: number;
-  price18: number;
-  price16: number;
-  price14: number;
-  price12: number;
-  price10B: number;
-  price10: number;
-  price9: number;
-  price8: number;
-  price7: number;
-  price6: number;
-  priceLeftover: number;
-  priceSpoil: number;
+  workerFees: number;
   remark: string;
 }

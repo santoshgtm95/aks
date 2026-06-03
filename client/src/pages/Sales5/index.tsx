@@ -47,37 +47,13 @@ const Sales5: React.FC = () => {
   const [selectedMarker, setSelectedMarker] = useState<string | null>(null);
   const [searchTerm, setSearchTerm] = useState("");
   const [formError, setFormError] = useState("");
-  const [, setSaving] = useState(false);
+  const [saving, setSaving] = useState(false);
+  const [markerWorkerFees, setMarkerWorkerFees] = useState<string>("0");
+  const [markerRemark, setMarkerRemark] = useState<string>("");
 
-  const [recordRemarks, setRecordRemarks] = useState<Record<number, string>>(
-    {},
-  );
   const [expandedRecords, setExpandedRecords] = useState<
     Record<number, boolean>
   >({});
-
-  useEffect(() => {
-    loadData();
-  }, []);
-
-  const loadData = async () => {
-    try {
-      const [sddData, exportData, productsData, salesData] = await Promise.all([
-        singleDoubleDrawnAPI.getAll(),
-        semiExportAPI.getAll(),
-        productsAPI.getAll(true),
-        salesAPI.getAll("Sales"),
-      ]);
-      setSddRecords(sddData);
-      setSavedExports(exportData);
-      setProducts(productsData);
-      setSales(salesData);
-    } catch (error) {
-      console.error("Failed to load data:", error);
-    } finally {
-      setLoading(false);
-    }
-  };
 
   const selectedRecords = useMemo(() => {
     if (!selectedMarker) return [];
@@ -86,129 +62,37 @@ const Sales5: React.FC = () => {
     );
   }, [sddRecords, selectedMarker]);
 
-  // Find product for selected marker
-  const selectedProduct = useMemo(() => {
-    if (!selectedMarker) return null;
-    return products.find((p) => p.marker === selectedMarker);
-  }, [products, selectedMarker]);
-
-  // Find sales for selected marker
-  const selectedProductSales = useMemo(() => {
-    if (!selectedMarker) return [];
-    return sales.filter(
-      (s) => s.productMarker === selectedMarker || s.marker === selectedMarker,
-    );
-  }, [sales, selectedMarker]);
-
-  // Compute metrics for selected marker
-  const selectedMarkerStats = useMemo(() => {
-    if (!selectedMarker) return null;
-
-    const unit = selectedProduct ? selectedProduct.unit : "viss";
-    const toViss = (v: number) => (unit === "kg" ? v / 1.633 : v);
-    const toKg = (v: number) => (unit === "kg" ? v : v * 1.633);
-
-    // 1. Original weight in inventory
-    const originalWeight = selectedProduct ? Number(selectedProduct.weight) : 0;
-    const originalWeightViss = toViss(originalWeight);
-    const originalWeightKg = toKg(originalWeight);
-
-    // 2. Weight sold in Raw Material Sales
-    const weightSoldRawMaterial = selectedProductSales.reduce(
-      (sum, s) => sum + Number(s.weight),
-      0,
-    );
-    const weightSoldViss = toViss(weightSoldRawMaterial);
-    const weightSoldKg = toKg(weightSoldRawMaterial);
-
-    // 3. Remaining weight after selling in Raw Material Sales
-    const remainingWeightAfterSales = originalWeight - weightSoldRawMaterial;
-    const remainingAfterSalesViss = toViss(remainingWeightAfterSales);
-    const remainingAfterSalesKg = toKg(remainingWeightAfterSales);
-
-    // 4. Sum of Lost Weight of all colors (viss)
-    const sumLostWeight = selectedRecords.reduce(
-      (sum, r) => sum + (r.lostWeight || 0),
-      0,
-    );
-
-    // 5. Sum of Spoilage Weight of all colors including Two Inches Spoilage (viss)
-    const sumSpoilageWeight = selectedRecords.reduce(
-      (sum, r) => sum + (r.spoilageWeight || 0) + (r.spoilageSize || 0),
-      0,
-    );
-
-    // 6. Sum of Return Weight of all colors including Two Inches Return (viss)
-    const sumReturnWeight = selectedRecords.reduce(
-      (sum, r) => sum + (r.returnWeight || 0) + (r.returnSize || 0),
-      0,
-    );
-
-    // 7. Total Sorted Weight across all SDD records (viss)
-    const totalSortedWeight = selectedRecords.reduce((sum, r) => {
-      return (
-        sum +
-        (r.size6 || 0) +
-        (r.size7 || 0) +
-        (r.size8 || 0) +
-        (r.size9 || 0) +
-        (r.size10 || 0) +
-        (r.size10B || 0) +
-        (r.size12 || 0) +
-        (r.size14 || 0) +
-        (r.size16 || 0) +
-        (r.size18 || 0) +
-        (r.size20 || 0) +
-        (r.size22 || 0) +
-        (r.size24 || 0) +
-        (r.size26 || 0) +
-        (r.size28 || 0) +
-        (r.sizeBar || 0)
-      );
-    }, 0);
-
-    // 8. Remaining Unsorted (viss)
-    const remainingUnsorted =
-      remainingAfterSalesViss -
-      (totalSortedWeight + sumLostWeight + sumSpoilageWeight + sumReturnWeight);
-
-    return {
-      originalWeightViss,
-      originalWeightKg,
-      weightSoldViss,
-      weightSoldKg,
-      remainingAfterSalesViss,
-      remainingAfterSalesKg,
-      remainingUnsorted,
-      sumLostWeight,
-      sumSpoilageWeight,
-      sumReturnWeight,
-      unit,
-    };
-  }, [selectedMarker, selectedProduct, selectedProductSales, selectedRecords]);
+  useEffect(() => {
+    loadData();
+  }, []);
 
   useEffect(() => {
     if (selectedMarker) {
-      const newRemarks: Record<number, string> = {};
       const newExpanded: Record<number, boolean> = {};
+
+      // Calculate initial marker worker fees and get common remark
+      let totalFees = 0;
+      let commonRemark = "";
 
       selectedRecords.forEach((record) => {
         const saved = savedExports.find(
           (x) => x.singleDoubleDrawnRecordId === record.id,
         );
         if (saved) {
-          newRemarks[record.id] = saved.remark || "";
-        } else {
-          newRemarks[record.id] = "";
+          totalFees += saved.workerFees || 0;
+          if (saved.remark && !commonRemark) {
+            commonRemark = saved.remark;
+          }
         }
-        // Collapse all by default
         newExpanded[record.id] = false;
       });
 
-      setRecordRemarks(newRemarks);
+      setMarkerWorkerFees(totalFees.toString());
+      setMarkerRemark(commonRemark);
       setExpandedRecords(newExpanded);
     } else {
-      setRecordRemarks({});
+      setMarkerWorkerFees("0");
+      setMarkerRemark("");
       setExpandedRecords({});
     }
   }, [selectedMarker, selectedRecords, savedExports]);
@@ -364,19 +248,134 @@ const Sales5: React.FC = () => {
     return calcs;
   }, [selectedRecords]);
 
-  const handleRecordRemarkChange = (recordId: number, val: string) => {
-    setRecordRemarks((prev) => ({
-      ...prev,
-      [recordId]: val,
-    }));
-  };
-
   const toggleRecordExpanded = (recordId: number) => {
     setExpandedRecords((prev) => ({
       ...prev,
       [recordId]: !prev[recordId],
     }));
   };
+
+  const loadData = async () => {
+    try {
+      const [sddData, exportData, productsData, salesData] = await Promise.all([
+        singleDoubleDrawnAPI.getAll(),
+        semiExportAPI.getAll(),
+        productsAPI.getAll(true),
+        salesAPI.getAll("Sales"),
+      ]);
+      setSddRecords(sddData);
+      setSavedExports(exportData);
+      setProducts(productsData);
+      setSales(salesData);
+    } catch (error) {
+      console.error("Failed to load data:", error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // Compute metrics for selected marker
+  const selectedMarkerStats = useMemo(() => {
+    if (!selectedMarker) return null;
+
+    const selectedProduct = products.find((p) => p.marker === selectedMarker);
+    const selectedProductSales = sales.filter(
+      (s) => s.productMarker === selectedMarker || s.marker === selectedMarker,
+    );
+
+    const unit = selectedProduct ? selectedProduct.unit : "viss";
+    const toViss = (v: number) => (unit === "kg" ? v / 1.633 : v);
+    const toKg = (v: number) => (unit === "kg" ? v : v * 1.633);
+
+    // 1. Original weight in inventory
+    const originalWeight = selectedProduct ? Number(selectedProduct.weight) : 0;
+    const originalWeightViss = toViss(originalWeight);
+    const originalWeightKg = toKg(originalWeight);
+
+    // 2. Weight sold in Raw Material Sales
+    const weightSoldRawMaterial = selectedProductSales.reduce(
+      (sum, s) => sum + Number(s.weight),
+      0,
+    );
+    const weightSoldViss = toViss(weightSoldRawMaterial);
+    const weightSoldKg = toKg(weightSoldRawMaterial);
+
+    // 3. Remaining weight after selling in Raw Material Sales
+    const remainingWeightAfterSales = originalWeight - weightSoldRawMaterial;
+    const remainingAfterSalesViss = toViss(remainingWeightAfterSales);
+    const remainingAfterSalesKg = toKg(remainingWeightAfterSales);
+
+    // 4. Sum of Lost Weight of all colors (viss)
+    const sumLostWeight = selectedRecords.reduce(
+      (sum, r) => sum + (r.lostWeight || 0),
+      0,
+    );
+
+    // 5. Sum of Spoilage Weight of all colors including Two Inches Spoilage (viss)
+    const sumSpoilageWeight = selectedRecords.reduce(
+      (sum, r) => sum + (r.spoilageWeight || 0) + (r.spoilageSize || 0),
+      0,
+    );
+
+    // 6. Sum of Return Weight of all colors including Two Inches Return (viss)
+    const sumReturnWeight = selectedRecords.reduce(
+      (sum, r) => sum + (r.returnWeight || 0) + (r.returnSize || 0),
+      0,
+    );
+
+    // 7. Total Sorted Weight across all SDD records (viss)
+    const totalSortedWeight = selectedRecords.reduce((sum, r) => {
+      return (
+        sum +
+        (r.size6 || 0) +
+        (r.size7 || 0) +
+        (r.size8 || 0) +
+        (r.size9 || 0) +
+        (r.size10 || 0) +
+        (r.size10B || 0) +
+        (r.size12 || 0) +
+        (r.size14 || 0) +
+        (r.size16 || 0) +
+        (r.size18 || 0) +
+        (r.size20 || 0) +
+        (r.size22 || 0) +
+        (r.size24 || 0) +
+        (r.size26 || 0) +
+        (r.size28 || 0) +
+        (r.sizeBar || 0)
+      );
+    }, 0);
+
+    // 8. Remaining Unsorted (viss)
+    const remainingUnsorted =
+      remainingAfterSalesViss -
+      (totalSortedWeight + sumLostWeight + sumSpoilageWeight + sumReturnWeight);
+
+    // 9. Percentage calculations based on Remaining Weight after Raw Material Sales
+    const denom = remainingAfterSalesViss || 1; // avoid division by zero
+    const remainingUnsortedPercent = (remainingUnsorted / denom) * 100;
+    const sumLostWeightPercent = (sumLostWeight / denom) * 100;
+    const sumSpoilageWeightPercent = (sumSpoilageWeight / denom) * 100;
+    const sumReturnWeightPercent = (sumReturnWeight / denom) * 100;
+
+    return {
+      originalWeightViss,
+      originalWeightKg,
+      weightSoldViss,
+      weightSoldKg,
+      remainingAfterSalesViss,
+      remainingAfterSalesKg,
+      remainingUnsorted,
+      remainingUnsortedPercent,
+      sumLostWeight,
+      sumLostWeightPercent,
+      sumSpoilageWeight,
+      sumSpoilageWeightPercent,
+      sumReturnWeight,
+      sumReturnWeightPercent,
+      unit,
+    };
+  }, [selectedMarker, products, sales, selectedRecords]);
 
   // Calculate row Amounts for each record
   const recordAmounts = useMemo(() => {
@@ -470,43 +469,40 @@ const Sales5: React.FC = () => {
     return amts;
   }, [selectedRecords, recordCalculations]);
 
-  const handleSaveRecord = async (e: React.FormEvent, recordId: number) => {
-    e.preventDefault();
-    const record = selectedRecords.find((r) => r.id === recordId);
-    const remarkState = recordRemarks[recordId] || "";
-    if (!record) return;
+  const markerTotalAmount = useMemo(() => {
+    const sumRecords = Object.values(recordAmounts).reduce(
+      (sum, r: any) => sum + (r.totalAmount || 0),
+      0,
+    );
+    const fees = parseFloat(markerWorkerFees) || 0;
+    return sumRecords + fees;
+  }, [recordAmounts, markerWorkerFees]);
+
+  const handleSaveMarkerData = async () => {
+    if (!selectedMarker || selectedRecords.length === 0) return;
 
     setSaving(true);
     setFormError("");
 
     try {
-      const dto = {
-        singleDoubleDrawnRecordId: recordId,
-        priceB: record.priceBar,
-        price28: record.price28,
-        price26: record.price26,
-        price24: record.price24,
-        price22: record.price22,
-        price20: record.price20,
-        price18: record.price18,
-        price16: record.price16,
-        price14: record.price14,
-        price12: record.price12,
-        price10B: record.price10B,
-        price10: record.price10,
-        price9: record.price9,
-        price8: record.price8,
-        price7: record.price7,
-        price6: record.price6,
-        priceLeftover: record.priceReturnSize,
-        priceSpoil: record.priceSpoilageSize,
-        remark: remarkState,
-      };
+      const totalFees = parseFloat(markerWorkerFees) || 0;
+      const workerFeesPerBatch = totalFees / selectedRecords.length;
 
-      await semiExportAPI.upsert(dto);
+      // Save all batches with the split worker fees and the common remark
+      await Promise.all(
+        selectedRecords.map((record) => {
+          const dto = {
+            singleDoubleDrawnRecordId: record.id,
+            workerFees: workerFeesPerBatch,
+            remark: markerRemark,
+          };
+          return semiExportAPI.upsert(dto);
+        }),
+      );
+
       await loadData();
     } catch (err) {
-      console.error("Failed to save export prices:", err);
+      console.error("Failed to save marker data:", err);
       setFormError("Failed to save Semi Export transaction. Please try again.");
     } finally {
       setSaving(false);
@@ -827,8 +823,8 @@ const Sales5: React.FC = () => {
                       </span>
                     </h3>
                     <span className="stat-footer">
-                      = {selectedMarkerStats.weightSoldKg.toFixed(3)} kg · Raw
-                      Material Sales
+                      = {selectedMarkerStats.weightSoldKg.toFixed(3)} kg ·
+                      <br /> Raw Material Sales
                     </span>
                   </div>
                 </div>
@@ -859,7 +855,7 @@ const Sales5: React.FC = () => {
                     </h3>
                     <span className="stat-footer">
                       = {selectedMarkerStats.remainingAfterSalesKg.toFixed(3)}{" "}
-                      kg · after Raw Material Sales
+                      kg · <br /> after Raw Material Sales
                     </span>
                   </div>
                 </div>
@@ -877,10 +873,17 @@ const Sales5: React.FC = () => {
                   </div>
                   <div>
                     <h3 className="stat-value">
-                      {selectedMarkerStats.remainingUnsorted.toFixed(2)}
+                      {selectedMarkerStats.remainingUnsorted.toFixed(3)} viss
                     </h3>
                     <span className="stat-footer">
-                      viss remaining unsorted in Inventory
+                      (
+                      <strong>
+                        {selectedMarkerStats.remainingUnsortedPercent.toFixed(
+                          2,
+                        )}
+                        %
+                      </strong>
+                      ) remaining unsorted
                     </span>
                   </div>
                 </div>
@@ -898,9 +901,15 @@ const Sales5: React.FC = () => {
                   </div>
                   <div>
                     <h3 className="stat-value">
-                      {selectedMarkerStats.sumLostWeight.toFixed(3)}
+                      {selectedMarkerStats.sumLostWeight.toFixed(3)} viss
                     </h3>
-                    <span className="stat-footer">viss across all colors</span>
+                    <span className="stat-footer">
+                      (
+                      <strong>
+                        {selectedMarkerStats.sumLostWeightPercent.toFixed(2)}%
+                      </strong>
+                      ) across all colors
+                    </span>
                   </div>
                 </div>
 
@@ -917,10 +926,17 @@ const Sales5: React.FC = () => {
                   </div>
                   <div>
                     <h3 className="stat-value">
-                      {selectedMarkerStats.sumSpoilageWeight.toFixed(3)}
+                      {selectedMarkerStats.sumSpoilageWeight.toFixed(3)} viss
                     </h3>
                     <span className="stat-footer">
-                      viss (incl. Two Inches Spoilage)
+                      (
+                      <strong>
+                        {selectedMarkerStats.sumSpoilageWeightPercent.toFixed(
+                          2,
+                        )}
+                        %
+                      </strong>
+                      ) (incl. 2" Spoil)
                     </span>
                   </div>
                 </div>
@@ -938,23 +954,233 @@ const Sales5: React.FC = () => {
                   </div>
                   <div>
                     <h3 className="stat-value">
-                      {selectedMarkerStats.sumReturnWeight.toFixed(3)}
+                      {selectedMarkerStats.sumReturnWeight.toFixed(3)} viss
                     </h3>
                     <span className="stat-footer">
-                      viss (incl. Two Inches Return)
+                      (
+                      <strong>
+                        {selectedMarkerStats.sumReturnWeightPercent.toFixed(2)}%
+                      </strong>
+                      ) (incl. 2" Return)
                     </span>
                   </div>
                 </div>
               </div>
             )}
 
+            {/* Grand Total Amount Summary Card */}
+            {selectedMarkerStats && (
+              <div
+                style={{
+                  marginTop: "32px",
+                  background: "#f8fafc",
+                  borderRadius: "16px",
+                  padding: "24px 32px",
+                  display: "flex",
+                  justifyContent: "space-between",
+                  alignItems: "center",
+                  boxShadow: "0 4px 6px rgba(0,0,0,0.02)",
+                  border: "1.5px solid #e2e8f0",
+                }}
+              >
+                <div>
+                  <h4
+                    style={{
+                      margin: 0,
+                      color: "#64748b",
+                      fontSize: "13px",
+                      textTransform: "uppercase",
+                      letterSpacing: "0.1em",
+                      fontWeight: 800,
+                    }}
+                  >
+                    Grand Total Marker Value
+                  </h4>
+                  <p
+                    style={{
+                      margin: "4px 0 0 0",
+                      fontSize: "14px",
+                      color: "#64748b",
+                    }}
+                  >
+                    Sum of all color categories + worker fees
+                  </p>
+                </div>
+                <div style={{ textAlign: "right" }}>
+                  <div
+                    style={{
+                      display: "flex",
+                      alignItems: "baseline",
+                      gap: "10px",
+                      justifyContent: "flex-end",
+                    }}
+                  >
+                    <span
+                      style={{
+                        fontSize: "36px",
+                        fontWeight: "950",
+                        color: "#2563eb",
+                        letterSpacing: "-0.03em",
+                      }}
+                    >
+                      {markerTotalAmount.toLocaleString(undefined, {
+                        minimumFractionDigits: 2,
+                        maximumFractionDigits: 2,
+                      })}
+                    </span>
+                    <span
+                      style={{
+                        fontSize: "16px",
+                        fontWeight: "800",
+                        color: "#64748b",
+                      }}
+                    >
+                      MMK
+                    </span>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* Marker-Level Global Save Section */}
+            <div
+              style={{
+                marginTop: "32px",
+                background: "#f8fafc",
+                padding: "24px",
+                borderRadius: "16px",
+                border: "1.5px solid #e2e8f0",
+                boxShadow: "0 4px 6px rgba(0,0,0,0.02)",
+              }}
+            >
+              <h3
+                style={{
+                  fontSize: "16px",
+                  fontWeight: "700",
+                  color: "#0f172a",
+                  marginBottom: "16px",
+                  display: "flex",
+                  alignItems: "center",
+                  gap: "8px",
+                }}
+              >
+                <Sparkles size={18} color="#2563eb" /> Record Sales Details for
+                Marker
+              </h3>
+
+              <div
+                style={{
+                  display: "flex",
+                  flexDirection: "column",
+                  gap: "20px",
+                }}
+              >
+                <div
+                  style={{
+                    display: "flex",
+                    alignItems: "center",
+                    gap: "16px",
+                  }}
+                >
+                  <div
+                    style={{
+                      display: "flex",
+                      alignItems: "center",
+                      gap: "8px",
+                    }}
+                  >
+                    <DollarSign size={18} style={{ color: "#2563eb" }} />
+                    <span
+                      style={{
+                        fontSize: "13.5px",
+                        fontWeight: "700",
+                        color: "#334155",
+                      }}
+                    >
+                      WORKER FEES (SUM):
+                    </span>
+                  </div>
+                  <input
+                    type="number"
+                    value={markerWorkerFees}
+                    onChange={(e) => setMarkerWorkerFees(e.target.value)}
+                    placeholder="0.00"
+                    style={{
+                      padding: "8px 12px",
+                      borderRadius: "8px",
+                      border: "1.5px solid #cbd5e1",
+                      fontSize: "14px",
+                      width: "200px",
+                      fontWeight: "600",
+                    }}
+                  />
+                </div>
+
+                <div style={{ display: "flex", flexDirection: "column" }}>
+                  <label
+                    style={{
+                      display: "flex",
+                      alignItems: "center",
+                      gap: "8px",
+                      fontSize: "13.5px",
+                      fontWeight: "700",
+                      color: "#334155",
+                      marginBottom: "6px",
+                    }}
+                  >
+                    <FileText size={15} /> REMARK:
+                  </label>
+                  <textarea
+                    value={markerRemark}
+                    onChange={(e) => setMarkerRemark(e.target.value)}
+                    placeholder="Enter remark for this marker..."
+                    rows={3}
+                    style={{
+                      width: "100%",
+                      padding: "10px 14px",
+                      borderRadius: "10px",
+                      border: "1.5px solid #cbd5e1",
+                      fontSize: "14px",
+                      outline: "none",
+                      resize: "vertical",
+                    }}
+                  />
+                </div>
+
+                <div style={{ display: "flex", justifyContent: "flex-end" }}>
+                  <button
+                    type="button"
+                    onClick={handleSaveMarkerData}
+                    className="btn btn-primary"
+                    disabled={saving}
+                    style={{
+                      display: "flex",
+                      alignItems: "center",
+                      gap: "10px",
+                      padding: "12px 32px",
+                      borderRadius: "12px",
+                      fontWeight: "800",
+                      fontSize: "15px",
+                      background: "#0f172a",
+                      color: "white",
+                      boxShadow: "0 4px 12px rgba(15, 23, 42, 0.2)",
+                      transition: "all 0.2s",
+                    }}
+                  >
+                    <CheckCircle size={20} />
+                    {saving ? "Saving..." : "Save Marker Records"}
+                  </button>
+                </div>
+              </div>
+            </div>
+
+            {/* Records List */}
             <div
               style={{ display: "flex", flexDirection: "column", gap: "24px" }}
             >
               {selectedRecords.map((record) => {
                 const calculations = recordCalculations[record.id];
                 const rowAmounts = recordAmounts[record.id];
-                const remarkState = recordRemarks[record.id] || "";
                 const isExpanded = expandedRecords[record.id];
                 const isSaved = savedExports.some(
                   (x) => x.singleDoubleDrawnRecordId === record.id,
@@ -1026,32 +1252,16 @@ const Sales5: React.FC = () => {
                         </span>
                         <span
                           style={{
-                            fontSize: "14px",
+                            fontSize: "13px",
                             color: "#64748b",
                             fontWeight: 600,
                           }}
                         >
-                          • Total Amount:{" "}
+                          • Amount:{" "}
                           <strong style={{ color: "#2563eb" }}>
-                            {rowAmounts.totalAmount.toLocaleString(undefined, {
-                              minimumFractionDigits: 2,
-                              maximumFractionDigits: 2,
-                            })}
+                            {rowAmounts.totalAmount.toLocaleString()}
                           </strong>{" "}
                           MMK
-                        </span>
-                        <span
-                          style={{
-                            fontSize: "14px",
-                            color: "#64748b",
-                            fontWeight: 600,
-                          }}
-                        >
-                          • Loss Weight:{" "}
-                          <strong style={{ color: "#b45309" }}>
-                            {calculations.wLoss.toFixed(3)}
-                          </strong>{" "}
-                          viss
                         </span>
                       </div>
                       <div
@@ -1086,12 +1296,8 @@ const Sales5: React.FC = () => {
                       </div>
                     </div>
 
-                    {/* Record Body (Expanded Content) */}
                     {isExpanded && (
-                      <form
-                        onSubmit={(e) => handleSaveRecord(e, record.id)}
-                        style={{ padding: "24px" }}
-                      >
+                      <div style={{ padding: "20px" }}>
                         <div
                           className="table-container"
                           style={{
@@ -1099,7 +1305,6 @@ const Sales5: React.FC = () => {
                             borderRadius: "12px",
                             overflow: "hidden",
                             background: "white",
-                            marginBottom: "20px",
                           }}
                         >
                           <table
@@ -1142,7 +1347,6 @@ const Sales5: React.FC = () => {
                                     padding: "10px 16px",
                                     fontWeight: "700",
                                     color: "#475569",
-                                    width: "160px",
                                   }}
                                 >
                                   BUY PRICES
@@ -1163,7 +1367,6 @@ const Sales5: React.FC = () => {
                                     fontWeight: "700",
                                     color: "#475569",
                                     textAlign: "right",
-                                    width: "110px",
                                   }}
                                 >
                                   AVG %
@@ -1331,7 +1534,7 @@ const Sales5: React.FC = () => {
                                           color: "#0f172a",
                                         }}
                                       >
-                                        {row.amt.toFixed(2)}
+                                        {row.amt.toLocaleString()}
                                       </td>
                                       <td
                                         style={{
@@ -1352,7 +1555,6 @@ const Sales5: React.FC = () => {
                                 style={{
                                   background: "#f8fafc",
                                   borderTop: "2px solid #cbd5e1",
-                                  borderBottom: "2.5px double #cbd5e1",
                                 }}
                               >
                                 <td
@@ -1383,7 +1585,7 @@ const Sales5: React.FC = () => {
                                     color: "#2563eb",
                                   }}
                                 >
-                                  {rowAmounts.totalAmount.toFixed(2)}
+                                  {rowAmounts.totalAmount.toLocaleString()}
                                 </td>
                                 <td
                                   style={{
@@ -1401,103 +1603,10 @@ const Sales5: React.FC = () => {
                                   %
                                 </td>
                               </tr>
-
-                              {/* LOSS ROW */}
-                              <tr
-                                style={{
-                                  borderBottom: "1px solid #e2e8f0",
-                                  background: "#fffbeb",
-                                }}
-                              >
-                                <td
-                                  style={{
-                                    padding: "8px 16px",
-                                    fontWeight: "700",
-                                    color: "#b45309",
-                                  }}
-                                >
-                                  Loss
-                                </td>
-                                <td
-                                  style={{
-                                    padding: "8px 16px",
-                                    textAlign: "right",
-                                    fontWeight: "700",
-                                    color: "#b45309",
-                                  }}
-                                >
-                                  {calculations.wLoss.toFixed(3)}
-                                </td>
-                                <td style={{ padding: "8px 16px" }}></td>
-                                <td style={{ padding: "8px 16px" }}></td>
-                                <td
-                                  style={{
-                                    padding: "8px 16px",
-                                    textAlign: "right",
-                                    fontWeight: "700",
-                                    color: "#b45309",
-                                  }}
-                                >
-                                  {(
-                                    (calculations.wLoss /
-                                      calculations.denominator) *
-                                    100
-                                  ).toFixed(2)}
-                                  %
-                                </td>
-                              </tr>
                             </tbody>
                           </table>
                         </div>
-
-                        {/* Remark section */}
-                        <div
-                          className="remark-section"
-                          style={{
-                            background: "#f8fafc",
-                            padding: "16px 20px",
-                            borderRadius: "12px",
-                            border: "1.5px solid #e2e8f0",
-                            marginBottom: "20px",
-                          }}
-                        >
-                          <label
-                            style={{
-                              display: "flex",
-                              alignItems: "center",
-                              gap: "8px",
-                              fontSize: "13.5px",
-                              fontWeight: "700",
-                              color: "#334155",
-                              marginBottom: "6px",
-                            }}
-                          >
-                            <FileText size={15} /> REMARK:
-                          </label>
-                          <textarea
-                            value={remarkState}
-                            onChange={(e) =>
-                              handleRecordRemarkChange(
-                                record.id,
-                                e.target.value,
-                              )
-                            }
-                            placeholder="Enter remark here..."
-                            rows={2}
-                            style={{
-                              width: "100%",
-                              padding: "8px 12px",
-                              borderRadius: "8px",
-                              border: "1.5px solid #cbd5e1",
-                              fontSize: "13px",
-                              color: "#0f172a",
-                              outline: "none",
-                              resize: "vertical",
-                              boxSizing: "border-box",
-                            }}
-                          />
-                        </div>
-                      </form>
+                      </div>
                     )}
                   </div>
                 );
@@ -1645,6 +1754,16 @@ const Sales5: React.FC = () => {
                           textAlign: "right",
                         }}
                       >
+                        Worker Fees
+                      </th>
+                      <th
+                        style={{
+                          padding: "12px 16px",
+                          fontWeight: "700",
+                          color: "#475569",
+                          textAlign: "right",
+                        }}
+                      >
                         Total Amount
                       </th>
                       <th
@@ -1672,7 +1791,7 @@ const Sales5: React.FC = () => {
                     {savedExports.length === 0 ? (
                       <tr>
                         <td
-                          colSpan={5}
+                          colSpan={6}
                           style={{
                             padding: "24px",
                             textAlign: "center",
@@ -1710,24 +1829,24 @@ const Sales5: React.FC = () => {
                           const wSpoil = sdd.spoilageWeight || 0;
 
                           totalAmount =
-                            wB * record.priceB +
-                            w28 * record.price28 +
-                            w26 * record.price26 +
-                            w24 * record.price24 +
-                            w22 * record.price22 +
-                            w20 * record.price20 +
-                            w18 * record.price18 +
-                            w16 * record.price16 +
-                            w14 * record.price14 +
-                            w12 * record.price12 +
-                            w10B * record.price10B +
-                            w10 * record.price10 +
-                            w9 * record.price9 +
-                            w8 * record.price8 +
-                            w7 * record.price7 +
-                            w6 * record.price6 +
-                            wLeftover * record.priceLeftover +
-                            wSpoil * record.priceSpoil;
+                            wB * sdd.priceBar +
+                            w28 * sdd.price28 +
+                            w26 * sdd.price26 +
+                            w24 * sdd.price24 +
+                            w22 * sdd.price22 +
+                            w20 * sdd.price20 +
+                            w18 * sdd.price18 +
+                            w16 * sdd.price16 +
+                            w14 * sdd.price14 +
+                            w12 * sdd.price12 +
+                            w10B * sdd.price10B +
+                            w10 * sdd.price10 +
+                            w9 * sdd.price9 +
+                            w8 * sdd.price8 +
+                            w7 * sdd.price7 +
+                            w6 * sdd.price6 +
+                            wLeftover * sdd.priceReturnSize +
+                            wSpoil * sdd.priceSpoilageSize;
                         }
 
                         return (
@@ -1780,6 +1899,16 @@ const Sales5: React.FC = () => {
                               }}
                             >
                               {formatDateTime(record.date)}
+                            </td>
+                            <td
+                              style={{
+                                padding: "12px 16px",
+                                textAlign: "right",
+                                fontWeight: "600",
+                                color: "#6366f1",
+                              }}
+                            >
+                              {(record.workerFees || 0).toLocaleString()} MMK
                             </td>
                             <td
                               style={{
