@@ -20,20 +20,20 @@ public class RefinementProcess : BaseEntity
     [Required]
     public string Category { get; set; } = string.Empty;
 
-    public int Count { get; set; }
+    public double Count { get; set; }
 
     [Column(TypeName = "decimal(18,4)")]
     public decimal Weight { get; set; }
 
-    public int RemainingCountAfter { get; set; }
+    public double RemainingCountAfter { get; set; }
 
     [Column(TypeName = "decimal(18,4)")]
     public decimal RemainingWeightAfter { get; set; }
 
-    public int? PurifierId { get; set; }
+    public int? RefinementWorkerId { get; set; }
 
-    [ForeignKey("PurifierId")]
-    public Purifier? Purifier { get; set; }
+    [ForeignKey("RefinementWorkerId")]
+    public RefinementWorker? RefinementWorker { get; set; }
 
     public ICollection<RefinementRecord> RefinementRecords { get; set; } = new List<RefinementRecord>();
 }

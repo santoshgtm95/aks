@@ -1,642 +1,977 @@
-import React, { useEffect, useState } from 'react';
-import { purificationAPI, purifiersAPI } from '../../services/api';
-import { useAuth } from '../../context/AuthContext';
-import { useNotification } from '../../context/NotificationContext';
-import type { AvailableCategory, PurificationProcess, PurifiedRecord, Purifier } from '../../types';
-import { Package, Send, History, Loader2, Search, User, Settings, X, Pencil, Trash2 } from 'lucide-react';
-import PurifierManagement from '../PurifierManagement';
-import { formatDateTime, getMyanmarNow, combineDateWithMyanmarTime } from '../../utils/format';
-import './index.css';
+import React, { useEffect, useState } from "react";
+import { purificationAPI, purifiersAPI } from "../../services/api";
+import { useAuth } from "../../context/AuthContext";
+import { useNotification } from "../../context/NotificationContext";
+import type {
+  AvailableCategory,
+  PurificationProcess,
+  PurifiedRecord,
+  Purifier,
+} from "../../types";
+import {
+  Package,
+  Send,
+  History,
+  Loader2,
+  Search,
+  User,
+  Settings,
+  X,
+  Pencil,
+  Trash2,
+} from "lucide-react";
+import PurifierManagement from "../PurifierManagement";
+import {
+  formatDateTime,
+  getMyanmarNow,
+  combineDateWithMyanmarTime,
+} from "../../utils/format";
+import "./index.css";
 
 const Purification: React.FC = () => {
-    const { hasPermission } = useAuth();
-    const { showAlert, showConfirm } = useNotification();
-    const [availableCategories, setAvailableCategories] = useState<AvailableCategory[]>([]);
-    const [processes, setProcesses] = useState<PurificationProcess[]>([]);
-    const [purifiedRecords, setPurifiedRecords] = useState<PurifiedRecord[]>([]);
-    const [activeTab, setActiveTab] = useState<'history' | 'stock'>('history');
-    const [purifiers, setPurifiers] = useState<Purifier[]>([]);
-    const [loading, setLoading] = useState(true);
-    const [submitting, setSubmitting] = useState<string | null>(null);
-    const [inputCounts, setInputCounts] = useState<Record<string, string>>({});
-    const [selectedPurifiers, setSelectedPurifiers] = useState<Record<string, number>>({});
-    const [searchTerm, setSearchTerm] = useState('');
-    const [showPurifierManagement, setShowPurifierManagement] = useState(false);
-    const [showPurifyModal, setShowPurifyModal] = useState(false);
-    const [selectedCategory, setSelectedCategory] = useState<AvailableCategory | null>(null);
-    const [editingProcess, setEditingProcess] = useState<PurificationProcess | null>(null);
-    const [editingRecord, setEditingRecord] = useState<PurifiedRecord | null>(null);
-    const [purifyForm, setPurifyForm] = useState({
-        count: '',
-        purifierId: 0,
+  const { hasPermission } = useAuth();
+  const { showAlert, showConfirm } = useNotification();
+  const [availableCategories, setAvailableCategories] = useState<
+    AvailableCategory[]
+  >([]);
+  const [processes, setProcesses] = useState<PurificationProcess[]>([]);
+  const [purifiedRecords, setPurifiedRecords] = useState<PurifiedRecord[]>([]);
+  const [activeTab, setActiveTab] = useState<"history" | "stock">("history");
+  const [purifiers, setPurifiers] = useState<Purifier[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [submitting, setSubmitting] = useState<string | null>(null);
+  const [inputCounts, setInputCounts] = useState<Record<string, string>>({});
+  const [selectedPurifiers, setSelectedPurifiers] = useState<
+    Record<string, number>
+  >({});
+  const [searchTerm, setSearchTerm] = useState("");
+  const [showPurifierManagement, setShowPurifierManagement] = useState(false);
+  const [showPurifyModal, setShowPurifyModal] = useState(false);
+  const [selectedCategory, setSelectedCategory] =
+    useState<AvailableCategory | null>(null);
+  const [editingProcess, setEditingProcess] =
+    useState<PurificationProcess | null>(null);
+  const [editingRecord, setEditingRecord] = useState<PurifiedRecord | null>(
+    null,
+  );
+  const [purifyForm, setPurifyForm] = useState({
+    count: "",
+    purifierId: 0,
+    isWeightFull: true,
+    date: getMyanmarNow(),
+  });
+
+  useEffect(() => {
+    loadData();
+  }, []);
+
+  const filteredAvailable = availableCategories.filter(
+    (a) =>
+      a.productMarker?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      a.warehouseName?.toLowerCase().includes(searchTerm.toLowerCase()),
+  );
+
+  const handleInputChance = (
+    recordId: number,
+    category: string,
+    value: string,
+  ) => {
+    const key = `${recordId}-${category}`;
+    setInputCounts((prev) => ({ ...prev, [key]: value }));
+  };
+
+  const handlePurify = async (avail: AvailableCategory) => {
+    const key = `${avail.processingRecordId}-${avail.category}`;
+    const countStr = inputCounts[key];
+    const count = parseFloat(countStr);
+    const purifierId = selectedPurifiers[key];
+
+    if (isNaN(count) || count <= 0)
+      return showAlert("Validation", "Please enter a valid count", "error");
+    if (!purifierId)
+      return showAlert("Validation", "Please select a purifier", "error");
+
+    setSubmitting(key);
+    try {
+      await purificationAPI.create({
+        date: new Date().toISOString(),
+        processingRecordId: avail.processingRecordId,
+        category: avail.category,
+        purifyCount: count,
+        purifierId: purifierId,
         isWeightFull: true,
-        date: getMyanmarNow()
-    });
+      });
+      await loadData();
+      setInputCounts((prev) => ({ ...prev, [key]: "" }));
+    } catch (error) {
+      console.error("Purification failed:", error);
+      showAlert("Error", "Purification failed", "error");
+    } finally {
+      setSubmitting(null);
+    }
+  };
 
-    useEffect(() => {
-        loadData();
-    }, []);
+  const loadData = async () => {
+    try {
+      const [availData, processData, purifiedData, purifierData] =
+        await Promise.all([
+          purificationAPI.getAvailableCategories(),
+          purificationAPI.getAll(),
+          purificationAPI.getPurifiedRecords(),
+          purifiersAPI.getAll(),
+        ]);
+      setAvailableCategories(availData);
+      setProcesses(processData);
+      setPurifiedRecords(purifiedData);
+      setPurifiers(purifierData);
+    } catch (error) {
+      console.error("Failed to load data:", error);
+    } finally {
+      setLoading(false);
+    }
+  };
 
-    const filteredAvailable = availableCategories.filter(a =>
-        a.productMarker?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        a.warehouseName?.toLowerCase().includes(searchTerm.toLowerCase())
+  const handleDelete = (id: number) => {
+    showConfirm(
+      "Confirm Delete",
+      "Are you sure you want to delete this record?",
+      async () => {
+        try {
+          await purificationAPI.delete(id);
+          await loadData();
+        } catch (error) {
+          console.error("Delete failed:", error);
+          showAlert("Error", "Failed to delete record", "error");
+        }
+      },
     );
+  };
 
-    const handleInputChance = (recordId: number, category: string, value: string) => {
-        const key = `${recordId}-${category}`;
-        setInputCounts(prev => ({ ...prev, [key]: value }));
-    };
+  const handleClosePurifierManagement = () => {
+    setShowPurifierManagement(false);
+    loadData();
+  };
 
-    const handlePurify = async (avail: AvailableCategory) => {
-        const key = `${avail.processingRecordId}-${avail.category}`;
-        const countStr = inputCounts[key];
-        const count = parseInt(countStr);
-        const purifierId = selectedPurifiers[key];
-
-        if (!count || count <= 0) return showAlert('Validation', 'Please enter a valid count', 'error');
-        if (!purifierId) return showAlert('Validation', 'Please select a purifier', 'error');
-
-        setSubmitting(key);
+  const handleDeleteRecord = (id: number) => {
+    showConfirm(
+      "Confirm Delete",
+      "Are you sure you want to delete this record?",
+      async () => {
         try {
-            await purificationAPI.create({
-                date: new Date().toISOString(),
-                processingRecordId: avail.processingRecordId,
-                category: avail.category,
-                purifyCount: count,
-                purifierId: purifierId,
-                isWeightFull: true
-            });
-            await loadData();
-            setInputCounts(prev => ({ ...prev, [key]: '' }));
+          await purificationAPI.deletePurifiedRecord(id);
+          await loadData();
         } catch (error) {
-            console.error('Purification failed:', error);
-            showAlert('Error', 'Purification failed', 'error');
-        } finally {
-            setSubmitting(null);
+          console.error("Delete failed:", error);
+          showAlert("Error", "Failed to delete record", "error");
         }
-    };
+      },
+    );
+  };
 
-    const loadData = async () => {
-        try {
-            const [availData, processData, purifiedData, purifierData] = await Promise.all([
-                purificationAPI.getAvailableCategories(),
-                purificationAPI.getAll(),
-                purificationAPI.getPurifiedRecords(),
-                purifiersAPI.getAll(),
-            ]);
-            setAvailableCategories(availData);
-            setProcesses(processData);
-            setPurifiedRecords(purifiedData);
-            setPurifiers(purifierData);
-        } catch (error) {
-            console.error('Failed to load data:', error);
-        } finally {
-            setLoading(false);
-        }
-    };
+  const handleEditClick = (p: PurificationProcess) => {
+    setEditingProcess(p);
+    setEditingRecord(null);
+    setSelectedCategory(null);
 
-    const handleDelete = (id: number) => {
-        showConfirm(
-            'Confirm Delete',
-            'Are you sure you want to delete this record?',
-            async () => {
-                try {
-                    await purificationAPI.delete(id);
-                    await loadData();
-                } catch (error) {
-                    console.error('Delete failed:', error);
-                    showAlert('Error', 'Failed to delete record', 'error');
-                }
-            }
+    const dateStr = p.date
+      ? p.date.includes("T")
+        ? p.date.slice(0, 16)
+        : p.date + "T00:00"
+      : getMyanmarNow();
+
+    setPurifyForm({
+      count: p.purifyCount.toString(),
+      date: dateStr,
+      purifierId: p.purifierId || 0,
+      isWeightFull: p.isWeightFull,
+    });
+    setShowPurifyModal(true);
+  };
+
+  const handleSubmitPurify = async (e: React.FormEvent) => {
+    e.preventDefault();
+    const count = parseFloat(purifyForm.count);
+    if (isNaN(count) || count <= 0)
+      return showAlert(
+        "Validation",
+        "Please enter a valid bundle count",
+        "error",
+      );
+    if (!purifyForm.purifierId)
+      return showAlert("Validation", "Please select a purifier", "error");
+
+    if (selectedCategory) {
+      if (count > selectedCategory.remainingCount) {
+        showAlert(
+          "Validation",
+          `Cannot exceed remaining count (${selectedCategory.remainingCount})`,
+          "error",
         );
-    };
-
-    const handleClosePurifierManagement = () => {
-        setShowPurifierManagement(false);
-        loadData();
-    };
-
-    const handleDeleteRecord = (id: number) => {
-        showConfirm(
-            'Confirm Delete',
-            'Are you sure you want to delete this record?',
-            async () => {
-                try {
-                    await purificationAPI.deletePurifiedRecord(id);
-                    await loadData();
-                } catch (error) {
-                    console.error('Delete failed:', error);
-                    showAlert('Error', 'Failed to delete record', 'error');
-                }
-            }
+        return;
+      }
+    } else if (editingProcess || editingRecord) {
+      const procId =
+        editingProcess?.processingRecordId || editingRecord?.processingRecordId;
+      const cat = editingProcess?.category || editingRecord?.category;
+      const currentRecordCount =
+        editingProcess?.purifyCount || editingRecord?.count || 0;
+      const avail = availableCategories.find(
+        (a) => a.processingRecordId === procId && a.category === cat,
+      );
+      const currentStockInBag = avail?.remainingCount || 0;
+      const maxAllowed = currentStockInBag + currentRecordCount;
+      if (count > maxAllowed) {
+        showAlert(
+          "Validation",
+          `Cannot exceed available count (${maxAllowed})`,
+          "error",
         );
-    };
-
-    const handleEditClick = (p: PurificationProcess) => {
-        setEditingProcess(p);
-        setEditingRecord(null);
-        setSelectedCategory(null);
-
-        const dateStr = p.date ? (p.date.includes('T') ? p.date.slice(0, 16) : p.date + 'T00:00') : getMyanmarNow();
-
-        setPurifyForm({
-            count: p.purifyCount.toString(),
-            date: dateStr,
-            purifierId: p.purifierId || 0,
-            isWeightFull: p.isWeightFull
-        });
-        setShowPurifyModal(true);
-    };
-
-    const handleSubmitPurify = async (e: React.FormEvent) => {
-        e.preventDefault();
-        const count = parseInt(purifyForm.count);
-        if (!count || count <= 0) return showAlert('Validation', 'Please enter a valid bundle count', 'error');
-        if (!purifyForm.purifierId) return showAlert('Validation', 'Please select a purifier', 'error');
-
-        if (selectedCategory) {
-            if (count > selectedCategory.remainingCount) {
-                showAlert('Validation', `Cannot exceed remaining count (${selectedCategory.remainingCount})`, 'error');
-                return;
-            }
-        } else if (editingProcess || editingRecord) {
-            const procId = editingProcess?.processingRecordId || editingRecord?.processingRecordId;
-            const cat = editingProcess?.category || editingRecord?.category;
-            const currentRecordCount = editingProcess?.purifyCount || editingRecord?.count || 0;
-            const avail = availableCategories.find(a => a.processingRecordId === procId && a.category === cat);
-            const currentStockInBag = avail?.remainingCount || 0;
-            const maxAllowed = currentStockInBag + currentRecordCount;
-            if (count > maxAllowed) {
-                showAlert('Validation', `Cannot exceed available count (${maxAllowed})`, 'error');
-                return;
-            }
-        }
-
-        try {
-            if (editingProcess) {
-                await purificationAPI.update(editingProcess.id, {
-                    date: combineDateWithMyanmarTime(purifyForm.date),
-                    processingRecordId: editingProcess.processingRecordId,
-                    category: editingProcess.category,
-                    purifyCount: count,
-                    purifierId: purifyForm.purifierId,
-                    isWeightFull: purifyForm.isWeightFull
-                });
-            } else if (editingRecord) {
-                await purificationAPI.updatePurifiedRecord(editingRecord.id, {
-                    date: combineDateWithMyanmarTime(purifyForm.date),
-                    processingRecordId: editingRecord.processingRecordId,
-                    category: editingRecord.category,
-                    purifyCount: count,
-                    purifierId: purifyForm.purifierId,
-                    isWeightFull: purifyForm.isWeightFull
-                });
-            } else if (selectedCategory) {
-                await purificationAPI.create({
-                    date: combineDateWithMyanmarTime(purifyForm.date),
-                    processingRecordId: selectedCategory.processingRecordId,
-                    category: selectedCategory.category,
-                    purifyCount: count,
-                    purifierId: purifyForm.purifierId,
-                    isWeightFull: purifyForm.isWeightFull
-                });
-            }
-            setShowPurifyModal(false);
-            await loadData();
-        } catch (error: any) {
-            console.error('Submit failed:', error);
-            showAlert('Error', error?.response?.data?.message || 'Failed to save record', 'error');
-        }
-    };
-
-    if (loading) {
-        return (
-            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '60vh', gap: '12px', color: '#64748b' }}>
-                <Loader2 className="animate-spin" size={28} />
-                <span style={{ fontSize: '16px', fontWeight: 500 }}>Loading purification data...</span>
-            </div>
-        );
+        return;
+      }
     }
 
+    try {
+      if (editingProcess) {
+        await purificationAPI.update(editingProcess.id, {
+          date: combineDateWithMyanmarTime(purifyForm.date),
+          processingRecordId: editingProcess.processingRecordId,
+          category: editingProcess.category,
+          purifyCount: count,
+          purifierId: purifyForm.purifierId,
+          isWeightFull: purifyForm.isWeightFull,
+        });
+      } else if (editingRecord) {
+        await purificationAPI.updatePurifiedRecord(editingRecord.id, {
+          date: combineDateWithMyanmarTime(purifyForm.date),
+          processingRecordId: editingRecord.processingRecordId,
+          category: editingRecord.category,
+          purifyCount: count,
+          purifierId: purifyForm.purifierId,
+          isWeightFull: purifyForm.isWeightFull,
+        });
+      } else if (selectedCategory) {
+        await purificationAPI.create({
+          date: combineDateWithMyanmarTime(purifyForm.date),
+          processingRecordId: selectedCategory.processingRecordId,
+          category: selectedCategory.category,
+          purifyCount: count,
+          purifierId: purifyForm.purifierId,
+          isWeightFull: purifyForm.isWeightFull,
+        });
+      }
+      setShowPurifyModal(false);
+      await loadData();
+    } catch (error: any) {
+      console.error("Submit failed:", error);
+      showAlert(
+        "Error",
+        error?.response?.data?.message || "Failed to save record",
+        "error",
+      );
+    }
+  };
+
+  if (loading) {
     return (
-        <div className="processing-container fade-in">
-            {/* Left Sidebar: Available Categories for Purification */}
-            <aside className="product-sidebar">
-                <h2 className="sidebar-title">
-                    <Package size={20} />
-                    Select Category to Purify
-                </h2>
-
-                <div className="search-box">
-                    <Search size={18} style={{ position: 'absolute', left: '14px', top: '50%', transform: 'translateY(-50%)', color: '#94a3b8' }} />
-                    <input
-                        type="text"
-                        placeholder="Search bag marker..."
-                        className="form-input"
-                        value={searchTerm}
-                        onChange={(e) => setSearchTerm(e.target.value)}
-                    />
-                </div>
-
-                <div className="product-list" style={{ maxHeight: 'calc(100vh - 200px)', overflowY: 'auto', paddingRight: '4px' }}>
-                    {filteredAvailable.length === 0 ? (
-                        <div className="sidebar-empty-state">
-                            {searchTerm ? 'No matching bags found' : 'No available bags for purification'}
-                        </div>
-                    ) : (
-                        filteredAvailable.map((avail) => {
-                            const key = `${avail.processingRecordId}-${avail.category}`;
-                            return (
-                                <div key={key} className="product-card premium-sidebar-card">
-                                    <div className="card-header">
-                                        <div style={{ display: 'flex', flexDirection: 'column' }}>
-                                            <span className="card-marker">{avail.productMarker}</span>
-                                            <span className="card-subtext">{avail.warehouseName || '---'}</span>
-                                        </div>
-                                        <span className={`card-badge category-${avail.category.toLowerCase().replace('.', '')}`}>
-                                            {avail.category}
-                                        </span>
-                                    </div>
-                                    <div className="card-details" style={{ marginBottom: '14px', display: 'flex', justifyContent: 'space-between' }}>
-                                        <div>
-                                            <div className="sidebar-details-label">Remaining</div>
-                                            <div className="sidebar-details-value">
-                                                {avail.remainingCount} <span className="sidebar-details-unit">bundles</span> / {avail.remainingWeight.toFixed(3)} <span className="sidebar-details-unit">viss</span>
-                                            </div>
-                                        </div>
-                                        <div style={{ textAlign: 'right' }}>
-                                            <div className="sidebar-details-label">Unit Wt</div>
-                                            <div className="sidebar-details-value" style={{ color: '#3b82f6' }}>{avail.unitWeight.toFixed(4)}</div>
-                                        </div>
-                                    </div>
-
-                                    <div className="purifier-selection" style={{ marginBottom: '12px' }}>
-                                        <div className="sidebar-details-label" style={{ marginBottom: '4px' }}>Purifier</div>
-                                        <select
-                                            className="sidebar-select"
-                                            value={selectedPurifiers[key] || ''}
-                                            onChange={(e) => setSelectedPurifiers(prev => ({ ...prev, [key]: parseInt(e.target.value) }))}
-                                        >
-                                            <option value="">-- Select Purifier --</option>
-                                            {purifiers
-                                                .filter(p => p.warehouseId === avail.warehouseId && p.isActive)
-                                                .map(p => (
-                                                    <option key={p.id} value={p.id}>{p.name}</option>
-                                                ))
-                                            }
-                                        </select>
-                                    </div>
-
-                                    <div className="purify-input-group" style={{ display: 'flex', gap: '8px', borderTop: '1px solid #f1f5f9', paddingTop: '12px' }}>
-                                        <input
-                                            type="number"
-                                            placeholder="Bundle count"
-                                            className="sidebar-input"
-                                            value={inputCounts[key] || ''}
-                                            onChange={(e) => handleInputChance(avail.processingRecordId, avail.category, e.target.value)}
-                                            min="1"
-                                            max={avail.remainingCount}
-                                        />
-                                        <button
-                                            className="sidebar-btn-send"
-                                            onClick={() => handlePurify(avail)}
-                                            disabled={submitting === key}
-                                        >
-                                            {submitting === key ? <Loader2 className="animate-spin" size={16} /> : <Send size={16} />}
-                                        </button>
-                                    </div>
-                                </div>
-                            );
-                        })
-                    )}
-                </div>
-            </aside>
-
-            {/* Main Content: Purification History / Purified Stock */}
-            <main className="processing-main">
-                <div className="record-details-view fade-in">
-                    <div className="main-header">
-                        <div className="header-title">
-                            <div className="icon-box" style={{ background: '#eff6ff', padding: '12px', borderRadius: '12px' }}>
-                                <History size={32} className="text-primary" />
-                            </div>
-                            <div className="premium-tabs">
-                                <div
-                                    className={`premium-tab ${activeTab === 'history' ? 'active' : ''}`}
-                                    onClick={() => setActiveTab('history')}
-                                >
-                                    <h1>Purification History</h1>
-                                    <p className="header-subtitle">Process log of raw hair bundles</p>
-                                </div>
-                                <div
-                                    className={`premium-tab ${activeTab === 'stock' ? 'active' : ''}`}
-                                    onClick={() => setActiveTab('stock')}
-                                >
-                                    <h1>Purified Stock</h1>
-                                    <p className="header-subtitle">Inventory of purified bundles</p>
-                                </div>
-                            </div>
-                        </div>
-                        <button
-                            className="btn-manage-purifiers"
-                            onClick={() => setShowPurifierManagement(true)}
-                        >
-                            <Settings size={16} />
-                            Manage Purifiers
-                        </button>
-                    </div>
-
-                    <div className="table-responsive premium-table-card">
-                        <table className="data-table">
-                            <thead>
-                                {activeTab === 'history' ? (
-                                    <tr>
-                                        <th>Date</th>
-                                        <th>Bag Marker</th>
-                                        <th>Category</th>
-                                        <th>Bundle Count</th>
-                                        <th>Weight (viss)</th>
-                                        <th>Purifier</th>
-                                        <th style={{ textAlign: 'right' }}>Actions</th>
-                                    </tr>
-                                ) : (
-                                    <tr>
-                                        <th>Date</th>
-                                        <th>Bag Marker</th>
-                                        <th>Category</th>
-                                        <th>Purified Count</th>
-                                        <th>Weight (Output)</th>
-                                        <th>Purifier</th>
-                                        <th>Weight Status</th>
-                                        <th style={{ textAlign: 'right' }}>Actions</th>
-                                    </tr>
-                                )}
-                            </thead>
-                            <tbody>
-                                {activeTab === 'history' ? (
-                                    processes.length === 0 ? (
-                                        <tr>
-                                            <td colSpan={7} style={{ textAlign: 'center', padding: '60px', color: '#94a3b8' }}>
-                                                <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '12px' }}>
-                                                    <History size={48} style={{ opacity: 0.2 }} />
-                                                    <span>No purification processes registered yet</span>
-                                                </div>
-                                            </td>
-                                        </tr>
-                                    ) : (
-                                        processes.map((p) => (
-                                            <tr key={p.id} onClick={() => handleEditClick(p)} style={{ cursor: 'pointer' }}>
-                                                <td>{formatDateTime(p.date)}</td>
-                                                <td style={{ fontWeight: 600, color: '#0f172a' }}>
-                                                    <div>{p.productMarker}</div>
-                                                    <div style={{ fontSize: '11px', color: '#3b82f6', fontWeight: 500 }}>{p.warehouseName || '---'}</div>
-                                                </td>
-                                                <td>
-                                                    <span className={`card-badge category-${p.category.toLowerCase().replace('.', '')}`}>
-                                                        {p.category}
-                                                    </span>
-                                                </td>
-                                                <td style={{ fontWeight: 800, color: '#0f172a', fontSize: '15px' }}>{p.purifyCount}</td>
-                                                <td style={{ fontWeight: 600, color: '#334155' }}>{p.purifyWeight.toFixed(3)}</td>
-                                                <td>
-                                                    <div style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '13px', fontWeight: 500 }}>
-                                                        <User size={14} style={{ color: '#64748b' }} />
-                                                        {p.purifierName || '---'}
-                                                    </div>
-                                                </td>
-                                                <td style={{ textAlign: 'right' }}>
-                                                    <div style={{ display: 'flex', gap: '8px', justifyContent: 'flex-end' }} onClick={(e) => e.stopPropagation()}>
-                                                        {hasPermission('Sales2.Edit') && (
-                                                            <button className="rec-action-btn edit-btn" onClick={() => handleEditClick(p)}>
-                                                                <Pencil size={14} />
-                                                            </button>
-                                                        )}
-                                                        {hasPermission('Sales2.Delete') && (
-                                                            <button className="rec-action-btn delete-btn" onClick={() => handleDelete(p.id)}>
-                                                                <Trash2 size={14} />
-                                                            </button>
-                                                        )}
-                                                    </div>
-                                                </td>
-                                            </tr>
-                                        ))
-                                    )
-                                ) : (
-                                    purifiedRecords.length === 0 ? (
-                                        <tr>
-                                            <td colSpan={8} style={{ textAlign: 'center', padding: '60px', color: '#94a3b8' }}>
-                                                <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '12px' }}>
-                                                    <Package size={48} style={{ opacity: 0.2 }} />
-                                                    <span>No purified stock inventory registered yet</span>
-                                                </div>
-                                            </td>
-                                        </tr>
-                                    ) : (
-                                        purifiedRecords.map((p) => (
-                                            <tr key={p.id}>
-                                                <td>{formatDateTime(p.date)}</td>
-                                                <td style={{ fontWeight: 600, color: '#0f172a' }}>
-                                                    <div>{p.productMarker}</div>
-                                                    <div style={{ fontSize: '11px', color: '#3b82f6', fontWeight: 500 }}>{p.warehouseName || '---'}</div>
-                                                </td>
-                                                <td>
-                                                    <span className={`card-badge category-${p.category.toLowerCase().replace('.', '')}`}>
-                                                        {p.category}
-                                                    </span>
-                                                </td>
-                                                <td style={{ fontWeight: 800, color: '#10b981', fontSize: '15px' }}>{p.count}</td>
-                                                <td style={{ fontWeight: 600, color: '#334155' }}>{p.weight.toFixed(3)}</td>
-                                                <td>
-                                                    <div style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '13px', fontWeight: 500 }}>
-                                                        <User size={14} style={{ color: '#64748b' }} />
-                                                        {p.purifierName || '---'}
-                                                    </div>
-                                                </td>
-                                                <td>
-                                                    {p.isWeightFull ? (
-                                                        <span className="weight-status-badge status-full">Full</span>
-                                                    ) : (
-                                                        <span className="weight-status-badge status-short">Short</span>
-                                                    )}
-                                                </td>
-                                                <td style={{ textAlign: 'right' }}>
-                                                    <div style={{ display: 'flex', gap: '8px', justifyContent: 'flex-end' }}>
-                                                        {hasPermission('Sales2.Delete') && (
-                                                            <button className="rec-action-btn delete-btn" onClick={() => handleDeleteRecord(p.id)}>
-                                                                <Trash2 size={14} />
-                                                            </button>
-                                                        )}
-                                                    </div>
-                                                </td>
-                                            </tr>
-                                        ))
-                                    )
-                                )}
-                            </tbody>
-                        </table>
-                    </div>
-                </div>
-            </main>
-
-            {/* Purifier Management Modal */}
-            {showPurifierManagement && (
-                <div className="modal-overlay" style={{ zIndex: 1100 }} onClick={handleClosePurifierManagement}>
-                    <div className="purifier-manager-modal" onClick={(e) => e.stopPropagation()}>
-                        <button
-                            className="pm-close-btn"
-                            style={{ position: 'absolute', right: '24px', top: '24px', zIndex: 10 }}
-                            onClick={handleClosePurifierManagement}
-                        >
-                            <X size={20} />
-                        </button>
-                        <PurifierManagement />
-                    </div>
-                </div>
-            )}
-
-            {/* Purify / Edit Modal */}
-            {showPurifyModal && (selectedCategory || editingProcess || editingRecord) && (
-                <div
-                    className="modal-overlay"
-                    style={{ zIndex: 1200 }}
-                    onClick={() => setShowPurifyModal(false)}
-                >
-                    <div className="pm-modal" onClick={(e) => e.stopPropagation()}>
-                        {/* Header */}
-                        <div className="pm-header">
-                            <div className="pm-header-left">
-                                <div className="pm-header-icon">
-                                    <Send size={20} />
-                                </div>
-                                <div>
-                                    <p className="pm-header-pre">Purification Process</p>
-                                    <h2 className="pm-header-title">
-                                        {editingProcess || editingRecord ? 'Edit Process Record' : 'Record Purified Bundles'}
-                                    </h2>
-                                </div>
-                            </div>
-                            <button className="pm-close-btn" onClick={() => setShowPurifyModal(false)}>
-                                <X size={20} />
-                            </button>
-                        </div>
-
-                        {/* Info Bar */}
-                        <div className="pm-info-bar">
-                            <div className="pm-info-chip">
-                                <span className="pm-info-label">Warehouse</span>
-                                <span className="pm-info-value">{selectedCategory?.warehouseName || editingProcess?.warehouseName || editingRecord?.warehouseName || '---'}</span>
-                            </div>
-                            <div className="pm-info-chip">
-                                <span className="pm-info-label">Bag Marker</span>
-                                <span className="pm-info-value">{selectedCategory?.productMarker || editingProcess?.productMarker || editingRecord?.productMarker}</span>
-                            </div>
-                            <div className="pm-info-chip">
-                                <span className="pm-info-label">Bundle Count</span>
-                                <span className="pm-info-value" style={{ color: '#ea580c' }}>
-                                    {editingRecord ? editingRecord.count : (editingProcess ? editingProcess.purifyCount : selectedCategory?.remainingCount)} bundles
-                                </span>
-                            </div>
-                        </div>
-
-                        <form onSubmit={handleSubmitPurify} className="pm-body">
-                            {/* Purifier */}
-                            <div className="pm-form-group">
-                                <label className="pm-form-label">Hair Purifier</label>
-                                <select
-                                    className="pm-form-control"
-                                    value={purifyForm.purifierId || ''}
-                                    onChange={(e) => setPurifyForm(prev => ({ ...prev, purifierId: parseInt(e.target.value) }))}
-                                    required
-                                >
-                                    <option value="">-- Select Purifier --</option>
-                                    {purifiers
-                                        .filter(p => p.isActive)
-                                        .map(p => (
-                                            <option key={p.id} value={p.id}>{p.name}</option>
-                                        ))
-                                    }
-                                </select>
-                            </div>
-
-                            {/* Category Display */}
-                            <div className="pm-form-group">
-                                <label className="pm-form-label">Category</label>
-                                <div className="pm-readonly-box">
-                                    <span className={`card-badge category-${(selectedCategory?.category || editingProcess?.category || editingRecord?.category || '').toLowerCase().replace('.', '')}`} style={{ margin: 0 }}>
-                                        {selectedCategory?.category || editingProcess?.category || editingRecord?.category}
-                                    </span>
-                                </div>
-                            </div>
-
-                            {/* Purified Count Input */}
-                            <div className="pm-form-group">
-                                <label className="pm-form-label">Purified Bundle Count</label>
-                                <input
-                                    type="number"
-                                    className="pm-form-control"
-                                    placeholder="Enter bundle count"
-                                    value={purifyForm.count}
-                                    onChange={(e) => setPurifyForm(prev => ({ ...prev, count: e.target.value }))}
-                                    required
-                                    min="1"
-                                />
-                            </div>
-
-                            {/* Weight Status */}
-                            <div className="pm-form-group">
-                                <label className="pm-form-label">Weight Status Verification</label>
-                                <div className="pm-toggle-row">
-                                    <button
-                                        type="button"
-                                        className={`pm-toggle-btn toggle-full ${purifyForm.isWeightFull ? 'active' : ''}`}
-                                        onClick={() => setPurifyForm(prev => ({ ...prev, isWeightFull: true }))}
-                                    >
-                                        Full Weight
-                                    </button>
-                                    <button
-                                        type="button"
-                                        className={`pm-toggle-btn toggle-short ${!purifyForm.isWeightFull ? 'active' : ''}`}
-                                        onClick={() => setPurifyForm(prev => ({ ...prev, isWeightFull: false }))}
-                                    >
-                                        Short Weight
-                                    </button>
-                                </div>
-                            </div>
-
-                            {/* Date */}
-                            <div className="pm-form-group">
-                                <label className="pm-form-label">Date</label>
-                                <input
-                                    type="date"
-                                    className="pm-form-control"
-                                    value={purifyForm.date.split('T')[0]}
-                                    onChange={(e) => setPurifyForm(prev => ({ ...prev, date: e.target.value }))}
-                                    required
-                                />
-                            </div>
-
-                            {/* Footer Actions */}
-                            <div className="pm-footer">
-                                <button
-                                    type="button"
-                                    className="pm-btn-cancel"
-                                    onClick={() => setShowPurifyModal(false)}
-                                >
-                                    <X size={15} /> Cancel
-                                </button>
-                                <button
-                                    type="submit"
-                                    className="pm-btn-save"
-                                >
-                                    <Send size={15} /> {editingRecord || editingProcess ? 'Save Changes' : 'Submit Process'}
-                                </button>
-                            </div>
-                        </form>
-                    </div>
-                </div>
-            )}
-        </div>
+      <div
+        style={{
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "center",
+          height: "60vh",
+          gap: "12px",
+          color: "#64748b",
+        }}
+      >
+        <Loader2 className="animate-spin" size={28} />
+        <span style={{ fontSize: "16px", fontWeight: 500 }}>
+          Loading purification data...
+        </span>
+      </div>
     );
+  }
+
+  return (
+    <div className="processing-container fade-in">
+      {/* Left Sidebar: Available Categories for Purification */}
+      <aside className="product-sidebar">
+        <h2 className="sidebar-title">
+          <Package size={20} />
+          Select Category to Purify
+        </h2>
+
+        <div className="search-box">
+          <Search
+            size={18}
+            style={{
+              position: "absolute",
+              left: "14px",
+              top: "50%",
+              transform: "translateY(-50%)",
+              color: "#94a3b8",
+            }}
+          />
+          <input
+            type="text"
+            placeholder="Search bag marker..."
+            className="form-input"
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+          />
+        </div>
+
+        <div
+          className="product-list"
+          style={{
+            maxHeight: "calc(100vh - 200px)",
+            overflowY: "auto",
+            paddingRight: "4px",
+          }}
+        >
+          {filteredAvailable.length === 0 ? (
+            <div className="sidebar-empty-state">
+              {searchTerm
+                ? "No matching bags found"
+                : "No available bags for purification"}
+            </div>
+          ) : (
+            filteredAvailable.map((avail) => {
+              const key = `${avail.processingRecordId}-${avail.category}`;
+              return (
+                <div key={key} className="product-card premium-sidebar-card">
+                  <div className="card-header">
+                    <div style={{ display: "flex", flexDirection: "column" }}>
+                      <span className="card-marker">{avail.productMarker}</span>
+                      <span className="card-subtext">
+                        {avail.warehouseName || "---"}
+                      </span>
+                    </div>
+                    <span
+                      className={`card-badge category-${avail.category.toLowerCase().replace(".", "")}`}
+                    >
+                      {avail.category}
+                    </span>
+                  </div>
+                  <div
+                    className="card-details"
+                    style={{
+                      marginBottom: "14px",
+                      display: "flex",
+                      justifyContent: "space-between",
+                    }}
+                  >
+                    <div>
+                      <div className="sidebar-details-label">Remaining</div>
+                      <div className="sidebar-details-value">
+                        {avail.remainingCount}{" "}
+                        <span className="sidebar-details-unit">bundles</span> /{" "}
+                        {avail.remainingWeight.toFixed(3)}{" "}
+                        <span className="sidebar-details-unit">viss</span>
+                      </div>
+                    </div>
+                    <div style={{ textAlign: "right" }}>
+                      <div className="sidebar-details-label">Unit Wt</div>
+                      <div
+                        className="sidebar-details-value"
+                        style={{ color: "#3b82f6" }}
+                      >
+                        {avail.unitWeight.toFixed(4)}
+                      </div>
+                    </div>
+                  </div>
+
+                  <div
+                    className="purifier-selection"
+                    style={{ marginBottom: "12px" }}
+                  >
+                    <div
+                      className="sidebar-details-label"
+                      style={{ marginBottom: "4px" }}
+                    >
+                      Purifier
+                    </div>
+                    <select
+                      className="sidebar-select"
+                      value={selectedPurifiers[key] || ""}
+                      onChange={(e) =>
+                        setSelectedPurifiers((prev) => ({
+                          ...prev,
+                          [key]: parseInt(e.target.value),
+                        }))
+                      }
+                    >
+                      <option value="">-- Select Purifier --</option>
+                      {purifiers
+                        .filter(
+                          (p) =>
+                            p.warehouseId === avail.warehouseId && p.isActive,
+                        )
+                        .map((p) => (
+                          <option key={p.id} value={p.id}>
+                            {p.name}
+                          </option>
+                        ))}
+                    </select>
+                  </div>
+
+                  <div
+                    className="purify-input-group"
+                    style={{
+                      display: "flex",
+                      gap: "8px",
+                      borderTop: "1px solid #f1f5f9",
+                      paddingTop: "12px",
+                    }}
+                  >
+                    <input
+                      type="number"
+                      placeholder="Bundle count"
+                      className="sidebar-input"
+                      value={inputCounts[key] || ""}
+                      onChange={(e) =>
+                        handleInputChance(
+                          avail.processingRecordId,
+                          avail.category,
+                          e.target.value,
+                        )
+                      }
+                      min="0"
+                      step="any"
+                      max={avail.remainingCount}
+                    />
+                    <button
+                      className="sidebar-btn-send"
+                      onClick={() => handlePurify(avail)}
+                      disabled={submitting === key}
+                    >
+                      {submitting === key ? (
+                        <Loader2 className="animate-spin" size={16} />
+                      ) : (
+                        <Send size={16} />
+                      )}
+                    </button>
+                  </div>
+                </div>
+              );
+            })
+          )}
+        </div>
+      </aside>
+
+      {/* Main Content: Purification History / Purified Stock */}
+      <main className="processing-main">
+        <div className="record-details-view fade-in">
+          <div className="main-header">
+            <div className="header-title">
+              <div
+                className="icon-box"
+                style={{
+                  background: "#eff6ff",
+                  padding: "12px",
+                  borderRadius: "12px",
+                }}
+              >
+                <History size={32} className="text-primary" />
+              </div>
+              <div className="premium-tabs">
+                <div
+                  className={`premium-tab ${activeTab === "history" ? "active" : ""}`}
+                  onClick={() => setActiveTab("history")}
+                >
+                  <h1>Purification History</h1>
+                  <p className="header-subtitle">
+                    Process log of raw hair bundles
+                  </p>
+                </div>
+                <div
+                  className={`premium-tab ${activeTab === "stock" ? "active" : ""}`}
+                  onClick={() => setActiveTab("stock")}
+                >
+                  <h1>Purified Stock</h1>
+                  <p className="header-subtitle">
+                    Inventory of purified bundles
+                  </p>
+                </div>
+              </div>
+            </div>
+            <button
+              className="btn-manage-purifiers"
+              onClick={() => setShowPurifierManagement(true)}
+            >
+              <Settings size={16} />
+              Manage Purifiers
+            </button>
+          </div>
+
+          <div className="table-responsive premium-table-card">
+            <table className="data-table">
+              <thead>
+                {activeTab === "history" ? (
+                  <tr>
+                    <th>Date</th>
+                    <th>Bag Marker</th>
+                    <th>Category</th>
+                    <th>Bundle Count</th>
+                    <th>Weight (viss)</th>
+                    <th>Purifier</th>
+                    <th style={{ textAlign: "right" }}>Actions</th>
+                  </tr>
+                ) : (
+                  <tr>
+                    <th>Date</th>
+                    <th>Bag Marker</th>
+                    <th>Category</th>
+                    <th>Purified Count</th>
+                    <th>Weight (Output)</th>
+                    <th>Purifier</th>
+                    <th>Weight Status</th>
+                    <th style={{ textAlign: "right" }}>Actions</th>
+                  </tr>
+                )}
+              </thead>
+              <tbody>
+                {activeTab === "history" ? (
+                  processes.length === 0 ? (
+                    <tr>
+                      <td
+                        colSpan={7}
+                        style={{
+                          textAlign: "center",
+                          padding: "60px",
+                          color: "#94a3b8",
+                        }}
+                      >
+                        <div
+                          style={{
+                            display: "flex",
+                            flexDirection: "column",
+                            alignItems: "center",
+                            gap: "12px",
+                          }}
+                        >
+                          <History size={48} style={{ opacity: 0.2 }} />
+                          <span>No purification processes registered yet</span>
+                        </div>
+                      </td>
+                    </tr>
+                  ) : (
+                    processes.map((p) => (
+                      <tr
+                        key={p.id}
+                        onClick={() => handleEditClick(p)}
+                        style={{ cursor: "pointer" }}
+                      >
+                        <td>{formatDateTime(p.date)}</td>
+                        <td style={{ fontWeight: 600, color: "#0f172a" }}>
+                          <div>{p.productMarker}</div>
+                          <div
+                            style={{
+                              fontSize: "11px",
+                              color: "#3b82f6",
+                              fontWeight: 500,
+                            }}
+                          >
+                            {p.warehouseName || "---"}
+                          </div>
+                        </td>
+                        <td>
+                          <span
+                            className={`card-badge category-${p.category.toLowerCase().replace(".", "")}`}
+                          >
+                            {p.category}
+                          </span>
+                        </td>
+                        <td
+                          style={{
+                            fontWeight: 800,
+                            color: "#0f172a",
+                            fontSize: "15px",
+                          }}
+                        >
+                          {p.purifyCount}
+                        </td>
+                        <td style={{ fontWeight: 600, color: "#334155" }}>
+                          {p.purifyWeight.toFixed(3)}
+                        </td>
+                        <td>
+                          <div
+                            style={{
+                              display: "flex",
+                              alignItems: "center",
+                              gap: "6px",
+                              fontSize: "13px",
+                              fontWeight: 500,
+                            }}
+                          >
+                            <User size={14} style={{ color: "#64748b" }} />
+                            {p.purifierName || "---"}
+                          </div>
+                        </td>
+                        <td style={{ textAlign: "right" }}>
+                          <div
+                            style={{
+                              display: "flex",
+                              gap: "8px",
+                              justifyContent: "flex-end",
+                            }}
+                            onClick={(e) => e.stopPropagation()}
+                          >
+                            {hasPermission("Sales2.Edit") && (
+                              <button
+                                className="rec-action-btn edit-btn"
+                                onClick={() => handleEditClick(p)}
+                              >
+                                <Pencil size={14} />
+                              </button>
+                            )}
+                            {hasPermission("Sales2.Delete") && (
+                              <button
+                                className="rec-action-btn delete-btn"
+                                onClick={() => handleDelete(p.id)}
+                              >
+                                <Trash2 size={14} />
+                              </button>
+                            )}
+                          </div>
+                        </td>
+                      </tr>
+                    ))
+                  )
+                ) : purifiedRecords.length === 0 ? (
+                  <tr>
+                    <td
+                      colSpan={8}
+                      style={{
+                        textAlign: "center",
+                        padding: "60px",
+                        color: "#94a3b8",
+                      }}
+                    >
+                      <div
+                        style={{
+                          display: "flex",
+                          flexDirection: "column",
+                          alignItems: "center",
+                          gap: "12px",
+                        }}
+                      >
+                        <Package size={48} style={{ opacity: 0.2 }} />
+                        <span>No purified stock inventory registered yet</span>
+                      </div>
+                    </td>
+                  </tr>
+                ) : (
+                  purifiedRecords.map((p) => (
+                    <tr key={p.id}>
+                      <td>{formatDateTime(p.date)}</td>
+                      <td style={{ fontWeight: 600, color: "#0f172a" }}>
+                        <div>{p.productMarker}</div>
+                        <div
+                          style={{
+                            fontSize: "11px",
+                            color: "#3b82f6",
+                            fontWeight: 500,
+                          }}
+                        >
+                          {p.warehouseName || "---"}
+                        </div>
+                      </td>
+                      <td>
+                        <span
+                          className={`card-badge category-${p.category.toLowerCase().replace(".", "")}`}
+                        >
+                          {p.category}
+                        </span>
+                      </td>
+                      <td
+                        style={{
+                          fontWeight: 800,
+                          color: "#10b981",
+                          fontSize: "15px",
+                        }}
+                      >
+                        {p.count}
+                      </td>
+                      <td style={{ fontWeight: 600, color: "#334155" }}>
+                        {p.weight.toFixed(3)}
+                      </td>
+                      <td>
+                        <div
+                          style={{
+                            display: "flex",
+                            alignItems: "center",
+                            gap: "6px",
+                            fontSize: "13px",
+                            fontWeight: 500,
+                          }}
+                        >
+                          <User size={14} style={{ color: "#64748b" }} />
+                          {p.purifierName || "---"}
+                        </div>
+                      </td>
+                      <td>
+                        {p.isWeightFull ? (
+                          <span className="weight-status-badge status-full">
+                            Full
+                          </span>
+                        ) : (
+                          <span className="weight-status-badge status-short">
+                            Short
+                          </span>
+                        )}
+                      </td>
+                      <td style={{ textAlign: "right" }}>
+                        <div
+                          style={{
+                            display: "flex",
+                            gap: "8px",
+                            justifyContent: "flex-end",
+                          }}
+                        >
+                          {hasPermission("Sales2.Delete") && (
+                            <button
+                              className="rec-action-btn delete-btn"
+                              onClick={() => handleDeleteRecord(p.id)}
+                            >
+                              <Trash2 size={14} />
+                            </button>
+                          )}
+                        </div>
+                      </td>
+                    </tr>
+                  ))
+                )}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </main>
+
+      {/* Purifier Management Modal */}
+      {showPurifierManagement && (
+        <div
+          className="modal-overlay"
+          style={{ zIndex: 1100 }}
+          onClick={handleClosePurifierManagement}
+        >
+          <div
+            className="purifier-manager-modal"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <button
+              className="pm-close-btn"
+              style={{
+                position: "absolute",
+                right: "24px",
+                top: "24px",
+                zIndex: 10,
+              }}
+              onClick={handleClosePurifierManagement}
+            >
+              <X size={20} />
+            </button>
+            <PurifierManagement />
+          </div>
+        </div>
+      )}
+
+      {/* Purify / Edit Modal */}
+      {showPurifyModal &&
+        (selectedCategory || editingProcess || editingRecord) && (
+          <div
+            className="modal-overlay"
+            style={{ zIndex: 1200 }}
+            onClick={() => setShowPurifyModal(false)}
+          >
+            <div className="pm-modal" onClick={(e) => e.stopPropagation()}>
+              {/* Header */}
+              <div className="pm-header">
+                <div className="pm-header-left">
+                  <div className="pm-header-icon">
+                    <Send size={20} />
+                  </div>
+                  <div>
+                    <p className="pm-header-pre">Purification Process</p>
+                    <h2 className="pm-header-title">
+                      {editingProcess || editingRecord
+                        ? "Edit Process Record"
+                        : "Record Purified Bundles"}
+                    </h2>
+                  </div>
+                </div>
+                <button
+                  className="pm-close-btn"
+                  onClick={() => setShowPurifyModal(false)}
+                >
+                  <X size={20} />
+                </button>
+              </div>
+
+              {/* Info Bar */}
+              <div className="pm-info-bar">
+                <div className="pm-info-chip">
+                  <span className="pm-info-label">Warehouse</span>
+                  <span className="pm-info-value">
+                    {selectedCategory?.warehouseName ||
+                      editingProcess?.warehouseName ||
+                      editingRecord?.warehouseName ||
+                      "---"}
+                  </span>
+                </div>
+                <div className="pm-info-chip">
+                  <span className="pm-info-label">Bag Marker</span>
+                  <span className="pm-info-value">
+                    {selectedCategory?.productMarker ||
+                      editingProcess?.productMarker ||
+                      editingRecord?.productMarker}
+                  </span>
+                </div>
+                <div className="pm-info-chip">
+                  <span className="pm-info-label">Bundle Count</span>
+                  <span className="pm-info-value" style={{ color: "#ea580c" }}>
+                    {editingRecord
+                      ? editingRecord.count
+                      : editingProcess
+                        ? editingProcess.purifyCount
+                        : selectedCategory?.remainingCount}{" "}
+                    bundles
+                  </span>
+                </div>
+              </div>
+
+              <form onSubmit={handleSubmitPurify} className="pm-body">
+                {/* Purifier */}
+                <div className="pm-form-group">
+                  <label className="pm-form-label">Hair Purifier</label>
+                  <select
+                    className="pm-form-control"
+                    value={purifyForm.purifierId || ""}
+                    onChange={(e) =>
+                      setPurifyForm((prev) => ({
+                        ...prev,
+                        purifierId: parseInt(e.target.value),
+                      }))
+                    }
+                    required
+                  >
+                    <option value="">-- Select Purifier --</option>
+                    {purifiers
+                      .filter((p) => p.isActive)
+                      .map((p) => (
+                        <option key={p.id} value={p.id}>
+                          {p.name}
+                        </option>
+                      ))}
+                  </select>
+                </div>
+
+                {/* Category Display */}
+                <div className="pm-form-group">
+                  <label className="pm-form-label">Category</label>
+                  <div className="pm-readonly-box">
+                    <span
+                      className={`card-badge category-${(selectedCategory?.category || editingProcess?.category || editingRecord?.category || "").toLowerCase().replace(".", "")}`}
+                      style={{ margin: 0 }}
+                    >
+                      {selectedCategory?.category ||
+                        editingProcess?.category ||
+                        editingRecord?.category}
+                    </span>
+                  </div>
+                </div>
+
+                {/* Purified Count Input */}
+                <div className="pm-form-group">
+                  <label className="pm-form-label">Purified Bundle Count</label>
+                  <input
+                    type="number"
+                    className="pm-form-control"
+                    placeholder="Enter bundle count"
+                    value={purifyForm.count}
+                    onChange={(e) =>
+                      setPurifyForm((prev) => ({
+                        ...prev,
+                        count: e.target.value,
+                      }))
+                    }
+                    required
+                    min="0"
+                    step="any"
+                  />
+                </div>
+
+                {/* Weight Status */}
+                <div className="pm-form-group">
+                  <label className="pm-form-label">
+                    Weight Status Verification
+                  </label>
+                  <div className="pm-toggle-row">
+                    <button
+                      type="button"
+                      className={`pm-toggle-btn toggle-full ${purifyForm.isWeightFull ? "active" : ""}`}
+                      onClick={() =>
+                        setPurifyForm((prev) => ({
+                          ...prev,
+                          isWeightFull: true,
+                        }))
+                      }
+                    >
+                      Full Weight
+                    </button>
+                    <button
+                      type="button"
+                      className={`pm-toggle-btn toggle-short ${!purifyForm.isWeightFull ? "active" : ""}`}
+                      onClick={() =>
+                        setPurifyForm((prev) => ({
+                          ...prev,
+                          isWeightFull: false,
+                        }))
+                      }
+                    >
+                      Short Weight
+                    </button>
+                  </div>
+                </div>
+
+                {/* Date */}
+                <div className="pm-form-group">
+                  <label className="pm-form-label">Date</label>
+                  <input
+                    type="date"
+                    className="pm-form-control"
+                    value={purifyForm.date.split("T")[0]}
+                    onChange={(e) =>
+                      setPurifyForm((prev) => ({
+                        ...prev,
+                        date: e.target.value,
+                      }))
+                    }
+                    required
+                  />
+                </div>
+
+                {/* Footer Actions */}
+                <div className="pm-footer">
+                  <button
+                    type="button"
+                    className="pm-btn-cancel"
+                    onClick={() => setShowPurifyModal(false)}
+                  >
+                    <X size={15} /> Cancel
+                  </button>
+                  <button type="submit" className="pm-btn-save">
+                    <Send size={15} />{" "}
+                    {editingRecord || editingProcess
+                      ? "Save Changes"
+                      : "Submit Process"}
+                  </button>
+                </div>
+              </form>
+            </div>
+          </div>
+        )}
+    </div>
+  );
 };
 
 export default Purification;

@@ -45,7 +45,7 @@ const Refinement: React.FC = () => {
   >([]);
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState<string | null>(null);
-  const [selectedPurifiers, setSelectedPurifiers] = useState<
+  const [selectedWorkers, setSelectedWorkers] = useState<
     Record<string, number>
   >({});
   const [searchTerm, setSearchTerm] = useState("");
@@ -63,7 +63,7 @@ const Refinement: React.FC = () => {
     weight: "",
     spoilageWeight: "",
     returnWeight: "",
-    purifierId: 0,
+    refinementWorkerId: 0,
     date: getMyanmarNow(),
   });
   const [validationError, setValidationError] = useState<string | null>(null);
@@ -99,8 +99,8 @@ const Refinement: React.FC = () => {
   const handleInlineSubmit = async (avail: AvailablePurifiedCategory) => {
     const key = `${avail.purifiedRecordId}-${avail.category}`;
     const count = avail.remainingCount;
-    const purifierId = selectedPurifiers[key];
-    if (!purifierId)
+    const refinementWorkerId = selectedWorkers[key];
+    if (!refinementWorkerId)
       return showAlert(
         "Validation",
         "Please select a refinement worker",
@@ -115,7 +115,7 @@ const Refinement: React.FC = () => {
         count,
         weight: avail.remainingWeight,
         lostWeight: 0,
-        purifierId,
+        refinementWorkerId,
       });
       await loadData();
     } catch (e: any) {
@@ -171,7 +171,7 @@ const Refinement: React.FC = () => {
       spoilageWeight: "",
       returnWeight: "",
       date: dateStr,
-      purifierId: p.purifierId || 0,
+      refinementWorkerId: p.refinementWorkerId || 0,
     });
     setValidationError(null);
     setShowModal(true);
@@ -196,7 +196,7 @@ const Refinement: React.FC = () => {
       setValidationError("Please enter a valid weight");
       return;
     }
-    if (!form.purifierId) {
+    if (!form.refinementWorkerId) {
       setValidationError("Please select a refinement worker");
       return;
     }
@@ -230,7 +230,7 @@ const Refinement: React.FC = () => {
         lostWeight,
         spoilageWeight,
         returnWeight,
-        purifierId: form.purifierId,
+        refinementWorkerId: form.refinementWorkerId,
       };
       if (editingProcess) await refinementAPI.update(editingProcess.id, dto);
       else if (editingRecord)
@@ -250,9 +250,12 @@ const Refinement: React.FC = () => {
 
   const filtered = availableCategories.filter(
     (a) =>
-      a.productMarker.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      a.category.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      (a.warehouseName || "").toLowerCase().includes(searchTerm.toLowerCase()),
+      a.remainingWeight >= 0.001 &&
+      (a.productMarker.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        a.category.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        (a.warehouseName || "")
+          .toLowerCase()
+          .includes(searchTerm.toLowerCase())),
   );
 
   if (loading) {
@@ -318,14 +321,16 @@ const Refinement: React.FC = () => {
                     <div className="rf-stat">
                       <span className="rf-stat-label">Remaining</span>
                       <span className="rf-stat-value">
-                        {avail.remainingCount}{" "}
+                        {avail.remainingCount % 1 === 0
+                          ? avail.remainingCount
+                          : avail.remainingCount.toFixed(4)}{" "}
                         <span className="rf-stat-unit">bundles</span>
                       </span>
                     </div>
                     <div className="rf-stat rf-stat-right">
                       <span className="rf-stat-label">Weight</span>
                       <span className="rf-stat-value rf-stat-blue">
-                        {avail.remainingWeight.toFixed(3)}{" "}
+                        {avail.remainingWeight.toFixed(4)}{" "}
                         <span className="rf-stat-unit">viss</span>
                       </span>
                     </div>
@@ -342,9 +347,9 @@ const Refinement: React.FC = () => {
                     <label className="rf-field-label">Refinement Worker</label>
                     <select
                       className="rf-select"
-                      value={selectedPurifiers[key] || ""}
+                      value={selectedWorkers[key] || ""}
                       onChange={(e) =>
-                        setSelectedPurifiers((prev) => ({
+                        setSelectedWorkers((prev) => ({
                           ...prev,
                           [key]: parseInt(e.target.value),
                         }))
@@ -491,7 +496,7 @@ const Refinement: React.FC = () => {
                         <td>
                           <div className="rf-worker-cell">
                             <User size={13} />
-                            {p.purifierName || "---"}
+                            {p.refinementWorkerName || "---"}
                           </div>
                         </td>
                         <td onClick={(e) => e.stopPropagation()}>
@@ -554,7 +559,7 @@ const Refinement: React.FC = () => {
                       <td>
                         <div className="rf-worker-cell">
                           <User size={13} />
-                          {p.purifierName || "---"}
+                          {p.refinementWorkerName || "---"}
                         </div>
                       </td>
                       <td>
@@ -586,7 +591,7 @@ const Refinement: React.FC = () => {
           onClick={handleCloseRefinementWorkerManagement}
         >
           <div
-            className="purifier-manager-modal"
+            className="worker-manager-modal"
             onClick={(e) => e.stopPropagation()}
           >
             <button
@@ -684,12 +689,12 @@ const Refinement: React.FC = () => {
                 <label className="rf-form-label">Refinement Worker</label>
                 <select
                   className="rf-form-control"
-                  value={form.purifierId}
+                  value={form.refinementWorkerId}
                   onChange={(e) => {
                     setValidationError(null);
                     setForm((prev) => ({
                       ...prev,
-                      purifierId: parseInt(e.target.value),
+                      refinementWorkerId: parseInt(e.target.value),
                     }));
                   }}
                   required

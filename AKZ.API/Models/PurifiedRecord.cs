@@ -20,7 +20,7 @@ public class PurifiedRecord : BaseEntity
     [Required]
     public string Category { get; set; } = string.Empty;
 
-    public int Count { get; set; }
+    public double Count { get; set; }
 
     [Column(TypeName = "decimal(18,4)")]
     public decimal Weight { get; set; }
@@ -38,7 +38,7 @@ public class PurifiedRecord : BaseEntity
     public PurificationProcess? PurificationProcess { get; set; }
 
     // Remaining stock of purified hair for further processing (Refinement, etc.)
-    public int RemainingCount { get; set; }
+    public double RemainingCount { get; set; }
 
     [Column(TypeName = "decimal(18,4)")]
     public decimal RemainingWeight { get; set; }

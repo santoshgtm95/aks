@@ -5,12 +5,14 @@ import {
   semiExportAPI,
   productsAPI,
   salesAPI,
+  ledgerAPI,
 } from "../../services/api";
 import type {
   SingleDoubleDrawnRecord,
   SemiExportRecord,
   Product,
   Sale,
+  LedgerDto,
 } from "../../types";
 import {
   Package,
@@ -25,6 +27,9 @@ import {
   Scale,
   AlertTriangle,
   RotateCcw,
+  FilePlus,
+  X,
+  Layers,
 } from "lucide-react";
 import { formatDateTime } from "../../utils/format";
 import "./index.css";
@@ -43,6 +48,7 @@ const Sales5: React.FC = () => {
   const [savedExports, setSavedExports] = useState<SemiExportRecord[]>([]);
   const [products, setProducts] = useState<Product[]>([]);
   const [sales, setSales] = useState<Sale[]>([]);
+  const [ledgers, setLedgers] = useState<LedgerDto[]>([]);
   const [loading, setLoading] = useState(true);
   const [selectedMarker, setSelectedMarker] = useState<string | null>(null);
   const [searchTerm, setSearchTerm] = useState("");
@@ -50,6 +56,15 @@ const Sales5: React.FC = () => {
   const [saving, setSaving] = useState(false);
   const [markerWorkerFees, setMarkerWorkerFees] = useState<string>("0");
   const [markerRemark, setMarkerRemark] = useState<string>("");
+  const [showLedgerModal, setShowLedgerModal] = useState(false);
+  const [selectedLedgerMarkers, setSelectedLedgerMarkers] = useState<string[]>(
+    [],
+  );
+  const [ledgerDate, setLedgerDate] = useState<string>(
+    new Date().toISOString().substring(0, 10),
+  );
+  const [ledgerName, setLedgerName] = useState<string>("");
+  const [ledgerDescription, setLedgerDescription] = useState<string>("");
 
   const [expandedRecords, setExpandedRecords] = useState<
     Record<number, boolean>
@@ -97,7 +112,7 @@ const Sales5: React.FC = () => {
     }
   }, [selectedMarker, selectedRecords, savedExports]);
 
-  // Calculate the total sorted weights for sidebar display
+  // Calculate the total sorted weights for sidebar display (Export sizes: 10B to Bar)
   const getSortedTotal = (record: SingleDoubleDrawnRecord) => {
     return (
       record.size6 +
@@ -121,8 +136,18 @@ const Sales5: React.FC = () => {
 
   const groupedRecords = useMemo(() => {
     const groups: Record<string, GroupedMarker> = {};
+
+    // Get all marker names that are already part of a ledger
+    const markersInLedgers = new Set(
+      ledgers.flatMap((l) => l.markers.map((m) => m.markerName)),
+    );
+
     sddRecords.forEach((record) => {
       const marker = record.refinementRecordMarker || "---";
+
+      // Filter out markers that are already in a ledger
+      if (markersInLedgers.has(marker)) return;
+
       if (!groups[marker]) {
         groups[marker] = {
           markerName: marker,
@@ -152,7 +177,79 @@ const Sales5: React.FC = () => {
       }
     });
     return Object.values(groups);
-  }, [sddRecords]);
+  }, [sddRecords, ledgers]);
+
+  const completedMarkers = useMemo(() => {
+    return groupedRecords.filter((group) => {
+      const marker = group.markerName;
+      const selectedProduct = products.find((p) => p.marker === marker);
+      const selectedProductSales = sales.filter(
+        (s) => s.productMarker === marker || s.marker === marker,
+      );
+
+      const unit = selectedProduct ? selectedProduct.unit : "viss";
+      const toViss = (v: number) => (unit === "kg" ? v / 1.633 : v);
+
+      const originalWeight = selectedProduct
+        ? Number(selectedProduct.weight)
+        : 0;
+      const originalWeightViss = toViss(originalWeight);
+
+      const weightSoldRawMaterial = selectedProductSales.reduce(
+        (sum, s) => sum + Number(s.weight),
+        0,
+      );
+      const weightSoldViss = toViss(weightSoldRawMaterial);
+
+      const remainingAfterSalesViss = originalWeightViss - weightSoldViss;
+
+      const sumLostWeight = group.records.reduce(
+        (sum, r) => sum + (r.lostWeight || 0),
+        0,
+      );
+
+      const sumSpoilageWeight = group.records.reduce(
+        (sum, r) => sum + (r.spoilageWeight || 0) + (r.spoilageSize || 0),
+        0,
+      );
+
+      const sumReturnWeight = group.records.reduce(
+        (sum, r) => sum + (r.returnWeight || 0) + (r.returnSize || 0),
+        0,
+      );
+
+      const totalSortedWeight = group.records.reduce((sum, r) => {
+        return (
+          sum +
+          (r.size6 || 0) +
+          (r.size7 || 0) +
+          (r.size8 || 0) +
+          (r.size9 || 0) +
+          (r.size10 || 0) +
+          (r.size10B || 0) +
+          (r.size12 || 0) +
+          (r.size14 || 0) +
+          (r.size16 || 0) +
+          (r.size18 || 0) +
+          (r.size20 || 0) +
+          (r.size22 || 0) +
+          (r.size24 || 0) +
+          (r.size26 || 0) +
+          (r.size28 || 0) +
+          (r.sizeBar || 0)
+        );
+      }, 0);
+
+      const remainingUnsorted =
+        remainingAfterSalesViss -
+        (totalSortedWeight +
+          sumLostWeight +
+          sumSpoilageWeight +
+          sumReturnWeight);
+
+      return remainingUnsorted <= 0.005;
+    });
+  }, [groupedRecords, products, sales]);
 
   // Filter sidebar list
   const filteredGroupedRecords = useMemo(() => {
@@ -255,18 +352,56 @@ const Sales5: React.FC = () => {
     }));
   };
 
+  const handleSubmitLedger = async () => {
+    if (selectedLedgerMarkers.length === 0 || !ledgerName.trim()) return;
+
+    setSaving(true);
+    try {
+      const markersPayload = selectedLedgerMarkers.map((markerName) => {
+        const product = products.find((p) => p.marker === markerName);
+        return {
+          markerName,
+          productId: product?.id,
+        };
+      });
+
+      await ledgerAPI.create({
+        ledgerName: ledgerName.trim(),
+        date: ledgerDate,
+        description: ledgerDescription,
+        markers: markersPayload,
+      });
+      setShowLedgerModal(false);
+      setSelectedLedgerMarkers([]);
+      setLedgerName("");
+      setLedgerDescription("");
+
+      // Reload ledgers to hide markers
+      const updatedLedgers = await ledgerAPI.getAll();
+      setLedgers(updatedLedgers);
+    } catch (error) {
+      console.error("Failed to create ledger:", error);
+      setFormError("Failed to create ledger. Please try again.");
+    } finally {
+      setSaving(false);
+    }
+  };
+
   const loadData = async () => {
     try {
-      const [sddData, exportData, productsData, salesData] = await Promise.all([
-        singleDoubleDrawnAPI.getAll(),
-        semiExportAPI.getAll(),
-        productsAPI.getAll(true),
-        salesAPI.getAll("Sales"),
-      ]);
+      const [sddData, exportData, productsData, salesData, ledgerData] =
+        await Promise.all([
+          singleDoubleDrawnAPI.getAll(),
+          semiExportAPI.getAll(),
+          productsAPI.getAll(true),
+          salesAPI.getAll("Sales"),
+          ledgerAPI.getAll(),
+        ]);
       setSddRecords(sddData);
       setSavedExports(exportData);
       setProducts(productsData);
       setSales(salesData);
+      setLedgers(ledgerData);
     } catch (error) {
       console.error("Failed to load data:", error);
     } finally {
@@ -311,45 +446,56 @@ const Sales5: React.FC = () => {
       0,
     );
 
-    // 5. Sum of Spoilage Weight of all colors including Two Inches Spoilage (viss)
+    // 5. Sum of Spoilage Weight (B to 10 only)
     const sumSpoilageWeight = selectedRecords.reduce(
       (sum, r) => sum + (r.spoilageWeight || 0) + (r.spoilageSize || 0),
       0,
     );
 
-    // 6. Sum of Return Weight of all colors including Two Inches Return (viss)
+    // 6. Sum of Return Weight (incl. 2" Return)
     const sumReturnWeight = selectedRecords.reduce(
       (sum, r) => sum + (r.returnWeight || 0) + (r.returnSize || 0),
       0,
     );
 
-    // 7. Total Sorted Weight across all SDD records (viss)
-    const totalSortedWeight = selectedRecords.reduce((sum, r) => {
+    // 7. Export Weight (10B to Bar)
+    const sumBto10Weight = selectedRecords.reduce((sum, r) => {
+      return (
+        sum +
+        (r.sizeBar || 0) +
+        (r.size28 || 0) +
+        (r.size26 || 0) +
+        (r.size24 || 0) +
+        (r.size22 || 0) +
+        (r.size20 || 0) +
+        (r.size18 || 0) +
+        (r.size16 || 0) +
+        (r.size14 || 0) +
+        (r.size12 || 0) +
+        (r.size10B || 0)
+      );
+    }, 0);
+
+    // 7b. Non-Export Sizes (6 to 10)
+    const sumTwoInchesWeight = selectedRecords.reduce((sum, r) => {
       return (
         sum +
         (r.size6 || 0) +
         (r.size7 || 0) +
         (r.size8 || 0) +
         (r.size9 || 0) +
-        (r.size10 || 0) +
-        (r.size10B || 0) +
-        (r.size12 || 0) +
-        (r.size14 || 0) +
-        (r.size16 || 0) +
-        (r.size18 || 0) +
-        (r.size20 || 0) +
-        (r.size22 || 0) +
-        (r.size24 || 0) +
-        (r.size26 || 0) +
-        (r.size28 || 0) +
-        (r.sizeBar || 0)
+        (r.size10 || 0)
       );
     }, 0);
 
     // 8. Remaining Unsorted (viss)
     const remainingUnsorted =
       remainingAfterSalesViss -
-      (totalSortedWeight + sumLostWeight + sumSpoilageWeight + sumReturnWeight);
+      (sumBto10Weight +
+        sumTwoInchesWeight +
+        sumLostWeight +
+        sumSpoilageWeight +
+        sumReturnWeight);
 
     // 9. Percentage calculations based on Remaining Weight after Raw Material Sales
     const denom = remainingAfterSalesViss || 1; // avoid division by zero
@@ -357,6 +503,50 @@ const Sales5: React.FC = () => {
     const sumLostWeightPercent = (sumLostWeight / denom) * 100;
     const sumSpoilageWeightPercent = (sumSpoilageWeight / denom) * 100;
     const sumReturnWeightPercent = (sumReturnWeight / denom) * 100;
+
+    const categoryBto10 = selectedRecords.reduce(
+      (acc: Record<string, number>, r) => {
+        const cat = (r.refinementRecordCategory || "Other").toLowerCase();
+        const weight =
+          (r.sizeBar || 0) +
+          (r.size28 || 0) +
+          (r.size26 || 0) +
+          (r.size24 || 0) +
+          (r.size22 || 0) +
+          (r.size20 || 0) +
+          (r.size18 || 0) +
+          (r.size16 || 0) +
+          (r.size14 || 0) +
+          (r.size12 || 0) +
+          (r.size10B || 0);
+
+        if (!acc[cat]) acc[cat] = 0;
+        acc[cat] += weight;
+        return acc;
+      },
+      {},
+    );
+
+    const averageBto10 =
+      remainingAfterSalesViss > 0
+        ? (sumBto10Weight / remainingAfterSalesViss) * 100
+        : 0;
+
+    // 10. Financial calculations (User Request - Bar to 10 Only)
+    const productPrice = selectedProduct ? selectedProduct.price : 0;
+    let productPriceViss = productPrice;
+    let productPriceKg = productPrice;
+
+    if (unit === "kg") {
+      productPriceViss = productPrice * 1.633;
+      productPriceKg = productPrice;
+    } else {
+      productPriceViss = productPrice;
+      productPriceKg = productPrice / 1.633;
+    }
+
+    const originalTotalAmount = remainingAfterSalesViss * productPriceViss;
+    const originalTotalAmountKg = remainingAfterSalesKg * productPriceKg;
 
     return {
       originalWeightViss,
@@ -373,7 +563,15 @@ const Sales5: React.FC = () => {
       sumSpoilageWeightPercent,
       sumReturnWeight,
       sumReturnWeightPercent,
+      sumBto10Weight,
+      sumTwoInchesWeight,
+      categoryBto10,
+      averageBto10,
       unit,
+      productPriceViss,
+      productPriceKg,
+      originalTotalAmount,
+      originalTotalAmountKg,
     };
   }, [selectedMarker, products, sales, selectedRecords]);
 
@@ -469,6 +667,89 @@ const Sales5: React.FC = () => {
     return amts;
   }, [selectedRecords, recordCalculations]);
 
+  const groupedHistory = useMemo(() => {
+    const groups: Record<string, any> = {};
+
+    savedExports.forEach((record) => {
+      const marker = record.refinementRecordMarker || "---";
+      const sdd = sddRecords.find(
+        (x) => x.id === record.singleDoubleDrawnRecordId,
+      );
+
+      let rowAmount = 0;
+      if (sdd) {
+        const wB = sdd.sizeBar || 0;
+        const w28 = sdd.size28 || 0;
+        const w26 = sdd.size26 || 0;
+        const w24 = sdd.size24 || 0;
+        const w22 = sdd.size22 || 0;
+        const w20 = sdd.size20 || 0;
+        const w18 = sdd.size18 || 0;
+        const w16 = sdd.size16 || 0;
+        const w14 = sdd.size14 || 0;
+        const w12 = sdd.size12 || 0;
+        const w10B = sdd.size10B || 0;
+        const w10 = sdd.size10 || 0;
+        const w9 = sdd.size9 || 0;
+        const w8 = sdd.size8 || 0;
+        const w7 = sdd.size7 || 0;
+        const w6 = sdd.size6 || 0;
+        const wLeftover = sdd.returnSize || 0;
+        const wSpoil = sdd.spoilageSize || 0;
+
+        rowAmount =
+          wB * (sdd.priceBar || 0) +
+          w28 * (sdd.price28 || 0) +
+          w26 * (sdd.price26 || 0) +
+          w24 * (sdd.price24 || 0) +
+          w22 * (sdd.price22 || 0) +
+          w20 * (sdd.price20 || 0) +
+          w18 * (sdd.price18 || 0) +
+          w16 * (sdd.price16 || 0) +
+          w14 * (sdd.price14 || 0) +
+          w12 * (sdd.price12 || 0) +
+          w10B * (sdd.price10B || 0) +
+          w10 * (sdd.price10 || 0) +
+          w9 * (sdd.price9 || 0) +
+          w8 * (sdd.price8 || 0) +
+          w7 * (sdd.price7 || 0) +
+          w6 * (sdd.price6 || 0) +
+          wLeftover * (sdd.priceReturnSize || 0) +
+          wSpoil * (sdd.priceSpoilageSize || 0);
+      }
+
+      if (!groups[marker]) {
+        groups[marker] = {
+          marker,
+          warehouseNames: new Set(),
+          categories: new Set(),
+          totalAmount: 0,
+          totalWorkerFees: 0,
+          latestDate: record.date,
+          remark: record.remark,
+          ids: [],
+        };
+      }
+
+      groups[marker].totalAmount += rowAmount;
+      groups[marker].totalWorkerFees += record.workerFees || 0;
+      if (record.refinementRecordWarehouseName)
+        groups[marker].warehouseNames.add(record.refinementRecordWarehouseName);
+      if (record.refinementRecordCategory)
+        groups[marker].categories.add(record.refinementRecordCategory);
+      if (new Date(record.date) > new Date(groups[marker].latestDate)) {
+        groups[marker].latestDate = record.date;
+        if (record.remark) groups[marker].remark = record.remark;
+      }
+      groups[marker].ids.push(record.id);
+    });
+
+    return Object.values(groups).sort(
+      (a: any, b: any) =>
+        new Date(b.latestDate).getTime() - new Date(a.latestDate).getTime(),
+    );
+  }, [savedExports, sddRecords]);
+
   const markerTotalAmount = useMemo(() => {
     const sumRecords = Object.values(recordAmounts).reduce(
       (sum, r: any) => sum + (r.totalAmount || 0),
@@ -478,6 +759,15 @@ const Sales5: React.FC = () => {
     return sumRecords + fees;
   }, [recordAmounts, markerWorkerFees]);
 
+  const financialComparison = useMemo(() => {
+    if (!selectedMarkerStats) return null;
+    const { originalTotalAmount } = selectedMarkerStats;
+    const pnl = originalTotalAmount - markerTotalAmount;
+    return {
+      pnl,
+    };
+  }, [selectedMarkerStats, markerTotalAmount]);
+
   const handleSaveMarkerData = async () => {
     if (!selectedMarker || selectedRecords.length === 0) return;
 
@@ -486,14 +776,13 @@ const Sales5: React.FC = () => {
 
     try {
       const totalFees = parseFloat(markerWorkerFees) || 0;
-      const workerFeesPerBatch = totalFees / selectedRecords.length;
 
-      // Save all batches with the split worker fees and the common remark
+      // Save all batches with the total worker fees on the first record and 0 on the rest
       await Promise.all(
-        selectedRecords.map((record) => {
+        selectedRecords.map((record, index) => {
           const dto = {
             singleDoubleDrawnRecordId: record.id,
-            workerFees: workerFeesPerBatch,
+            workerFees: index === 0 ? totalFees : 0,
             remark: markerRemark,
           };
           return semiExportAPI.upsert(dto);
@@ -509,7 +798,7 @@ const Sales5: React.FC = () => {
     }
   };
 
-  const handleDeleteExport = async (id: number) => {
+  const handleDeleteExport = async (ids: number[]) => {
     if (
       !window.confirm(
         "Are you sure you want to delete this Semi Export record?",
@@ -517,7 +806,7 @@ const Sales5: React.FC = () => {
     )
       return;
     try {
-      await semiExportAPI.delete(id);
+      await Promise.all(ids.map((id) => semiExportAPI.delete(id)));
       await loadData();
     } catch (err) {
       console.error("Failed to delete export:", err);
@@ -705,6 +994,32 @@ const Sales5: React.FC = () => {
             })
           )}
         </div>
+
+        <div style={{ marginTop: "20px", padding: "0 10px" }}>
+          <button
+            onClick={() => setShowLedgerModal(true)}
+            style={{
+              width: "100%",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              gap: "8px",
+              padding: "12px",
+              background: "#2563eb",
+              color: "white",
+              border: "none",
+              borderRadius: "10px",
+              fontSize: "14px",
+              fontWeight: "700",
+              cursor: "pointer",
+              transition: "all 0.2s",
+              boxShadow: "0 4px 6px -1px rgba(37, 99, 235, 0.2)",
+            }}
+          >
+            <FilePlus size={18} />
+            Create Ledger
+          </button>
+        </div>
       </aside>
 
       {/* Right Main Content */}
@@ -759,7 +1074,7 @@ const Sales5: React.FC = () => {
                             .filter(Boolean),
                         ),
                       ).join(", ") || "---"}
-                    </strong>
+                    </strong>{" "}
                   </p>
                 </div>
               </div>
@@ -861,34 +1176,36 @@ const Sales5: React.FC = () => {
                 </div>
 
                 {/* 3b. Remaining Unsorted in Inventory */}
-                <div className="stat-card">
-                  <div className="stat-header">
-                    <span className="stat-title">Remaining Unsorted</span>
-                    <div
-                      className="stat-icon-wrapper"
-                      style={{ backgroundColor: "#f0f9ff", color: "#0284c7" }}
-                    >
-                      <Scale size={16} />
+                {selectedMarkerStats.remainingUnsorted >= 0.001 && (
+                  <div className="stat-card">
+                    <div className="stat-header">
+                      <span className="stat-title">Remaining Unsorted</span>
+                      <div
+                        className="stat-icon-wrapper"
+                        style={{ backgroundColor: "#f0f9ff", color: "#0284c7" }}
+                      >
+                        <Scale size={16} />
+                      </div>
+                    </div>
+                    <div>
+                      <h3 className="stat-value">
+                        {selectedMarkerStats.remainingUnsorted.toFixed(3)} viss
+                      </h3>
+                      <span className="stat-footer">
+                        (
+                        <strong>
+                          {selectedMarkerStats.remainingUnsortedPercent.toFixed(
+                            2,
+                          )}
+                          %
+                        </strong>
+                        ) remaining unsorted
+                      </span>
                     </div>
                   </div>
-                  <div>
-                    <h3 className="stat-value">
-                      {selectedMarkerStats.remainingUnsorted.toFixed(3)} viss
-                    </h3>
-                    <span className="stat-footer">
-                      (
-                      <strong>
-                        {selectedMarkerStats.remainingUnsortedPercent.toFixed(
-                          2,
-                        )}
-                        %
-                      </strong>
-                      ) remaining unsorted
-                    </span>
-                  </div>
-                </div>
+                )}
 
-                {/* 4. Sum of Lost Weight of all colors */}
+                {/* 4. Sum of Lost Weight of all colors (viss) */}
                 <div className="stat-card">
                   <div className="stat-header">
                     <span className="stat-title">Sum of Lost Weight</span>
@@ -947,7 +1264,7 @@ const Sales5: React.FC = () => {
                     <span className="stat-title">Sum of Return Weight</span>
                     <div
                       className="stat-icon-wrapper"
-                      style={{ backgroundColor: "#f0fdf4", color: "#15803d" }}
+                      style={{ backgroundColor: "#fdf4ff", color: "#c026d3" }}
                     >
                       <RotateCcw size={16} />
                     </div>
@@ -965,6 +1282,69 @@ const Sales5: React.FC = () => {
                     </span>
                   </div>
                 </div>
+
+                {/* 3c. Sum of Bar to 10B Sizes (Total Export Weight) */}
+                <div className="stat-card">
+                  <div className="stat-header">
+                    <span className="stat-title">Bar to 10B Sizes</span>
+                    <div
+                      className="stat-icon-wrapper"
+                      style={{ backgroundColor: "#fdf2f8", color: "#db2777" }}
+                    >
+                      <Layers size={16} />
+                    </div>
+                  </div>
+                  <div
+                    style={{
+                      display: "flex",
+                      justifyContent: "space-between",
+                      alignItems: "flex-end",
+                    }}
+                  >
+                    <div>
+                      <h3 className="stat-value">
+                        {selectedMarkerStats.sumBto10Weight.toFixed(3)} viss
+                      </h3>
+                      <span className="stat-footer">
+                        (
+                        <strong>
+                          {selectedMarkerStats.averageBto10.toFixed(2)}%
+                        </strong>
+                        ) total export ratio
+                      </span>
+                    </div>
+                  </div>
+                </div>
+                {/* 7. Two Inches & Ten Size */}
+                <div className="stat-card">
+                  <div className="stat-header">
+                    <span className="stat-title">Two Inches Area</span>
+                    <div
+                      className="stat-icon-wrapper"
+                      style={{ backgroundColor: "#f0fdf4", color: "#15803d" }}
+                    >
+                      <Package size={16} />
+                    </div>
+                  </div>
+                  <div>
+                    <h3 className="stat-value">
+                      {selectedMarkerStats.sumTwoInchesWeight.toFixed(3)} viss
+                    </h3>
+                    <span className="stat-footer">
+                      (
+                      <strong>
+                        {(
+                          (selectedMarkerStats.sumTwoInchesWeight /
+                            (selectedMarkerStats.remainingAfterSalesViss ||
+                              1)) *
+                          100
+                        ).toFixed(2)}
+                        %
+                      </strong>
+                      ) (Size 6 to 10)
+                    </span>
+                  </div>
+                </div>
               </div>
             )}
 
@@ -972,7 +1352,6 @@ const Sales5: React.FC = () => {
             {selectedMarkerStats && (
               <div
                 style={{
-                  marginTop: "32px",
                   background: "#f8fafc",
                   borderRadius: "16px",
                   padding: "24px 32px",
@@ -983,12 +1362,145 @@ const Sales5: React.FC = () => {
                   border: "1.5px solid #e2e8f0",
                 }}
               >
-                <div>
+                <div style={{ flex: 1 }}>
                   <h4
                     style={{
                       margin: 0,
                       color: "#64748b",
-                      fontSize: "13px",
+                      fontSize: "14px",
+                      textTransform: "uppercase",
+                      letterSpacing: "0.1em",
+                      fontWeight: 800,
+                    }}
+                  >
+                    Inventory Reference
+                  </h4>
+                  <div
+                    style={{
+                      marginTop: "12px",
+                      display: "grid",
+                      gridTemplateColumns: "1fr 1fr",
+                      gap: "24px",
+                    }}
+                  >
+                    <div>
+                      <p
+                        style={{
+                          margin: 0,
+                          fontSize: "12px",
+                          color: "#94a3b8",
+                          fontWeight: 700,
+                        }}
+                      >
+                        INVENTORY PRICE
+                      </p>
+                      <div
+                        style={{
+                          display: "flex",
+                          gap: "12px",
+                          marginTop: "2px",
+                        }}
+                      >
+                        <div>
+                          <p
+                            style={{
+                              margin: 0,
+                              fontSize: "16px",
+                              color: "#1e293b",
+                              fontWeight: 600,
+                            }}
+                          >
+                            {selectedMarkerStats.productPriceViss.toLocaleString(
+                              undefined,
+                              {
+                                minimumFractionDigits: 1,
+                                maximumFractionDigits: 1,
+                              },
+                            )}{" "}
+                            <span
+                              style={{ fontSize: "12px", color: "#64748b" }}
+                            >
+                              MMK/viss
+                            </span>
+                          </p>
+                        </div>
+                        <div
+                          style={{
+                            width: "1.5px",
+                            height: "16px",
+                            backgroundColor: "#e2e8f0",
+                            alignSelf: "center",
+                          }}
+                        />
+                        <div>
+                          <p
+                            style={{
+                              margin: 0,
+                              fontSize: "16px",
+                              color: "#1e293b",
+                              fontWeight: 600,
+                            }}
+                          >
+                            {selectedMarkerStats.productPriceKg.toLocaleString(
+                              undefined,
+                              {
+                                minimumFractionDigits: 1,
+                                maximumFractionDigits: 1,
+                              },
+                            )}{" "}
+                            <span
+                              style={{ fontSize: "12px", color: "#64748b" }}
+                            >
+                              MMK/kg
+                            </span>
+                          </p>
+                        </div>
+                      </div>
+                    </div>
+                    <div>
+                      <p
+                        style={{
+                          margin: 0,
+                          fontSize: "12px",
+                          color: "#94a3b8",
+                          fontWeight: 700,
+                        }}
+                      >
+                        ORIGINAL TOTAL AMOUNT
+                      </p>
+                      <p
+                        style={{
+                          margin: "2px 0 0 0",
+                          fontSize: "17px",
+                          color: "#1e293b",
+                          fontWeight: 600,
+                        }}
+                      >
+                        {selectedMarkerStats.originalTotalAmount.toLocaleString(
+                          undefined,
+                          {
+                            minimumFractionDigits: 1,
+                            maximumFractionDigits: 1,
+                          },
+                        )}{" "}
+                        <span style={{ fontSize: "13px" }}>MMK</span>
+                      </p>
+                    </div>
+                  </div>
+                </div>
+
+                <div
+                  style={{
+                    textAlign: "right",
+                    paddingLeft: "40px",
+                    borderLeft: "1.5px solid #e2e8f0",
+                  }}
+                >
+                  <h4
+                    style={{
+                      margin: 0,
+                      color: "#64748b",
+                      fontSize: "12px",
                       textTransform: "uppercase",
                       letterSpacing: "0.1em",
                       fontWeight: 800,
@@ -996,28 +1508,18 @@ const Sales5: React.FC = () => {
                   >
                     Grand Total Marker Value
                   </h4>
-                  <p
-                    style={{
-                      margin: "4px 0 0 0",
-                      fontSize: "14px",
-                      color: "#64748b",
-                    }}
-                  >
-                    Sum of all color categories + worker fees
-                  </p>
-                </div>
-                <div style={{ textAlign: "right" }}>
                   <div
                     style={{
                       display: "flex",
                       alignItems: "baseline",
                       gap: "10px",
                       justifyContent: "flex-end",
+                      marginTop: "4px",
                     }}
                   >
                     <span
                       style={{
-                        fontSize: "36px",
+                        fontSize: "32px",
                         fontWeight: "950",
                         color: "#2563eb",
                         letterSpacing: "-0.03em",
@@ -1030,7 +1532,7 @@ const Sales5: React.FC = () => {
                     </span>
                     <span
                       style={{
-                        fontSize: "16px",
+                        fontSize: "14px",
                         fontWeight: "800",
                         color: "#64748b",
                       }}
@@ -1038,6 +1540,51 @@ const Sales5: React.FC = () => {
                       MMK
                     </span>
                   </div>
+
+                  {financialComparison && (
+                    <div
+                      style={{
+                        marginTop: "8px",
+                        display: "flex",
+                        alignItems: "center",
+                        justifyContent: "flex-end",
+                        gap: "8px",
+                      }}
+                    >
+                      <span
+                        style={{
+                          fontSize: "12px",
+                          color: "#64748b",
+                          fontWeight: 600,
+                        }}
+                      >
+                        P&L:
+                      </span>
+                      <span
+                        style={{
+                          fontSize: "16px",
+                          fontWeight: "800",
+                          color:
+                            financialComparison.pnl <= 0
+                              ? "#059669"
+                              : "#dc2626",
+                        }}
+                      >
+                        {financialComparison.pnl.toLocaleString(undefined, {
+                          maximumFractionDigits: 2,
+                        })}
+                      </span>
+                      <span
+                        style={{
+                          fontSize: "10px",
+                          color: "#94a3b8",
+                          fontWeight: 700,
+                        }}
+                      >
+                        MMK
+                      </span>
+                    </div>
+                  )}
                 </div>
               </div>
             )}
@@ -1176,7 +1723,12 @@ const Sales5: React.FC = () => {
 
             {/* Records List */}
             <div
-              style={{ display: "flex", flexDirection: "column", gap: "24px" }}
+              style={{
+                display: "flex",
+                flexDirection: "column",
+                gap: "24px",
+                marginTop: "24px",
+              }}
             >
               {selectedRecords.map((record) => {
                 const calculations = recordCalculations[record.id];
@@ -1347,6 +1899,7 @@ const Sales5: React.FC = () => {
                                     padding: "10px 16px",
                                     fontWeight: "700",
                                     color: "#475569",
+                                    textAlign: "right",
                                   }}
                                 >
                                   BUY PRICES
@@ -1360,16 +1913,6 @@ const Sales5: React.FC = () => {
                                   }}
                                 >
                                   AMOUNT
-                                </th>
-                                <th
-                                  style={{
-                                    padding: "10px 16px",
-                                    fontWeight: "700",
-                                    color: "#475569",
-                                    textAlign: "right",
-                                  }}
-                                >
-                                  AVG %
                                 </th>
                               </tr>
                             </thead>
@@ -1486,8 +2029,6 @@ const Sales5: React.FC = () => {
                               ]
                                 .filter((row) => row.w > 0)
                                 .map((row, index) => {
-                                  const avgPercent =
-                                    (row.w / calculations.denominator) * 100;
                                   return (
                                     <tr
                                       key={row.label}
@@ -1536,16 +2077,6 @@ const Sales5: React.FC = () => {
                                       >
                                         {row.amt.toLocaleString()}
                                       </td>
-                                      <td
-                                        style={{
-                                          padding: "8px 16px",
-                                          textAlign: "right",
-                                          fontWeight: "600",
-                                          color: "#64748b",
-                                        }}
-                                      >
-                                        {avgPercent.toFixed(2)}%
-                                      </td>
                                     </tr>
                                   );
                                 })}
@@ -1586,21 +2117,6 @@ const Sales5: React.FC = () => {
                                   }}
                                 >
                                   {rowAmounts.totalAmount.toLocaleString()}
-                                </td>
-                                <td
-                                  style={{
-                                    padding: "10px 16px",
-                                    textAlign: "right",
-                                    fontWeight: "800",
-                                    color: "#475569",
-                                  }}
-                                >
-                                  {(
-                                    (calculations.totalWeight /
-                                      calculations.denominator) *
-                                    100
-                                  ).toFixed(2)}
-                                  %
                                 </td>
                               </tr>
                             </tbody>
@@ -1788,7 +2304,7 @@ const Sales5: React.FC = () => {
                     </tr>
                   </thead>
                   <tbody>
-                    {savedExports.length === 0 ? (
+                    {groupedHistory.length === 0 ? (
                       <tr>
                         <td
                           colSpan={6}
@@ -1802,56 +2318,10 @@ const Sales5: React.FC = () => {
                         </td>
                       </tr>
                     ) : (
-                      savedExports.map((record) => {
-                        // Calculate total amount from saved prices and the linked SDD record
-                        const sdd = sddRecords.find(
-                          (x) => x.id === record.singleDoubleDrawnRecordId,
-                        );
-                        let totalAmount = 0;
-                        if (sdd) {
-                          const wB = sdd.sizeBar || 0;
-                          const w28 = sdd.size28 || 0;
-                          const w26 = sdd.size26 || 0;
-                          const w24 = sdd.size24 || 0;
-                          const w22 = sdd.size22 || 0;
-                          const w20 = sdd.size20 || 0;
-                          const w18 = sdd.size18 || 0;
-                          const w16 = sdd.size16 || 0;
-                          const w14 = sdd.size14 || 0;
-                          const w12 = sdd.size12 || 0;
-                          const w10B = sdd.size10B || 0;
-                          const w10 = sdd.size10 || 0;
-                          const w9 = sdd.size9 || 0;
-                          const w8 = sdd.size8 || 0;
-                          const w7 = sdd.size7 || 0;
-                          const w6 = sdd.size6 || 0;
-                          const wLeftover = sdd.returnWeight || 0;
-                          const wSpoil = sdd.spoilageWeight || 0;
-
-                          totalAmount =
-                            wB * sdd.priceBar +
-                            w28 * sdd.price28 +
-                            w26 * sdd.price26 +
-                            w24 * sdd.price24 +
-                            w22 * sdd.price22 +
-                            w20 * sdd.price20 +
-                            w18 * sdd.price18 +
-                            w16 * sdd.price16 +
-                            w14 * sdd.price14 +
-                            w12 * sdd.price12 +
-                            w10B * sdd.price10B +
-                            w10 * sdd.price10 +
-                            w9 * sdd.price9 +
-                            w8 * sdd.price8 +
-                            w7 * sdd.price7 +
-                            w6 * sdd.price6 +
-                            wLeftover * sdd.priceReturnSize +
-                            wSpoil * sdd.priceSpoilageSize;
-                        }
-
+                      groupedHistory.map((group: any) => {
                         return (
                           <tr
-                            key={record.id}
+                            key={group.marker}
                             style={{ borderBottom: "1px solid #f1f5f9" }}
                           >
                             <td
@@ -1874,7 +2344,7 @@ const Sales5: React.FC = () => {
                                     fontWeight: "700",
                                   }}
                                 >
-                                  {record.refinementRecordMarker || "---"}
+                                  {group.marker}
                                 </span>
                                 <span
                                   style={{
@@ -1884,9 +2354,12 @@ const Sales5: React.FC = () => {
                                     marginTop: "2px",
                                   }}
                                 >
-                                  {record.refinementRecordWarehouseName ||
-                                    "---"}{" "}
-                                  • {record.refinementRecordCategory || "---"}
+                                  {Array.from(group.warehouseNames).join(
+                                    ", ",
+                                  ) || "---"}{" "}
+                                  •{" "}
+                                  {Array.from(group.categories).join(", ") ||
+                                    "---"}
                                 </span>
                               </div>
                             </td>
@@ -1898,7 +2371,7 @@ const Sales5: React.FC = () => {
                                 color: "#0f172a",
                               }}
                             >
-                              {formatDateTime(record.date)}
+                              {formatDateTime(group.latestDate)}
                             </td>
                             <td
                               style={{
@@ -1908,7 +2381,8 @@ const Sales5: React.FC = () => {
                                 color: "#6366f1",
                               }}
                             >
-                              {(record.workerFees || 0).toLocaleString()} MMK
+                              {(group.totalWorkerFees || 0).toLocaleString()}{" "}
+                              MMK
                             </td>
                             <td
                               style={{
@@ -1918,7 +2392,13 @@ const Sales5: React.FC = () => {
                                 color: "#10b981",
                               }}
                             >
-                              {totalAmount.toFixed(2)} MMK
+                              {(
+                                group.totalAmount + group.totalWorkerFees
+                              ).toLocaleString(undefined, {
+                                minimumFractionDigits: 2,
+                                maximumFractionDigits: 2,
+                              })}{" "}
+                              MMK
                             </td>
                             <td
                               style={{
@@ -1930,9 +2410,9 @@ const Sales5: React.FC = () => {
                                 textOverflow: "ellipsis",
                                 whiteSpace: "nowrap",
                               }}
-                              title={record.remark}
+                              title={group.remark}
                             >
-                              {record.remark || "—"}
+                              {group.remark || "—"}
                             </td>
                             <td
                               style={{
@@ -1942,7 +2422,7 @@ const Sales5: React.FC = () => {
                             >
                               {hasPermission("Sales5.Delete") && (
                                 <button
-                                  onClick={() => handleDeleteExport(record.id)}
+                                  onClick={() => handleDeleteExport(group.ids)}
                                   className="btn btn-danger"
                                   style={{
                                     padding: "6px 10px",
@@ -1968,6 +2448,297 @@ const Sales5: React.FC = () => {
           </div>
         )}
       </main>
+
+      {/* Create Ledger Modal */}
+      {showLedgerModal && (
+        <div
+          style={{
+            position: "fixed",
+            top: 0,
+            left: 0,
+            right: 0,
+            bottom: 0,
+            backgroundColor: "rgba(0, 0, 0, 0.5)",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            zIndex: 1000,
+            backdropFilter: "blur(4px)",
+          }}
+          onClick={() => setShowLedgerModal(false)}
+        >
+          <div
+            style={{
+              width: "500px",
+              maxHeight: "80vh",
+              backgroundColor: "white",
+              borderRadius: "20px",
+              padding: "24px",
+              boxShadow: "0 20px 25px -5px rgba(0, 0, 0, 0.1)",
+              display: "flex",
+              flexDirection: "column",
+              gap: "20px",
+            }}
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div
+              style={{
+                display: "flex",
+                justifyContent: "space-between",
+                alignItems: "center",
+              }}
+            >
+              <h2
+                style={{
+                  margin: 0,
+                  fontSize: "20px",
+                  fontWeight: "800",
+                  color: "#0f172a",
+                }}
+              >
+                Create Ledger
+              </h2>
+              <button
+                onClick={() => setShowLedgerModal(false)}
+                style={{
+                  padding: "8px",
+                  borderRadius: "50%",
+                  border: "none",
+                  backgroundColor: "#f1f5f9",
+                  cursor: "pointer",
+                }}
+              >
+                <X size={20} color="#64748b" />
+              </button>
+            </div>
+
+            <p style={{ margin: 0, fontSize: "14px", color: "#64748b" }}>
+              Markers with zero remaining unsorted weight.
+            </p>
+
+            <div
+              style={{ display: "flex", flexDirection: "column", gap: "12px" }}
+            >
+              <div
+                style={{ display: "flex", flexDirection: "column", gap: "6px" }}
+              >
+                <label
+                  style={{
+                    fontSize: "13px",
+                    fontWeight: "700",
+                    color: "#475569",
+                  }}
+                >
+                  LEDGER NAME <span style={{ color: "#ef4444" }}>*</span>:
+                </label>
+                <input
+                  type="text"
+                  value={ledgerName}
+                  onChange={(e) => setLedgerName(e.target.value)}
+                  placeholder="e.g. June 2026 Export Ledger"
+                  style={{
+                    padding: "10px 14px",
+                    borderRadius: "10px",
+                    border: "1.5px solid #cbd5e1",
+                    fontSize: "14px",
+                    outline: "none",
+                  }}
+                />
+              </div>
+
+              <div
+                style={{ display: "flex", flexDirection: "column", gap: "6px" }}
+              >
+                <label
+                  style={{
+                    fontSize: "13px",
+                    fontWeight: "700",
+                    color: "#475569",
+                  }}
+                >
+                  LEDGER DATE:
+                </label>
+                <input
+                  type="date"
+                  value={ledgerDate}
+                  onChange={(e) => setLedgerDate(e.target.value)}
+                  style={{
+                    padding: "10px 14px",
+                    borderRadius: "10px",
+                    border: "1.5px solid #cbd5e1",
+                    fontSize: "14px",
+                    outline: "none",
+                  }}
+                />
+              </div>
+
+              <div
+                style={{ display: "flex", flexDirection: "column", gap: "6px" }}
+              >
+                <label
+                  style={{
+                    fontSize: "13px",
+                    fontWeight: "700",
+                    color: "#475569",
+                  }}
+                >
+                  DESCRIPTION / REMARK:
+                </label>
+                <textarea
+                  value={ledgerDescription}
+                  onChange={(e) => setLedgerDescription(e.target.value)}
+                  placeholder="Enter ledger description..."
+                  rows={2}
+                  style={{
+                    padding: "10px 14px",
+                    borderRadius: "10px",
+                    border: "1.5px solid #cbd5e1",
+                    fontSize: "14px",
+                    outline: "none",
+                    resize: "vertical",
+                  }}
+                />
+              </div>
+            </div>
+
+            <div
+              style={{
+                flex: 1,
+                overflowY: "auto",
+                display: "flex",
+                flexDirection: "column",
+                gap: "10px",
+                padding: "4px",
+              }}
+            >
+              {completedMarkers.length === 0 ? (
+                <div
+                  style={{
+                    textAlign: "center",
+                    padding: "40px",
+                    color: "#94a3b8",
+                  }}
+                >
+                  No completed markers available.
+                </div>
+              ) : (
+                completedMarkers.map((group) => (
+                  <label
+                    key={group.markerName}
+                    style={{
+                      display: "flex",
+                      alignItems: "center",
+                      gap: "12px",
+                      padding: "12px 16px",
+                      borderRadius: "12px",
+                      border: "1.5px solid #e2e8f0",
+                      cursor: "pointer",
+                      transition: "all 0.2s",
+                      backgroundColor: selectedLedgerMarkers.includes(
+                        group.markerName,
+                      )
+                        ? "#f0f9ff"
+                        : "white",
+                      borderColor: selectedLedgerMarkers.includes(
+                        group.markerName,
+                      )
+                        ? "#2563eb"
+                        : "#e2e8f0",
+                    }}
+                  >
+                    <input
+                      type="checkbox"
+                      checked={selectedLedgerMarkers.includes(group.markerName)}
+                      onChange={(e) => {
+                        if (e.target.checked) {
+                          setSelectedLedgerMarkers([
+                            ...selectedLedgerMarkers,
+                            group.markerName,
+                          ]);
+                        } else {
+                          setSelectedLedgerMarkers(
+                            selectedLedgerMarkers.filter(
+                              (m) => m !== group.markerName,
+                            ),
+                          );
+                        }
+                      }}
+                      style={{
+                        width: "18px",
+                        height: "18px",
+                        borderRadius: "4px",
+                        border: "1.5px solid #cbd5e1",
+                      }}
+                    />
+                    <div style={{ display: "flex", flexDirection: "column" }}>
+                      <span style={{ fontWeight: "700", color: "#0f172a" }}>
+                        {group.markerName}
+                      </span>
+                      <span style={{ fontSize: "12px", color: "#64748b" }}>
+                        {group.warehouseNames.join(", ") || "---"}
+                      </span>
+                    </div>
+                  </label>
+                ))
+              )}
+            </div>
+
+            <div
+              style={{
+                display: "flex",
+                justifyContent: "flex-end",
+                gap: "12px",
+              }}
+            >
+              <button
+                onClick={() => setShowLedgerModal(false)}
+                style={{
+                  padding: "10px 20px",
+                  borderRadius: "10px",
+                  border: "1.5px solid #e2e8f0",
+                  backgroundColor: "white",
+                  fontWeight: "600",
+                  cursor: "pointer",
+                }}
+              >
+                Cancel
+              </button>
+              <button
+                disabled={
+                  selectedLedgerMarkers.length === 0 ||
+                  !ledgerName.trim() ||
+                  saving
+                }
+                style={{
+                  padding: "10px 24px",
+                  borderRadius: "10px",
+                  border: "none",
+                  backgroundColor:
+                    selectedLedgerMarkers.length === 0 ||
+                    !ledgerName.trim() ||
+                    saving
+                      ? "#94a3b8"
+                      : "#0f172a",
+                  color: "white",
+                  fontWeight: "700",
+                  cursor:
+                    selectedLedgerMarkers.length === 0 ||
+                    !ledgerName.trim() ||
+                    saving
+                      ? "not-allowed"
+                      : "pointer",
+                  boxShadow: "0 4px 6px -1px rgba(15, 23, 42, 0.2)",
+                }}
+                onClick={handleSubmitLedger}
+              >
+                {saving
+                  ? "Generating..."
+                  : `Generate Ledger (${selectedLedgerMarkers.length})`}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

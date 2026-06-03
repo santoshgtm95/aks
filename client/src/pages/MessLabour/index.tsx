@@ -1224,11 +1224,13 @@ const MessLabour: React.FC = () => {
                         <Calculator size={24} />
                         <span>Remaining Count:</span>
                         <span>
-                          {formData.count} - {totals.catSum}
+                          {formData.count} - {totals.catSum.toFixed(4)}
                         </span>
                         <span>=</span>
                       </div>
-                      <div className="calc-right">{totals.remainingCount}</div>
+                      <div className="calc-right">
+                        {totals.remainingCount.toFixed(4)}
+                      </div>
                     </div>
                   </div>
 

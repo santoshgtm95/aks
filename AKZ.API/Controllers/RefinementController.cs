@@ -37,7 +37,6 @@ public class RefinementController : ControllerBase
             .Include(p => p.ProcessingRecord)
                 .ThenInclude(r => r.Product)
                     .ThenInclude(pr => pr.Warehouse)
-            .Include(p => p.Purifier)
             .Where(p => p.DeleteFlg == 0)
             .Where(p => warehouseId == null || p.ProcessingRecord.Product.WarehouseId == warehouseId)
             .OrderByDescending(p => p.Date)
@@ -59,11 +58,11 @@ public class RefinementController : ControllerBase
                 .Where(h => h.PurifiedRecordId == p.Id)
                 .Sum(h => h.Count);
 
-            int actualRemaining = p.RemainingCount - used;
+            double actualRemaining = p.RemainingCount - used;
             if (actualRemaining <= 0) continue;
 
-            decimal unitWeight = p.Count > 0 ? p.Weight / p.Count : 0;
-            decimal remainingWeight = actualRemaining * unitWeight;
+            decimal unitWeight = (decimal)p.Count > 0 ? p.Weight / (decimal)p.Count : 0;
+            decimal remainingWeight = (decimal)actualRemaining * unitWeight;
 
             string warehouseName = p.ProcessingRecord.Product.Warehouse?.Name ?? "";
             if (string.IsNullOrEmpty(warehouseName) && p.ProcessingRecord.Product.WarehouseId.HasValue)
@@ -100,7 +99,7 @@ public class RefinementController : ControllerBase
                 .ThenInclude(p => p.ProcessingRecord)
                     .ThenInclude(pr => pr.Product)
                         .ThenInclude(prod => prod.Warehouse)
-            .Include(r => r.Purifier)
+            .Include(r => r.RefinementWorker)
             .Include(r => r.RefinementRecords)
             .Where(r => r.DeleteFlg == 0)
             .Where(r => warehouseId == null || r.PurifiedRecord.ProcessingRecord.Product.WarehouseId == warehouseId)
@@ -119,8 +118,8 @@ public class RefinementController : ControllerBase
             decimal remainingWeight = totalAssigned - totalConsumed;
             if (remainingWeight <= 0.001m) continue;
 
-            int usedCount = r.RefinementRecords.Where(rr => rr.DeleteFlg == 0).Sum(rr => rr.Count);
-            int remainingCount = r.Count - usedCount;
+            double usedCount = r.RefinementRecords.Where(rr => rr.DeleteFlg == 0).Sum(rr => rr.Count);
+            double remainingCount = r.Count - usedCount;
 
             decimal usedWeight = r.RefinementRecords.Where(rr => rr.DeleteFlg == 0).Sum(rr => rr.Weight);
 
@@ -138,8 +137,8 @@ public class RefinementController : ControllerBase
                 RemainingCountAfter = r.RemainingCountAfter,
                 RemainingWeightAfter = r.RemainingWeightAfter,
                 WarehouseName = warehouseName,
-                PurifierId = r.PurifierId,
-                PurifierName = r.Purifier?.Name ?? ""
+                RefinementWorkerId = r.RefinementWorkerId,
+                RefinementWorkerName = r.RefinementWorker?.Name ?? ""
             });
         }
 
@@ -158,7 +157,7 @@ public class RefinementController : ControllerBase
                 .ThenInclude(p => p.ProcessingRecord)
                     .ThenInclude(pr => pr.Product)
                         .ThenInclude(prod => prod.Warehouse)
-            .Include(r => r.Purifier)
+            .Include(r => r.RefinementWorker)
             .Where(r => r.DeleteFlg == 0)
             .Where(r => warehouseId == null || r.PurifiedRecord.ProcessingRecord.Product.WarehouseId == warehouseId)
             .OrderByDescending(r => r.Date)
@@ -187,8 +186,8 @@ public class RefinementController : ControllerBase
                 Count = r.Count,
                 Weight = r.Weight,
                 WarehouseName = warehouseName,
-                PurifierId = r.PurifierId,
-                PurifierName = r.Purifier?.Name ?? "",
+                RefinementWorkerId = r.RefinementWorkerId,
+                RefinementWorkerName = r.RefinementWorker?.Name ?? "",
                 LostWeight = r.LostWeight,
                 SpoilageWeight = r.SpoilageWeight,
                 ReturnWeight = r.ReturnWeight
@@ -216,15 +215,15 @@ public class RefinementController : ControllerBase
             .Where(r => r.PurifiedRecordId == dto.PurifiedRecordId && r.DeleteFlg == 0)
             .SumAsync(r => r.Count);
 
-        decimal unitWeight = purifiedRecord.Count > 0 ? purifiedRecord.Weight / purifiedRecord.Count : 0;
-        int count = unitWeight > 0 ? (int)Math.Round(dto.Weight / unitWeight) : dto.Count;
+        decimal unitWeight = (decimal)purifiedRecord.Count > 0 ? purifiedRecord.Weight / (decimal)purifiedRecord.Count : 0;
+        double count = unitWeight > 0 ? (double)(dto.Weight / unitWeight) : dto.Count;
 
-        int actualRemaining = purifiedRecord.RemainingCount - usedSoFar;
+        double actualRemaining = purifiedRecord.RemainingCount - usedSoFar;
         if (count > actualRemaining)
             return BadRequest(new { message = $"လက်ကျန် မလုံလောက်ပါ (ကျန်: {actualRemaining})" });
 
-        int remCountAfter = actualRemaining - count;
-        decimal remWeightAfter = remCountAfter * unitWeight;
+        double remCountAfter = actualRemaining - count;
+        decimal remWeightAfter = (decimal)remCountAfter * unitWeight;
 
         var process = new RefinementProcess
         {
@@ -235,7 +234,7 @@ public class RefinementController : ControllerBase
             Weight = dto.Weight,
             RemainingCountAfter = remCountAfter,
             RemainingWeightAfter = remWeightAfter,
-            PurifierId = dto.PurifierId
+            RefinementWorkerId = dto.RefinementWorkerId
         };
 
         _context.RefinementProcesses.Add(process);
@@ -255,8 +254,8 @@ public class RefinementController : ControllerBase
             RemainingCountAfter = process.RemainingCountAfter,
             RemainingWeightAfter = process.RemainingWeightAfter,
             WarehouseName = warehouseName,
-            PurifierId = process.PurifierId,
-            PurifierName = ""
+            RefinementWorkerId = process.RefinementWorkerId,
+            RefinementWorkerName = ""
         });
     }
 
@@ -271,10 +270,10 @@ public class RefinementController : ControllerBase
 
         if (process == null) return NotFound();
 
-        decimal unitWeight = process.PurifiedRecord.Count > 0
-            ? process.PurifiedRecord.Weight / process.PurifiedRecord.Count
+        decimal unitWeight = (decimal)process.PurifiedRecord.Count > 0
+            ? process.PurifiedRecord.Weight / (decimal)process.PurifiedRecord.Count
             : 0;
-        int count = unitWeight > 0 ? (int)Math.Round(dto.Weight / unitWeight) : dto.Count;
+        double count = unitWeight > 0 ? (double)(dto.Weight / unitWeight) : dto.Count;
 
         var refinementRecord = new RefinementRecord
         {
@@ -288,7 +287,7 @@ public class RefinementController : ControllerBase
             ReturnWeight = dto.ReturnWeight,
             RemainingCount = count,
             RemainingWeight = dto.Weight,
-            PurifierId = dto.PurifierId,
+            RefinementWorkerId = dto.RefinementWorkerId,
             RefinementProcessId = id
         };
         _context.RefinementRecords.Add(refinementRecord);
@@ -328,10 +327,10 @@ public class RefinementController : ControllerBase
 
         if (record == null) return NotFound();
 
-        decimal unitWeight = record.PurifiedRecord.Count > 0
-            ? record.PurifiedRecord.Weight / record.PurifiedRecord.Count
+        decimal unitWeight = (decimal)record.PurifiedRecord.Count > 0
+            ? record.PurifiedRecord.Weight / (decimal)record.PurifiedRecord.Count
             : 0;
-        int count = unitWeight > 0 ? (int)Math.Round(dto.Weight / unitWeight) : dto.Count;
+        double count = unitWeight > 0 ? (double)(dto.Weight / unitWeight) : dto.Count;
 
         record.Date = dto.Date.Date.Add(DateTime.UtcNow.AddHours(6.5).TimeOfDay);
         record.Count = count;
@@ -341,7 +340,7 @@ public class RefinementController : ControllerBase
         record.ReturnWeight = dto.ReturnWeight;
         record.RemainingCount = count;
         record.RemainingWeight = dto.Weight;
-        record.PurifierId = dto.PurifierId;
+        record.RefinementWorkerId = dto.RefinementWorkerId;
 
         // Sync process if exists
         if (record.RefinementProcessId.HasValue)
@@ -352,7 +351,7 @@ public class RefinementController : ControllerBase
                 process.Date = record.Date;
                 process.Count = count;
                 process.Weight = dto.Weight;
-                process.PurifierId = dto.PurifierId;
+                process.RefinementWorkerId = dto.RefinementWorkerId;
             }
         }
 

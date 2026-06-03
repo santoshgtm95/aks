@@ -4,16 +4,19 @@ using AKZ.API.Data;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 #nullable disable
 
-namespace AKZ.API.Migrations
+namespace AKZ.API.Data.Migrations
 {
     [DbContext(typeof(AKZDbContext))]
-    partial class AKZDbContextModelSnapshot : ModelSnapshot
+    [Migration("20260603074134_AddLedgerTables")]
+    partial class AddLedgerTables
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -50,10 +53,6 @@ namespace AKZ.API.Migrations
                         .HasColumnType("int");
 
                     b.Property<string>("Description")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<string>("LedgerName")
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
 
@@ -100,9 +99,6 @@ namespace AKZ.API.Migrations
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
 
-                    b.Property<int?>("ProductId")
-                        .HasColumnType("int");
-
                     b.Property<string>("UpdateBy")
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
@@ -113,8 +109,6 @@ namespace AKZ.API.Migrations
                     b.HasKey("Id");
 
                     b.HasIndex("LedgerId");
-
-                    b.HasIndex("ProductId");
 
                     b.ToTable("LedgerMarkers");
                 });
@@ -650,7 +644,7 @@ namespace AKZ.API.Migrations
                     b.Property<int>("PurifiedRecordId")
                         .HasColumnType("int");
 
-                    b.Property<int?>("RefinementWorkerId")
+                    b.Property<int?>("PurifierId")
                         .HasColumnType("int");
 
                     b.Property<double>("RemainingCountAfter")
@@ -673,7 +667,7 @@ namespace AKZ.API.Migrations
 
                     b.HasIndex("PurifiedRecordId");
 
-                    b.HasIndex("RefinementWorkerId");
+                    b.HasIndex("PurifierId");
 
                     b.ToTable("RefinementProcesses");
                 });
@@ -718,10 +712,10 @@ namespace AKZ.API.Migrations
                     b.Property<int>("PurifiedRecordId")
                         .HasColumnType("int");
 
-                    b.Property<int?>("RefinementProcessId")
+                    b.Property<int?>("PurifierId")
                         .HasColumnType("int");
 
-                    b.Property<int?>("RefinementWorkerId")
+                    b.Property<int?>("RefinementProcessId")
                         .HasColumnType("int");
 
                     b.Property<double>("RemainingCount")
@@ -750,9 +744,9 @@ namespace AKZ.API.Migrations
 
                     b.HasIndex("PurifiedRecordId");
 
-                    b.HasIndex("RefinementProcessId");
+                    b.HasIndex("PurifierId");
 
-                    b.HasIndex("RefinementWorkerId");
+                    b.HasIndex("RefinementProcessId");
 
                     b.ToTable("RefinementRecords");
                 });
@@ -1428,13 +1422,7 @@ namespace AKZ.API.Migrations
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
-                    b.HasOne("AKZ.API.Models.Product", "Product")
-                        .WithMany()
-                        .HasForeignKey("ProductId");
-
                     b.Navigation("Ledger");
-
-                    b.Navigation("Product");
                 });
 
             modelBuilder.Entity("AKZ.API.Models.ProcessingRecord", b =>
@@ -1518,14 +1506,14 @@ namespace AKZ.API.Migrations
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
 
-                    b.HasOne("AKZ.API.Models.RefinementWorker", "RefinementWorker")
+                    b.HasOne("AKZ.API.Models.Purifier", "Purifier")
                         .WithMany()
-                        .HasForeignKey("RefinementWorkerId")
+                        .HasForeignKey("PurifierId")
                         .OnDelete(DeleteBehavior.Restrict);
 
                     b.Navigation("PurifiedRecord");
 
-                    b.Navigation("RefinementWorker");
+                    b.Navigation("Purifier");
                 });
 
             modelBuilder.Entity("AKZ.API.Models.RefinementRecord", b =>
@@ -1536,21 +1524,21 @@ namespace AKZ.API.Migrations
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
 
+                    b.HasOne("AKZ.API.Models.Purifier", "Purifier")
+                        .WithMany()
+                        .HasForeignKey("PurifierId")
+                        .OnDelete(DeleteBehavior.Restrict);
+
                     b.HasOne("AKZ.API.Models.RefinementProcess", "RefinementProcess")
                         .WithMany("RefinementRecords")
                         .HasForeignKey("RefinementProcessId")
                         .OnDelete(DeleteBehavior.Restrict);
 
-                    b.HasOne("AKZ.API.Models.RefinementWorker", "RefinementWorker")
-                        .WithMany()
-                        .HasForeignKey("RefinementWorkerId")
-                        .OnDelete(DeleteBehavior.Restrict);
-
                     b.Navigation("PurifiedRecord");
 
-                    b.Navigation("RefinementProcess");
+                    b.Navigation("Purifier");
 
-                    b.Navigation("RefinementWorker");
+                    b.Navigation("RefinementProcess");
                 });
 
             modelBuilder.Entity("AKZ.API.Models.RefinementWorker", b =>

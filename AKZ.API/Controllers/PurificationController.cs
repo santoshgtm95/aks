@@ -118,7 +118,7 @@ public class PurificationController : ControllerBase
 
         foreach (var p in processes)
         {
-            int remainingCount = p.PurifyCount - p.PurifiedRecords.Where(pr => pr.DeleteFlg == 0).Sum(pr => pr.Count);
+            double remainingCount = p.PurifyCount - p.PurifiedRecords.Where(pr => pr.DeleteFlg == 0).Sum(pr => pr.Count);
             
             // Only show records that still have balance to be registered
             if (remainingCount <= 0) continue;
@@ -208,7 +208,7 @@ public class PurificationController : ControllerBase
 
         if (record == null) return BadRequest(new { message = "Processing record not found" });
 
-        decimal purifyWeight = dto.PurifyCount * record.UnitWeight;
+        decimal purifyWeight = (decimal)dto.PurifyCount * record.UnitWeight;
         double remCount = 0;
         decimal remWeight = 0;
 
@@ -280,7 +280,7 @@ public class PurificationController : ControllerBase
             .FirstOrDefaultAsync(p => p.PurificationProcessId == id);
 
         decimal unitWeight = process.ProcessingRecord.UnitWeight;
-        decimal newWeight = dto.PurifyCount * unitWeight;
+        decimal newWeight = (decimal)dto.PurifyCount * unitWeight;
 
         if (purifiedRecord == null)
         {
@@ -369,7 +369,7 @@ public class PurificationController : ControllerBase
 
         RevertInventory(procRecord, record.Category, record.Count, unitWeight);
 
-        decimal newWeight = dto.PurifyCount * unitWeight;
+        decimal newWeight = (decimal)dto.PurifyCount * unitWeight;
         double remCount = 0;
         decimal remWeight = 0;
 
@@ -428,9 +428,9 @@ public class PurificationController : ControllerBase
         return NoContent();
     }
 
-    private void RevertInventory(ProcessingRecord record, string category, int count, decimal unitWeight)
+    private void RevertInventory(ProcessingRecord record, string category, double count, decimal unitWeight)
     {
-        decimal weight = count * unitWeight;
+        decimal weight = (decimal)count * unitWeight;
         switch (category.ToLower())
         {
             case "red": record.RemRedCount += count; record.RemRedWeight += weight; break;
@@ -445,7 +445,7 @@ public class PurificationController : ControllerBase
         }
     }
 
-    private bool ApplyInventory(ProcessingRecord record, string category, int count, decimal weight, out double remCount, out decimal remWeight)
+    private bool ApplyInventory(ProcessingRecord record, string category, double count, decimal weight, out double remCount, out decimal remWeight)
     {
         remCount = 0;
         remWeight = 0;

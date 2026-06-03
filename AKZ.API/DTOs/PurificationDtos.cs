@@ -8,7 +8,7 @@ public class PurificationProcessDto
     public string ProductMarker { get; set; } = string.Empty;
     public string WarehouseName { get; set; } = string.Empty;
     public string Category { get; set; } = string.Empty;
-    public int PurifyCount { get; set; }
+    public double PurifyCount { get; set; }
     public decimal PurifyWeight { get; set; }
     public double RemainingCountAfter { get; set; }
     public decimal RemainingWeightAfter { get; set; }
@@ -25,7 +25,7 @@ public class PurifiedRecordDto
     public string ProductMarker { get; set; } = string.Empty;
     public string WarehouseName { get; set; } = string.Empty;
     public string Category { get; set; } = string.Empty;
-    public int Count { get; set; }
+    public double Count { get; set; }
     public decimal Weight { get; set; }
     public int? PurifierId { get; set; }
     public string PurifierName { get; set; } = string.Empty;
@@ -37,7 +37,7 @@ public class CreatePurificationProcessDto
     public DateTime Date { get; set; }
     public int ProcessingRecordId { get; set; }
     public string Category { get; set; } = string.Empty;
-    public int PurifyCount { get; set; }
+    public double PurifyCount { get; set; }
     public int? PurifierId { get; set; }
     public bool IsWeightFull { get; set; }
 }

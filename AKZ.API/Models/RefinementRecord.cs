@@ -20,15 +20,15 @@ public class RefinementRecord : BaseEntity
     [Required]
     public string Category { get; set; } = string.Empty;
 
-    public int Count { get; set; }
+    public double Count { get; set; }
 
     [Column(TypeName = "decimal(18,4)")]
     public decimal Weight { get; set; }
 
-    public int? PurifierId { get; set; }
+    public int? RefinementWorkerId { get; set; }
 
-    [ForeignKey("PurifierId")]
-    public Purifier? Purifier { get; set; }
+    [ForeignKey("RefinementWorkerId")]
+    public RefinementWorker? RefinementWorker { get; set; }
 
     [Column(TypeName = "decimal(18,4)")]
     public decimal LostWeight { get; set; }
@@ -45,7 +45,7 @@ public class RefinementRecord : BaseEntity
     public RefinementProcess? RefinementProcess { get; set; }
 
     // Remaining stock after this record for further downstream use
-    public int RemainingCount { get; set; }
+    public double RemainingCount { get; set; }
 
     [Column(TypeName = "decimal(18,4)")]
     public decimal RemainingWeight { get; set; }

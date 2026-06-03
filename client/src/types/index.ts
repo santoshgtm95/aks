@@ -337,8 +337,8 @@ export interface RefinementProcess {
   remainingCountAfter: number;
   remainingWeightAfter: number;
   warehouseName?: string;
-  purifierId?: number;
-  purifierName?: string;
+  refinementWorkerId?: number;
+  refinementWorkerName?: string;
 }
 
 export interface RefinementRecord {
@@ -353,8 +353,8 @@ export interface RefinementRecord {
   spoilageWeight: number;
   returnWeight: number;
   warehouseName?: string;
-  purifierId?: number;
-  purifierName?: string;
+  refinementWorkerId?: number;
+  refinementWorkerName?: string;
 }
 
 export interface CreateRefinementProcessDto {
@@ -366,7 +366,7 @@ export interface CreateRefinementProcessDto {
   lostWeight: number;
   spoilageWeight?: number;
   returnWeight?: number;
-  purifierId?: number;
+  refinementWorkerId?: number;
 }
 
 export interface SingleDoubleDrawnRecord {
@@ -415,6 +415,26 @@ export interface SingleDoubleDrawnRecord {
   returnSize: number;
   priceSpoilageSize: number;
   priceReturnSize: number;
+}
+
+export interface LedgerDto {
+  id: number;
+  ledgerName: string;
+  date: string;
+  description: string;
+  markers: LedgerMarkerDto[];
+}
+
+export interface CreateLedgerDto {
+  ledgerName: string;
+  date: string;
+  description: string;
+  markers: LedgerMarkerDto[];
+}
+
+export interface LedgerMarkerDto {
+  productId?: number;
+  markerName: string;
 }
 
 export interface CreateSingleDoubleDrawnRecordDto {

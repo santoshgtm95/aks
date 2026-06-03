@@ -35,6 +35,8 @@ import type {
   CreateSingleDoubleDrawnRecordDto,
   SemiExportRecord,
   UpsertSemiExportRecordDto,
+  LedgerDto,
+  CreateLedgerDto,
 } from "../types";
 
 const API_BASE_URL = "/api";
@@ -423,6 +425,20 @@ export const semiExportAPI = {
   },
   delete: async (id: number): Promise<void> => {
     await api.delete(`/semiexport/${id}`);
+  },
+};
+
+export const ledgerAPI = {
+  getAll: async (): Promise<LedgerDto[]> => {
+    const response = await api.get<LedgerDto[]>("/ledger");
+    return response.data;
+  },
+  create: async (data: CreateLedgerDto): Promise<LedgerDto> => {
+    const response = await api.post<LedgerDto>("/ledger", data);
+    return response.data;
+  },
+  delete: async (id: number): Promise<void> => {
+    await api.delete(`/ledger/${id}`);
   },
 };
 

@@ -20,7 +20,7 @@ public class PurificationProcess : BaseEntity
     [Required]
     public string Category { get; set; } = string.Empty;
 
-    public int PurifyCount { get; set; }
+    public double PurifyCount { get; set; }
 
     [Column(TypeName = "decimal(18,4)")]
     public decimal PurifyWeight { get; set; }
