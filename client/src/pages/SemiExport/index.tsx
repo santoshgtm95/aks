@@ -32,6 +32,7 @@ import {
   FilePlus,
   X,
   Layers,
+  Clock,
 } from "lucide-react";
 import { formatDateTime } from "../../utils/format";
 import "./index.css";
@@ -70,6 +71,10 @@ const SemiExport: React.FC = () => {
   const [ledgerDescription, setLedgerDescription] = useState<string>("");
   const [activeTab, setActiveTab] = useState<"processing" | "history">(
     "processing",
+  );
+  const [showHistoryModal, setShowHistoryModal] = useState(false);
+  const [prevSelectedMarker, setPrevSelectedMarker] = useState<string | null>(
+    null,
   );
 
   const [expandedRecords, setExpandedRecords] = useState<
@@ -861,6 +866,12 @@ const SemiExport: React.FC = () => {
     }
   };
 
+  const closeHistoryModal = () => {
+    setShowHistoryModal(false);
+    setSelectedMarker(prevSelectedMarker);
+    setPrevSelectedMarker(null);
+  };
+
   if (loading) {
     return (
       <div
@@ -871,6 +882,1284 @@ const SemiExport: React.FC = () => {
       </div>
     );
   }
+
+  const renderMarkerDetails = (isModal = false) => {
+    if (!selectedMarker || selectedRecords.length === 0 || !selectedMarkerStats) {
+      return null;
+    }
+    return (
+      <div
+        style={{ display: "flex", flexDirection: "column", height: "100%", gap: "24px" }}
+      >
+        {/* Header details */}
+        {!isModal && (
+          <div
+            className="main-header"
+            style={{
+              display: "flex",
+              justifyContent: "space-between",
+              alignItems: "flex-start",
+              marginBottom: "24px",
+              paddingBottom: "16px",
+              borderBottom: "2px solid #f1f5f9",
+            }}
+          >
+            <div
+              className="header-title"
+              style={{ display: "flex", alignItems: "center", gap: "16px" }}
+            >
+              <DollarSign size={32} style={{ color: "#2563eb" }} />
+              <div>
+                <h1
+                  style={{
+                    fontSize: "26px",
+                    fontWeight: "800",
+                    margin: 0,
+                    color: "#0f172a",
+                  }}
+                >
+                  Semi Export
+                </h1>
+                <p
+                  className="header-subtitle"
+                  style={{
+                    fontSize: "13.5px",
+                    color: "#64748b",
+                    margin: "6px 0 0 0",
+                    fontWeight: "500",
+                  }}
+                >
+                  Marker: <strong>{selectedMarker}</strong> • Warehouse(s):{" "}
+                  <strong>
+                    {Array.from(
+                      new Set(
+                        selectedRecords
+                          .map((r) => r.refinementRecordWarehouseName)
+                          .filter(Boolean),
+                      ),
+                    ).join(", ") || "---"}
+                  </strong>{" "}
+                </p>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Stats Dashboard Grid */}
+        <div className="stats-grid">
+          {/* 1. Original Weight */}
+          <div className="stat-card">
+            <div className="stat-header">
+              <span className="stat-title">Original Weight</span>
+              <div
+                className="stat-icon-wrapper"
+                style={{ backgroundColor: "#eff6ff", color: "#2563eb" }}
+              >
+                <Scale size={16} />
+              </div>
+            </div>
+            <div>
+              <h3 className="stat-value">
+                {selectedMarkerStats.originalWeightViss.toFixed(3)}{" "}
+                <span
+                  style={{
+                    fontSize: "13px",
+                    fontWeight: 600,
+                    color: "#64748b",
+                  }}
+                >
+                  viss
+                </span>
+              </h3>
+              <span className="stat-footer">
+                = {selectedMarkerStats.originalWeightKg.toFixed(3)} kg
+              </span>
+            </div>
+          </div>
+
+          {/* 2. Weight Sold in Raw Material Sales */}
+          <div className="stat-card">
+            <div className="stat-header">
+              <span className="stat-title">Weight Sold</span>
+              <div
+                className="stat-icon-wrapper"
+                style={{ backgroundColor: "#fef2f2", color: "#ef4444" }}
+              >
+                <Scale size={16} />
+              </div>
+            </div>
+            <div>
+              <h3 className="stat-value">
+                {selectedMarkerStats.weightSoldViss.toFixed(3)}{" "}
+                <span
+                  style={{
+                    fontSize: "13px",
+                    fontWeight: 600,
+                    color: "#64748b",
+                  }}
+                >
+                  viss
+                </span>
+              </h3>
+              <span className="stat-footer">
+                = {selectedMarkerStats.weightSoldKg.toFixed(3)} kg ·
+                <br /> Raw Material Sales
+              </span>
+            </div>
+          </div>
+
+          {/* 3. Remaining Weight after Sales */}
+          <div className="stat-card">
+            <div className="stat-header">
+              <span className="stat-title">Remaining Weight</span>
+              <div
+                className="stat-icon-wrapper"
+                style={{ backgroundColor: "#ecfdf5", color: "#10b981" }}
+              >
+                <Scale size={16} />
+              </div>
+            </div>
+            <div>
+              <h3 className="stat-value">
+                {selectedMarkerStats.remainingAfterSalesViss.toFixed(3)}{" "}
+                <span
+                  style={{
+                    fontSize: "13px",
+                    fontWeight: 600,
+                    color: "#64748b",
+                  }}
+                >
+                  viss
+                </span>
+              </h3>
+              <span className="stat-footer">
+                = {selectedMarkerStats.remainingAfterSalesKg.toFixed(3)} kg ·{" "}
+                <br /> after Raw Material Sales
+              </span>
+            </div>
+          </div>
+
+          {/* 3b. Remaining Unsorted in Inventory */}
+          {selectedMarkerStats.remainingUnsorted >= 0.001 && (
+            <div className="stat-card">
+              <div className="stat-header">
+                <span className="stat-title">Remaining Unsorted</span>
+                <div
+                  className="stat-icon-wrapper"
+                  style={{ backgroundColor: "#f0f9ff", color: "#0284c7" }}
+                >
+                  <Scale size={16} />
+                </div>
+              </div>
+              <div>
+                <h3 className="stat-value">
+                  {selectedMarkerStats.remainingUnsorted.toFixed(3)} viss
+                </h3>
+                <span className="stat-footer">
+                  (
+                  <strong>
+                    {selectedMarkerStats.remainingUnsortedPercent.toFixed(2)}%
+                  </strong>
+                  ) remaining unsorted
+                </span>
+              </div>
+            </div>
+          )}
+
+          {/* 4. Sum of Lost Weight of all colors (viss) */}
+          <div className="stat-card">
+            <div className="stat-header">
+              <span className="stat-title">Sum of Lost Weight</span>
+              <div
+                className="stat-icon-wrapper"
+                style={{ backgroundColor: "#fffbeb", color: "#d97706" }}
+              >
+                <AlertTriangle size={16} />
+              </div>
+            </div>
+            <div>
+              <h3 className="stat-value">
+                {selectedMarkerStats.sumLostWeight.toFixed(3)} viss
+              </h3>
+              <span className="stat-footer">
+                (
+                <strong>
+                  {selectedMarkerStats.sumLostWeightPercent.toFixed(2)}%
+                </strong>
+                ) across all colors
+              </span>
+            </div>
+          </div>
+
+          {/* 5. Sum of Spoilage Weight of all colors */}
+          <div className="stat-card">
+            <div className="stat-header">
+              <span className="stat-title">Sum of Spoilage Weight</span>
+              <div
+                className="stat-icon-wrapper"
+                style={{ backgroundColor: "#faf5ff", color: "#8b5cf6" }}
+              >
+                <AlertTriangle size={16} />
+              </div>
+            </div>
+            <div>
+              <h3 className="stat-value">
+                {selectedMarkerStats.sumSpoilageWeight.toFixed(3)} viss
+              </h3>
+              <span className="stat-footer">
+                (
+                <strong>
+                  {selectedMarkerStats.sumSpoilageWeightPercent.toFixed(2)}%
+                </strong>
+                ) (incl. 2" Spoil)
+              </span>
+            </div>
+          </div>
+
+          {/* 6. Sum of Return Weight of all colors */}
+          <div className="stat-card">
+            <div className="stat-header">
+              <span className="stat-title">Sum of Return Weight</span>
+              <div
+                className="stat-icon-wrapper"
+                style={{ backgroundColor: "#fdf4ff", color: "#c026d3" }}
+              >
+                <RotateCcw size={16} />
+              </div>
+            </div>
+            <div>
+              <h3 className="stat-value">
+                {selectedMarkerStats.sumReturnWeight.toFixed(3)} viss
+              </h3>
+              <span className="stat-footer">
+                (
+                <strong>
+                  {selectedMarkerStats.sumReturnWeightPercent.toFixed(2)}%
+                </strong>
+                ) (incl. 2" Return)
+              </span>
+            </div>
+          </div>
+
+          {/* 3c. Sum of Bar to 10B Sizes (Total Export Weight) */}
+          <div className="stat-card">
+            <div className="stat-header">
+              <span className="stat-title">Bar to 10B Sizes</span>
+              <div
+                className="stat-icon-wrapper"
+                style={{ backgroundColor: "#fdf2f8", color: "#db2777" }}
+              >
+                <Layers size={16} />
+              </div>
+            </div>
+            <div
+              style={{
+                display: "flex",
+                justifyContent: "space-between",
+                alignItems: "flex-end",
+              }}
+            >
+              <div>
+                <h3 className="stat-value">
+                  {selectedMarkerStats.sumBto10Weight.toFixed(3)} viss
+                </h3>
+                <span className="stat-footer">
+                  (
+                  <strong>
+                    {selectedMarkerStats.averageBto10.toFixed(2)}%
+                  </strong>
+                  ) total export ratio
+                </span>
+              </div>
+            </div>
+          </div>
+          {/* 7. Two Inches & Ten Size */}
+          <div className="stat-card">
+            <div className="stat-header">
+              <span className="stat-title">Two Inches Area</span>
+              <div
+                className="stat-icon-wrapper"
+                style={{ backgroundColor: "#f0fdf4", color: "#15803d" }}
+              >
+                <Package size={16} />
+              </div>
+            </div>
+            <div>
+              <h3 className="stat-value">
+                {selectedMarkerStats.sumTwoInchesWeight.toFixed(3)} viss
+              </h3>
+              <span className="stat-footer">
+                (
+                <strong>
+                  {(
+                    (selectedMarkerStats.sumTwoInchesWeight /
+                      (selectedMarkerStats.remainingAfterSalesViss || 1)) *
+                    100
+                  ).toFixed(2)}
+                  %
+                </strong>
+                ) (Size 6 to 10)
+              </span>
+            </div>
+          </div>
+        </div>
+
+        {/* Marker-Level Global Save Section */}
+        <div
+          style={{
+            background: "#f8fafc",
+            padding: "24px",
+            borderRadius: "16px",
+            border: "1.5px solid #e2e8f0",
+            boxShadow: "0 4px 6px rgba(0,0,0,0.02)",
+          }}
+        >
+          <h3
+            style={{
+              fontSize: "16px",
+              fontWeight: "700",
+              color: "#0f172a",
+              marginBottom: "16px",
+              display: "flex",
+              alignItems: "center",
+              gap: "8px",
+            }}
+          >
+            <Sparkles size={18} color="#2563eb" /> Record Sales Details for Marker
+          </h3>
+
+          <div
+            style={{
+              display: "flex",
+              flexDirection: "column",
+              gap: "20px",
+            }}
+          >
+            <div
+              style={{
+                display: "flex",
+                alignItems: "center",
+                gap: "16px",
+              }}
+            >
+              <div
+                style={{
+                  display: "flex",
+                  alignItems: "center",
+                  gap: "8px",
+                }}
+              >
+                <DollarSign size={18} style={{ color: "#2563eb" }} />
+                <span
+                  style={{
+                    fontSize: "13.5px",
+                    fontWeight: "700",
+                    color: "#334155",
+                  }}
+                >
+                  WORKER FEES (SUM):
+                </span>
+              </div>
+              <input
+                type="number"
+                value={markerWorkerFees}
+                onChange={(e) => setMarkerWorkerFees(e.target.value)}
+                placeholder="0.00"
+                disabled={isModal}
+                style={{
+                  padding: "8px 12px",
+                  borderRadius: "8px",
+                  border: "1.5px solid #cbd5e1",
+                  fontSize: "14px",
+                  width: "200px",
+                  fontWeight: "600",
+                  backgroundColor: isModal ? "#f1f5f9" : "white",
+                  cursor: isModal ? "not-allowed" : "text",
+                }}
+              />
+            </div>
+
+            <div style={{ display: "flex", flexDirection: "column" }}>
+              <label
+                style={{
+                  display: "flex",
+                  alignItems: "center",
+                  gap: "8px",
+                  fontSize: "13.5px",
+                  fontWeight: "700",
+                  color: "#334155",
+                  marginBottom: "6px",
+                }}
+              >
+                <FileText size={15} /> REMARK:
+              </label>
+              <textarea
+                value={markerRemark}
+                onChange={(e) => setMarkerRemark(e.target.value)}
+                placeholder={isModal ? "No remark" : "Enter remark for this marker..."}
+                rows={3}
+                disabled={isModal}
+                style={{
+                  width: "100%",
+                  padding: "10px 14px",
+                  borderRadius: "10px",
+                  border: "1.5px solid #cbd5e1",
+                  fontSize: "14px",
+                  outline: "none",
+                  resize: isModal ? "none" : "vertical",
+                  backgroundColor: isModal ? "#f1f5f9" : "white",
+                  cursor: isModal ? "not-allowed" : "text",
+                }}
+              />
+            </div>
+
+            {!isModal && (
+              <div style={{ display: "flex", justifyContent: "flex-end" }}>
+                <button
+                  type="button"
+                  onClick={handleSaveMarkerData}
+                  className="btn btn-primary"
+                  disabled={saving}
+                  style={{
+                    display: "flex",
+                    alignItems: "center",
+                    gap: "10px",
+                    padding: "12px 32px",
+                    borderRadius: "12px",
+                    fontWeight: "800",
+                    fontSize: "15px",
+                    background: "#0f172a",
+                    color: "white",
+                    boxShadow: "0 4px 12px rgba(15, 23, 42, 0.2)",
+                    transition: "all 0.2s",
+                  }}
+                >
+                  <CheckCircle size={20} />
+                  {saving ? "Saving..." : "Save Marker Records"}
+                </button>
+              </div>
+            )}
+          </div>
+        </div>
+
+        {/* Grand Total Amount Summary Card */}
+        <div
+          style={{
+            background: "#f8fafc",
+            borderRadius: "16px",
+            padding: "24px 32px",
+            display: "flex",
+            justifyContent: "space-between",
+            alignItems: "center",
+            boxShadow: "0 4px 6px rgba(0,0,0,0.02)",
+            border: "1.5px solid #e2e8f0",
+            marginTop: "24px",
+          }}
+        >
+          <div style={{ flex: 1 }}>
+            <h4
+              style={{
+                margin: 0,
+                color: "#64748b",
+                fontSize: "14px",
+                textTransform: "uppercase",
+                letterSpacing: "0.1em",
+                fontWeight: 800,
+              }}
+            >
+              Inventory Reference
+            </h4>
+            <div
+              style={{
+                marginTop: "12px",
+                display: "grid",
+                gridTemplateColumns: "1fr 1fr",
+                gap: "24px",
+              }}
+            >
+              <div>
+                <p
+                  style={{
+                    margin: 0,
+                    fontSize: "12px",
+                    color: "#94a3b8",
+                    fontWeight: 700,
+                  }}
+                >
+                  INVENTORY PRICE
+                </p>
+                <div
+                  style={{
+                    display: "flex",
+                    gap: "12px",
+                    marginTop: "2px",
+                  }}
+                >
+                  <div>
+                    <p
+                      style={{
+                        margin: 0,
+                        fontSize: "16px",
+                        color: "#1e293b",
+                        fontWeight: 600,
+                      }}
+                    >
+                      {selectedMarkerStats.productPriceViss.toLocaleString(
+                        undefined,
+                        {
+                          minimumFractionDigits: 1,
+                          maximumFractionDigits: 1,
+                        },
+                      )}{" "}
+                      <span style={{ fontSize: "12px", color: "#64748b" }}>
+                        MMK/viss
+                      </span>
+                    </p>
+                  </div>
+                  <div
+                    style={{
+                      width: "1.5px",
+                      height: "16px",
+                      backgroundColor: "#e2e8f0",
+                      alignSelf: "center",
+                    }}
+                  />
+                  <div>
+                    <p
+                      style={{
+                        margin: 0,
+                        fontSize: "16px",
+                        color: "#1e293b",
+                        fontWeight: 600,
+                      }}
+                    >
+                      {selectedMarkerStats.productPriceKg.toLocaleString(
+                        undefined,
+                        {
+                          minimumFractionDigits: 1,
+                          maximumFractionDigits: 1,
+                        },
+                      )}{" "}
+                      <span style={{ fontSize: "12px", color: "#64748b" }}>
+                        MMK/kg
+                      </span>
+                    </p>
+                  </div>
+                </div>
+              </div>
+              <div>
+                <p
+                  style={{
+                    margin: 0,
+                    fontSize: "12px",
+                    color: "#94a3b8",
+                    fontWeight: 700,
+                  }}
+                >
+                  ORIGINAL TOTAL AMOUNT
+                </p>
+                <p
+                  style={{
+                    margin: "2px 0 0 0",
+                    fontSize: "17px",
+                    color: "#1e293b",
+                    fontWeight: 600,
+                  }}
+                >
+                  {selectedMarkerStats.originalTotalAmount.toLocaleString(
+                    undefined,
+                    {
+                      minimumFractionDigits: 1,
+                      maximumFractionDigits: 1,
+                    },
+                  )}{" "}
+                  <span style={{ fontSize: "13px" }}>MMK</span>
+                </p>
+              </div>
+            </div>
+          </div>
+
+          <div
+            style={{
+              textAlign: "right",
+              paddingLeft: "40px",
+              borderLeft: "1.5px solid #e2e8f0",
+              display: "flex",
+              flexDirection: "column",
+              gap: "10px",
+              minWidth: "320px",
+            }}
+          >
+            {/* 1. Total Marker Value in CNY */}
+            <div
+              style={{
+                display: "flex",
+                justifyContent: "space-between",
+                alignItems: "baseline",
+                gap: "16px",
+              }}
+            >
+              <span
+                style={{
+                  fontSize: "12px",
+                  fontWeight: 700,
+                  color: "#64748b",
+                  textTransform: "uppercase",
+                  letterSpacing: "0.05em",
+                }}
+              >
+                Total Marker Value (CNY)
+              </span>
+              <div>
+                <span
+                  style={{
+                    fontSize: "16px",
+                    fontWeight: "800",
+                    color: "#1e293b",
+                  }}
+                >
+                  {markerTotalAmount.toLocaleString(undefined, {
+                    minimumFractionDigits: 2,
+                    maximumFractionDigits: 2,
+                  })}
+                </span>
+                <span
+                  style={{
+                    fontSize: "11px",
+                    fontWeight: "700",
+                    color: "#64748b",
+                    marginLeft: "4px",
+                  }}
+                >
+                  CNY
+                </span>
+              </div>
+            </div>
+
+            {/* 2. Total Marker Value in MMK */}
+            {cnyToMmkRate !== null && (
+              <div
+                style={{
+                  display: "flex",
+                  justifyContent: "space-between",
+                  alignItems: "baseline",
+                  gap: "16px",
+                }}
+              >
+                <span
+                  style={{
+                    fontSize: "12px",
+                    fontWeight: 700,
+                    color: "#64748b",
+                    textTransform: "uppercase",
+                    letterSpacing: "0.05em",
+                  }}
+                >
+                  Total Marker Value (MMK)
+                </span>
+                <div>
+                  <span
+                    style={{
+                      fontSize: "16px",
+                      fontWeight: "800",
+                      color: "#475569",
+                    }}
+                  >
+                    {(markerTotalAmount * cnyToMmkRate).toLocaleString(
+                      undefined,
+                      {
+                        minimumFractionDigits: 2,
+                        maximumFractionDigits: 2,
+                      },
+                    )}
+                  </span>
+                  <span
+                    style={{
+                      fontSize: "11px",
+                      fontWeight: "700",
+                      color: "#64748b",
+                      marginLeft: "4px",
+                    }}
+                  >
+                    MMK
+                  </span>
+                </div>
+              </div>
+            )}
+
+            {/* Divider line */}
+            <div
+              style={{
+                height: "1px",
+                backgroundColor: "#e2e8f0",
+                margin: "2px 0",
+              }}
+            />
+
+            {/* 3. Grand Total Value (Total Marker Value in MMK + Worker Fees) */}
+            <div>
+              <h4
+                style={{
+                  margin: 0,
+                  color: "#64748b",
+                  fontSize: "11px",
+                  textTransform: "uppercase",
+                  letterSpacing: "0.1em",
+                  fontWeight: 800,
+                  textAlign: "right",
+                  marginBottom: "4px",
+                }}
+              >
+                Grand Total Value
+              </h4>
+              <div
+                style={{
+                  display: "flex",
+                  alignItems: "baseline",
+                  gap: "8px",
+                  justifyContent: "flex-end",
+                }}
+              >
+                <span
+                  style={{
+                    fontSize: "28px",
+                    fontWeight: "950",
+                    color: "#2563eb",
+                    letterSpacing: "-0.03em",
+                  }}
+                >
+                  {markerTotalAmountMmk !== null
+                    ? markerTotalAmountMmk.toLocaleString(undefined, {
+                        minimumFractionDigits: 2,
+                        maximumFractionDigits: 2,
+                      })
+                    : markerTotalAmount.toLocaleString(undefined, {
+                        minimumFractionDigits: 2,
+                        maximumFractionDigits: 2,
+                      })}
+                </span>
+                <span
+                  style={{
+                    fontSize: "14px",
+                    fontWeight: "800",
+                    color: "#64748b",
+                  }}
+                >
+                  MMK
+                </span>
+              </div>
+
+              {cnyToMmkRate !== null && (
+                <div
+                  style={{
+                    fontSize: "10px",
+                    color: "#94a3b8",
+                    marginTop: "2px",
+                  }}
+                >
+                  (Rate: 1 CNY = {cnyToMmkRate.toLocaleString()} MMK +{" "}
+                  {(parseFloat(markerWorkerFees) || 0).toLocaleString()} MMK Worker
+                  Fees)
+                </div>
+              )}
+            </div>
+
+            {financialComparison && (
+              <div
+                style={{
+                  marginTop: "8px",
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "flex-end",
+                  gap: "8px",
+                }}
+              >
+                <span
+                  style={{
+                    fontSize: "12px",
+                    color: "#64748b",
+                    fontWeight: 600,
+                  }}
+                >
+                  P&L:
+                </span>
+                <span
+                  style={{
+                    fontSize: "16px",
+                    fontWeight: "800",
+                    color:
+                      financialComparison.pnl <= 0
+                        ? "#059669"
+                        : "#dc2626",
+                  }}
+                >
+                  {financialComparison.pnl.toLocaleString(undefined, {
+                    maximumFractionDigits: 2,
+                  })}
+                </span>
+                <span
+                  style={{
+                    fontSize: "10px",
+                    color: "#94a3b8",
+                    fontWeight: 700,
+                  }}
+                >
+                  MMK
+                </span>
+              </div>
+            )}
+          </div>
+        </div>
+
+        {/* Records List */}
+        <div
+          style={{
+            display: "flex",
+            flexDirection: "column",
+            gap: "24px",
+            marginTop: "24px",
+          }}
+        >
+          {selectedRecords.map((record) => {
+            const calculations = recordCalculations[record.id];
+            const rowAmounts = recordAmounts[record.id];
+            const isExpanded = expandedRecords[record.id];
+            const isSaved = savedExports.some(
+              (x) => x.singleDoubleDrawnRecordId === record.id,
+            );
+
+            if (!calculations || !rowAmounts) return null;
+
+            return (
+              <div
+                key={record.id}
+                style={{
+                  background: "white",
+                  border: "1.5px solid #e2e8f0",
+                  borderRadius: "16px",
+                  overflow: "hidden",
+                  boxShadow: "0 4px 6px rgba(0, 0, 0, 0.02)",
+                }}
+              >
+                {/* Record Header */}
+                <div
+                  style={{
+                    padding: "16px 24px",
+                    background: "#f8fafc",
+                    borderBottom: "1.5px solid #e2e8f0",
+                    display: "flex",
+                    justifyContent: "space-between",
+                    alignItems: "center",
+                    cursor: "pointer",
+                  }}
+                  onClick={() => toggleRecordExpanded(record.id)}
+                >
+                  <div
+                    style={{
+                      display: "flex",
+                      alignItems: "center",
+                      gap: "12px",
+                    }}
+                  >
+                    <span
+                      className={`rf-badge category-${(record.refinementRecordCategory || "").toLowerCase().replace(".", "")}`}
+                      style={{ fontSize: "12px", padding: "4px 10px" }}
+                    >
+                      {record.refinementRecordCategory}
+                    </span>
+                    <span
+                      style={{
+                        fontSize: "14px",
+                        color: "#64748b",
+                        fontWeight: 600,
+                      }}
+                    >
+                      Sorted Weight:{" "}
+                      <strong style={{ color: "#0f172a" }}>
+                        {calculations.totalWeight.toFixed(3)}
+                      </strong>{" "}
+                      viss
+                    </span>
+                    <span
+                      style={{
+                        fontSize: "14px",
+                        color: "#64748b",
+                        fontWeight: 600,
+                      }}
+                    >
+                      • Date:{" "}
+                      <strong style={{ color: "#0f172a" }}>
+                        {new Date(record.date).toLocaleDateString()}
+                      </strong>
+                    </span>
+                    <span
+                      style={{
+                        fontSize: "13px",
+                        color: "#64748b",
+                        fontWeight: 600,
+                      }}
+                    >
+                      • Amount:{" "}
+                      <strong style={{ color: "#2563eb" }}>
+                        {rowAmounts.totalAmount.toLocaleString()}
+                      </strong>{" "}
+                      MMK
+                    </span>
+                  </div>
+                  <div
+                    style={{
+                      display: "flex",
+                      alignItems: "center",
+                      gap: "12px",
+                    }}
+                  >
+                    {isSaved && (
+                      <span
+                        style={{
+                          background: "#d1fae5",
+                          color: "#065f46",
+                          fontSize: "11px",
+                          padding: "4px 8px",
+                          borderRadius: "6px",
+                          fontWeight: "bold",
+                          display: "inline-flex",
+                          alignItems: "center",
+                          gap: "3px",
+                        }}
+                      >
+                        <CheckCircle size={12} /> Saved
+                      </span>
+                    )}
+                    {isExpanded ? (
+                      <ChevronUp size={20} />
+                    ) : (
+                      <ChevronDown size={20} />
+                    )}
+                  </div>
+                </div>
+
+                {isExpanded && (
+                  <div style={{ padding: "20px" }}>
+                    <div
+                      className="table-container"
+                      style={{
+                        border: "1.5px solid #e2e8f0",
+                        borderRadius: "12px",
+                        overflow: "hidden",
+                        background: "white",
+                      }}
+                    >
+                      <table
+                        className="table"
+                        style={{
+                          width: "100%",
+                          borderCollapse: "collapse",
+                          textAlign: "left",
+                          fontSize: "14px",
+                        }}
+                      >
+                        <thead>
+                          <tr
+                            style={{
+                              background: "#f8fafc",
+                              borderBottom: "1.5px solid #e2e8f0",
+                            }}
+                          >
+                            <th
+                              style={{
+                                padding: "10px 16px",
+                                fontWeight: "700",
+                                color: "#475569",
+                              }}
+                            >
+                              SIZE
+                            </th>
+                            <th
+                              style={{
+                                padding: "10px 16px",
+                                fontWeight: "700",
+                                color: "#475569",
+                                textAlign: "right",
+                              }}
+                            >
+                              WEIGHT (viss)
+                            </th>
+                            <th
+                              style={{
+                                padding: "10px 16px",
+                                fontWeight: "700",
+                                color: "#475569",
+                                textAlign: "right",
+                              }}
+                            >
+                              BUY PRICES
+                            </th>
+                            <th
+                              style={{
+                                padding: "10px 16px",
+                                fontWeight: "700",
+                                color: "#475569",
+                                textAlign: "right",
+                              }}
+                            >
+                              AMOUNT
+                            </th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {[
+                            {
+                              label: "B",
+                              w: calculations.wB,
+                              price: record.priceBar,
+                              amt: rowAmounts.amtB,
+                            },
+                            {
+                              label: "28",
+                              w: calculations.w28,
+                              price: record.price28,
+                              amt: rowAmounts.amt28,
+                            },
+                            {
+                              label: "26",
+                              w: calculations.w26,
+                              price: record.price26,
+                              amt: rowAmounts.amt26,
+                            },
+                            {
+                              label: "24",
+                              w: calculations.w24,
+                              price: record.price24,
+                              amt: rowAmounts.amt24,
+                            },
+                            {
+                              label: "22",
+                              w: calculations.w22,
+                              price: record.price22,
+                              amt: rowAmounts.amt22,
+                            },
+                            {
+                              label: "20",
+                              w: calculations.w20,
+                              price: record.price20,
+                              amt: rowAmounts.amt20,
+                            },
+                            {
+                              label: "18",
+                              w: calculations.w18,
+                              price: record.price18,
+                              amt: rowAmounts.amt18,
+                            },
+                            {
+                              label: "16",
+                              w: calculations.w16,
+                              price: record.price16,
+                              amt: rowAmounts.amt16,
+                            },
+                            {
+                              label: "14",
+                              w: calculations.w14,
+                              price: record.price14,
+                              amt: rowAmounts.amt14,
+                            },
+                            {
+                              label: "12",
+                              w: calculations.w12,
+                              price: record.price12,
+                              amt: rowAmounts.amt12,
+                            },
+                            {
+                              label: "10B",
+                              w: calculations.w10B,
+                              price: record.price10B,
+                              amt: rowAmounts.amt10B,
+                            },
+                            {
+                              label: "10",
+                              w: calculations.w10,
+                              price: record.price10,
+                              amt: rowAmounts.amt10,
+                            },
+                            {
+                              label: "9",
+                              w: calculations.w9,
+                              price: record.price9,
+                              amt: rowAmounts.amt9,
+                            },
+                            {
+                              label: "8",
+                              w: calculations.w8,
+                              price: record.price8,
+                              amt: rowAmounts.amt8,
+                            },
+                            {
+                              label: "7",
+                              w: calculations.w7,
+                              price: record.price7,
+                              amt: rowAmounts.amt7,
+                            },
+                            {
+                              label: "6",
+                              w: calculations.w6,
+                              price: record.price6,
+                              amt: rowAmounts.amt6,
+                            },
+                            {
+                              label: "Leftover",
+                              w: calculations.wLeftover,
+                              price: record.priceReturnSize,
+                              amt: rowAmounts.amtLeftover,
+                            },
+                            {
+                              label: "Spoil",
+                              w: calculations.wSpoil,
+                              price: record.priceSpoilageSize,
+                              amt: rowAmounts.amtSpoil,
+                            },
+                          ]
+                            .filter((row) => row.w > 0)
+                            .map((row, index) => {
+                              return (
+                                <tr
+                                  key={row.label}
+                                  style={{
+                                    borderBottom: "1px solid #f1f5f9",
+                                    background:
+                                      index % 2 === 0 ? "white" : "#fdfdfd",
+                                  }}
+                                >
+                                  <td
+                                    style={{
+                                      padding: "8px 16px",
+                                      fontWeight: "700",
+                                      color: "#1e293b",
+                                    }}
+                                  >
+                                    {row.label}
+                                  </td>
+                                  <td
+                                    style={{
+                                      padding: "8px 16px",
+                                      textAlign: "right",
+                                      fontWeight: "500",
+                                      color: "#475569",
+                                    }}
+                                  >
+                                    {row.w.toFixed(3)}
+                                  </td>
+                                  <td
+                                    style={{
+                                      padding: "8px 16px",
+                                      textAlign: "right",
+                                      fontWeight: "600",
+                                      color: "#0f172a",
+                                    }}
+                                  >
+                                    {(row.price || 0).toLocaleString()}
+                                  </td>
+                                  <td
+                                    style={{
+                                      padding: "8px 16px",
+                                      textAlign: "right",
+                                      fontWeight: "700",
+                                      color: "#0f172a",
+                                    }}
+                                  >
+                                    {row.amt.toLocaleString()}
+                                  </td>
+                                </tr>
+                              );
+                            })}
+
+                          {/* TOTAL ROW */}
+                          <tr
+                            style={{
+                              background: "#f8fafc",
+                              borderTop: "2px solid #cbd5e1",
+                            }}
+                          >
+                            <td
+                              style={{
+                                padding: "10px 16px",
+                                fontWeight: "800",
+                                color: "#0f172a",
+                              }}
+                            >
+                              TOTAL
+                            </td>
+                            <td
+                              style={{
+                                padding: "10px 16px",
+                                textAlign: "right",
+                                fontWeight: "800",
+                                color: "#0f172a",
+                              }}
+                            >
+                              {calculations.totalWeight.toFixed(3)}
+                            </td>
+                            <td style={{ padding: "10px 16px" }}></td>
+                            <td
+                              style={{
+                                padding: "10px 16px",
+                                textAlign: "right",
+                                fontWeight: "800",
+                                color: "#2563eb",
+                              }}
+                            >
+                              {rowAmounts.totalAmount.toLocaleString()}
+                            </td>
+                          </tr>
+                        </tbody>
+                      </table>
+                    </div>
+                  </div>
+                )}
+              </div>
+            );
+          })}
+        </div>
+
+        {/* Close/Cancel button */}
+        {!isModal && (
+          <div
+            style={{
+              display: "flex",
+              justifyContent: "flex-end",
+              marginTop: "24px",
+            }}
+          >
+            <button
+              type="button"
+              onClick={() => setSelectedMarker(null)}
+              className="btn btn-secondary"
+              style={{
+                padding: "10px 24px",
+                borderRadius: "10px",
+                fontWeight: 600,
+                cursor: "pointer",
+              }}
+            >
+              Close Marker View
+            </button>
+          </div>
+        )}
+
+        {formError && (
+          <p
+            style={{
+              color: "#ef4444",
+              fontSize: "13px",
+              fontWeight: 600,
+              marginTop: "10px",
+              textAlign: "center",
+            }}
+          >
+            {formError}
+          </p>
+        )}
+      </div>
+    );
+  };
 
   return (
     <div className="rf-container fade-in">
@@ -1072,1281 +2361,8 @@ const SemiExport: React.FC = () => {
 
           {activeTab === "processing" ? (
             selectedMarker && selectedRecords.length > 0 ? (
-              <div
-                style={{ display: "flex", flexDirection: "column", height: "100%" }}
-              >
-            {/* Header details */}
-            <div
-              className="main-header"
-              style={{
-                display: "flex",
-                justifyContent: "space-between",
-                alignItems: "flex-start",
-                marginBottom: "24px",
-                paddingBottom: "16px",
-                borderBottom: "2px solid #f1f5f9",
-              }}
-            >
-              <div
-                className="header-title"
-                style={{ display: "flex", alignItems: "center", gap: "16px" }}
-              >
-                <DollarSign size={32} style={{ color: "#2563eb" }} />
-                <div>
-                  <h1
-                    style={{
-                      fontSize: "26px",
-                      fontWeight: "800",
-                      margin: 0,
-                      color: "#0f172a",
-                    }}
-                  >
-                    Semi Export
-                  </h1>
-                  <p
-                    className="header-subtitle"
-                    style={{
-                      fontSize: "13.5px",
-                      color: "#64748b",
-                      margin: "6px 0 0 0",
-                      fontWeight: "500",
-                    }}
-                  >
-                    Marker: <strong>{selectedMarker}</strong> • Warehouse(s):{" "}
-                    <strong>
-                      {Array.from(
-                        new Set(
-                          selectedRecords
-                            .map((r) => r.refinementRecordWarehouseName)
-                            .filter(Boolean),
-                        ),
-                      ).join(", ") || "---"}
-                    </strong>{" "}
-                  </p>
-                </div>
-              </div>
-            </div>
-
-            {/* Stats Dashboard Grid */}
-            {selectedMarkerStats && (
-              <div className="stats-grid">
-                {/* 1. Original Weight */}
-                <div className="stat-card">
-                  <div className="stat-header">
-                    <span className="stat-title">Original Weight</span>
-                    <div
-                      className="stat-icon-wrapper"
-                      style={{ backgroundColor: "#eff6ff", color: "#2563eb" }}
-                    >
-                      <Scale size={16} />
-                    </div>
-                  </div>
-                  <div>
-                    <h3 className="stat-value">
-                      {selectedMarkerStats.originalWeightViss.toFixed(3)}{" "}
-                      <span
-                        style={{
-                          fontSize: "13px",
-                          fontWeight: 600,
-                          color: "#64748b",
-                        }}
-                      >
-                        viss
-                      </span>
-                    </h3>
-                    <span className="stat-footer">
-                      = {selectedMarkerStats.originalWeightKg.toFixed(3)} kg
-                    </span>
-                  </div>
-                </div>
-
-                {/* 2. Weight Sold in Raw Material Sales */}
-                <div className="stat-card">
-                  <div className="stat-header">
-                    <span className="stat-title">Weight Sold</span>
-                    <div
-                      className="stat-icon-wrapper"
-                      style={{ backgroundColor: "#fef2f2", color: "#ef4444" }}
-                    >
-                      <Scale size={16} />
-                    </div>
-                  </div>
-                  <div>
-                    <h3 className="stat-value">
-                      {selectedMarkerStats.weightSoldViss.toFixed(3)}{" "}
-                      <span
-                        style={{
-                          fontSize: "13px",
-                          fontWeight: 600,
-                          color: "#64748b",
-                        }}
-                      >
-                        viss
-                      </span>
-                    </h3>
-                    <span className="stat-footer">
-                      = {selectedMarkerStats.weightSoldKg.toFixed(3)} kg ·
-                      <br /> Raw Material Sales
-                    </span>
-                  </div>
-                </div>
-
-                {/* 3. Remaining Weight after Sales */}
-                <div className="stat-card">
-                  <div className="stat-header">
-                    <span className="stat-title">Remaining Weight</span>
-                    <div
-                      className="stat-icon-wrapper"
-                      style={{ backgroundColor: "#ecfdf5", color: "#10b981" }}
-                    >
-                      <Scale size={16} />
-                    </div>
-                  </div>
-                  <div>
-                    <h3 className="stat-value">
-                      {selectedMarkerStats.remainingAfterSalesViss.toFixed(3)}{" "}
-                      <span
-                        style={{
-                          fontSize: "13px",
-                          fontWeight: 600,
-                          color: "#64748b",
-                        }}
-                      >
-                        viss
-                      </span>
-                    </h3>
-                    <span className="stat-footer">
-                      = {selectedMarkerStats.remainingAfterSalesKg.toFixed(3)}{" "}
-                      kg · <br /> after Raw Material Sales
-                    </span>
-                  </div>
-                </div>
-
-                {/* 3b. Remaining Unsorted in Inventory */}
-                {selectedMarkerStats.remainingUnsorted >= 0.001 && (
-                  <div className="stat-card">
-                    <div className="stat-header">
-                      <span className="stat-title">Remaining Unsorted</span>
-                      <div
-                        className="stat-icon-wrapper"
-                        style={{ backgroundColor: "#f0f9ff", color: "#0284c7" }}
-                      >
-                        <Scale size={16} />
-                      </div>
-                    </div>
-                    <div>
-                      <h3 className="stat-value">
-                        {selectedMarkerStats.remainingUnsorted.toFixed(3)} viss
-                      </h3>
-                      <span className="stat-footer">
-                        (
-                        <strong>
-                          {selectedMarkerStats.remainingUnsortedPercent.toFixed(
-                            2,
-                          )}
-                          %
-                        </strong>
-                        ) remaining unsorted
-                      </span>
-                    </div>
-                  </div>
-                )}
-
-                {/* 4. Sum of Lost Weight of all colors (viss) */}
-                <div className="stat-card">
-                  <div className="stat-header">
-                    <span className="stat-title">Sum of Lost Weight</span>
-                    <div
-                      className="stat-icon-wrapper"
-                      style={{ backgroundColor: "#fffbeb", color: "#d97706" }}
-                    >
-                      <AlertTriangle size={16} />
-                    </div>
-                  </div>
-                  <div>
-                    <h3 className="stat-value">
-                      {selectedMarkerStats.sumLostWeight.toFixed(3)} viss
-                    </h3>
-                    <span className="stat-footer">
-                      (
-                      <strong>
-                        {selectedMarkerStats.sumLostWeightPercent.toFixed(2)}%
-                      </strong>
-                      ) across all colors
-                    </span>
-                  </div>
-                </div>
-
-                {/* 5. Sum of Spoilage Weight of all colors */}
-                <div className="stat-card">
-                  <div className="stat-header">
-                    <span className="stat-title">Sum of Spoilage Weight</span>
-                    <div
-                      className="stat-icon-wrapper"
-                      style={{ backgroundColor: "#faf5ff", color: "#8b5cf6" }}
-                    >
-                      <AlertTriangle size={16} />
-                    </div>
-                  </div>
-                  <div>
-                    <h3 className="stat-value">
-                      {selectedMarkerStats.sumSpoilageWeight.toFixed(3)} viss
-                    </h3>
-                    <span className="stat-footer">
-                      (
-                      <strong>
-                        {selectedMarkerStats.sumSpoilageWeightPercent.toFixed(
-                          2,
-                        )}
-                        %
-                      </strong>
-                      ) (incl. 2" Spoil)
-                    </span>
-                  </div>
-                </div>
-
-                {/* 6. Sum of Return Weight of all colors */}
-                <div className="stat-card">
-                  <div className="stat-header">
-                    <span className="stat-title">Sum of Return Weight</span>
-                    <div
-                      className="stat-icon-wrapper"
-                      style={{ backgroundColor: "#fdf4ff", color: "#c026d3" }}
-                    >
-                      <RotateCcw size={16} />
-                    </div>
-                  </div>
-                  <div>
-                    <h3 className="stat-value">
-                      {selectedMarkerStats.sumReturnWeight.toFixed(3)} viss
-                    </h3>
-                    <span className="stat-footer">
-                      (
-                      <strong>
-                        {selectedMarkerStats.sumReturnWeightPercent.toFixed(2)}%
-                      </strong>
-                      ) (incl. 2" Return)
-                    </span>
-                  </div>
-                </div>
-
-                {/* 3c. Sum of Bar to 10B Sizes (Total Export Weight) */}
-                <div className="stat-card">
-                  <div className="stat-header">
-                    <span className="stat-title">Bar to 10B Sizes</span>
-                    <div
-                      className="stat-icon-wrapper"
-                      style={{ backgroundColor: "#fdf2f8", color: "#db2777" }}
-                    >
-                      <Layers size={16} />
-                    </div>
-                  </div>
-                  <div
-                    style={{
-                      display: "flex",
-                      justifyContent: "space-between",
-                      alignItems: "flex-end",
-                    }}
-                  >
-                    <div>
-                      <h3 className="stat-value">
-                        {selectedMarkerStats.sumBto10Weight.toFixed(3)} viss
-                      </h3>
-                      <span className="stat-footer">
-                        (
-                        <strong>
-                          {selectedMarkerStats.averageBto10.toFixed(2)}%
-                        </strong>
-                        ) total export ratio
-                      </span>
-                    </div>
-                  </div>
-                </div>
-                {/* 7. Two Inches & Ten Size */}
-                <div className="stat-card">
-                  <div className="stat-header">
-                    <span className="stat-title">Two Inches Area</span>
-                    <div
-                      className="stat-icon-wrapper"
-                      style={{ backgroundColor: "#f0fdf4", color: "#15803d" }}
-                    >
-                      <Package size={16} />
-                    </div>
-                  </div>
-                  <div>
-                    <h3 className="stat-value">
-                      {selectedMarkerStats.sumTwoInchesWeight.toFixed(3)} viss
-                    </h3>
-                    <span className="stat-footer">
-                      (
-                      <strong>
-                        {(
-                          (selectedMarkerStats.sumTwoInchesWeight /
-                            (selectedMarkerStats.remainingAfterSalesViss ||
-                              1)) *
-                          100
-                        ).toFixed(2)}
-                        %
-                      </strong>
-                      ) (Size 6 to 10)
-                    </span>
-                  </div>
-                </div>
-              </div>
-            )}
-
-            {/* Marker-Level Global Save Section */}
-            <div
-              style={{
-                background: "#f8fafc",
-                padding: "24px",
-                borderRadius: "16px",
-                border: "1.5px solid #e2e8f0",
-                boxShadow: "0 4px 6px rgba(0,0,0,0.02)",
-              }}
-            >
-              <h3
-                style={{
-                  fontSize: "16px",
-                  fontWeight: "700",
-                  color: "#0f172a",
-                  marginBottom: "16px",
-                  display: "flex",
-                  alignItems: "center",
-                  gap: "8px",
-                }}
-              >
-                <Sparkles size={18} color="#2563eb" /> Record Sales Details for
-                Marker
-              </h3>
-
-              <div
-                style={{
-                  display: "flex",
-                  flexDirection: "column",
-                  gap: "20px",
-                }}
-              >
-                <div
-                  style={{
-                    display: "flex",
-                    alignItems: "center",
-                    gap: "16px",
-                  }}
-                >
-                  <div
-                    style={{
-                      display: "flex",
-                      alignItems: "center",
-                      gap: "8px",
-                    }}
-                  >
-                    <DollarSign size={18} style={{ color: "#2563eb" }} />
-                    <span
-                      style={{
-                        fontSize: "13.5px",
-                        fontWeight: "700",
-                        color: "#334155",
-                      }}
-                    >
-                      WORKER FEES (SUM):
-                    </span>
-                  </div>
-                  <input
-                    type="number"
-                    value={markerWorkerFees}
-                    onChange={(e) => setMarkerWorkerFees(e.target.value)}
-                    placeholder="0.00"
-                    style={{
-                      padding: "8px 12px",
-                      borderRadius: "8px",
-                      border: "1.5px solid #cbd5e1",
-                      fontSize: "14px",
-                      width: "200px",
-                      fontWeight: "600",
-                    }}
-                  />
-                </div>
-
-                <div style={{ display: "flex", flexDirection: "column" }}>
-                  <label
-                    style={{
-                      display: "flex",
-                      alignItems: "center",
-                      gap: "8px",
-                      fontSize: "13.5px",
-                      fontWeight: "700",
-                      color: "#334155",
-                      marginBottom: "6px",
-                    }}
-                  >
-                    <FileText size={15} /> REMARK:
-                  </label>
-                  <textarea
-                    value={markerRemark}
-                    onChange={(e) => setMarkerRemark(e.target.value)}
-                    placeholder="Enter remark for this marker..."
-                    rows={3}
-                    style={{
-                      width: "100%",
-                      padding: "10px 14px",
-                      borderRadius: "10px",
-                      border: "1.5px solid #cbd5e1",
-                      fontSize: "14px",
-                      outline: "none",
-                      resize: "vertical",
-                    }}
-                  />
-                </div>
-
-                <div style={{ display: "flex", justifyContent: "flex-end" }}>
-                  <button
-                    type="button"
-                    onClick={handleSaveMarkerData}
-                    className="btn btn-primary"
-                    disabled={saving}
-                    style={{
-                      display: "flex",
-                      alignItems: "center",
-                      gap: "10px",
-                      padding: "12px 32px",
-                      borderRadius: "12px",
-                      fontWeight: "800",
-                      fontSize: "15px",
-                      background: "#0f172a",
-                      color: "white",
-                      boxShadow: "0 4px 12px rgba(15, 23, 42, 0.2)",
-                      transition: "all 0.2s",
-                    }}
-                  >
-                    <CheckCircle size={20} />
-                    {saving ? "Saving..." : "Save Marker Records"}
-                  </button>
-                </div>
-              </div>
-            </div>
-
-            {/* Grand Total Amount Summary Card */}
-            {selectedMarkerStats && (
-              <div
-                style={{
-                  background: "#f8fafc",
-                  borderRadius: "16px",
-                  padding: "24px 32px",
-                  display: "flex",
-                  justifyContent: "space-between",
-                  alignItems: "center",
-                  boxShadow: "0 4px 6px rgba(0,0,0,0.02)",
-                  border: "1.5px solid #e2e8f0",
-                  marginTop: "24px",
-                }}
-              >
-                <div style={{ flex: 1 }}>
-                  <h4
-                    style={{
-                      margin: 0,
-                      color: "#64748b",
-                      fontSize: "14px",
-                      textTransform: "uppercase",
-                      letterSpacing: "0.1em",
-                      fontWeight: 800,
-                    }}
-                  >
-                    Inventory Reference
-                  </h4>
-                  <div
-                    style={{
-                      marginTop: "12px",
-                      display: "grid",
-                      gridTemplateColumns: "1fr 1fr",
-                      gap: "24px",
-                    }}
-                  >
-                    <div>
-                      <p
-                        style={{
-                          margin: 0,
-                          fontSize: "12px",
-                          color: "#94a3b8",
-                          fontWeight: 700,
-                        }}
-                      >
-                        INVENTORY PRICE
-                      </p>
-                      <div
-                        style={{
-                          display: "flex",
-                          gap: "12px",
-                          marginTop: "2px",
-                        }}
-                      >
-                        <div>
-                          <p
-                            style={{
-                              margin: 0,
-                              fontSize: "16px",
-                              color: "#1e293b",
-                              fontWeight: 600,
-                            }}
-                          >
-                            {selectedMarkerStats.productPriceViss.toLocaleString(
-                              undefined,
-                              {
-                                minimumFractionDigits: 1,
-                                maximumFractionDigits: 1,
-                              },
-                            )}{" "}
-                            <span
-                              style={{ fontSize: "12px", color: "#64748b" }}
-                            >
-                              MMK/viss
-                            </span>
-                          </p>
-                        </div>
-                        <div
-                          style={{
-                            width: "1.5px",
-                            height: "16px",
-                            backgroundColor: "#e2e8f0",
-                            alignSelf: "center",
-                          }}
-                        />
-                        <div>
-                          <p
-                            style={{
-                              margin: 0,
-                              fontSize: "16px",
-                              color: "#1e293b",
-                              fontWeight: 600,
-                            }}
-                          >
-                            {selectedMarkerStats.productPriceKg.toLocaleString(
-                              undefined,
-                              {
-                                minimumFractionDigits: 1,
-                                maximumFractionDigits: 1,
-                              },
-                            )}{" "}
-                            <span
-                              style={{ fontSize: "12px", color: "#64748b" }}
-                            >
-                              MMK/kg
-                            </span>
-                          </p>
-                        </div>
-                      </div>
-                    </div>
-                    <div>
-                      <p
-                        style={{
-                          margin: 0,
-                          fontSize: "12px",
-                          color: "#94a3b8",
-                          fontWeight: 700,
-                        }}
-                      >
-                        ORIGINAL TOTAL AMOUNT
-                      </p>
-                      <p
-                        style={{
-                          margin: "2px 0 0 0",
-                          fontSize: "17px",
-                          color: "#1e293b",
-                          fontWeight: 600,
-                        }}
-                      >
-                        {selectedMarkerStats.originalTotalAmount.toLocaleString(
-                          undefined,
-                          {
-                            minimumFractionDigits: 1,
-                            maximumFractionDigits: 1,
-                          },
-                        )}{" "}
-                        <span style={{ fontSize: "13px" }}>MMK</span>
-                      </p>
-                    </div>
-                  </div>
-                </div>
-
-                <div
-                  style={{
-                    textAlign: "right",
-                    paddingLeft: "40px",
-                    borderLeft: "1.5px solid #e2e8f0",
-                    display: "flex",
-                    flexDirection: "column",
-                    gap: "10px",
-                    minWidth: "320px",
-                  }}
-                >
-                  {/* 1. Total Marker Value in CNY */}
-                  <div
-                    style={{
-                      display: "flex",
-                      justifyContent: "space-between",
-                      alignItems: "baseline",
-                      gap: "16px",
-                    }}
-                  >
-                    <span
-                      style={{
-                        fontSize: "12px",
-                        fontWeight: 700,
-                        color: "#64748b",
-                        textTransform: "uppercase",
-                        letterSpacing: "0.05em",
-                      }}
-                    >
-                      Total Marker Value (CNY)
-                    </span>
-                    <div>
-                      <span
-                        style={{
-                          fontSize: "16px",
-                          fontWeight: "800",
-                          color: "#1e293b",
-                        }}
-                      >
-                        {markerTotalAmount.toLocaleString(undefined, {
-                          minimumFractionDigits: 2,
-                          maximumFractionDigits: 2,
-                        })}
-                      </span>
-                      <span
-                        style={{
-                          fontSize: "11px",
-                          fontWeight: "700",
-                          color: "#64748b",
-                          marginLeft: "4px",
-                        }}
-                      >
-                        CNY
-                      </span>
-                    </div>
-                  </div>
-
-                  {/* 2. Total Marker Value in MMK */}
-                  {cnyToMmkRate !== null && (
-                    <div
-                      style={{
-                        display: "flex",
-                        justifyContent: "space-between",
-                        alignItems: "baseline",
-                        gap: "16px",
-                      }}
-                    >
-                      <span
-                        style={{
-                          fontSize: "12px",
-                          fontWeight: 700,
-                          color: "#64748b",
-                          textTransform: "uppercase",
-                          letterSpacing: "0.05em",
-                        }}
-                      >
-                        Total Marker Value (MMK)
-                      </span>
-                      <div>
-                        <span
-                          style={{
-                            fontSize: "16px",
-                            fontWeight: "800",
-                            color: "#475569",
-                          }}
-                        >
-                          {(markerTotalAmount * cnyToMmkRate).toLocaleString(
-                            undefined,
-                            {
-                              minimumFractionDigits: 2,
-                              maximumFractionDigits: 2,
-                            },
-                          )}
-                        </span>
-                        <span
-                          style={{
-                            fontSize: "11px",
-                            fontWeight: "700",
-                            color: "#64748b",
-                            marginLeft: "4px",
-                          }}
-                        >
-                          MMK
-                        </span>
-                      </div>
-                    </div>
-                  )}
-
-                  {/* Divider line */}
-                  <div
-                    style={{
-                      height: "1px",
-                      backgroundColor: "#e2e8f0",
-                      margin: "2px 0",
-                    }}
-                  />
-
-                  {/* 3. Grand Total Value (Total Marker Value in MMK + Worker Fees) */}
-                  <div>
-                    <h4
-                      style={{
-                        margin: 0,
-                        color: "#64748b",
-                        fontSize: "11px",
-                        textTransform: "uppercase",
-                        letterSpacing: "0.1em",
-                        fontWeight: 800,
-                        textAlign: "right",
-                        marginBottom: "4px",
-                      }}
-                    >
-                      Grand Total Value
-                    </h4>
-                    <div
-                      style={{
-                        display: "flex",
-                        alignItems: "baseline",
-                        gap: "8px",
-                        justifyContent: "flex-end",
-                      }}
-                    >
-                      <span
-                        style={{
-                          fontSize: "28px",
-                          fontWeight: "950",
-                          color: "#2563eb",
-                          letterSpacing: "-0.03em",
-                        }}
-                      >
-                        {markerTotalAmountMmk !== null
-                          ? markerTotalAmountMmk.toLocaleString(undefined, {
-                              minimumFractionDigits: 2,
-                              maximumFractionDigits: 2,
-                            })
-                          : markerTotalAmount.toLocaleString(undefined, {
-                              minimumFractionDigits: 2,
-                              maximumFractionDigits: 2,
-                            })}
-                      </span>
-                      <span
-                        style={{
-                          fontSize: "14px",
-                          fontWeight: "800",
-                          color: "#64748b",
-                        }}
-                      >
-                        MMK
-                      </span>
-                    </div>
-
-                    {cnyToMmkRate !== null && (
-                      <div
-                        style={{
-                          fontSize: "10px",
-                          color: "#94a3b8",
-                          marginTop: "2px",
-                        }}
-                      >
-                        (Rate: 1 CNY = {cnyToMmkRate.toLocaleString()} MMK +{" "}
-                        {(parseFloat(markerWorkerFees) || 0).toLocaleString()}{" "}
-                        MMK Worker Fees)
-                      </div>
-                    )}
-                  </div>
-
-                  {financialComparison && (
-                    <div
-                      style={{
-                        marginTop: "8px",
-                        display: "flex",
-                        alignItems: "center",
-                        justifyContent: "flex-end",
-                        gap: "8px",
-                      }}
-                    >
-                      <span
-                        style={{
-                          fontSize: "12px",
-                          color: "#64748b",
-                          fontWeight: 600,
-                        }}
-                      >
-                        P&L:
-                      </span>
-                      <span
-                        style={{
-                          fontSize: "16px",
-                          fontWeight: "800",
-                          color:
-                            financialComparison.pnl <= 0
-                              ? "#059669"
-                              : "#dc2626",
-                        }}
-                      >
-                        {financialComparison.pnl.toLocaleString(undefined, {
-                          maximumFractionDigits: 2,
-                        })}
-                      </span>
-                      <span
-                        style={{
-                          fontSize: "10px",
-                          color: "#94a3b8",
-                          fontWeight: 700,
-                        }}
-                      >
-                        MMK
-                      </span>
-                    </div>
-                  )}
-                </div>
-              </div>
-            )}
-
-            {/* Records List */}
-            <div
-              style={{
-                display: "flex",
-                flexDirection: "column",
-                gap: "24px",
-                marginTop: "24px",
-              }}
-            >
-              {selectedRecords.map((record) => {
-                const calculations = recordCalculations[record.id];
-                const rowAmounts = recordAmounts[record.id];
-                const isExpanded = expandedRecords[record.id];
-                const isSaved = savedExports.some(
-                  (x) => x.singleDoubleDrawnRecordId === record.id,
-                );
-
-                if (!calculations || !rowAmounts) return null;
-
-                return (
-                  <div
-                    key={record.id}
-                    style={{
-                      background: "white",
-                      border: "1.5px solid #e2e8f0",
-                      borderRadius: "16px",
-                      overflow: "hidden",
-                      boxShadow: "0 4px 6px rgba(0, 0, 0, 0.02)",
-                    }}
-                  >
-                    {/* Record Header */}
-                    <div
-                      style={{
-                        padding: "16px 24px",
-                        background: "#f8fafc",
-                        borderBottom: "1.5px solid #e2e8f0",
-                        display: "flex",
-                        justifyContent: "space-between",
-                        alignItems: "center",
-                        cursor: "pointer",
-                      }}
-                      onClick={() => toggleRecordExpanded(record.id)}
-                    >
-                      <div
-                        style={{
-                          display: "flex",
-                          alignItems: "center",
-                          gap: "12px",
-                        }}
-                      >
-                        <span
-                          className={`rf-badge category-${(record.refinementRecordCategory || "").toLowerCase().replace(".", "")}`}
-                          style={{ fontSize: "12px", padding: "4px 10px" }}
-                        >
-                          {record.refinementRecordCategory}
-                        </span>
-                        <span
-                          style={{
-                            fontSize: "14px",
-                            color: "#64748b",
-                            fontWeight: 600,
-                          }}
-                        >
-                          Sorted Weight:{" "}
-                          <strong style={{ color: "#0f172a" }}>
-                            {calculations.totalWeight.toFixed(3)}
-                          </strong>{" "}
-                          viss
-                        </span>
-                        <span
-                          style={{
-                            fontSize: "14px",
-                            color: "#64748b",
-                            fontWeight: 600,
-                          }}
-                        >
-                          • Date:{" "}
-                          <strong style={{ color: "#0f172a" }}>
-                            {new Date(record.date).toLocaleDateString()}
-                          </strong>
-                        </span>
-                        <span
-                          style={{
-                            fontSize: "13px",
-                            color: "#64748b",
-                            fontWeight: 600,
-                          }}
-                        >
-                          • Amount:{" "}
-                          <strong style={{ color: "#2563eb" }}>
-                            {rowAmounts.totalAmount.toLocaleString()}
-                          </strong>{" "}
-                          MMK
-                        </span>
-                      </div>
-                      <div
-                        style={{
-                          display: "flex",
-                          alignItems: "center",
-                          gap: "12px",
-                        }}
-                      >
-                        {isSaved && (
-                          <span
-                            style={{
-                              background: "#d1fae5",
-                              color: "#065f46",
-                              fontSize: "11px",
-                              padding: "4px 8px",
-                              borderRadius: "6px",
-                              fontWeight: "bold",
-                              display: "inline-flex",
-                              alignItems: "center",
-                              gap: "3px",
-                            }}
-                          >
-                            <CheckCircle size={12} /> Saved
-                          </span>
-                        )}
-                        {isExpanded ? (
-                          <ChevronUp size={20} />
-                        ) : (
-                          <ChevronDown size={20} />
-                        )}
-                      </div>
-                    </div>
-
-                    {isExpanded && (
-                      <div style={{ padding: "20px" }}>
-                        <div
-                          className="table-container"
-                          style={{
-                            border: "1.5px solid #e2e8f0",
-                            borderRadius: "12px",
-                            overflow: "hidden",
-                            background: "white",
-                          }}
-                        >
-                          <table
-                            className="table"
-                            style={{
-                              width: "100%",
-                              borderCollapse: "collapse",
-                              textAlign: "left",
-                              fontSize: "14px",
-                            }}
-                          >
-                            <thead>
-                              <tr
-                                style={{
-                                  background: "#f8fafc",
-                                  borderBottom: "1.5px solid #e2e8f0",
-                                }}
-                              >
-                                <th
-                                  style={{
-                                    padding: "10px 16px",
-                                    fontWeight: "700",
-                                    color: "#475569",
-                                  }}
-                                >
-                                  SIZE
-                                </th>
-                                <th
-                                  style={{
-                                    padding: "10px 16px",
-                                    fontWeight: "700",
-                                    color: "#475569",
-                                    textAlign: "right",
-                                  }}
-                                >
-                                  WEIGHT (viss)
-                                </th>
-                                <th
-                                  style={{
-                                    padding: "10px 16px",
-                                    fontWeight: "700",
-                                    color: "#475569",
-                                    textAlign: "right",
-                                  }}
-                                >
-                                  BUY PRICES
-                                </th>
-                                <th
-                                  style={{
-                                    padding: "10px 16px",
-                                    fontWeight: "700",
-                                    color: "#475569",
-                                    textAlign: "right",
-                                  }}
-                                >
-                                  AMOUNT
-                                </th>
-                              </tr>
-                            </thead>
-                            <tbody>
-                              {[
-                                {
-                                  label: "B",
-                                  w: calculations.wB,
-                                  price: record.priceBar,
-                                  amt: rowAmounts.amtB,
-                                },
-                                {
-                                  label: "28",
-                                  w: calculations.w28,
-                                  price: record.price28,
-                                  amt: rowAmounts.amt28,
-                                },
-                                {
-                                  label: "26",
-                                  w: calculations.w26,
-                                  price: record.price26,
-                                  amt: rowAmounts.amt26,
-                                },
-                                {
-                                  label: "24",
-                                  w: calculations.w24,
-                                  price: record.price24,
-                                  amt: rowAmounts.amt24,
-                                },
-                                {
-                                  label: "22",
-                                  w: calculations.w22,
-                                  price: record.price22,
-                                  amt: rowAmounts.amt22,
-                                },
-                                {
-                                  label: "20",
-                                  w: calculations.w20,
-                                  price: record.price20,
-                                  amt: rowAmounts.amt20,
-                                },
-                                {
-                                  label: "18",
-                                  w: calculations.w18,
-                                  price: record.price18,
-                                  amt: rowAmounts.amt18,
-                                },
-                                {
-                                  label: "16",
-                                  w: calculations.w16,
-                                  price: record.price16,
-                                  amt: rowAmounts.amt16,
-                                },
-                                {
-                                  label: "14",
-                                  w: calculations.w14,
-                                  price: record.price14,
-                                  amt: rowAmounts.amt14,
-                                },
-                                {
-                                  label: "12",
-                                  w: calculations.w12,
-                                  price: record.price12,
-                                  amt: rowAmounts.amt12,
-                                },
-                                {
-                                  label: "10B",
-                                  w: calculations.w10B,
-                                  price: record.price10B,
-                                  amt: rowAmounts.amt10B,
-                                },
-                                {
-                                  label: "10",
-                                  w: calculations.w10,
-                                  price: record.price10,
-                                  amt: rowAmounts.amt10,
-                                },
-                                {
-                                  label: "9",
-                                  w: calculations.w9,
-                                  price: record.price9,
-                                  amt: rowAmounts.amt9,
-                                },
-                                {
-                                  label: "8",
-                                  w: calculations.w8,
-                                  price: record.price8,
-                                  amt: rowAmounts.amt8,
-                                },
-                                {
-                                  label: "7",
-                                  w: calculations.w7,
-                                  price: record.price7,
-                                  amt: rowAmounts.amt7,
-                                },
-                                {
-                                  label: "6",
-                                  w: calculations.w6,
-                                  price: record.price6,
-                                  amt: rowAmounts.amt6,
-                                },
-                                {
-                                  label: "Leftover",
-                                  w: calculations.wLeftover,
-                                  price: record.priceReturnSize,
-                                  amt: rowAmounts.amtLeftover,
-                                },
-                                {
-                                  label: "Spoil",
-                                  w: calculations.wSpoil,
-                                  price: record.priceSpoilageSize,
-                                  amt: rowAmounts.amtSpoil,
-                                },
-                              ]
-                                .filter((row) => row.w > 0)
-                                .map((row, index) => {
-                                  return (
-                                    <tr
-                                      key={row.label}
-                                      style={{
-                                        borderBottom: "1px solid #f1f5f9",
-                                        background:
-                                          index % 2 === 0 ? "white" : "#fdfdfd",
-                                      }}
-                                    >
-                                      <td
-                                        style={{
-                                          padding: "8px 16px",
-                                          fontWeight: "700",
-                                          color: "#1e293b",
-                                        }}
-                                      >
-                                        {row.label}
-                                      </td>
-                                      <td
-                                        style={{
-                                          padding: "8px 16px",
-                                          textAlign: "right",
-                                          fontWeight: "500",
-                                          color: "#475569",
-                                        }}
-                                      >
-                                        {row.w.toFixed(3)}
-                                      </td>
-                                      <td
-                                        style={{
-                                          padding: "8px 16px",
-                                          textAlign: "right",
-                                          fontWeight: "600",
-                                          color: "#0f172a",
-                                        }}
-                                      >
-                                        {(row.price || 0).toLocaleString()}
-                                      </td>
-                                      <td
-                                        style={{
-                                          padding: "8px 16px",
-                                          textAlign: "right",
-                                          fontWeight: "700",
-                                          color: "#0f172a",
-                                        }}
-                                      >
-                                        {row.amt.toLocaleString()}
-                                      </td>
-                                    </tr>
-                                  );
-                                })}
-
-                              {/* TOTAL ROW */}
-                              <tr
-                                style={{
-                                  background: "#f8fafc",
-                                  borderTop: "2px solid #cbd5e1",
-                                }}
-                              >
-                                <td
-                                  style={{
-                                    padding: "10px 16px",
-                                    fontWeight: "800",
-                                    color: "#0f172a",
-                                  }}
-                                >
-                                  TOTAL
-                                </td>
-                                <td
-                                  style={{
-                                    padding: "10px 16px",
-                                    textAlign: "right",
-                                    fontWeight: "800",
-                                    color: "#0f172a",
-                                  }}
-                                >
-                                  {calculations.totalWeight.toFixed(3)}
-                                </td>
-                                <td style={{ padding: "10px 16px" }}></td>
-                                <td
-                                  style={{
-                                    padding: "10px 16px",
-                                    textAlign: "right",
-                                    fontWeight: "800",
-                                    color: "#2563eb",
-                                  }}
-                                >
-                                  {rowAmounts.totalAmount.toLocaleString()}
-                                </td>
-                              </tr>
-                            </tbody>
-                          </table>
-                        </div>
-                      </div>
-                    )}
-                  </div>
-                );
-              })}
-            </div>
-
-            {/* Cancel marker button */}
-            <div
-              style={{
-                display: "flex",
-                justifyContent: "flex-end",
-                marginTop: "24px",
-              }}
-            >
-              <button
-                type="button"
-                onClick={() => setSelectedMarker(null)}
-                className="btn btn-secondary"
-                style={{
-                  padding: "10px 24px",
-                  borderRadius: "10px",
-                  fontWeight: 600,
-                  cursor: "pointer",
-                }}
-              >
-                Close Marker View
-              </button>
-            </div>
-
-            {formError && (
-              <p
-                style={{
-                  color: "#ef4444",
-                  fontSize: "13px",
-                  fontWeight: 600,
-                  marginTop: "10px",
-                  textAlign: "center",
-                }}
-              >
-                {formError}
-              </p>
-            )}
-          </div>
-        ) : (
+              renderMarkerDetails(false)
+            ) : (
           // Placeholder when no selection
           <div
             style={{
@@ -2416,7 +2432,12 @@ const SemiExport: React.FC = () => {
                     return (
                       <tr
                         key={group.marker}
-                        style={{ borderBottom: "1px solid #f1f5f9" }}
+                        style={{ borderBottom: "1px solid #f1f5f9", cursor: "pointer" }}
+                        onClick={() => {
+                          setPrevSelectedMarker(selectedMarker);
+                          setSelectedMarker(group.marker);
+                          setShowHistoryModal(true);
+                        }}
                       >
                         <td
                           style={{
@@ -2516,7 +2537,10 @@ const SemiExport: React.FC = () => {
                         >
                           {hasPermission("SemiExport.Delete") && (
                             <button
-                              onClick={() => handleDeleteExport(group.ids)}
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                handleDeleteExport(group.ids);
+                              }}
                               className="btn btn-danger"
                               style={{
                                 padding: "6px 10px",
@@ -2542,6 +2566,100 @@ const SemiExport: React.FC = () => {
       )}
       </div>
     </main>
+
+      {/* History Detail Modal */}
+      {showHistoryModal && selectedMarker && (
+        <div
+          style={{
+            position: "fixed",
+            top: 0,
+            left: 0,
+            right: 0,
+            bottom: 0,
+            backgroundColor: "rgba(0, 0, 0, 0.5)",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            zIndex: 1000,
+            backdropFilter: "blur(4px)",
+            padding: "20px",
+          }}
+          onClick={closeHistoryModal}
+        >
+          <div
+            style={{
+              width: "1200px",
+              maxWidth: "95vw",
+              maxHeight: "90vh",
+              backgroundColor: "white",
+              borderRadius: "20px",
+              padding: "24px",
+              boxShadow: "0 20px 25px -5px rgba(0, 0, 0, 0.1)",
+              display: "flex",
+              flexDirection: "column",
+              gap: "20px",
+              overflow: "hidden",
+            }}
+            onClick={(e) => e.stopPropagation()}
+          >
+            {/* Modal Header */}
+            <div
+              style={{
+                display: "flex",
+                justifyContent: "space-between",
+                alignItems: "center",
+                borderBottom: "2px solid #f1f5f9",
+                paddingBottom: "16px",
+              }}
+            >
+              <div style={{ display: "flex", alignItems: "center", gap: "12px" }}>
+                <Clock size={24} style={{ color: "#2563eb" }} />
+                <div>
+                  <h2
+                    style={{
+                      margin: 0,
+                      fontSize: "20px",
+                      fontWeight: "800",
+                      color: "#0f172a",
+                    }}
+                  >
+                    Export History Detail
+                  </h2>
+                  <p style={{ margin: "2px 0 0 0", fontSize: "13px", color: "#64748b" }}>
+                    Marker: <strong>{selectedMarker}</strong>
+                  </p>
+                </div>
+              </div>
+              <button
+                onClick={closeHistoryModal}
+                style={{
+                  padding: "8px",
+                  borderRadius: "50%",
+                  border: "none",
+                  backgroundColor: "#f1f5f9",
+                  cursor: "pointer",
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                }}
+              >
+                <X size={20} color="#64748b" />
+              </button>
+            </div>
+
+            {/* Scrollable Modal Content */}
+            <div
+              style={{
+                flex: 1,
+                overflowY: "auto",
+                paddingRight: "4px",
+              }}
+            >
+              {renderMarkerDetails(true)}
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Create Ledger Modal */}
       {showLedgerModal && (
