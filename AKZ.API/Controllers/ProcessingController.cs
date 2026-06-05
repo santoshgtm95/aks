@@ -166,7 +166,8 @@ public class ProcessingController : ControllerBase
         
         decimal categorizedWeight = dto.RedWeight + dto.WhiteWeight + dto.SpecialWeight + 
                                     dto.NaturalWeight + dto.NaturalWhiteWeight + dto.NaturalRedWeight + 
-                                    dto.ShortCutWeight + dto.ArtificialWeight + dto.ShortWeight;
+                                    dto.ShortCutWeight + dto.ArtificialWeight + dto.ShortWeight +
+                                    dto.LossWeight;
 
         // The UI calculates remaining as: rwViss - categorizedWeight
         // Therefore, we deduct categorizedWeight to match the UI's remaining weight exactly.
@@ -249,7 +250,8 @@ public class ProcessingController : ControllerBase
 
         decimal oldCategorizedWeight = record.RedWeight + record.WhiteWeight + record.SpecialWeight + 
                                        record.NaturalWeight + record.NaturalWhiteWeight + record.NaturalRedWeight + 
-                                       record.ShortCutWeight + record.ArtificialWeight + record.ShortWeight;
+                                       record.ShortCutWeight + record.ArtificialWeight + record.ShortWeight +
+                                       record.LossWeight;
 
         // Revert old weight deduction (convert Viss back to product unit)
         decimal oldDeduction = isProductKg ? oldCategorizedWeight * 1.633m : oldCategorizedWeight;
@@ -257,7 +259,8 @@ public class ProcessingController : ControllerBase
 
         decimal newCategorizedWeight = dto.RedWeight + dto.WhiteWeight + dto.SpecialWeight + 
                                        dto.NaturalWeight + dto.NaturalWhiteWeight + dto.NaturalRedWeight + 
-                                       dto.ShortCutWeight + dto.ArtificialWeight + dto.ShortWeight;
+                                       dto.ShortCutWeight + dto.ArtificialWeight + dto.ShortWeight +
+                                       dto.LossWeight;
 
         // Apply new weight deduction (convert new Viss to product unit)
         decimal newDeduction = isProductKg ? newCategorizedWeight * 1.633m : newCategorizedWeight;
@@ -354,7 +357,8 @@ public class ProcessingController : ControllerBase
         
         decimal oldCategorizedWeight = record.RedWeight + record.WhiteWeight + record.SpecialWeight + 
                                        record.NaturalWeight + record.NaturalWhiteWeight + record.NaturalRedWeight + 
-                                       record.ShortCutWeight + record.ArtificialWeight + record.ShortWeight;
+                                       record.ShortCutWeight + record.ArtificialWeight + record.ShortWeight +
+                                       record.LossWeight;
 
         decimal restoreWeight = isProductKg ? oldCategorizedWeight * 1.633m : oldCategorizedWeight;
 

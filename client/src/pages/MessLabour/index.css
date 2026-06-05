@@ -2742,6 +2742,11 @@
   border: 1.5px solid #f59e0b;
 }
 
+.box-lost {
+  background: #f1f5f9;
+  border: 1.5px solid #94a3b8;
+}
+
 .box-label {
   font-size: 13px;
   font-weight: 700;
@@ -2774,6 +2779,9 @@
 .label-short {
   color: #92400e;
 }
+.label-lost {
+  color: #475569;
+}
 
 .hint-red {
   color: #fc8181;
@@ -2801,6 +2809,9 @@
 }
 .hint-short {
   color: #f59e0b;
+}
+.hint-lost {
+  color: #64748b;
 }
 
 .box-input {
@@ -3520,6 +3531,20 @@
   border-color: #fb7185;
 }
 
+.em-cat-lost {
+  background: #f1f5f9;
+  border-color: #94a3b8;
+}
+.em-cat-lost .em-cat-label {
+  color: #475569;
+}
+.em-cat-lost .em-cat-weight {
+  color: #64748b;
+}
+.em-cat-lost .em-cat-input:focus {
+  border-color: #94a3b8;
+}
+
 /* Summary Bar */
 .em-summary-bar {
   display: flex;
@@ -4019,6 +4044,17 @@
 }
 .vm-cat-short .vm-cat-weight {
   color: #fb7185;
+}
+
+.vm-cat-lost {
+  background: #f1f5f9;
+  border-color: #94a3b8;
+}
+.vm-cat-lost .vm-cat-label {
+  color: #475569;
+}
+.vm-cat-lost .vm-cat-weight {
+  color: #64748b;
 }
 
 /* Totals Bar */

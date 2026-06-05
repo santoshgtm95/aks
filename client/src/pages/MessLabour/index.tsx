@@ -71,6 +71,7 @@ const MessLabour: React.FC = () => {
     shortCut: 0,
     artificial: 0,
     short: 0,
+    lossWeight: 0,
     selectedStaff: [] as string[],
   });
 
@@ -86,6 +87,7 @@ const MessLabour: React.FC = () => {
     shortCut: "",
     artificial: "",
     short: "",
+    lossWeight: "",
   });
 
   const selectedProduct = useMemo(
@@ -261,6 +263,7 @@ const MessLabour: React.FC = () => {
     const shortCutWeight = Number(formData.shortCut) * uw;
     const artificialWeight = Number(formData.artificial) * uw;
     const shortWeight = Number(formData.short) * uw;
+    const lossWeight = Number(formData.lossWeight) || 0;
 
     const categorizedWeight =
       redWeight +
@@ -271,7 +274,8 @@ const MessLabour: React.FC = () => {
       naturalRedWeight +
       shortCutWeight +
       artificialWeight +
-      shortWeight;
+      shortWeight +
+      lossWeight;
     const remainingWeight = rwViss - categorizedWeight;
 
     const total = totalWeightFromCount;
@@ -289,6 +293,7 @@ const MessLabour: React.FC = () => {
       shortCutWeight,
       artificialWeight,
       shortWeight,
+      lossWeight,
       categorizedWeight,
       remainingWeight,
       total,
@@ -303,17 +308,7 @@ const MessLabour: React.FC = () => {
         Number(formData.shortCut) +
         Number(formData.artificial) +
         Number(formData.short),
-      remainingCount:
-        (Number(formData.count) || 0) -
-        (Number(formData.red) +
-          Number(formData.white) +
-          Number(formData.special) +
-          Number(formData.natural) +
-          Number(formData.naturalWhite) +
-          Number(formData.naturalRed) +
-          Number(formData.shortCut) +
-          Number(formData.artificial) +
-          Number(formData.short)),
+      remainingCount: uw > 0 ? Math.max(0, remainingWeight / uw) : 0,
     };
   }, [formData, selectedProduct]);
 
@@ -343,6 +338,7 @@ const MessLabour: React.FC = () => {
       shortCut,
       artificial,
       short,
+      lossWeight: record.lossWeight,
       selectedStaff: record.workerNames
         ? record.workerNames.split(", ").filter((n) => n.trim() !== "")
         : [],
@@ -464,6 +460,7 @@ const MessLabour: React.FC = () => {
     const shortCutWeight = editFormData.shortCut * uw;
     const artificialWeight = editFormData.artificial * uw;
     const shortWeight = editFormData.short * uw;
+    const lossWeight = Number(editFormData.lossWeight) || 0;
 
     const catSum =
       editFormData.red +
@@ -477,9 +474,12 @@ const MessLabour: React.FC = () => {
       editFormData.short;
     const originalTotal = getOriginalTotalCount(editingRecord);
 
-    const normalCount = originalTotal - catSum;
+    const normalWeight = Math.max(
+      0,
+      (originalTotal - catSum) * uw - lossWeight,
+    );
+    const normalCount = uw > 0 ? normalWeight / uw : 0;
 
-    const normalWeight = normalCount * uw;
     const categoryWeight =
       redWeight +
       whiteWeight +
@@ -489,7 +489,8 @@ const MessLabour: React.FC = () => {
       naturalRedWeight +
       shortCutWeight +
       artificialWeight +
-      shortWeight;
+      shortWeight +
+      lossWeight;
     const totalWeight = normalWeight + categoryWeight;
 
     const dto: CreateProcessingRecordDto = {
@@ -517,7 +518,7 @@ const MessLabour: React.FC = () => {
       artificialCount: editFormData.artificial,
       shortWeight: shortWeight,
       shortCount: editFormData.short,
-      lossWeight: 0,
+      lossWeight,
       totalWeight,
       remainingWeight: normalWeight, // normalWeight is the remaining weight for sale
       remainingWeightKg: (() => {
@@ -587,18 +588,6 @@ const MessLabour: React.FC = () => {
     if (!selectedProductId || selectedStaff.length === 0) return;
 
     try {
-      const catSum =
-        Number(formData.red) +
-        Number(formData.white) +
-        Number(formData.special) +
-        Number(formData.natural) +
-        Number(formData.naturalWhite) +
-        Number(formData.naturalRed) +
-        Number(formData.shortCut) +
-        Number(formData.artificial) +
-        Number(formData.short);
-      const normalCount = Number(formData.count) - catSum;
-
       const dto: CreateProcessingRecordDto = {
         date: combineDateWithMyanmarTime(
           new Date().toISOString().split("T")[0],
@@ -606,7 +595,7 @@ const MessLabour: React.FC = () => {
         productId: selectedProductId,
         workerNames: selectedStaff.join(", "),
         count: Number(formData.count),
-        remainingCount: normalCount,
+        remainingCount: totals.remainingCount,
         unitWeight: Number(formData.unitWeight),
         redWeight: totals.redWeight,
         redCount: Number(formData.red) || 0,
@@ -626,7 +615,7 @@ const MessLabour: React.FC = () => {
         artificialCount: Number(formData.artificial) || 0,
         shortWeight: totals.shortWeight,
         shortCount: Number(formData.short) || 0,
-        lossWeight: 0,
+        lossWeight: totals.lossWeight,
         totalWeight: totals.total,
         remainingWeight: totals.remainingWeight,
         remainingWeightKg:
@@ -652,6 +641,7 @@ const MessLabour: React.FC = () => {
         shortCut: "",
         artificial: "",
         short: "",
+        lossWeight: "",
       });
       setSelectedStaff([]);
       setSelectedProductId(null);
@@ -1169,6 +1159,22 @@ const MessLabour: React.FC = () => {
                           {totals.shortWeight.toFixed(3)} viss
                         </span>
                       </div>
+                      <div className="category-input-box box-lost">
+                        <span className="box-label label-lost">lost</span>
+                        <input
+                          type="number"
+                          name="lossWeight"
+                          step="0.0001"
+                          min="0"
+                          className="box-input"
+                          value={formData.lossWeight || ""}
+                          onChange={handleInputChange}
+                          placeholder="0"
+                        />
+                        <span className="box-weight-hint hint-lost">
+                          {(Number(formData.lossWeight) || 0).toFixed(3)} viss
+                        </span>
+                      </div>
                     </div>
                   </section>
 
@@ -1194,7 +1200,7 @@ const MessLabour: React.FC = () => {
                         <span>=</span>
                       </div>
                       <div className="calc-right">
-                        {totals.remainingWeight.toFixed(4)}
+                        {totals.remainingWeight.toFixed(3)}
                       </div>
                     </div>
                     {(selectedProduct?.unit?.toLowerCase() === "kg" ||
@@ -1316,6 +1322,7 @@ const MessLabour: React.FC = () => {
                     <th>Marker</th>
                     <th>Staff</th>
                     <th>Categories</th>
+                    <th style={{ textAlign: "center" }}>Lost (viss)</th>
                     <th style={{ textAlign: "center" }}>Actions</th>
                   </tr>
                 </thead>
@@ -1388,6 +1395,27 @@ const MessLabour: React.FC = () => {
                             </span>
                           )}
                         </div>
+                      </td>
+                      <td style={{ textAlign: "center" }}>
+                        {record.lossWeight > 0 ? (
+                          <span
+                            style={{
+                              background: "#f1f5f9",
+                              color: "#475569",
+                              fontWeight: 700,
+                              fontSize: "13px",
+                              padding: "3px 10px",
+                              borderRadius: "6px",
+                              border: "1px solid #cbd5e1",
+                            }}
+                          >
+                            {Number(record.lossWeight).toFixed(3)}
+                          </span>
+                        ) : (
+                          <span style={{ color: "#cbd5e1", fontSize: "12px" }}>
+                            —
+                          </span>
+                        )}
                       </td>
                       <td onClick={(e) => e.stopPropagation()}>
                         <div
@@ -1661,6 +1689,28 @@ const MessLabour: React.FC = () => {
                       </span>
                     </div>
                   ))}
+                  {/* Lost weight — direct viss input, not count-based */}
+                  <div className="em-cat-card em-cat-lost">
+                    <span className="em-cat-label">Lost</span>
+                    <input
+                      type="number"
+                      name="lossWeight"
+                      step="0.0001"
+                      min="0"
+                      className="em-cat-input"
+                      value={editFormData.lossWeight || ""}
+                      onChange={(e) =>
+                        setEditFormData((prev) => ({
+                          ...prev,
+                          lossWeight: Number(e.target.value) || 0,
+                        }))
+                      }
+                      placeholder="0"
+                    />
+                    <span className="em-cat-weight">
+                      {Number(editFormData.lossWeight || 0).toFixed(3)} v
+                    </span>
+                  </div>
                 </div>
               </div>
 
@@ -1880,6 +1930,16 @@ const MessLabour: React.FC = () => {
                         </span>
                       </div>
                     ))}
+                  {/* Lost — weight only, no bundle count */}
+                  {viewingRecord.lossWeight > 0 && (
+                    <div className="vm-cat-card vm-cat-lost">
+                      <span className="vm-cat-label">Lost</span>
+                      <span className="vm-cat-count">—</span>
+                      <span className="vm-cat-weight">
+                        {Number(viewingRecord.lossWeight).toFixed(3)} viss
+                      </span>
+                    </div>
+                  )}
                   {viewingRecord.redCount === 0 &&
                     viewingRecord.whiteCount === 0 &&
                     viewingRecord.specialCount === 0 &&
@@ -1888,7 +1948,8 @@ const MessLabour: React.FC = () => {
                     viewingRecord.naturalRedCount === 0 &&
                     viewingRecord.shortCutCount === 0 &&
                     viewingRecord.artificialCount === 0 &&
-                    viewingRecord.shortCount === 0 && (
+                    viewingRecord.shortCount === 0 &&
+                    viewingRecord.lossWeight === 0 && (
                       <div className="vm-empty-cats">
                         No bundles were sorted into categories.
                       </div>
