@@ -42,7 +42,7 @@ interface GroupedMarker {
   warehouseNames: string[];
 }
 
-const Sales5: React.FC = () => {
+const SemiExport: React.FC = () => {
   const { hasPermission } = useAuth();
   const [sddRecords, setSddRecords] = useState<SingleDoubleDrawnRecord[]>([]);
   const [savedExports, setSavedExports] = useState<SemiExportRecord[]>([]);
@@ -2420,7 +2420,7 @@ const Sales5: React.FC = () => {
                                 textAlign: "center",
                               }}
                             >
-                              {hasPermission("Sales5.Delete") && (
+                              {hasPermission("SemiExport.Delete") && (
                                 <button
                                   onClick={() => handleDeleteExport(group.ids)}
                                   className="btn btn-danger"
@@ -2743,4 +2743,4 @@ const Sales5: React.FC = () => {
   );
 };
 
-export default Sales5;
+export default SemiExport;

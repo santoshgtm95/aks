@@ -96,6 +96,17 @@ export interface CreateSaleDto {
   category: string;
 }
 
+export interface MarkerSortingStats {
+  marker: string;
+  warehouseName: string;
+  category: string;
+  totalSorted: number;
+  totalLost: number;
+  totalSpoilage: number;
+  totalReturns: number;
+  recordCount: number;
+}
+
 export interface DashboardStats {
   totalProducts: number;
   activeProducts: number;
@@ -106,6 +117,7 @@ export interface DashboardStats {
   todaySalesAmount: number;
   recentSales: Sale[];
   lowStockProducts: Product[];
+  markerSortingStats: MarkerSortingStats[];
 }
 
 export interface CreateUserDto {

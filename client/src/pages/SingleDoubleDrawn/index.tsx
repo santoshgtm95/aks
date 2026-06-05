@@ -361,18 +361,18 @@ const SingleDoubleDrawn: React.FC = () => {
     ["6", "7", "8", "9", "10"].forEach((size) => {
       const wVal = parseFloat(twoInchesForm[`size${size}` as keyof typeof twoInchesForm]) || 0;
       const pVal = parseFloat(twoInchesPricesForm[`price${size}` as keyof typeof twoInchesPricesForm]) || 0;
-      if (wVal > 0 && pVal <= 0) {
+      if (wVal > 0 && pVal < 0) {
         priceMissing = true;
         missingSize = `Size ${size}`;
       }
     });
 
     // Check spoilage and return sizes
-    if ((parseFloat(spoilageSizeWeight) || 0) > 0 && (parseFloat(spoilageSizePrice) || 0) <= 0) {
+    if ((parseFloat(spoilageSizeWeight) || 0) > 0 && (parseFloat(spoilageSizePrice) || 0) < 0) {
       priceMissing = true;
       missingSize = "Spoilage";
     }
-    if ((parseFloat(returnSizeWeight) || 0) > 0 && (parseFloat(returnSizePrice) || 0) <= 0) {
+    if ((parseFloat(returnSizeWeight) || 0) > 0 && (parseFloat(returnSizePrice) || 0) < 0) {
       priceMissing = true;
       missingSize = "Return";
     }
@@ -523,9 +523,10 @@ const SingleDoubleDrawn: React.FC = () => {
       setSelectedRecordId(null);
 
       await loadData();
-    } catch (error) {
+    } catch (error: any) {
       console.error("Failed to save record:", error);
-      setFormError("Failed to save record. Please try again.");
+      const serverMessage = error.response?.data?.message;
+      setFormError(serverMessage || "Failed to save record. Please try again.");
     }
   };
 
@@ -837,7 +838,7 @@ const SingleDoubleDrawn: React.FC = () => {
                                           width: "100%",
                                           padding: "8px 12px",
                                           borderRadius: "8px",
-                                          border: spoilageW > 0 && spoilageP <= 0 ? "1.5px solid #ef4444" : "1.5px solid #ffedd5",
+                                          border: spoilageW > 0 && spoilageP < 0 ? "1.5px solid #ef4444" : "1.5px solid #ffedd5",
                                           fontSize: "13.5px",
                                           fontWeight: "600",
                                           outline: "none",
@@ -892,7 +893,7 @@ const SingleDoubleDrawn: React.FC = () => {
                                           width: "100%",
                                           padding: "8px 12px",
                                           borderRadius: "8px",
-                                          border: returnW > 0 && returnP <= 0 ? "1.5px solid #ef4444" : "1.5px solid #dbeafe",
+                                          border: returnW > 0 && returnP < 0 ? "1.5px solid #ef4444" : "1.5px solid #dbeafe",
                                           fontSize: "13.5px",
                                           fontWeight: "600",
                                           outline: "none",

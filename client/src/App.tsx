@@ -22,7 +22,7 @@ import PurifierManagement from "./pages/PurifierManagement/index";
 import Refinement from "./pages/Refinement/index";
 import RefinementWorkerManagement from "./pages/RefinementWorkerManagement/index";
 import SingleDoubleDrawn from "./pages/SingleDoubleDrawn/index";
-import Sales5 from "./pages/Sales5/index";
+import SemiExport from "./pages/SemiExport/index";
 import Sales6 from "./pages/Sales6/index";
 import ExchangeRates from "./pages/ExchangeRates/index";
 
@@ -145,10 +145,10 @@ const App: React.FC = () => {
                 }
               />
               <Route
-                path="sales5"
+                path="semi-export"
                 element={
-                  <ProtectedRoute permission="Sales5.View">
-                    <Sales5 />
+                  <ProtectedRoute permission="SemiExport.View">
+                    <SemiExport />
                   </ProtectedRoute>
                 }
               />

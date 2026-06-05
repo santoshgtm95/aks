@@ -101,6 +101,31 @@ public static class DbSeeder
             context.SaveChanges();
         }
 
+        // Rename legacy Sales5 permissions
+        var legacySales5Permissions = context.Permissions.Where(p => p.Name.StartsWith("Sales5.")).ToList();
+        var existingPermNames5 = context.Permissions.Select(p => p.Name).ToList();
+
+        if (legacySales5Permissions.Any())
+        {
+            foreach (var p in legacySales5Permissions)
+            {
+                var newName = p.Name.Replace("Sales5.", "SemiExport.");
+                if (existingPermNames5.Contains(newName))
+                {
+                    context.Permissions.Remove(p);
+                }
+                else
+                {
+                    p.Name = newName;
+                    if (p.Description != null)
+                    {
+                        p.Description = p.Description.Replace("Sales5", "Semi Export");
+                    }
+                }
+            }
+            context.SaveChanges();
+        }
+
         // Seed Permissions
         var allPermissions = new List<Permission>
         {
@@ -155,10 +180,10 @@ public static class DbSeeder
             new Permission { Name = "SingleDoubleDrawn.Edit", Description = "Edit Single & Double Drawn records" },
             new Permission { Name = "SingleDoubleDrawn.Delete", Description = "Delete Single & Double Drawn records" },
 
-            new Permission { Name = "Sales5.View", Description = "View Sales5 records" },
-            new Permission { Name = "Sales5.Create", Description = "Create Sales5 records" },
-            new Permission { Name = "Sales5.Edit", Description = "Edit Sales5 records" },
-            new Permission { Name = "Sales5.Delete", Description = "Delete Sales5 records" },
+            new Permission { Name = "SemiExport.View", Description = "View Semi Export records" },
+            new Permission { Name = "SemiExport.Create", Description = "Create Semi Export records" },
+            new Permission { Name = "SemiExport.Edit", Description = "Edit Semi Export records" },
+            new Permission { Name = "SemiExport.Delete", Description = "Delete Semi Export records" },
 
             new Permission { Name = "Sales6.View", Description = "View Sales6 records" },
             new Permission { Name = "Sales6.Create", Description = "Create Sales6 records" },
@@ -197,7 +222,7 @@ public static class DbSeeder
         // Manager (Base Seed)
         if (roles.TryGetValue("Manager", out var managerRole))
         {
-            string[] managerPerms = { "Dashboard.View", "Inventory.View", "Inventory.Create", "Inventory.Edit", "Inventory.Delete", "Warehouse.View", "Sales.View", "MessLabour.View", "Sales2.View", "Refinement.View", "SingleDoubleDrawn.View", "Sales5.View", "Sales6.View", "Staff.View" };
+            string[] managerPerms = { "Dashboard.View", "Inventory.View", "Inventory.Create", "Inventory.Edit", "Inventory.Delete", "Warehouse.View", "Sales.View", "MessLabour.View", "Sales2.View", "Refinement.View", "SingleDoubleDrawn.View", "SemiExport.View", "Sales6.View", "Staff.View" };
             foreach (var pName in managerPerms)
             {
                 if (perms.TryGetValue(pName, out var p) && !existingRolePerms.Any(rp => rp.RoleId == managerRole.Id && rp.PermissionId == p.Id))
@@ -219,7 +244,7 @@ public static class DbSeeder
                 }
             }
             // Explicitly remove unwanted permissions if they were previously assigned
-            string[] permsToRemove = { "Refinement.View", "Refinement.Create", "SingleDoubleDrawn.View", "SingleDoubleDrawn.Create", "Sales5.View", "Sales5.Create", "Sales6.View", "Sales6.Create" };
+            string[] permsToRemove = { "Refinement.View", "Refinement.Create", "SingleDoubleDrawn.View", "SingleDoubleDrawn.Create", "SemiExport.View", "SemiExport.Create", "Sales6.View", "Sales6.Create" };
             var unwantedRPs = context.RolePermissions
                 .Include(rp => rp.Permission)
                 .Where(rp => rp.RoleId == sellerRole.Id && permsToRemove.Contains(rp.Permission!.Name))

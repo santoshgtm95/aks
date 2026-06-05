@@ -34,6 +34,18 @@ public class CreateSaleDto
     public string Category { get; set; } = "General";
 }
 
+public class MarkerSortingStatsDto
+{
+    public string Marker { get; set; } = string.Empty;
+    public string WarehouseName { get; set; } = string.Empty;
+    public string Category { get; set; } = string.Empty;
+    public decimal TotalSorted { get; set; }
+    public decimal TotalLost { get; set; }
+    public decimal TotalSpoilage { get; set; }
+    public decimal TotalReturns { get; set; }
+    public int RecordCount { get; set; }
+}
+
 public class DashboardStatsDto
 {
     public int TotalProducts { get; set; }
@@ -45,4 +57,5 @@ public class DashboardStatsDto
     public decimal TodaySalesAmount { get; set; }
     public List<SaleDto> RecentSales { get; set; } = new();
     public List<ProductDto> LowStockProducts { get; set; } = new();
+    public List<MarkerSortingStatsDto> MarkerSortingStats { get; set; } = new();
 }

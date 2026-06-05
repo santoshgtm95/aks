@@ -79,6 +79,51 @@ public class DashboardController : ControllerBase
             })
             .ToListAsync();
 
+        // Per-marker sorting stats from SingleDoubleDrawnRecords
+        var sddRecords = await _context.SingleDoubleDrawnRecords
+            .Include(s => s.RefinementRecord)
+                .ThenInclude(rr => rr.PurifiedRecord)
+                    .ThenInclude(p => p.ProcessingRecord)
+                        .ThenInclude(pr => pr.Product)
+                            .ThenInclude(prod => prod.Warehouse)
+            .ToListAsync();
+
+        var markerStats = sddRecords
+            .GroupBy(s =>
+            {
+                var marker = s.RefinementRecord?.PurifiedRecord?.ProcessingRecord?.Product?.Marker ?? "---";
+                return marker;
+            })
+            .Select(g =>
+            {
+                var first = g.First();
+                var warehouseName = first.RefinementRecord?.PurifiedRecord?.ProcessingRecord?.Product?.Warehouse?.Name ?? "";
+                var category = first.RefinementRecord?.Category ?? "";
+
+                var totalSorted =
+                    g.Sum(r => r.Size6 + r.Size7 + r.Size8 + r.Size9 + r.Size10 +
+                               r.Size10B + r.Size12 + r.Size14 + r.Size16 + r.Size18 +
+                               r.Size20 + r.Size22 + r.Size24 + r.Size26 + r.Size28 + r.SizeBar);
+
+                var totalLost = g.Sum(r => r.LostWeight);
+                var totalSpoilage = g.Sum(r => r.SpoilageWeight + r.SpoilageSize);
+                var totalReturns = g.Sum(r => r.ReturnWeight + r.ReturnSize);
+
+                return new MarkerSortingStatsDto
+                {
+                    Marker = g.Key,
+                    WarehouseName = warehouseName,
+                    Category = category,
+                    TotalSorted = totalSorted,
+                    TotalLost = totalLost,
+                    TotalSpoilage = totalSpoilage,
+                    TotalReturns = totalReturns,
+                    RecordCount = g.Count()
+                };
+            })
+            .OrderByDescending(m => m.TotalSorted)
+            .ToList();
+
         var stats = new DashboardStatsDto
         {
             TotalProducts = totalProducts,
@@ -89,7 +134,8 @@ public class DashboardController : ControllerBase
             TodaySales = todaySales,
             TodaySalesAmount = todaySalesAmount,
             RecentSales = recentSales,
-            LowStockProducts = lowStockProducts
+            LowStockProducts = lowStockProducts,
+            MarkerSortingStats = markerStats
         };
 
         return Ok(stats);

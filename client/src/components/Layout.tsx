@@ -165,10 +165,10 @@ const Layout: React.FC = () => {
             </Link>
           )}
 
-          {(hasPermission("Sales5.View") || hasPermission("Sales5.Create")) && (
+          {(hasPermission("SemiExport.View") || hasPermission("SemiExport.Create")) && (
             <Link
-              to="/sales5"
-              className={`nav-item ${isActive("/sales5") ? "active" : ""}`}
+              to="/semi-export"
+              className={`nav-item ${isActive("/semi-export") ? "active" : ""}`}
               onClick={closeMobileMenu}
             >
               <ShoppingCart className="nav-icon" size={24} />

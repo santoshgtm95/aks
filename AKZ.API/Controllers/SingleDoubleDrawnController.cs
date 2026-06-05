@@ -143,12 +143,12 @@ public class SingleDoubleDrawnController : ControllerBase
             return BadRequest(new { message = "Refined Stock record not found" });
         }
 
-        // Validate: for any size weight > 0, price must be > 0
-        if ((dto.Size6 > 0 && dto.Price6 <= 0) ||
-            (dto.Size7 > 0 && dto.Price7 <= 0) ||
-            (dto.Size8 > 0 && dto.Price8 <= 0) ||
-            (dto.Size9 > 0 && dto.Price9 <= 0) ||
-            (dto.Size10 > 0 && dto.Price10 <= 0) ||
+        // Validate: for any size weight > 0, price must be > 0 (Two Inches Category sizes can be 0, but not negative)
+        if ((dto.Size6 > 0 && dto.Price6 < 0) ||
+            (dto.Size7 > 0 && dto.Price7 < 0) ||
+            (dto.Size8 > 0 && dto.Price8 < 0) ||
+            (dto.Size9 > 0 && dto.Price9 < 0) ||
+            (dto.Size10 > 0 && dto.Price10 < 0) ||
             (dto.Size10B > 0 && dto.Price10B <= 0) ||
             (dto.Size12 > 0 && dto.Price12 <= 0) ||
             (dto.Size14 > 0 && dto.Price14 <= 0) ||
