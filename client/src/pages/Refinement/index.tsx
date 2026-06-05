@@ -593,20 +593,54 @@ const Refinement: React.FC = () => {
           <div
             className="worker-manager-modal"
             onClick={(e) => e.stopPropagation()}
+            style={{
+              background: "#f8fafc",
+              borderRadius: "16px",
+              boxShadow: "0 25px 50px -12px rgba(0, 0, 0, 0.25)",
+              width: "90%",
+              maxWidth: "1100px",
+              maxHeight: "90vh",
+              display: "flex",
+              flexDirection: "column",
+              position: "relative",
+            }}
           >
-            <button
-              className="pm-close-btn"
+            <div
               style={{
-                position: "absolute",
-                right: "24px",
-                top: "24px",
-                zIndex: 10,
+                display: "flex",
+                justifyContent: "flex-end",
+                padding: "16px 16px 0 16px",
               }}
-              onClick={handleCloseRefinementWorkerManagement}
             >
-              <X size={20} />
-            </button>
-            <RefinementWorkerManagement />
+              <button
+                className="pm-close-btn"
+                style={{
+                  background: "#e2e8f0",
+                  border: "none",
+                  borderRadius: "50%",
+                  width: "36px",
+                  height: "36px",
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  cursor: "pointer",
+                  transition: "all 0.2s",
+                }}
+                onClick={handleCloseRefinementWorkerManagement}
+              >
+                <X size={20} color="#475569" />
+              </button>
+            </div>
+            <div
+              style={{
+                overflowY: "auto",
+                flex: 1,
+                marginTop: "-20px",
+                paddingBottom: "16px",
+              }}
+            >
+              <RefinementWorkerManagement />
+            </div>
           </div>
         </div>
       )}

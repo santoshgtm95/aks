@@ -37,6 +37,8 @@ import type {
   UpsertSemiExportRecordDto,
   LedgerDto,
   CreateLedgerDto,
+  ExchangeRate,
+  CreateExchangeRateDto,
 } from "../types";
 
 const API_BASE_URL = "/api";
@@ -439,6 +441,21 @@ export const ledgerAPI = {
   },
   delete: async (id: number): Promise<void> => {
     await api.delete(`/ledger/${id}`);
+  },
+};
+
+export const exchangeRatesAPI = {
+  getAll: async (): Promise<ExchangeRate[]> => {
+    const response = await api.get<ExchangeRate[]>("/ExchangeRates");
+    return response.data;
+  },
+  getActive: async (): Promise<ExchangeRate[]> => {
+    const response = await api.get<ExchangeRate[]>("/ExchangeRates/active");
+    return response.data;
+  },
+  create: async (data: CreateExchangeRateDto): Promise<ExchangeRate> => {
+    const response = await api.post<ExchangeRate>("/ExchangeRates", data);
+    return response.data;
   },
 };
 

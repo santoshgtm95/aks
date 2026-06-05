@@ -33,6 +33,7 @@ public class AKZDbContext : DbContext
     public DbSet<SemiExportRecord> SemiExportRecords { get; set; }
     public DbSet<Ledger> Ledgers { get; set; }
     public DbSet<LedgerMarker> LedgerMarkers { get; set; }
+    public DbSet<ExchangeRate> ExchangeRates { get; set; }
 
     public override Task<int> SaveChangesAsync(CancellationToken cancellationToken = default)
     {
@@ -188,6 +189,7 @@ public class AKZDbContext : DbContext
         modelBuilder.Entity<RefinementRecord>().HasQueryFilter(e => e.DeleteFlg == 0);
         modelBuilder.Entity<SingleDoubleDrawnRecord>().HasQueryFilter(e => e.DeleteFlg == 0);
         modelBuilder.Entity<SemiExportRecord>().HasQueryFilter(e => e.DeleteFlg == 0);
+        modelBuilder.Entity<ExchangeRate>().HasQueryFilter(e => e.DeleteFlg == 0);
 
         modelBuilder.Entity<RefinementProcess>()
             .HasOne(r => r.PurifiedRecord)

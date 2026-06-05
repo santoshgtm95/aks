@@ -498,3 +498,20 @@ export interface UpsertSemiExportRecordDto {
   workerFees: number;
   remark: string;
 }
+
+export interface ExchangeRate {
+  id: number;
+  fromCurrency: string;
+  toCurrency: string;
+  rate: number;
+  activeStatus: boolean;
+  createDate: string;
+  createBy: string;
+}
+
+export interface CreateExchangeRateDto {
+  fromCurrency: string;
+  toCurrency: string;
+  rate: number;
+  activeStatus: boolean;
+}

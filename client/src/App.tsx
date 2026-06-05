@@ -24,6 +24,7 @@ import RefinementWorkerManagement from "./pages/RefinementWorkerManagement/index
 import SingleDoubleDrawn from "./pages/SingleDoubleDrawn/index";
 import Sales5 from "./pages/Sales5/index";
 import Sales6 from "./pages/Sales6/index";
+import ExchangeRates from "./pages/ExchangeRates/index";
 
 const ProtectedRoute: React.FC<{
   children: React.ReactNode;
@@ -172,6 +173,14 @@ const App: React.FC = () => {
                 element={
                   <ProtectedRoute permission="Permissions.Manage">
                     <PermissionManagement />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="exchange-rates"
+                element={
+                  <ProtectedRoute permission="Permissions.Manage">
+                    <ExchangeRates />
                   </ProtectedRoute>
                 }
               />
