@@ -37,7 +37,7 @@ const sumRecordSizes = (r: SingleDoubleDrawnRecord): number =>
   (r.spoilageSize ?? 0) +
   (r.returnSize ?? 0);
 
-// Helper: calculate total MMK amount of a SingleDoubleDrawnRecord (sum of weight * price for all sizes)
+// Helper: calculate total CNY amount of a SingleDoubleDrawnRecord (sum of weight * price for all sizes)
 const calculateRecordTotalAmount = (r: SingleDoubleDrawnRecord): number =>
   r.size6 * (r.price6 ?? 0) +
   r.size7 * (r.price7 ?? 0) +
@@ -65,34 +65,52 @@ const renderTwoInchesBadges = (record: SingleDoubleDrawnRecord) => {
     { label: '8"', val: record.size8, price: record.price8 },
     { label: '9"', val: record.size9, price: record.price9 },
     { label: '10"', val: record.size10, price: record.price10 },
-    { label: 'Spoilage', val: record.spoilageSize ?? 0, price: record.priceSpoilageSize ?? 0, isSpecial: true, color: '#ea580c', bg: '#fff7ed' },
-    { label: 'Return', val: record.returnSize ?? 0, price: record.priceReturnSize ?? 0, isSpecial: true, color: '#2563eb', bg: '#eff6ff' },
+    {
+      label: "Spoilage",
+      val: record.spoilageSize ?? 0,
+      price: record.priceSpoilageSize ?? 0,
+      isSpecial: true,
+      color: "#ea580c",
+      bg: "#fff7ed",
+    },
+    {
+      label: "Return",
+      val: record.returnSize ?? 0,
+      price: record.priceReturnSize ?? 0,
+      isSpecial: true,
+      color: "#2563eb",
+      bg: "#eff6ff",
+    },
   ];
 
   return (
     <div style={{ display: "flex", gap: "8px", flexWrap: "wrap" }}>
-      {sizes.map((s) => s.val > 0 && (
-        <span
-          key={s.label}
-          style={{
-            background: (s as any).bg ?? "#eff6ff",
-            color: (s as any).color ?? "#2563eb",
-            padding: "3px 8px",
-            borderRadius: "6px",
-            fontSize: "11.5px",
-            fontWeight: "700",
-          }}
-        >
-          {s.label}: {s.val.toFixed(3)} viss @ {(s.price ?? 0).toLocaleString()} MMK
-        </span>
-      ))}
+      {sizes.map(
+        (s) =>
+          s.val > 0 && (
+            <span
+              key={s.label}
+              style={{
+                background: (s as any).bg ?? "#eff6ff",
+                color: (s as any).color ?? "#2563eb",
+                padding: "3px 8px",
+                borderRadius: "6px",
+                fontSize: "11.5px",
+                fontWeight: "700",
+              }}
+            >
+              {s.label}: {s.val.toFixed(3)} viss @{" "}
+              {(s.price ?? 0).toLocaleString()} CNY
+            </span>
+          ),
+      )}
     </div>
   );
 };
 
 const renderBToTenBadges = (record: SingleDoubleDrawnRecord) => {
   const sizes = [
-    { label: '10B', val: record.size10B, price: record.price10B },
+    { label: "10B", val: record.size10B, price: record.price10B },
     { label: '12"', val: record.size12, price: record.price12 },
     { label: '14"', val: record.size14, price: record.price14 },
     { label: '16"', val: record.size16, price: record.price16 },
@@ -102,26 +120,30 @@ const renderBToTenBadges = (record: SingleDoubleDrawnRecord) => {
     { label: '24"', val: record.size24, price: record.price24 },
     { label: '26"', val: record.size26, price: record.price26 },
     { label: '28"', val: record.size28, price: record.price28 },
-    { label: 'Bar', val: record.sizeBar, price: record.priceBar },
+    { label: "Bar", val: record.sizeBar, price: record.priceBar },
   ];
 
   return (
     <div style={{ display: "flex", gap: "8px", flexWrap: "wrap" }}>
-      {sizes.map((s) => s.val > 0 && (
-        <span
-          key={s.label}
-          style={{
-            background: "#faf5ff",
-            color: "#8b5cf6",
-            padding: "3px 8px",
-            borderRadius: "6px",
-            fontSize: "11.5px",
-            fontWeight: "700",
-          }}
-        >
-          {s.label}: {s.val.toFixed(3)} viss @ {(s.price ?? 0).toLocaleString()} MMK
-        </span>
-      ))}
+      {sizes.map(
+        (s) =>
+          s.val > 0 && (
+            <span
+              key={s.label}
+              style={{
+                background: "#faf5ff",
+                color: "#8b5cf6",
+                padding: "3px 8px",
+                borderRadius: "6px",
+                fontSize: "11.5px",
+                fontWeight: "700",
+              }}
+            >
+              {s.label}: {s.val.toFixed(3)} viss @{" "}
+              {(s.price ?? 0).toLocaleString()} CNY
+            </span>
+          ),
+      )}
     </div>
   );
 };
@@ -136,7 +158,9 @@ const SingleDoubleDrawn: React.FC = () => {
   const [selectedRecordId, setSelectedRecordId] = useState<number | null>(null);
   const [searchTerm, setSearchTerm] = useState("");
   const [formError, setFormError] = useState("");
-  const [activeTab, setActiveTab] = useState<"processing" | "history">("processing");
+  const [activeTab, setActiveTab] = useState<"processing" | "history">(
+    "processing",
+  );
 
   // Two Inches Category sizes: 6, 7, 8, 9, 10
   const [twoInchesForm, setTwoInchesForm] = useState({
@@ -257,8 +281,16 @@ const SingleDoubleDrawn: React.FC = () => {
   const totalFormAmount = useMemo(() => {
     let total = 0;
     ["6", "7", "8", "9", "10"].forEach((size) => {
-      const w = parseFloat(twoInchesForm[`size${size}` as keyof typeof twoInchesForm]) || 0;
-      const p = parseFloat(twoInchesPricesForm[`price${size}` as keyof typeof twoInchesPricesForm]) || 0;
+      const w =
+        parseFloat(
+          twoInchesForm[`size${size}` as keyof typeof twoInchesForm],
+        ) || 0;
+      const p =
+        parseFloat(
+          twoInchesPricesForm[
+            `price${size}` as keyof typeof twoInchesPricesForm
+          ],
+        ) || 0;
       total += w * p;
     });
     [
@@ -275,26 +307,38 @@ const SingleDoubleDrawn: React.FC = () => {
       "Bar",
     ].forEach((size) => {
       const fieldName =
-        size === "10B"
-          ? "size10B"
-          : size === "Bar"
-            ? "sizeBar"
-            : `size${size}`;
+        size === "10B" ? "size10B" : size === "Bar" ? "sizeBar" : `size${size}`;
       const priceFieldName =
         size === "10B"
           ? "price10B"
           : size === "Bar"
             ? "priceBar"
             : `price${size}`;
-      const w = parseFloat(bToTenForm[fieldName as keyof typeof bToTenForm]) || 0;
-      const p = parseFloat(bToTenPricesForm[priceFieldName as keyof typeof bToTenPricesForm]) || 0;
+      const w =
+        parseFloat(bToTenForm[fieldName as keyof typeof bToTenForm]) || 0;
+      const p =
+        parseFloat(
+          bToTenPricesForm[priceFieldName as keyof typeof bToTenPricesForm],
+        ) || 0;
       total += w * p;
     });
     // Include spoilage and return sizes
-    total += (parseFloat(spoilageSizeWeight) || 0) * (parseFloat(spoilageSizePrice) || 0);
-    total += (parseFloat(returnSizeWeight) || 0) * (parseFloat(returnSizePrice) || 0);
+    total +=
+      (parseFloat(spoilageSizeWeight) || 0) *
+      (parseFloat(spoilageSizePrice) || 0);
+    total +=
+      (parseFloat(returnSizeWeight) || 0) * (parseFloat(returnSizePrice) || 0);
     return total;
-  }, [twoInchesForm, twoInchesPricesForm, bToTenForm, bToTenPricesForm, spoilageSizeWeight, spoilageSizePrice, returnSizeWeight, returnSizePrice]);
+  }, [
+    twoInchesForm,
+    twoInchesPricesForm,
+    bToTenForm,
+    bToTenPricesForm,
+    spoilageSizeWeight,
+    spoilageSizePrice,
+    returnSizeWeight,
+    returnSizePrice,
+  ]);
 
   // Filter sidebar: hide fully sorted, apply search
   const filteredRecords = useMemo(() => {
@@ -319,7 +363,9 @@ const SingleDoubleDrawn: React.FC = () => {
     setTwoInchesForm((prev) => ({ ...prev, [name]: value }));
   };
 
-  const handleTwoInchesPriceChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleTwoInchesPriceChange = (
+    e: React.ChangeEvent<HTMLInputElement>,
+  ) => {
     const { name, value } = e.target;
     setTwoInchesPricesForm((prev) => ({ ...prev, [name]: value }));
   };
@@ -333,7 +379,6 @@ const SingleDoubleDrawn: React.FC = () => {
     const { name, value } = e.target;
     setBToTenPricesForm((prev) => ({ ...prev, [name]: value }));
   };
-
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -359,8 +404,16 @@ const SingleDoubleDrawn: React.FC = () => {
 
     // Check Two Inches
     ["6", "7", "8", "9", "10"].forEach((size) => {
-      const wVal = parseFloat(twoInchesForm[`size${size}` as keyof typeof twoInchesForm]) || 0;
-      const pVal = parseFloat(twoInchesPricesForm[`price${size}` as keyof typeof twoInchesPricesForm]) || 0;
+      const wVal =
+        parseFloat(
+          twoInchesForm[`size${size}` as keyof typeof twoInchesForm],
+        ) || 0;
+      const pVal =
+        parseFloat(
+          twoInchesPricesForm[
+            `price${size}` as keyof typeof twoInchesPricesForm
+          ],
+        ) || 0;
       if (wVal > 0 && pVal < 0) {
         priceMissing = true;
         missingSize = `Size ${size}`;
@@ -368,11 +421,17 @@ const SingleDoubleDrawn: React.FC = () => {
     });
 
     // Check spoilage and return sizes
-    if ((parseFloat(spoilageSizeWeight) || 0) > 0 && (parseFloat(spoilageSizePrice) || 0) < 0) {
+    if (
+      (parseFloat(spoilageSizeWeight) || 0) > 0 &&
+      (parseFloat(spoilageSizePrice) || 0) < 0
+    ) {
       priceMissing = true;
       missingSize = "Spoilage";
     }
-    if ((parseFloat(returnSizeWeight) || 0) > 0 && (parseFloat(returnSizePrice) || 0) < 0) {
+    if (
+      (parseFloat(returnSizeWeight) || 0) > 0 &&
+      (parseFloat(returnSizePrice) || 0) < 0
+    ) {
       priceMissing = true;
       missingSize = "Return";
     }
@@ -392,19 +451,19 @@ const SingleDoubleDrawn: React.FC = () => {
       "Bar",
     ].forEach((size) => {
       const fieldName =
-        size === "10B"
-          ? "size10B"
-          : size === "Bar"
-            ? "sizeBar"
-            : `size${size}`;
+        size === "10B" ? "size10B" : size === "Bar" ? "sizeBar" : `size${size}`;
       const priceFieldName =
         size === "10B"
           ? "price10B"
           : size === "Bar"
             ? "priceBar"
             : `price${size}`;
-      const wVal = parseFloat(bToTenForm[fieldName as keyof typeof bToTenForm]) || 0;
-      const pVal = parseFloat(bToTenPricesForm[priceFieldName as keyof typeof bToTenPricesForm]) || 0;
+      const wVal =
+        parseFloat(bToTenForm[fieldName as keyof typeof bToTenForm]) || 0;
+      const pVal =
+        parseFloat(
+          bToTenPricesForm[priceFieldName as keyof typeof bToTenPricesForm],
+        ) || 0;
       if (wVal > 0 && pVal <= 0) {
         priceMissing = true;
         missingSize = size === "Bar" ? "Size Bar" : `Size ${size}`;
@@ -412,7 +471,9 @@ const SingleDoubleDrawn: React.FC = () => {
     });
 
     if (priceMissing) {
-      setFormError(`Price is required for ${missingSize} because a weight has been entered.`);
+      setFormError(
+        `Price is required for ${missingSize} because a weight has been entered.`,
+      );
       return;
     }
 
@@ -568,9 +629,7 @@ const SingleDoubleDrawn: React.FC = () => {
 
         <div className="rf-card-list">
           {filteredRecords.length === 0 ? (
-            <div className="rf-empty-sidebar">
-              No refined stock found
-            </div>
+            <div className="rf-empty-sidebar">No refined stock found</div>
           ) : (
             filteredRecords.map((record) => (
               <div
@@ -629,7 +688,13 @@ const SingleDoubleDrawn: React.FC = () => {
           {/* Header & Tabs */}
           <div className="rf-main-header">
             <div className="rf-header-left">
-              <div className="rf-header-icon" style={{ background: "linear-gradient(135deg, #dbeafe, #eff6ff)", color: "#2563eb" }}>
+              <div
+                className="rf-header-icon"
+                style={{
+                  background: "linear-gradient(135deg, #dbeafe, #eff6ff)",
+                  color: "#2563eb",
+                }}
+              >
                 <Scissors size={26} />
               </div>
               <div className="rf-tab-group">
@@ -638,7 +703,9 @@ const SingleDoubleDrawn: React.FC = () => {
                   onClick={() => setActiveTab("processing")}
                 >
                   <span className="rf-tab-title">Processing</span>
-                  <span className="rf-tab-sub">Sort selected refined stock</span>
+                  <span className="rf-tab-sub">
+                    Sort selected refined stock
+                  </span>
                 </button>
                 <button
                   className={`rf-tab ${activeTab === "history" ? "rf-tab-active rf-tab-green" : ""}`}
@@ -651,11 +718,19 @@ const SingleDoubleDrawn: React.FC = () => {
             </div>
 
             <div className="rf-header-badge">
-              <span className="rf-count-badge" style={{ background: "#dbeafe", color: "#2563eb", borderColor: "#bfdbfe" }}>
+              <span
+                className="rf-count-badge"
+                style={{
+                  background: "#dbeafe",
+                  color: "#2563eb",
+                  borderColor: "#bfdbfe",
+                }}
+              >
                 {activeTab === "processing"
-                  ? selectedRecord ? "Active Selection" : "No Selection"
-                  : `${savedRecords.length} records`
-                }
+                  ? selectedRecord
+                    ? "Active Selection"
+                    : "No Selection"
+                  : `${savedRecords.length} records`}
               </span>
             </div>
           </div>
@@ -663,16 +738,30 @@ const SingleDoubleDrawn: React.FC = () => {
           {/* Tab Content */}
           {activeTab === "processing" ? (
             selectedRecord ? (
-              <div className="fade-in" style={{ display: "flex", flexDirection: "column", gap: "24px" }}>
+              <div
+                className="fade-in"
+                style={{
+                  display: "flex",
+                  flexDirection: "column",
+                  gap: "24px",
+                }}
+              >
                 {/* Header details */}
                 <div
                   style={{
                     paddingBottom: "16px",
                     borderBottom: "1.5px solid #f1f5f9",
-                    marginBottom: "8px"
+                    marginBottom: "8px",
                   }}
                 >
-                  <h2 style={{ fontSize: "20px", fontWeight: "800", color: "#0f172a", margin: 0 }}>
+                  <h2
+                    style={{
+                      fontSize: "20px",
+                      fontWeight: "800",
+                      color: "#0f172a",
+                      margin: 0,
+                    }}
+                  >
                     Single &amp; Double Drawn Sorting
                   </h2>
                   <p
@@ -683,7 +772,9 @@ const SingleDoubleDrawn: React.FC = () => {
                       fontWeight: "500",
                     }}
                   >
-                    Refined Record: <strong>{selectedRecord.productMarker}</strong> ({selectedRecord.category})
+                    Refined Record:{" "}
+                    <strong>{selectedRecord.productMarker}</strong> (
+                    {selectedRecord.category})
                   </p>
                 </div>
 
@@ -693,28 +784,60 @@ const SingleDoubleDrawn: React.FC = () => {
                     <div className="detail-label">Output Weight</div>
                     <div className="detail-value">
                       {selectedRecord.weight.toFixed(3)}{" "}
-                      <span style={{ fontSize: "11px", fontWeight: 600, color: "#64748b" }}>viss</span>
+                      <span
+                        style={{
+                          fontSize: "11px",
+                          fontWeight: 600,
+                          color: "#64748b",
+                        }}
+                      >
+                        viss
+                      </span>
                     </div>
                   </div>
                   <div className="detail-info-card card-lost">
                     <div className="detail-label">Lost Weight</div>
                     <div className="detail-value">
                       {selectedRecord.lostWeight.toFixed(3)}{" "}
-                      <span style={{ fontSize: "11px", fontWeight: 600, color: "#64748b" }}>viss</span>
+                      <span
+                        style={{
+                          fontSize: "11px",
+                          fontWeight: 600,
+                          color: "#64748b",
+                        }}
+                      >
+                        viss
+                      </span>
                     </div>
                   </div>
                   <div className="detail-info-card card-spoilage">
                     <div className="detail-label">Spoilage Weight</div>
                     <div className="detail-value">
                       {selectedRecord.spoilageWeight.toFixed(3)}{" "}
-                      <span style={{ fontSize: "11px", fontWeight: 600, color: "#64748b" }}>viss</span>
+                      <span
+                        style={{
+                          fontSize: "11px",
+                          fontWeight: 600,
+                          color: "#64748b",
+                        }}
+                      >
+                        viss
+                      </span>
                     </div>
                   </div>
                   <div className="detail-info-card card-return">
                     <div className="detail-label">Return Weight</div>
                     <div className="detail-value">
                       {selectedRecord.returnWeight.toFixed(3)}{" "}
-                      <span style={{ fontSize: "11px", fontWeight: 600, color: "#64748b" }}>viss</span>
+                      <span
+                        style={{
+                          fontSize: "11px",
+                          fontWeight: 600,
+                          color: "#64748b",
+                        }}
+                      >
+                        viss
+                      </span>
                     </div>
                   </div>
                   <div className="detail-info-card card-worker">
@@ -735,31 +858,114 @@ const SingleDoubleDrawn: React.FC = () => {
                           <LayoutGrid size={18} style={{ color: "#2563eb" }} />
                           Two Inches Category
                         </h3>
-                        <div className="table-container" style={{ border: "1.5px solid #e2e8f0", borderRadius: "12px", overflow: "hidden", background: "white" }}>
-                          <table className="table" style={{ width: "100%", borderCollapse: "collapse", textAlign: "left", fontSize: "13.5px" }}>
+                        <div
+                          className="table-container"
+                          style={{
+                            border: "1.5px solid #e2e8f0",
+                            borderRadius: "12px",
+                            overflow: "hidden",
+                            background: "white",
+                          }}
+                        >
+                          <table
+                            className="table"
+                            style={{
+                              width: "100%",
+                              borderCollapse: "collapse",
+                              textAlign: "left",
+                              fontSize: "13.5px",
+                            }}
+                          >
                             <thead>
-                              <tr style={{ background: "#f8fafc", borderBottom: "1.5px solid #e2e8f0" }}>
-                                <th style={{ padding: "10px 16px", fontWeight: "700", color: "#475569" }}>SIZE</th>
-                                <th style={{ padding: "10px 16px", fontWeight: "700", color: "#475569", width: "160px" }}>WEIGHT (viss)</th>
-                                <th style={{ padding: "10px 16px", fontWeight: "700", color: "#475569", width: "160px" }}>PRICE (MMK)</th>
-                                <th style={{ padding: "10px 16px", fontWeight: "700", color: "#475569", textAlign: "right" }}>AMOUNT (MMK)</th>
+                              <tr
+                                style={{
+                                  background: "#f8fafc",
+                                  borderBottom: "1.5px solid #e2e8f0",
+                                }}
+                              >
+                                <th
+                                  style={{
+                                    padding: "10px 16px",
+                                    fontWeight: "700",
+                                    color: "#475569",
+                                  }}
+                                >
+                                  SIZE
+                                </th>
+                                <th
+                                  style={{
+                                    padding: "10px 16px",
+                                    fontWeight: "700",
+                                    color: "#475569",
+                                    width: "160px",
+                                  }}
+                                >
+                                  WEIGHT (viss)
+                                </th>
+                                <th
+                                  style={{
+                                    padding: "10px 16px",
+                                    fontWeight: "700",
+                                    color: "#475569",
+                                    width: "160px",
+                                  }}
+                                >
+                                  PRICE (CNY)
+                                </th>
+                                <th
+                                  style={{
+                                    padding: "10px 16px",
+                                    fontWeight: "700",
+                                    color: "#475569",
+                                    textAlign: "right",
+                                  }}
+                                >
+                                  AMOUNT (CNY)
+                                </th>
                               </tr>
                             </thead>
                             <tbody>
                               {["6", "7", "8", "9", "10"].map((size) => {
-                                const weightVal = parseFloat(twoInchesForm[`size${size}` as keyof typeof twoInchesForm]) || 0;
-                                const priceVal = parseFloat(twoInchesPricesForm[`price${size}` as keyof typeof twoInchesPricesForm]) || 0;
+                                const weightVal =
+                                  parseFloat(
+                                    twoInchesForm[
+                                      `size${size}` as keyof typeof twoInchesForm
+                                    ],
+                                  ) || 0;
+                                const priceVal =
+                                  parseFloat(
+                                    twoInchesPricesForm[
+                                      `price${size}` as keyof typeof twoInchesPricesForm
+                                    ],
+                                  ) || 0;
                                 const amount = weightVal * priceVal;
                                 return (
-                                  <tr key={size} style={{ borderBottom: "1px solid #f1f5f9" }}>
-                                    <td style={{ padding: "10px 16px", fontWeight: "700", color: "#1e293b" }}>Size {size}</td>
+                                  <tr
+                                    key={size}
+                                    style={{
+                                      borderBottom: "1px solid #f1f5f9",
+                                    }}
+                                  >
+                                    <td
+                                      style={{
+                                        padding: "10px 16px",
+                                        fontWeight: "700",
+                                        color: "#1e293b",
+                                      }}
+                                    >
+                                      Size {size}
+                                    </td>
                                     <td style={{ padding: "6px 16px" }}>
                                       <input
                                         type="number"
                                         step="0.001"
                                         name={`size${size}`}
                                         placeholder="0.000"
-                                        value={twoInchesForm[`size${size}` as keyof typeof twoInchesForm]}
+                                        value={
+                                          twoInchesForm[
+                                            `size${size}` as keyof typeof twoInchesForm
+                                          ]
+                                        }
                                         onChange={handleTwoInchesChange}
                                         style={{
                                           width: "100%",
@@ -769,7 +975,7 @@ const SingleDoubleDrawn: React.FC = () => {
                                           fontSize: "13.5px",
                                           fontWeight: "600",
                                           outline: "none",
-                                          boxSizing: "border-box"
+                                          boxSizing: "border-box",
                                         }}
                                       />
                                     </td>
@@ -778,7 +984,11 @@ const SingleDoubleDrawn: React.FC = () => {
                                         type="number"
                                         name={`price${size}`}
                                         placeholder="0"
-                                        value={twoInchesPricesForm[`price${size}` as keyof typeof twoInchesPricesForm]}
+                                        value={
+                                          twoInchesPricesForm[
+                                            `price${size}` as keyof typeof twoInchesPricesForm
+                                          ]
+                                        }
                                         onChange={handleTwoInchesPriceChange}
                                         style={{
                                           width: "100%",
@@ -788,32 +998,61 @@ const SingleDoubleDrawn: React.FC = () => {
                                           fontSize: "13.5px",
                                           fontWeight: "600",
                                           outline: "none",
-                                          boxSizing: "border-box"
+                                          boxSizing: "border-box",
                                         }}
                                       />
                                     </td>
-                                    <td style={{ padding: "10px 16px", textAlign: "right", fontWeight: "700", color: "#0f172a" }}>
-                                      {amount > 0 ? amount.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 }) : "0.00"}
+                                    <td
+                                      style={{
+                                        padding: "10px 16px",
+                                        textAlign: "right",
+                                        fontWeight: "700",
+                                        color: "#0f172a",
+                                      }}
+                                    >
+                                      {amount > 0
+                                        ? amount.toLocaleString(undefined, {
+                                            minimumFractionDigits: 2,
+                                            maximumFractionDigits: 2,
+                                          })
+                                        : "0.00"}
                                     </td>
                                   </tr>
                                 );
                               })}
-                              
+
                               {/* Spoilage row */}
                               {(() => {
-                                const spoilageW = parseFloat(spoilageSizeWeight) || 0;
-                                const spoilageP = parseFloat(spoilageSizePrice) || 0;
+                                const spoilageW =
+                                  parseFloat(spoilageSizeWeight) || 0;
+                                const spoilageP =
+                                  parseFloat(spoilageSizePrice) || 0;
                                 const spoilageAmt = spoilageW * spoilageP;
                                 return (
-                                  <tr style={{ borderBottom: "1px solid #f1f5f9", background: "#fffaf8" }}>
-                                    <td style={{ padding: "10px 16px", fontWeight: "700", color: "#ea580c" }}>Spoilage</td>
+                                  <tr
+                                    style={{
+                                      borderBottom: "1px solid #f1f5f9",
+                                      background: "#fffaf8",
+                                    }}
+                                  >
+                                    <td
+                                      style={{
+                                        padding: "10px 16px",
+                                        fontWeight: "700",
+                                        color: "#ea580c",
+                                      }}
+                                    >
+                                      Spoilage
+                                    </td>
                                     <td style={{ padding: "6px 16px" }}>
                                       <input
                                         type="number"
                                         step="0.001"
                                         placeholder="0.000"
                                         value={spoilageSizeWeight}
-                                        onChange={(e) => setSpoilageSizeWeight(e.target.value)}
+                                        onChange={(e) =>
+                                          setSpoilageSizeWeight(e.target.value)
+                                        }
                                         style={{
                                           width: "100%",
                                           padding: "8px 12px",
@@ -823,7 +1062,7 @@ const SingleDoubleDrawn: React.FC = () => {
                                           fontWeight: "600",
                                           outline: "none",
                                           boxSizing: "border-box",
-                                          background: "#fff"
+                                          background: "#fff",
                                         }}
                                       />
                                     </td>
@@ -833,22 +1072,45 @@ const SingleDoubleDrawn: React.FC = () => {
                                         step="1"
                                         placeholder="0"
                                         value={spoilageSizePrice}
-                                        onChange={(e) => setSpoilageSizePrice(e.target.value)}
+                                        onChange={(e) =>
+                                          setSpoilageSizePrice(e.target.value)
+                                        }
                                         style={{
                                           width: "100%",
                                           padding: "8px 12px",
                                           borderRadius: "8px",
-                                          border: spoilageW > 0 && spoilageP < 0 ? "1.5px solid #ef4444" : "1.5px solid #ffedd5",
+                                          border:
+                                            spoilageW > 0 && spoilageP < 0
+                                              ? "1.5px solid #ef4444"
+                                              : "1.5px solid #ffedd5",
                                           fontSize: "13.5px",
                                           fontWeight: "600",
                                           outline: "none",
                                           boxSizing: "border-box",
-                                          background: "#fff"
+                                          background: "#fff",
                                         }}
                                       />
                                     </td>
-                                    <td style={{ padding: "10px 16px", textAlign: "right", fontWeight: "700", color: spoilageAmt > 0 ? "#ea580c" : "#cbd5e1" }}>
-                                      {spoilageAmt > 0 ? spoilageAmt.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 }) : "0.00"}
+                                    <td
+                                      style={{
+                                        padding: "10px 16px",
+                                        textAlign: "right",
+                                        fontWeight: "700",
+                                        color:
+                                          spoilageAmt > 0
+                                            ? "#ea580c"
+                                            : "#cbd5e1",
+                                      }}
+                                    >
+                                      {spoilageAmt > 0
+                                        ? spoilageAmt.toLocaleString(
+                                            undefined,
+                                            {
+                                              minimumFractionDigits: 2,
+                                              maximumFractionDigits: 2,
+                                            },
+                                          )
+                                        : "0.00"}
                                     </td>
                                   </tr>
                                 );
@@ -856,19 +1118,36 @@ const SingleDoubleDrawn: React.FC = () => {
 
                               {/* Return row */}
                               {(() => {
-                                const returnW = parseFloat(returnSizeWeight) || 0;
-                                const returnP = parseFloat(returnSizePrice) || 0;
+                                const returnW =
+                                  parseFloat(returnSizeWeight) || 0;
+                                const returnP =
+                                  parseFloat(returnSizePrice) || 0;
                                 const returnAmt = returnW * returnP;
                                 return (
-                                  <tr style={{ borderBottom: "1px solid #f1f5f9", background: "#f8fafc" }}>
-                                    <td style={{ padding: "10px 16px", fontWeight: "700", color: "#2563eb" }}>Return</td>
+                                  <tr
+                                    style={{
+                                      borderBottom: "1px solid #f1f5f9",
+                                      background: "#f8fafc",
+                                    }}
+                                  >
+                                    <td
+                                      style={{
+                                        padding: "10px 16px",
+                                        fontWeight: "700",
+                                        color: "#2563eb",
+                                      }}
+                                    >
+                                      Return
+                                    </td>
                                     <td style={{ padding: "6px 16px" }}>
                                       <input
                                         type="number"
                                         step="0.001"
                                         placeholder="0.000"
                                         value={returnSizeWeight}
-                                        onChange={(e) => setReturnSizeWeight(e.target.value)}
+                                        onChange={(e) =>
+                                          setReturnSizeWeight(e.target.value)
+                                        }
                                         style={{
                                           width: "100%",
                                           padding: "8px 12px",
@@ -878,7 +1157,7 @@ const SingleDoubleDrawn: React.FC = () => {
                                           fontWeight: "600",
                                           outline: "none",
                                           boxSizing: "border-box",
-                                          background: "#fff"
+                                          background: "#fff",
                                         }}
                                       />
                                     </td>
@@ -888,22 +1167,40 @@ const SingleDoubleDrawn: React.FC = () => {
                                         step="1"
                                         placeholder="0"
                                         value={returnSizePrice}
-                                        onChange={(e) => setReturnSizePrice(e.target.value)}
+                                        onChange={(e) =>
+                                          setReturnSizePrice(e.target.value)
+                                        }
                                         style={{
                                           width: "100%",
                                           padding: "8px 12px",
                                           borderRadius: "8px",
-                                          border: returnW > 0 && returnP < 0 ? "1.5px solid #ef4444" : "1.5px solid #dbeafe",
+                                          border:
+                                            returnW > 0 && returnP < 0
+                                              ? "1.5px solid #ef4444"
+                                              : "1.5px solid #dbeafe",
                                           fontSize: "13.5px",
                                           fontWeight: "600",
                                           outline: "none",
                                           boxSizing: "border-box",
-                                          background: "#fff"
+                                          background: "#fff",
                                         }}
                                       />
                                     </td>
-                                    <td style={{ padding: "10px 16px", textAlign: "right", fontWeight: "700", color: returnAmt > 0 ? "#2563eb" : "#cbd5e1" }}>
-                                      {returnAmt > 0 ? returnAmt.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 }) : "0.00"}
+                                    <td
+                                      style={{
+                                        padding: "10px 16px",
+                                        textAlign: "right",
+                                        fontWeight: "700",
+                                        color:
+                                          returnAmt > 0 ? "#2563eb" : "#cbd5e1",
+                                      }}
+                                    >
+                                      {returnAmt > 0
+                                        ? returnAmt.toLocaleString(undefined, {
+                                            minimumFractionDigits: 2,
+                                            maximumFractionDigits: 2,
+                                          })
+                                        : "0.00"}
                                     </td>
                                   </tr>
                                 );
@@ -916,17 +1213,73 @@ const SingleDoubleDrawn: React.FC = () => {
                       {/* Column 2: B to Ten Category */}
                       <div className="category-column category-column-b">
                         <h3 className="category-title">
-                          <LayoutGrid size={18} style={{ color: "#8b5cf6" }} />
-                          B to Ten Category
+                          <LayoutGrid size={18} style={{ color: "#8b5cf6" }} />B
+                          to Ten Category
                         </h3>
-                        <div className="table-container" style={{ border: "1.5px solid #e2e8f0", borderRadius: "12px", overflow: "hidden", background: "white" }}>
-                          <table className="table" style={{ width: "100%", borderCollapse: "collapse", textAlign: "left", fontSize: "13.5px" }}>
+                        <div
+                          className="table-container"
+                          style={{
+                            border: "1.5px solid #e2e8f0",
+                            borderRadius: "12px",
+                            overflow: "hidden",
+                            background: "white",
+                          }}
+                        >
+                          <table
+                            className="table"
+                            style={{
+                              width: "100%",
+                              borderCollapse: "collapse",
+                              textAlign: "left",
+                              fontSize: "13.5px",
+                            }}
+                          >
                             <thead>
-                              <tr style={{ background: "#f8fafc", borderBottom: "1.5px solid #e2e8f0" }}>
-                                <th style={{ padding: "10px 16px", fontWeight: "700", color: "#475569" }}>SIZE</th>
-                                <th style={{ padding: "10px 16px", fontWeight: "700", color: "#475569", width: "160px" }}>WEIGHT (viss)</th>
-                                <th style={{ padding: "10px 16px", fontWeight: "700", color: "#475569", width: "160px" }}>PRICE (MMK)</th>
-                                <th style={{ padding: "10px 16px", fontWeight: "700", color: "#475569", textAlign: "right" }}>AMOUNT (MMK)</th>
+                              <tr
+                                style={{
+                                  background: "#f8fafc",
+                                  borderBottom: "1.5px solid #e2e8f0",
+                                }}
+                              >
+                                <th
+                                  style={{
+                                    padding: "10px 16px",
+                                    fontWeight: "700",
+                                    color: "#475569",
+                                  }}
+                                >
+                                  SIZE
+                                </th>
+                                <th
+                                  style={{
+                                    padding: "10px 16px",
+                                    fontWeight: "700",
+                                    color: "#475569",
+                                    width: "160px",
+                                  }}
+                                >
+                                  WEIGHT (viss)
+                                </th>
+                                <th
+                                  style={{
+                                    padding: "10px 16px",
+                                    fontWeight: "700",
+                                    color: "#475569",
+                                    width: "160px",
+                                  }}
+                                >
+                                  PRICE (CNY)
+                                </th>
+                                <th
+                                  style={{
+                                    padding: "10px 16px",
+                                    fontWeight: "700",
+                                    color: "#475569",
+                                    textAlign: "right",
+                                  }}
+                                >
+                                  AMOUNT (CNY)
+                                </th>
                               </tr>
                             </thead>
                             <tbody>
@@ -955,22 +1308,50 @@ const SingleDoubleDrawn: React.FC = () => {
                                     : size === "Bar"
                                       ? "priceBar"
                                       : `price${size}`;
-                                const displayLabel = size === "10B" ? "Size 10B" : `Size ${size}`;
+                                const displayLabel =
+                                  size === "10B" ? "Size 10B" : `Size ${size}`;
 
-                                const weightVal = parseFloat(bToTenForm[fieldName as keyof typeof bToTenForm]) || 0;
-                                const priceVal = parseFloat(bToTenPricesForm[priceFieldName as keyof typeof bToTenPricesForm]) || 0;
+                                const weightVal =
+                                  parseFloat(
+                                    bToTenForm[
+                                      fieldName as keyof typeof bToTenForm
+                                    ],
+                                  ) || 0;
+                                const priceVal =
+                                  parseFloat(
+                                    bToTenPricesForm[
+                                      priceFieldName as keyof typeof bToTenPricesForm
+                                    ],
+                                  ) || 0;
                                 const amount = weightVal * priceVal;
 
                                 return (
-                                  <tr key={size} style={{ borderBottom: "1px solid #f1f5f9" }}>
-                                    <td style={{ padding: "10px 16px", fontWeight: "700", color: "#1e293b" }}>{displayLabel}</td>
+                                  <tr
+                                    key={size}
+                                    style={{
+                                      borderBottom: "1px solid #f1f5f9",
+                                    }}
+                                  >
+                                    <td
+                                      style={{
+                                        padding: "10px 16px",
+                                        fontWeight: "700",
+                                        color: "#1e293b",
+                                      }}
+                                    >
+                                      {displayLabel}
+                                    </td>
                                     <td style={{ padding: "6px 16px" }}>
                                       <input
                                         type="number"
                                         step="0.001"
                                         name={fieldName}
                                         placeholder="0.000"
-                                        value={bToTenForm[fieldName as keyof typeof bToTenForm]}
+                                        value={
+                                          bToTenForm[
+                                            fieldName as keyof typeof bToTenForm
+                                          ]
+                                        }
                                         onChange={handleBToTenChange}
                                         style={{
                                           width: "100%",
@@ -980,7 +1361,7 @@ const SingleDoubleDrawn: React.FC = () => {
                                           fontSize: "13.5px",
                                           fontWeight: "600",
                                           outline: "none",
-                                          boxSizing: "border-box"
+                                          boxSizing: "border-box",
                                         }}
                                       />
                                     </td>
@@ -989,7 +1370,11 @@ const SingleDoubleDrawn: React.FC = () => {
                                         type="number"
                                         name={priceFieldName}
                                         placeholder="0"
-                                        value={bToTenPricesForm[priceFieldName as keyof typeof bToTenPricesForm]}
+                                        value={
+                                          bToTenPricesForm[
+                                            priceFieldName as keyof typeof bToTenPricesForm
+                                          ]
+                                        }
                                         onChange={handleBToTenPriceChange}
                                         style={{
                                           width: "100%",
@@ -999,12 +1384,24 @@ const SingleDoubleDrawn: React.FC = () => {
                                           fontSize: "13.5px",
                                           fontWeight: "600",
                                           outline: "none",
-                                          boxSizing: "border-box"
+                                          boxSizing: "border-box",
                                         }}
                                       />
                                     </td>
-                                    <td style={{ padding: "10px 16px", textAlign: "right", fontWeight: "700", color: "#0f172a" }}>
-                                      {amount > 0 ? amount.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 }) : "0.00"}
+                                    <td
+                                      style={{
+                                        padding: "10px 16px",
+                                        textAlign: "right",
+                                        fontWeight: "700",
+                                        color: "#0f172a",
+                                      }}
+                                    >
+                                      {amount > 0
+                                        ? amount.toLocaleString(undefined, {
+                                            minimumFractionDigits: 2,
+                                            maximumFractionDigits: 2,
+                                          })
+                                        : "0.00"}
                                     </td>
                                   </tr>
                                 );
@@ -1035,13 +1432,25 @@ const SingleDoubleDrawn: React.FC = () => {
                         transition: "all 0.3s ease",
                       }}
                     >
-                      <div style={{ display: "flex", alignItems: "center", gap: "12px" }}>
+                      <div
+                        style={{
+                          display: "flex",
+                          alignItems: "center",
+                          gap: "12px",
+                        }}
+                      >
                         {Math.abs(remainingWeight) < 0.001 ? (
-                          <CheckCircle2 size={22} style={{ color: "#10b981" }} />
+                          <CheckCircle2
+                            size={22}
+                            style={{ color: "#10b981" }}
+                          />
                         ) : (
                           <Weight
                             size={22}
-                            style={{ color: remainingWeight < 0 ? "#ef4444" : "#f59e0b" }}
+                            style={{
+                              color:
+                                remainingWeight < 0 ? "#ef4444" : "#f59e0b",
+                            }}
                           />
                         )}
                         <div>
@@ -1066,10 +1475,18 @@ const SingleDoubleDrawn: React.FC = () => {
                                 ? "Exceeded"
                                 : "Remaining Weight"}
                           </div>
-                          <div style={{ fontSize: "11px", color: "#64748b", fontWeight: 500 }}>
-                            Output: {selectedRecord.weight.toFixed(3)} viss — Already Saved:{" "}
-                            {alreadySortedWeight.toFixed(3)} viss — Current Input:{" "}
-                            {currentFormTotal.toFixed(3)} viss — Total Amount: {totalFormAmount.toLocaleString()} MMK
+                          <div
+                            style={{
+                              fontSize: "11px",
+                              color: "#64748b",
+                              fontWeight: 500,
+                            }}
+                          >
+                            Output: {selectedRecord.weight.toFixed(3)} viss —
+                            Already Saved: {alreadySortedWeight.toFixed(3)} viss
+                            — Current Input: {currentFormTotal.toFixed(3)} viss
+                            — Total Amount: {totalFormAmount.toLocaleString()}{" "}
+                            CNY
                           </div>
                         </div>
                       </div>
@@ -1086,19 +1503,25 @@ const SingleDoubleDrawn: React.FC = () => {
                         }}
                       >
                         {remainingWeight.toFixed(3)}{" "}
-                        <span style={{ fontSize: "12px", fontWeight: 700 }}>viss</span>
+                        <span style={{ fontSize: "12px", fontWeight: 700 }}>
+                          viss
+                        </span>
                       </div>
                     </div>
 
                     <button
                       type="submit"
                       className="submit-btn"
-                      disabled={Math.abs(remainingWeight) > 0.001 || currentFormTotal <= 0}
+                      disabled={
+                        Math.abs(remainingWeight) > 0.001 ||
+                        currentFormTotal <= 0
+                      }
                       style={{
                         width: "100%",
                         padding: "14px",
                         background:
-                          Math.abs(remainingWeight) > 0.001 || currentFormTotal <= 0
+                          Math.abs(remainingWeight) > 0.001 ||
+                          currentFormTotal <= 0
                             ? "#94a3b8"
                             : "linear-gradient(135deg, #2563eb, #1d4ed8)",
                         color: "white",
@@ -1107,7 +1530,8 @@ const SingleDoubleDrawn: React.FC = () => {
                         fontSize: "15px",
                         fontWeight: "700",
                         cursor:
-                          Math.abs(remainingWeight) > 0.001 || currentFormTotal <= 0
+                          Math.abs(remainingWeight) > 0.001 ||
+                          currentFormTotal <= 0
                             ? "not-allowed"
                             : "pointer",
                         display: "flex",
@@ -1115,10 +1539,15 @@ const SingleDoubleDrawn: React.FC = () => {
                         justifyContent: "center",
                         gap: "8px",
                         boxShadow:
-                          Math.abs(remainingWeight) > 0.001 || currentFormTotal <= 0
+                          Math.abs(remainingWeight) > 0.001 ||
+                          currentFormTotal <= 0
                             ? "none"
                             : "0 4px 12px rgba(37,99,235,0.2)",
-                        opacity: Math.abs(remainingWeight) > 0.001 || currentFormTotal <= 0 ? 0.7 : 1,
+                        opacity:
+                          Math.abs(remainingWeight) > 0.001 ||
+                          currentFormTotal <= 0
+                            ? 0.7
+                            : 1,
                         transition: "all 0.3s ease",
                       }}
                     >
@@ -1158,18 +1587,32 @@ const SingleDoubleDrawn: React.FC = () => {
                   textAlign: "center",
                 }}
               >
-                <Sparkles size={40} style={{ color: "#cbd5e1", marginBottom: "12px" }} />
-                <h3 style={{ fontSize: "16px", fontWeight: "700", color: "#64748b", margin: "0 0 4px 0" }}>
+                <Sparkles
+                  size={40}
+                  style={{ color: "#cbd5e1", marginBottom: "12px" }}
+                />
+                <h3
+                  style={{
+                    fontSize: "16px",
+                    fontWeight: "700",
+                    color: "#64748b",
+                    margin: "0 0 4px 0",
+                  }}
+                >
                   No Selection
                 </h3>
                 <p style={{ fontSize: "13px", margin: 0 }}>
-                  Select a refined stock record from the sidebar to start sorting sizes.
+                  Select a refined stock record from the sidebar to start
+                  sorting sizes.
                 </p>
               </div>
             )
           ) : (
             /* HISTORY TAB */
-            <div className="fade-in" style={{ display: "flex", flexDirection: "column", gap: "20px" }}>
+            <div
+              className="fade-in"
+              style={{ display: "flex", flexDirection: "column", gap: "20px" }}
+            >
               {selectedRecordId ? (
                 /* Selected stock item history */
                 <div>
@@ -1182,15 +1625,30 @@ const SingleDoubleDrawn: React.FC = () => {
                       padding: "12px 18px",
                       borderRadius: "12px",
                       border: "1px solid #e2e8f0",
-                      marginBottom: "16px"
+                      marginBottom: "16px",
                     }}
                   >
                     <div>
-                      <span style={{ fontSize: "12px", fontWeight: "600", color: "#64748b" }}>
+                      <span
+                        style={{
+                          fontSize: "12px",
+                          fontWeight: "600",
+                          color: "#64748b",
+                        }}
+                      >
                         Showing history for:
                       </span>
-                      <h3 style={{ fontSize: "15px", fontWeight: "700", color: "#0f172a", margin: "2px 0 0 0" }}>
-                        {selectedRecord?.productMarker} ({selectedRecord?.category}) — {selectedRecord?.warehouseName}
+                      <h3
+                        style={{
+                          fontSize: "15px",
+                          fontWeight: "700",
+                          color: "#0f172a",
+                          margin: "2px 0 0 0",
+                        }}
+                      >
+                        {selectedRecord?.productMarker} (
+                        {selectedRecord?.category}) —{" "}
+                        {selectedRecord?.warehouseName}
                       </h3>
                     </div>
                     <button
@@ -1204,7 +1662,7 @@ const SingleDoubleDrawn: React.FC = () => {
                         border: "1.5px solid #cbd5e1",
                         borderRadius: "8px",
                         cursor: "pointer",
-                        transition: "all 0.2s"
+                        transition: "all 0.2s",
                       }}
                     >
                       Clear Selection &amp; Show All
@@ -1226,38 +1684,83 @@ const SingleDoubleDrawn: React.FC = () => {
                         </tr>
                       </thead>
                       <tbody>
-                        {savedRecords.filter((r) => r.refinementRecordId === selectedRecordId).length === 0 ? (
+                        {savedRecords.filter(
+                          (r) => r.refinementRecordId === selectedRecordId,
+                        ).length === 0 ? (
                           <tr>
                             <td colSpan={8} className="rf-empty-row">
                               <Package size={44} className="rf-empty-icon" />
-                              <span>No sorting history recorded for this stock item.</span>
+                              <span>
+                                No sorting history recorded for this stock item.
+                              </span>
                             </td>
                           </tr>
                         ) : (
                           savedRecords
-                            .filter((r) => r.refinementRecordId === selectedRecordId)
+                            .filter(
+                              (r) => r.refinementRecordId === selectedRecordId,
+                            )
                             .map((record) => (
                               <tr key={record.id}>
-                                <td className="rf-td-date">{formatDateTime(record.date)}</td>
+                                <td className="rf-td-date">
+                                  {formatDateTime(record.date)}
+                                </td>
                                 <td>{renderTwoInchesBadges(record)}</td>
                                 <td>{renderBToTenBadges(record)}</td>
-                                <td style={{ color: "#64748b", fontWeight: "600" }}>
-                                  {record.lostWeight ? record.lostWeight.toFixed(3) : "0.000"} viss
+                                <td
+                                  style={{
+                                    color: "#64748b",
+                                    fontWeight: "600",
+                                  }}
+                                >
+                                  {record.lostWeight
+                                    ? record.lostWeight.toFixed(3)
+                                    : "0.000"}{" "}
+                                  viss
                                 </td>
-                                <td style={{ color: "#ea580c", fontWeight: "600" }}>
-                                  {record.spoilageWeight ? record.spoilageWeight.toFixed(3) : "0.000"} viss
+                                <td
+                                  style={{
+                                    color: "#ea580c",
+                                    fontWeight: "600",
+                                  }}
+                                >
+                                  {record.spoilageWeight
+                                    ? record.spoilageWeight.toFixed(3)
+                                    : "0.000"}{" "}
+                                  viss
                                 </td>
-                                <td style={{ color: "#2563eb", fontWeight: "600" }}>
-                                  {record.returnWeight ? record.returnWeight.toFixed(3) : "0.000"} viss
+                                <td
+                                  style={{
+                                    color: "#2563eb",
+                                    fontWeight: "600",
+                                  }}
+                                >
+                                  {record.returnWeight
+                                    ? record.returnWeight.toFixed(3)
+                                    : "0.000"}{" "}
+                                  viss
                                 </td>
                                 <td className="rf-td-weight rf-green rf-th-right">
-                                  {calculateRecordTotalAmount(record).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })} MMK
+                                  {calculateRecordTotalAmount(
+                                    record,
+                                  ).toLocaleString(undefined, {
+                                    minimumFractionDigits: 2,
+                                    maximumFractionDigits: 2,
+                                  })}{" "}
+                                  CNY
                                 </td>
                                 <td>
-                                  <div className="rf-actions" style={{ justifyContent: "center" }}>
-                                    {hasPermission("SingleDoubleDrawn.Delete") && (
+                                  <div
+                                    className="rf-actions"
+                                    style={{ justifyContent: "center" }}
+                                  >
+                                    {hasPermission(
+                                      "SingleDoubleDrawn.Delete",
+                                    ) && (
                                       <button
-                                        onClick={() => handleDeleteRecord(record.id)}
+                                        onClick={() =>
+                                          handleDeleteRecord(record.id)
+                                        }
                                         className="rf-action-btn rf-delete-btn"
                                       >
                                         <Trash2 size={14} />
@@ -1276,11 +1779,25 @@ const SingleDoubleDrawn: React.FC = () => {
                 /* Global history */
                 <div>
                   <div style={{ marginBottom: "16px" }}>
-                    <h3 style={{ fontSize: "16px", fontWeight: "800", color: "#0f172a", margin: 0 }}>
+                    <h3
+                      style={{
+                        fontSize: "16px",
+                        fontWeight: "800",
+                        color: "#0f172a",
+                        margin: 0,
+                      }}
+                    >
                       Global Sorting History
                     </h3>
-                    <p style={{ fontSize: "13px", color: "#64748b", margin: "4px 0 0 0" }}>
-                      All single &amp; double drawn sorting records across all stock items
+                    <p
+                      style={{
+                        fontSize: "13px",
+                        color: "#64748b",
+                        margin: "4px 0 0 0",
+                      }}
+                    >
+                      All single &amp; double drawn sorting records across all
+                      stock items
                     </p>
                   </div>
 
@@ -1311,32 +1828,65 @@ const SingleDoubleDrawn: React.FC = () => {
                           savedRecords.map((record) => (
                             <tr key={record.id}>
                               <td>
-                                <div className="rf-marker">{record.refinementRecordMarker || "---"}</div>
+                                <div className="rf-marker">
+                                  {record.refinementRecordMarker || "---"}
+                                </div>
                                 <div className="rf-warehouse">
-                                  {record.refinementRecordWarehouseName || "---"} •{" "}
-                                  {record.refinementRecordCategory || "---"}
+                                  {record.refinementRecordWarehouseName ||
+                                    "---"}{" "}
+                                  • {record.refinementRecordCategory || "---"}
                                 </div>
                               </td>
-                              <td className="rf-td-date">{formatDateTime(record.date)}</td>
+                              <td className="rf-td-date">
+                                {formatDateTime(record.date)}
+                              </td>
                               <td>{renderTwoInchesBadges(record)}</td>
                               <td>{renderBToTenBadges(record)}</td>
-                              <td style={{ color: "#64748b", fontWeight: "600" }}>
-                                {record.lostWeight ? record.lostWeight.toFixed(3) : "0.000"} viss
+                              <td
+                                style={{ color: "#64748b", fontWeight: "600" }}
+                              >
+                                {record.lostWeight
+                                  ? record.lostWeight.toFixed(3)
+                                  : "0.000"}{" "}
+                                viss
                               </td>
-                              <td style={{ color: "#ea580c", fontWeight: "600" }}>
-                                {record.spoilageWeight ? record.spoilageWeight.toFixed(3) : "0.000"} viss
+                              <td
+                                style={{ color: "#ea580c", fontWeight: "600" }}
+                              >
+                                {record.spoilageWeight
+                                  ? record.spoilageWeight.toFixed(3)
+                                  : "0.000"}{" "}
+                                viss
                               </td>
-                              <td style={{ color: "#2563eb", fontWeight: "600" }}>
-                                {record.returnWeight ? record.returnWeight.toFixed(3) : "0.000"} viss
+                              <td
+                                style={{ color: "#2563eb", fontWeight: "600" }}
+                              >
+                                {record.returnWeight
+                                  ? record.returnWeight.toFixed(3)
+                                  : "0.000"}{" "}
+                                viss
                               </td>
                               <td className="rf-td-weight rf-green rf-th-right">
-                                {calculateRecordTotalAmount(record).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })} MMK
+                                {calculateRecordTotalAmount(
+                                  record,
+                                ).toLocaleString(undefined, {
+                                  minimumFractionDigits: 2,
+                                  maximumFractionDigits: 2,
+                                })}{" "}
+                                CNY
                               </td>
                               <td>
-                                <div className="rf-actions" style={{ justifyContent: "center" }}>
-                                  {hasPermission("SingleDoubleDrawn.Delete") && (
+                                <div
+                                  className="rf-actions"
+                                  style={{ justifyContent: "center" }}
+                                >
+                                  {hasPermission(
+                                    "SingleDoubleDrawn.Delete",
+                                  ) && (
                                     <button
-                                      onClick={() => handleDeleteRecord(record.id)}
+                                      onClick={() =>
+                                        handleDeleteRecord(record.id)
+                                      }
                                       className="rf-action-btn rf-delete-btn"
                                     >
                                       <Trash2 size={14} />

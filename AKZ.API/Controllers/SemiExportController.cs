@@ -62,7 +62,8 @@ public class SemiExportController : ControllerBase
                 RefinementRecordCategory = category,
                 RefinementRecordWarehouseName = warehouseName,
                 WorkerFees = r.WorkerFees,
-                Remark = r.Remark
+                Remark = r.Remark,
+                ExchangeRateId = r.ExchangeRateId
             });
         }
 
@@ -112,7 +113,8 @@ public class SemiExportController : ControllerBase
             RefinementRecordCategory = category,
             RefinementRecordWarehouseName = warehouseName,
             WorkerFees = r.WorkerFees,
-            Remark = r.Remark
+            Remark = r.Remark,
+            ExchangeRateId = r.ExchangeRateId
         };
 
         return Ok(dto);
@@ -149,6 +151,7 @@ public class SemiExportController : ControllerBase
 
         record.WorkerFees = dto.WorkerFees;
         record.Remark = dto.Remark;
+        record.ExchangeRateId = dto.ExchangeRateId;
 
         await _context.SaveChangesAsync();
 
@@ -177,7 +180,8 @@ public class SemiExportController : ControllerBase
             RefinementRecordCategory = category,
             RefinementRecordWarehouseName = warehouseName,
             WorkerFees = record.WorkerFees,
-            Remark = record.Remark
+            Remark = record.Remark,
+            ExchangeRateId = record.ExchangeRateId
         };
 
         return Ok(resultDto);

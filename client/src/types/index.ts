@@ -503,12 +503,14 @@ export interface SemiExportRecord {
   refinementRecordWarehouseName: string;
   workerFees: number;
   remark: string;
+  exchangeRateId?: number | null;
 }
 
 export interface UpsertSemiExportRecordDto {
   singleDoubleDrawnRecordId: number;
   workerFees: number;
   remark: string;
+  exchangeRateId?: number | null;
 }
 
 export interface ExchangeRate {

@@ -23,4 +23,9 @@ public class SemiExportRecord : BaseEntity
 
     [MaxLength(500)]
     public string Remark { get; set; } = string.Empty;
+
+    public int? ExchangeRateId { get; set; }
+
+    [ForeignKey("ExchangeRateId")]
+    public ExchangeRate? ExchangeRate { get; set; }
 }

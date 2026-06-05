@@ -6,6 +6,7 @@ import {
   productsAPI,
   salesAPI,
   ledgerAPI,
+  exchangeRatesAPI,
 } from "../../services/api";
 import type {
   SingleDoubleDrawnRecord,
@@ -13,6 +14,7 @@ import type {
   Product,
   Sale,
   LedgerDto,
+  ExchangeRate,
 } from "../../types";
 import {
   Package,
@@ -49,6 +51,7 @@ const SemiExport: React.FC = () => {
   const [products, setProducts] = useState<Product[]>([]);
   const [sales, setSales] = useState<Sale[]>([]);
   const [ledgers, setLedgers] = useState<LedgerDto[]>([]);
+  const [activeRates, setActiveRates] = useState<ExchangeRate[]>([]);
   const [loading, setLoading] = useState(true);
   const [selectedMarker, setSelectedMarker] = useState<string | null>(null);
   const [searchTerm, setSearchTerm] = useState("");
@@ -182,6 +185,13 @@ const SemiExport: React.FC = () => {
   const completedMarkers = useMemo(() => {
     return groupedRecords.filter((group) => {
       const marker = group.markerName;
+
+      // Check if all records of this group are saved in SemiExportRecords
+      const allRecordsSaved = group.records.every((record) =>
+        savedExports.some((x) => x.singleDoubleDrawnRecordId === record.id)
+      );
+      if (!allRecordsSaved) return false;
+
       const selectedProduct = products.find((p) => p.marker === marker);
       const selectedProductSales = sales.filter(
         (s) => s.productMarker === marker || s.marker === marker,
@@ -249,7 +259,7 @@ const SemiExport: React.FC = () => {
 
       return remainingUnsorted <= 0.005;
     });
-  }, [groupedRecords, products, sales]);
+  }, [groupedRecords, products, sales, savedExports]);
 
   // Filter sidebar list
   const filteredGroupedRecords = useMemo(() => {
@@ -389,25 +399,40 @@ const SemiExport: React.FC = () => {
 
   const loadData = async () => {
     try {
-      const [sddData, exportData, productsData, salesData, ledgerData] =
-        await Promise.all([
-          singleDoubleDrawnAPI.getAll(),
-          semiExportAPI.getAll(),
-          productsAPI.getAll(true),
-          salesAPI.getAll("Sales"),
-          ledgerAPI.getAll(),
-        ]);
+      const [
+        sddData,
+        exportData,
+        productsData,
+        salesData,
+        ledgerData,
+        ratesData,
+      ] = await Promise.all([
+        singleDoubleDrawnAPI.getAll(),
+        semiExportAPI.getAll(),
+        productsAPI.getAll(true),
+        salesAPI.getAll("Sales"),
+        ledgerAPI.getAll(),
+        exchangeRatesAPI.getActive(),
+      ]);
       setSddRecords(sddData);
       setSavedExports(exportData);
       setProducts(productsData);
       setSales(salesData);
       setLedgers(ledgerData);
+      setActiveRates(ratesData);
     } catch (error) {
       console.error("Failed to load data:", error);
     } finally {
       setLoading(false);
     }
   };
+
+  const cnyToMmkRate = useMemo(() => {
+    const rateObj = activeRates.find(
+      (r) => r.fromCurrency === "CNY" && r.toCurrency === "MMK",
+    );
+    return rateObj ? rateObj.rate : null;
+  }, [activeRates]);
 
   // Compute metrics for selected marker
   const selectedMarkerStats = useMemo(() => {
@@ -755,18 +780,26 @@ const SemiExport: React.FC = () => {
       (sum, r: any) => sum + (r.totalAmount || 0),
       0,
     );
+    return sumRecords;
+  }, [recordAmounts]);
+
+  const markerTotalAmountMmk = useMemo(() => {
     const fees = parseFloat(markerWorkerFees) || 0;
-    return sumRecords + fees;
-  }, [recordAmounts, markerWorkerFees]);
+    if (cnyToMmkRate !== null) {
+      return markerTotalAmount * cnyToMmkRate + fees;
+    }
+    return null;
+  }, [markerTotalAmount, cnyToMmkRate, markerWorkerFees]);
 
   const financialComparison = useMemo(() => {
     if (!selectedMarkerStats) return null;
     const { originalTotalAmount } = selectedMarkerStats;
-    const pnl = originalTotalAmount - markerTotalAmount;
+    const markerMmk = markerTotalAmountMmk !== null ? markerTotalAmountMmk : 0;
+    const pnl = originalTotalAmount - markerMmk;
     return {
       pnl,
     };
-  }, [selectedMarkerStats, markerTotalAmount]);
+  }, [selectedMarkerStats, markerTotalAmountMmk]);
 
   const handleSaveMarkerData = async () => {
     if (!selectedMarker || selectedRecords.length === 0) return;
@@ -776,6 +809,9 @@ const SemiExport: React.FC = () => {
 
     try {
       const totalFees = parseFloat(markerWorkerFees) || 0;
+      const activeCnyRateId = activeRates.find(
+        (r) => r.fromCurrency === "CNY" && r.toCurrency === "MMK"
+      )?.id || null;
 
       // Save all batches with the total worker fees on the first record and 0 on the rest
       await Promise.all(
@@ -784,6 +820,7 @@ const SemiExport: React.FC = () => {
             singleDoubleDrawnRecordId: record.id,
             workerFees: index === 0 ? totalFees : 0,
             remark: markerRemark,
+            exchangeRateId: activeCnyRateId,
           };
           return semiExportAPI.upsert(dto);
         }),
@@ -1348,6 +1385,137 @@ const SemiExport: React.FC = () => {
               </div>
             )}
 
+            {/* Marker-Level Global Save Section */}
+            <div
+              style={{
+                background: "#f8fafc",
+                padding: "24px",
+                borderRadius: "16px",
+                border: "1.5px solid #e2e8f0",
+                boxShadow: "0 4px 6px rgba(0,0,0,0.02)",
+              }}
+            >
+              <h3
+                style={{
+                  fontSize: "16px",
+                  fontWeight: "700",
+                  color: "#0f172a",
+                  marginBottom: "16px",
+                  display: "flex",
+                  alignItems: "center",
+                  gap: "8px",
+                }}
+              >
+                <Sparkles size={18} color="#2563eb" /> Record Sales Details for
+                Marker
+              </h3>
+
+              <div
+                style={{
+                  display: "flex",
+                  flexDirection: "column",
+                  gap: "20px",
+                }}
+              >
+                <div
+                  style={{
+                    display: "flex",
+                    alignItems: "center",
+                    gap: "16px",
+                  }}
+                >
+                  <div
+                    style={{
+                      display: "flex",
+                      alignItems: "center",
+                      gap: "8px",
+                    }}
+                  >
+                    <DollarSign size={18} style={{ color: "#2563eb" }} />
+                    <span
+                      style={{
+                        fontSize: "13.5px",
+                        fontWeight: "700",
+                        color: "#334155",
+                      }}
+                    >
+                      WORKER FEES (SUM):
+                    </span>
+                  </div>
+                  <input
+                    type="number"
+                    value={markerWorkerFees}
+                    onChange={(e) => setMarkerWorkerFees(e.target.value)}
+                    placeholder="0.00"
+                    style={{
+                      padding: "8px 12px",
+                      borderRadius: "8px",
+                      border: "1.5px solid #cbd5e1",
+                      fontSize: "14px",
+                      width: "200px",
+                      fontWeight: "600",
+                    }}
+                  />
+                </div>
+
+                <div style={{ display: "flex", flexDirection: "column" }}>
+                  <label
+                    style={{
+                      display: "flex",
+                      alignItems: "center",
+                      gap: "8px",
+                      fontSize: "13.5px",
+                      fontWeight: "700",
+                      color: "#334155",
+                      marginBottom: "6px",
+                    }}
+                  >
+                    <FileText size={15} /> REMARK:
+                  </label>
+                  <textarea
+                    value={markerRemark}
+                    onChange={(e) => setMarkerRemark(e.target.value)}
+                    placeholder="Enter remark for this marker..."
+                    rows={3}
+                    style={{
+                      width: "100%",
+                      padding: "10px 14px",
+                      borderRadius: "10px",
+                      border: "1.5px solid #cbd5e1",
+                      fontSize: "14px",
+                      outline: "none",
+                      resize: "vertical",
+                    }}
+                  />
+                </div>
+
+                <div style={{ display: "flex", justifyContent: "flex-end" }}>
+                  <button
+                    type="button"
+                    onClick={handleSaveMarkerData}
+                    className="btn btn-primary"
+                    disabled={saving}
+                    style={{
+                      display: "flex",
+                      alignItems: "center",
+                      gap: "10px",
+                      padding: "12px 32px",
+                      borderRadius: "12px",
+                      fontWeight: "800",
+                      fontSize: "15px",
+                      background: "#0f172a",
+                      color: "white",
+                      boxShadow: "0 4px 12px rgba(15, 23, 42, 0.2)",
+                      transition: "all 0.2s",
+                    }}
+                  >
+                    <CheckCircle size={20} />
+                    {saving ? "Saving..." : "Save Marker Records"}
+                  </button>
+                </div>
+              </div>
+            </div>
+
             {/* Grand Total Amount Summary Card */}
             {selectedMarkerStats && (
               <div
@@ -1360,6 +1528,7 @@ const SemiExport: React.FC = () => {
                   alignItems: "center",
                   boxShadow: "0 4px 6px rgba(0,0,0,0.02)",
                   border: "1.5px solid #e2e8f0",
+                  marginTop: "24px",
                 }}
               >
                 <div style={{ flex: 1 }}>
@@ -1494,51 +1663,184 @@ const SemiExport: React.FC = () => {
                     textAlign: "right",
                     paddingLeft: "40px",
                     borderLeft: "1.5px solid #e2e8f0",
+                    display: "flex",
+                    flexDirection: "column",
+                    gap: "10px",
+                    minWidth: "320px",
                   }}
                 >
-                  <h4
-                    style={{
-                      margin: 0,
-                      color: "#64748b",
-                      fontSize: "12px",
-                      textTransform: "uppercase",
-                      letterSpacing: "0.1em",
-                      fontWeight: 800,
-                    }}
-                  >
-                    Grand Total Marker Value
-                  </h4>
+                  {/* 1. Total Marker Value in CNY */}
                   <div
                     style={{
                       display: "flex",
+                      justifyContent: "space-between",
                       alignItems: "baseline",
-                      gap: "10px",
-                      justifyContent: "flex-end",
-                      marginTop: "4px",
+                      gap: "16px",
                     }}
                   >
                     <span
                       style={{
-                        fontSize: "32px",
-                        fontWeight: "950",
-                        color: "#2563eb",
-                        letterSpacing: "-0.03em",
-                      }}
-                    >
-                      {markerTotalAmount.toLocaleString(undefined, {
-                        minimumFractionDigits: 2,
-                        maximumFractionDigits: 2,
-                      })}
-                    </span>
-                    <span
-                      style={{
-                        fontSize: "14px",
-                        fontWeight: "800",
+                        fontSize: "12px",
+                        fontWeight: 700,
                         color: "#64748b",
+                        textTransform: "uppercase",
+                        letterSpacing: "0.05em",
                       }}
                     >
-                      MMK
+                      Total Marker Value (CNY)
                     </span>
+                    <div>
+                      <span
+                        style={{
+                          fontSize: "16px",
+                          fontWeight: "800",
+                          color: "#1e293b",
+                        }}
+                      >
+                        {markerTotalAmount.toLocaleString(undefined, {
+                          minimumFractionDigits: 2,
+                          maximumFractionDigits: 2,
+                        })}
+                      </span>
+                      <span
+                        style={{
+                          fontSize: "11px",
+                          fontWeight: "700",
+                          color: "#64748b",
+                          marginLeft: "4px",
+                        }}
+                      >
+                        CNY
+                      </span>
+                    </div>
+                  </div>
+
+                  {/* 2. Total Marker Value in MMK */}
+                  {cnyToMmkRate !== null && (
+                    <div
+                      style={{
+                        display: "flex",
+                        justifyContent: "space-between",
+                        alignItems: "baseline",
+                        gap: "16px",
+                      }}
+                    >
+                      <span
+                        style={{
+                          fontSize: "12px",
+                          fontWeight: 700,
+                          color: "#64748b",
+                          textTransform: "uppercase",
+                          letterSpacing: "0.05em",
+                        }}
+                      >
+                        Total Marker Value (MMK)
+                      </span>
+                      <div>
+                        <span
+                          style={{
+                            fontSize: "16px",
+                            fontWeight: "800",
+                            color: "#475569",
+                          }}
+                        >
+                          {(markerTotalAmount * cnyToMmkRate).toLocaleString(
+                            undefined,
+                            {
+                              minimumFractionDigits: 2,
+                              maximumFractionDigits: 2,
+                            },
+                          )}
+                        </span>
+                        <span
+                          style={{
+                            fontSize: "11px",
+                            fontWeight: "700",
+                            color: "#64748b",
+                            marginLeft: "4px",
+                          }}
+                        >
+                          MMK
+                        </span>
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Divider line */}
+                  <div
+                    style={{
+                      height: "1px",
+                      backgroundColor: "#e2e8f0",
+                      margin: "2px 0",
+                    }}
+                  />
+
+                  {/* 3. Grand Total Value (Total Marker Value in MMK + Worker Fees) */}
+                  <div>
+                    <h4
+                      style={{
+                        margin: 0,
+                        color: "#64748b",
+                        fontSize: "11px",
+                        textTransform: "uppercase",
+                        letterSpacing: "0.1em",
+                        fontWeight: 800,
+                        textAlign: "right",
+                        marginBottom: "4px",
+                      }}
+                    >
+                      Grand Total Value
+                    </h4>
+                    <div
+                      style={{
+                        display: "flex",
+                        alignItems: "baseline",
+                        gap: "8px",
+                        justifyContent: "flex-end",
+                      }}
+                    >
+                      <span
+                        style={{
+                          fontSize: "28px",
+                          fontWeight: "950",
+                          color: "#2563eb",
+                          letterSpacing: "-0.03em",
+                        }}
+                      >
+                        {markerTotalAmountMmk !== null
+                          ? markerTotalAmountMmk.toLocaleString(undefined, {
+                              minimumFractionDigits: 2,
+                              maximumFractionDigits: 2,
+                            })
+                          : markerTotalAmount.toLocaleString(undefined, {
+                              minimumFractionDigits: 2,
+                              maximumFractionDigits: 2,
+                            })}
+                      </span>
+                      <span
+                        style={{
+                          fontSize: "14px",
+                          fontWeight: "800",
+                          color: "#64748b",
+                        }}
+                      >
+                        MMK
+                      </span>
+                    </div>
+
+                    {cnyToMmkRate !== null && (
+                      <div
+                        style={{
+                          fontSize: "10px",
+                          color: "#94a3b8",
+                          marginTop: "2px",
+                        }}
+                      >
+                        (Rate: 1 CNY = {cnyToMmkRate.toLocaleString()} MMK +{" "}
+                        {(parseFloat(markerWorkerFees) || 0).toLocaleString()}{" "}
+                        MMK Worker Fees)
+                      </div>
+                    )}
                   </div>
 
                   {financialComparison && (
@@ -1588,138 +1890,6 @@ const SemiExport: React.FC = () => {
                 </div>
               </div>
             )}
-
-            {/* Marker-Level Global Save Section */}
-            <div
-              style={{
-                marginTop: "32px",
-                background: "#f8fafc",
-                padding: "24px",
-                borderRadius: "16px",
-                border: "1.5px solid #e2e8f0",
-                boxShadow: "0 4px 6px rgba(0,0,0,0.02)",
-              }}
-            >
-              <h3
-                style={{
-                  fontSize: "16px",
-                  fontWeight: "700",
-                  color: "#0f172a",
-                  marginBottom: "16px",
-                  display: "flex",
-                  alignItems: "center",
-                  gap: "8px",
-                }}
-              >
-                <Sparkles size={18} color="#2563eb" /> Record Sales Details for
-                Marker
-              </h3>
-
-              <div
-                style={{
-                  display: "flex",
-                  flexDirection: "column",
-                  gap: "20px",
-                }}
-              >
-                <div
-                  style={{
-                    display: "flex",
-                    alignItems: "center",
-                    gap: "16px",
-                  }}
-                >
-                  <div
-                    style={{
-                      display: "flex",
-                      alignItems: "center",
-                      gap: "8px",
-                    }}
-                  >
-                    <DollarSign size={18} style={{ color: "#2563eb" }} />
-                    <span
-                      style={{
-                        fontSize: "13.5px",
-                        fontWeight: "700",
-                        color: "#334155",
-                      }}
-                    >
-                      WORKER FEES (SUM):
-                    </span>
-                  </div>
-                  <input
-                    type="number"
-                    value={markerWorkerFees}
-                    onChange={(e) => setMarkerWorkerFees(e.target.value)}
-                    placeholder="0.00"
-                    style={{
-                      padding: "8px 12px",
-                      borderRadius: "8px",
-                      border: "1.5px solid #cbd5e1",
-                      fontSize: "14px",
-                      width: "200px",
-                      fontWeight: "600",
-                    }}
-                  />
-                </div>
-
-                <div style={{ display: "flex", flexDirection: "column" }}>
-                  <label
-                    style={{
-                      display: "flex",
-                      alignItems: "center",
-                      gap: "8px",
-                      fontSize: "13.5px",
-                      fontWeight: "700",
-                      color: "#334155",
-                      marginBottom: "6px",
-                    }}
-                  >
-                    <FileText size={15} /> REMARK:
-                  </label>
-                  <textarea
-                    value={markerRemark}
-                    onChange={(e) => setMarkerRemark(e.target.value)}
-                    placeholder="Enter remark for this marker..."
-                    rows={3}
-                    style={{
-                      width: "100%",
-                      padding: "10px 14px",
-                      borderRadius: "10px",
-                      border: "1.5px solid #cbd5e1",
-                      fontSize: "14px",
-                      outline: "none",
-                      resize: "vertical",
-                    }}
-                  />
-                </div>
-
-                <div style={{ display: "flex", justifyContent: "flex-end" }}>
-                  <button
-                    type="button"
-                    onClick={handleSaveMarkerData}
-                    className="btn btn-primary"
-                    disabled={saving}
-                    style={{
-                      display: "flex",
-                      alignItems: "center",
-                      gap: "10px",
-                      padding: "12px 32px",
-                      borderRadius: "12px",
-                      fontWeight: "800",
-                      fontSize: "15px",
-                      background: "#0f172a",
-                      color: "white",
-                      boxShadow: "0 4px 12px rgba(15, 23, 42, 0.2)",
-                      transition: "all 0.2s",
-                    }}
-                  >
-                    <CheckCircle size={20} />
-                    {saving ? "Saving..." : "Save Marker Records"}
-                  </button>
-                </div>
-              </div>
-            </div>
 
             {/* Records List */}
             <div
