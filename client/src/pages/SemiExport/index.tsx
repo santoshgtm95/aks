@@ -68,6 +68,9 @@ const SemiExport: React.FC = () => {
   );
   const [ledgerName, setLedgerName] = useState<string>("");
   const [ledgerDescription, setLedgerDescription] = useState<string>("");
+  const [activeTab, setActiveTab] = useState<"processing" | "history">(
+    "processing",
+  );
 
   const [expandedRecords, setExpandedRecords] = useState<
     Record<number, boolean>
@@ -775,6 +778,13 @@ const SemiExport: React.FC = () => {
     );
   }, [savedExports, sddRecords]);
 
+  const filteredHistory = useMemo(() => {
+    if (selectedMarker) {
+      return groupedHistory.filter((g: any) => g.marker === selectedMarker);
+    }
+    return groupedHistory;
+  }, [groupedHistory, selectedMarker]);
+
   const markerTotalAmount = useMemo(() => {
     const sumRecords = Object.values(recordAmounts).reduce(
       (sum, r: any) => sum + (r.totalAmount || 0),
@@ -852,65 +862,39 @@ const SemiExport: React.FC = () => {
   };
 
   if (loading) {
-    return <div className="spinner"></div>;
+    return (
+      <div
+        className="rf-container"
+        style={{ justifyContent: "center", alignItems: "center" }}
+      >
+        <div className="loading-spinner">Loading...</div>
+      </div>
+    );
   }
 
   return (
-    <div className="processing-container fade-in">
+    <div className="rf-container fade-in">
       {/* Left Sidebar: Single Double Drawn Sorting List */}
-      <aside className="product-sidebar">
-        <h2 className="sidebar-title">
-          <Package size={20} />
-          Sorted Batches
-        </h2>
+      <aside className="rf-sidebar">
+        <div className="rf-sidebar-header">
+          <Package size={18} />
+          <span>Sorted Batches</span>
+        </div>
 
-        <div
-          className="sidebar-search"
-          style={{ marginBottom: "20px", position: "relative" }}
-        >
-          <Search
-            size={16}
-            style={{
-              position: "absolute",
-              left: "12px",
-              top: "50%",
-              transform: "translateY(-50%)",
-              color: "#94a3b8",
-            }}
-          />
+        <div className="rf-search-box">
+          <Search size={16} className="rf-search-icon" />
           <input
             type="text"
+            className="rf-search-input"
             placeholder="Search marker, warehouse..."
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
-            style={{
-              width: "100%",
-              padding: "10px 12px 10px 36px",
-              borderRadius: "10px",
-              border: "1.5px solid #e2e8f0",
-              fontSize: "13.5px",
-              outline: "none",
-              transition: "all 0.2s",
-              boxSizing: "border-box",
-            }}
           />
         </div>
 
-        <div
-          className="product-list"
-          style={{ maxHeight: "calc(100vh - 220px)", overflowY: "auto" }}
-        >
+        <div className="rf-card-list">
           {filteredGroupedRecords.length === 0 ? (
-            <div
-              style={{
-                textAlign: "center",
-                color: "#94a3b8",
-                padding: "20px",
-                fontSize: "13.5px",
-              }}
-            >
-              No sorted batches found
-            </div>
+            <div className="rf-empty-sidebar">No sorted batches found</div>
           ) : (
             filteredGroupedRecords.map((group) => {
               const savedCount = group.records.filter((r) =>
@@ -924,7 +908,10 @@ const SemiExport: React.FC = () => {
                 <div
                   key={group.markerName}
                   className={`product-card ${selectedMarker === group.markerName ? "selected" : ""}`}
-                  onClick={() => setSelectedMarker(group.markerName)}
+                  onClick={() => {
+                    setSelectedMarker(group.markerName);
+                    setActiveTab("processing");
+                  }}
                 >
                   <div className="card-header">
                     <div style={{ display: "flex", flexDirection: "column" }}>
@@ -1032,9 +1019,10 @@ const SemiExport: React.FC = () => {
           )}
         </div>
 
-        <div style={{ marginTop: "20px", padding: "0 10px" }}>
+        <div style={{ marginTop: "auto", paddingTop: "12px" }}>
           <button
             onClick={() => setShowLedgerModal(true)}
+            className="btn btn-primary"
             style={{
               width: "100%",
               display: "flex",
@@ -1042,9 +1030,6 @@ const SemiExport: React.FC = () => {
               justifyContent: "center",
               gap: "8px",
               padding: "12px",
-              background: "#2563eb",
-              color: "white",
-              border: "none",
               borderRadius: "10px",
               fontSize: "14px",
               fontWeight: "700",
@@ -1060,11 +1045,36 @@ const SemiExport: React.FC = () => {
       </aside>
 
       {/* Right Main Content */}
-      <main className="processing-main">
-        {selectedMarker && selectedRecords.length > 0 ? (
-          <div
-            style={{ display: "flex", flexDirection: "column", height: "100%" }}
-          >
+      <main className="rf-main">
+        <div className="rf-main-card">
+          <div className="rf-main-header">
+            <div className="rf-header-left">
+              <div className="rf-tab-group" style={{ marginLeft: "24px" }}>
+                <button
+                  className={`rf-tab ${activeTab === "processing" ? "rf-tab-active" : ""}`}
+                  onClick={() => setActiveTab("processing")}
+                >
+                  <span className="rf-tab-title">Processing</span>
+                  <span className="rf-tab-sub">Sales Calculations</span>
+                </button>
+                <button
+                  className={`rf-tab ${activeTab === "history" ? "rf-tab-active" : ""}`}
+                  onClick={() => setActiveTab("history")}
+                >
+                  <span className="rf-tab-title">History</span>
+                  <span className="rf-tab-sub">
+                    {selectedMarker ? "Batch History" : "Global History"}
+                  </span>
+                </button>
+              </div>
+            </div>
+          </div>
+
+          {activeTab === "processing" ? (
+            selectedMarker && selectedRecords.length > 0 ? (
+              <div
+                style={{ display: "flex", flexDirection: "column", height: "100%" }}
+              >
             {/* Header details */}
             <div
               className="main-header"
@@ -2337,287 +2347,201 @@ const SemiExport: React.FC = () => {
             )}
           </div>
         ) : (
-          // Placeholder when no selection + Global History
+          // Placeholder when no selection
           <div
             style={{
               display: "flex",
               flexDirection: "column",
-              gap: "32px",
-              width: "100%",
+              alignItems: "center",
+              justifyContent: "center",
+              color: "#94a3b8",
+              padding: "40px 20px",
+              background: "#f8fafc",
+              borderRadius: "16px",
+              border: "2px dashed #e2e8f0",
             }}
           >
-            <div
+            <Sparkles
+              size={40}
+              style={{ color: "#cbd5e1", marginBottom: "12px" }}
+            />
+            <h3
               style={{
-                display: "flex",
-                flexDirection: "column",
-                alignItems: "center",
-                justifyContent: "center",
-                color: "#94a3b8",
-                padding: "40px 20px",
-                background: "#f8fafc",
-                borderRadius: "16px",
-                border: "2px dashed #e2e8f0",
+                fontSize: "16px",
+                fontWeight: "700",
+                color: "#64748b",
+                margin: "0 0 4px 0",
               }}
             >
-              <Sparkles
-                size={40}
-                style={{ color: "#cbd5e1", marginBottom: "12px" }}
-              />
-              <h3
-                style={{
-                  fontSize: "16px",
-                  fontWeight: "700",
-                  color: "#64748b",
-                  margin: "0 0 4px 0",
-                }}
-              >
-                No Selection
-              </h3>
-              <p style={{ fontSize: "13.0px", margin: 0 }}>
-                Select a sorted batch from the sidebar to calculate pricing and
-                amounts.
-              </p>
-            </div>
-
-            <div className="history-section">
-              <h2
-                style={{
-                  fontSize: "18px",
-                  fontWeight: "700",
-                  color: "#0f172a",
-                  marginBottom: "16px",
-                }}
-              >
-                Semi Export History
-              </h2>
-              <div
-                className="table-container"
-                style={{
-                  border: "1.5px solid #e2e8f0",
-                  borderRadius: "12px",
-                  overflow: "hidden",
-                }}
-              >
-                <table
-                  className="table"
-                  style={{
-                    width: "100%",
-                    borderCollapse: "collapse",
-                    textAlign: "left",
-                    fontSize: "13.5px",
-                  }}
-                >
-                  <thead>
-                    <tr
-                      style={{
-                        background: "#f8fafc",
-                        borderBottom: "1.5px solid #e2e8f0",
-                      }}
-                    >
-                      <th
+              No Selection
+            </h3>
+            <p style={{ fontSize: "13.0px", margin: 0 }}>
+              Select a sorted batch from the sidebar to calculate pricing and
+              amounts.
+            </p>
+          </div>
+        )
+      ) : (
+        <div className="ledger-history-tab">
+          <div className="rf-table-wrap">
+            <table className="rf-table">
+              <thead>
+                <tr>
+                  <th>Sorted Batch</th>
+                  <th>Export Date</th>
+                  <th className="rf-th-right">Worker Fees</th>
+                  <th className="rf-th-right">Total Amount</th>
+                  <th>Remark</th>
+                  <th style={{ textAlign: "center" }}>Actions</th>
+                </tr>
+              </thead>
+              <tbody>
+                {filteredHistory.length === 0 ? (
+                  <tr>
+                    <td colSpan={6} className="rf-empty-row">
+                      <Package
+                        size={44}
+                        className="rf-empty-icon"
                         style={{
-                          padding: "12px 16px",
-                          fontWeight: "700",
-                          color: "#475569",
+                          opacity: 0.2,
+                          margin: "0 auto 12px",
+                          display: "block",
                         }}
+                      />
+                      <span>No export history recorded</span>
+                    </td>
+                  </tr>
+                ) : (
+                  filteredHistory.map((group: any) => {
+                    return (
+                      <tr
+                        key={group.marker}
+                        style={{ borderBottom: "1px solid #f1f5f9" }}
                       >
-                        Sorted Batch
-                      </th>
-                      <th
-                        style={{
-                          padding: "12px 16px",
-                          fontWeight: "700",
-                          color: "#475569",
-                        }}
-                      >
-                        Export Date
-                      </th>
-                      <th
-                        style={{
-                          padding: "12px 16px",
-                          fontWeight: "700",
-                          color: "#475569",
-                          textAlign: "right",
-                        }}
-                      >
-                        Worker Fees
-                      </th>
-                      <th
-                        style={{
-                          padding: "12px 16px",
-                          fontWeight: "700",
-                          color: "#475569",
-                          textAlign: "right",
-                        }}
-                      >
-                        Total Amount
-                      </th>
-                      <th
-                        style={{
-                          padding: "12px 16px",
-                          fontWeight: "700",
-                          color: "#475569",
-                        }}
-                      >
-                        Remark
-                      </th>
-                      <th
-                        style={{
-                          padding: "12px 16px",
-                          fontWeight: "700",
-                          color: "#475569",
-                          textAlign: "center",
-                        }}
-                      >
-                        Actions
-                      </th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {groupedHistory.length === 0 ? (
-                      <tr>
                         <td
-                          colSpan={6}
                           style={{
-                            padding: "24px",
-                            textAlign: "center",
-                            color: "#94a3b8",
+                            padding: "12px 16px",
+                            fontWeight: "600",
+                            color: "#334155",
                           }}
                         >
-                          No export history recorded.
+                          <div
+                            style={{
+                              display: "flex",
+                              flexDirection: "column",
+                            }}
+                          >
+                            <span
+                              style={{
+                                fontSize: "13.5px",
+                                color: "#0f172a",
+                                fontWeight: "700",
+                              }}
+                            >
+                              {group.marker}
+                            </span>
+                            <span
+                              style={{
+                                fontSize: "11px",
+                                color: "#64748b",
+                                fontWeight: 500,
+                                marginTop: "2px",
+                              }}
+                            >
+                              {Array.from(group.warehouseNames).join(
+                                ", ",
+                              ) || "---"}{" "}
+                              •{" "}
+                              {Array.from(group.categories).join(", ") ||
+                                "---"}
+                            </span>
+                          </div>
+                        </td>
+                        <td
+                          style={{
+                            padding: "12px 16px",
+                            whiteSpace: "nowrap",
+                            fontWeight: "500",
+                            color: "#0f172a",
+                          }}
+                        >
+                          {formatDateTime(group.latestDate)}
+                        </td>
+                        <td
+                          className="rf-th-right"
+                          style={{
+                            padding: "12px 16px",
+                            fontWeight: "600",
+                            color: "#6366f1",
+                          }}
+                        >
+                          {(group.totalWorkerFees || 0).toLocaleString()}{" "}
+                          MMK
+                        </td>
+                        <td
+                          className="rf-th-right"
+                          style={{
+                            padding: "12px 16px",
+                            fontWeight: "700",
+                            color: "#10b981",
+                          }}
+                        >
+                          {(
+                            group.totalAmount + group.totalWorkerFees
+                          ).toLocaleString(undefined, {
+                            minimumFractionDigits: 2,
+                            maximumFractionDigits: 2,
+                          })}{" "}
+                          MMK
+                        </td>
+                        <td
+                          style={{
+                            padding: "12px 16px",
+                            color: "#475569",
+                            fontSize: "13px",
+                            maxWidth: "200px",
+                            overflow: "hidden",
+                            textOverflow: "ellipsis",
+                            whiteSpace: "nowrap",
+                          }}
+                          title={group.remark}
+                        >
+                          {group.remark || "—"}
+                        </td>
+                        <td
+                          style={{
+                            padding: "12px 16px",
+                            textAlign: "center",
+                          }}
+                        >
+                          {hasPermission("SemiExport.Delete") && (
+                            <button
+                              onClick={() => handleDeleteExport(group.ids)}
+                              className="btn btn-danger"
+                              style={{
+                                padding: "6px 10px",
+                                borderRadius: "6px",
+                                cursor: "pointer",
+                                display: "inline-flex",
+                                alignItems: "center",
+                                justifyContent: "center",
+                              }}
+                            >
+                              <Trash2 size={13} />
+                            </button>
+                          )}
                         </td>
                       </tr>
-                    ) : (
-                      groupedHistory.map((group: any) => {
-                        return (
-                          <tr
-                            key={group.marker}
-                            style={{ borderBottom: "1px solid #f1f5f9" }}
-                          >
-                            <td
-                              style={{
-                                padding: "12px 16px",
-                                fontWeight: "600",
-                                color: "#334155",
-                              }}
-                            >
-                              <div
-                                style={{
-                                  display: "flex",
-                                  flexDirection: "column",
-                                }}
-                              >
-                                <span
-                                  style={{
-                                    fontSize: "13.5px",
-                                    color: "#0f172a",
-                                    fontWeight: "700",
-                                  }}
-                                >
-                                  {group.marker}
-                                </span>
-                                <span
-                                  style={{
-                                    fontSize: "11px",
-                                    color: "#64748b",
-                                    fontWeight: 500,
-                                    marginTop: "2px",
-                                  }}
-                                >
-                                  {Array.from(group.warehouseNames).join(
-                                    ", ",
-                                  ) || "---"}{" "}
-                                  •{" "}
-                                  {Array.from(group.categories).join(", ") ||
-                                    "---"}
-                                </span>
-                              </div>
-                            </td>
-                            <td
-                              style={{
-                                padding: "12px 16px",
-                                whiteSpace: "nowrap",
-                                fontWeight: "500",
-                                color: "#0f172a",
-                              }}
-                            >
-                              {formatDateTime(group.latestDate)}
-                            </td>
-                            <td
-                              style={{
-                                padding: "12px 16px",
-                                textAlign: "right",
-                                fontWeight: "600",
-                                color: "#6366f1",
-                              }}
-                            >
-                              {(group.totalWorkerFees || 0).toLocaleString()}{" "}
-                              MMK
-                            </td>
-                            <td
-                              style={{
-                                padding: "12px 16px",
-                                textAlign: "right",
-                                fontWeight: "700",
-                                color: "#10b981",
-                              }}
-                            >
-                              {(
-                                group.totalAmount + group.totalWorkerFees
-                              ).toLocaleString(undefined, {
-                                minimumFractionDigits: 2,
-                                maximumFractionDigits: 2,
-                              })}{" "}
-                              MMK
-                            </td>
-                            <td
-                              style={{
-                                padding: "12px 16px",
-                                color: "#475569",
-                                fontSize: "13px",
-                                maxWidth: "200px",
-                                overflow: "hidden",
-                                textOverflow: "ellipsis",
-                                whiteSpace: "nowrap",
-                              }}
-                              title={group.remark}
-                            >
-                              {group.remark || "—"}
-                            </td>
-                            <td
-                              style={{
-                                padding: "12px 16px",
-                                textAlign: "center",
-                              }}
-                            >
-                              {hasPermission("SemiExport.Delete") && (
-                                <button
-                                  onClick={() => handleDeleteExport(group.ids)}
-                                  className="btn btn-danger"
-                                  style={{
-                                    padding: "6px 10px",
-                                    borderRadius: "6px",
-                                    cursor: "pointer",
-                                    display: "inline-flex",
-                                    alignItems: "center",
-                                    justifyContent: "center",
-                                  }}
-                                >
-                                  <Trash2 size={13} />
-                                </button>
-                              )}
-                            </td>
-                          </tr>
-                        );
-                      })
-                    )}
-                  </tbody>
-                </table>
-              </div>
-            </div>
+                    );
+                  })
+                )}
+              </tbody>
+            </table>
           </div>
-        )}
-      </main>
+        </div>
+      )}
+      </div>
+    </main>
 
       {/* Create Ledger Modal */}
       {showLedgerModal && (
