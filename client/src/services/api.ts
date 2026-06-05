@@ -39,6 +39,8 @@ import type {
   CreateLedgerDto,
   ExchangeRate,
   CreateExchangeRateDto,
+  Export,
+  CreateExportDto,
 } from "../types";
 
 const API_BASE_URL = "/api";
@@ -455,6 +457,21 @@ export const exchangeRatesAPI = {
   },
   create: async (data: CreateExchangeRateDto): Promise<ExchangeRate> => {
     const response = await api.post<ExchangeRate>("/ExchangeRates", data);
+    return response.data;
+  },
+};
+
+export const exportAPI = {
+  getAll: async (): Promise<Export[]> => {
+    const response = await api.get<Export[]>("/Export");
+    return response.data;
+  },
+  getByLedger: async (ledgerId: number): Promise<Export[]> => {
+    const response = await api.get<Export[]>(`/Export/by-ledger/${ledgerId}`);
+    return response.data;
+  },
+  create: async (data: CreateExportDto): Promise<Export> => {
+    const response = await api.post<Export>("/Export", data);
     return response.data;
   },
 };

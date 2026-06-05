@@ -529,3 +529,36 @@ export interface CreateExchangeRateDto {
   rate: number;
   activeStatus: boolean;
 }
+
+export interface Export {
+  id: number;
+  ledgerId: number;
+  ledgerName: string;
+  date: string;
+  selectedColors: string;
+  selectedWeight: number;
+  totalExportWeightViss: number;
+  totalExportWeightKg: number;
+  productAmountMMK: number;
+  productAmountCNY: number;
+  workerFees: number;
+  grandTotalMMK: number;
+  exchangeRateId?: number | null;
+  exchangeRateRate?: number | null;
+  sellingPrice: number;
+}
+
+export interface CreateExportDto {
+  ledgerId: number;
+  date: string;
+  selectedColors: string;
+  selectedWeight: number;
+  totalExportWeightViss: number;
+  totalExportWeightKg: number;
+  productAmountMMK: number;
+  productAmountCNY: number;
+  workerFees: number;
+  grandTotalMMK: number;
+  exchangeRateId?: number | null;
+  sellingPrice: number;
+}
