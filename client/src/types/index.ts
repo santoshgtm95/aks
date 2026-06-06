@@ -408,6 +408,8 @@ export interface SingleDoubleDrawnRecord {
   lostWeight: number;
   spoilageWeight: number;
   returnWeight: number;
+  processingLossWeight: number;
+  processingRecordId?: number;
   price6: number;
   price7: number;
   price8: number;

@@ -97,6 +97,8 @@ public class SingleDoubleDrawnController : ControllerBase
                 LostWeight = r.LostWeight == 0 && r.RefinementRecord != null ? r.RefinementRecord.LostWeight : r.LostWeight,
                 SpoilageWeight = r.SpoilageWeight == 0 && r.RefinementRecord != null ? r.RefinementRecord.SpoilageWeight : r.SpoilageWeight,
                 ReturnWeight = r.ReturnWeight == 0 && r.RefinementRecord != null ? r.RefinementRecord.ReturnWeight : r.ReturnWeight,
+                ProcessingLossWeight = r.RefinementRecord?.PurifiedRecord?.ProcessingRecord?.LossWeight ?? 0,
+                ProcessingRecordId = r.RefinementRecord?.PurifiedRecord?.ProcessingRecord?.Id,
 
                 // Prices mapping
                 Price6 = r.Price6,
