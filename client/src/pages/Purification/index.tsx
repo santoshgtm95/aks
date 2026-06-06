@@ -418,36 +418,82 @@ const Purification: React.FC = () => {
                     className="purify-input-group"
                     style={{
                       display: "flex",
+                      flexDirection: "column",
                       gap: "8px",
                       borderTop: "1px solid #f1f5f9",
                       paddingTop: "12px",
                     }}
                   >
-                    <input
-                      type="number"
-                      placeholder="Bundle count"
-                      className="sidebar-input"
-                      value={inputCounts[key] || ""}
-                      onChange={(e) =>
-                        handleInputChance(
-                          avail.processingRecordId,
-                          avail.category,
-                          e.target.value,
-                        )
-                      }
-                      min="0"
-                      step="any"
-                      max={avail.remainingCount}
-                    />
+                    <div
+                      style={{
+                        display: "flex",
+                        gap: "8px",
+                        alignItems: "center",
+                      }}
+                    >
+                      <input
+                        type="number"
+                        placeholder="Bundle count"
+                        className="sidebar-input"
+                        style={{ minWidth: 0, flex: 1 }}
+                        value={inputCounts[key] || ""}
+                        onChange={(e) =>
+                          handleInputChance(
+                            avail.processingRecordId,
+                            avail.category,
+                            e.target.value,
+                          )
+                        }
+                        min="0"
+                        step="any"
+                        max={avail.remainingCount}
+                      />
+                      <button
+                        type="button"
+                        onClick={() =>
+                          handleInputChance(
+                            avail.processingRecordId,
+                            avail.category,
+                            avail.remainingCount.toString(),
+                          )
+                        }
+                        style={{
+                          padding: "6px 8px",
+                          fontSize: "12px",
+                          backgroundColor: "#f1f5f9",
+                          border: "1px solid #cbd5e1",
+                          borderRadius: "4px",
+                          cursor: "pointer",
+                          color: "#475569",
+                          fontWeight: 600,
+                          flexShrink: 0,
+                        }}
+                      >
+                        Max
+                      </button>
+                    </div>
                     <button
                       className="sidebar-btn-send"
+                      style={{ width: "100%", padding: "10px 0" }}
                       onClick={() => handlePurify(avail)}
                       disabled={submitting === key}
                     >
                       {submitting === key ? (
                         <Loader2 className="animate-spin" size={16} />
                       ) : (
-                        <Send size={16} />
+                        <div
+                          style={{
+                            display: "flex",
+                            alignItems: "center",
+                            gap: "6px",
+                            justifyContent: "center",
+                          }}
+                        >
+                          <Send size={16} />
+                          <span style={{ fontSize: "14px", fontWeight: 500 }}>
+                            Purify
+                          </span>
+                        </div>
                       )}
                     </button>
                   </div>
