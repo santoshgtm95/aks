@@ -103,7 +103,7 @@ const Layout: React.FC = () => {
               className={`nav-item ${isActive("/warehouse") ? "active" : ""}`}
               onClick={closeMobileMenu}
             >
-              <ShoppingCart className="nav-icon" size={24} />
+              <Warehouse className="nav-icon" size={24} />
               Inventory
             </Link>
           )}
@@ -125,7 +125,7 @@ const Layout: React.FC = () => {
               className={`nav-item ${isActive("/mess-labour") ? "active" : ""}`}
               onClick={closeMobileMenu}
             >
-              <ShoppingCart className="nav-icon" size={24} />
+              <Users className="nav-icon" size={24} />
               Mess-Labour List
             </Link>
           )}
@@ -136,7 +136,7 @@ const Layout: React.FC = () => {
               className={`nav-item ${isActive("/purification") ? "active" : ""}`}
               onClick={closeMobileMenu}
             >
-              <ShoppingCart className="nav-icon" size={24} />
+              <TrendingUp className="nav-icon" size={24} />
               Purification
             </Link>
           )}
@@ -148,7 +148,7 @@ const Layout: React.FC = () => {
               className={`nav-item ${isActive("/refinement") ? "active" : ""}`}
               onClick={closeMobileMenu}
             >
-              <ShoppingCart className="nav-icon" size={24} />
+              <TrendingUp className="nav-icon" size={24} />
               Girdle-bush List
             </Link>
           )}
@@ -160,18 +160,19 @@ const Layout: React.FC = () => {
               className={`nav-item ${isActive("/single-double-drawn") ? "active" : ""}`}
               onClick={closeMobileMenu}
             >
-              <ShoppingCart className="nav-icon" size={24} />
+              <TrendingUp className="nav-icon" size={24} />
               Single & Double Drawn List
             </Link>
           )}
 
-          {(hasPermission("SemiExport.View") || hasPermission("SemiExport.Create")) && (
+          {(hasPermission("SemiExport.View") ||
+            hasPermission("SemiExport.Create")) && (
             <Link
               to="/semi-export"
               className={`nav-item ${isActive("/semi-export") ? "active" : ""}`}
               onClick={closeMobileMenu}
             >
-              <ShoppingCart className="nav-icon" size={24} />
+              <TrendingUp className="nav-icon" size={24} />
               Semi Export
             </Link>
           )}
