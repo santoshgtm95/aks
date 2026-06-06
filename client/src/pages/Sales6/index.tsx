@@ -1212,6 +1212,7 @@ const Sales6: React.FC = () => {
                           <th>Date</th>
                           {!selectedLedger && <th>Ledger</th>}
                           <th>Colors Sold</th>
+                          <th>Markers</th>
                           <th>Selling Price</th>
                           <th>Weight (viss)</th>
                           <th>Weight (kg)</th>
@@ -1253,6 +1254,21 @@ const Sales6: React.FC = () => {
                                         {col}
                                       </span>
                                     ))}
+                                </div>
+                              </td>
+                              <td>
+                                <div className="history-colors-list">
+                                  {saleLedger
+                                    ? saleLedger.markers.map((m) => (
+                                        <span
+                                          key={m.markerName}
+                                          className="history-color-tag"
+                                          style={{ background: "rgba(99,102,241,0.15)", color: "#a5b4fc" }}
+                                        >
+                                          {m.markerName}
+                                        </span>
+                                      ))
+                                    : <span className="history-color-tag">—</span>}
                                 </div>
                               </td>
                               <td className="font-numeric">
