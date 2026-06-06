@@ -16,6 +16,8 @@ public class SemiExportRecordDto
     public decimal WorkerFees { get; set; }
     public string Remark { get; set; } = string.Empty;
     public int? ExchangeRateId { get; set; }
+    /// <summary>The CNY→MMK rate at the time this record was saved.</summary>
+    public decimal? ExchangeRateRate { get; set; }
 }
 
 public class UpsertSemiExportRecordDto

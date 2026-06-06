@@ -29,6 +29,7 @@ public class SemiExportController : ControllerBase
                         .ThenInclude(p => p.ProcessingRecord)
                             .ThenInclude(pr => pr.Product)
                                 .ThenInclude(prod => prod.Warehouse)
+            .Include(s => s.ExchangeRate)
             .OrderByDescending(r => r.Date)
             .ToListAsync();
 
@@ -63,7 +64,8 @@ public class SemiExportController : ControllerBase
                 RefinementRecordWarehouseName = warehouseName,
                 WorkerFees = r.WorkerFees,
                 Remark = r.Remark,
-                ExchangeRateId = r.ExchangeRateId
+                ExchangeRateId = r.ExchangeRateId,
+                ExchangeRateRate = r.ExchangeRate?.Rate
             });
         }
 

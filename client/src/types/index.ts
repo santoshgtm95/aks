@@ -506,6 +506,7 @@ export interface SemiExportRecord {
   workerFees: number;
   remark: string;
   exchangeRateId?: number | null;
+  exchangeRateRate?: number | null;
 }
 
 export interface UpsertSemiExportRecordDto {

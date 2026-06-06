@@ -226,11 +226,19 @@ const SemiExport: React.FC = () => {
         (sum, r) => sum + (r.lostWeight || 0),
         0,
       );
-      // Processing-level lost weight: all records in the group share the same ProcessingRecord,
-      // so processingLossWeight is the same on every record — take it once from the first record.
-      const processingLostWeight = group.records.length > 0
-        ? (group.records[0].processingLossWeight || 0)
-        : 0;
+      // Processing-level lost weight: deduplicate by processingRecordId so each
+      // ProcessingRecord's LossWeight is counted exactly once. If a product has
+      // multiple ProcessingRecords (multiple Mess-Labour batches), all are summed.
+      const processingIdMap = new Map<number, number>();
+      group.records.forEach((r) => {
+        if (r.processingRecordId != null && !processingIdMap.has(r.processingRecordId)) {
+          processingIdMap.set(r.processingRecordId, r.processingLossWeight || 0);
+        }
+      });
+      const processingLostWeight = Array.from(processingIdMap.values()).reduce(
+        (s, v) => s + v,
+        0,
+      );
       const sumLostWeight = refinementLostWeight + processingLostWeight;
 
       const sumSpoilageWeight = group.records.reduce(
@@ -482,15 +490,23 @@ const SemiExport: React.FC = () => {
 
     // 4. Sum of Lost Weight of all colors (viss)
     // Refinement lostWeight: sum across all SDD records (one per color category).
-    // ProcessingRecord LossWeight: all SDD records in this marker share the same ProcessingRecord,
-    // so processingLossWeight is identical on every row — take it once from the first record.
+    // Processing-level lost weight: deduplicate by processingRecordId so each
+    // ProcessingRecord's LossWeight is counted exactly once. If a product has
+    // multiple ProcessingRecords (multiple Mess-Labour batches), all are summed.
     const refinementLostWeight = selectedRecords.reduce(
       (sum, r) => sum + (r.lostWeight || 0),
       0,
     );
-    const processingLostWeight = selectedRecords.length > 0
-      ? (selectedRecords[0].processingLossWeight || 0)
-      : 0;
+    const selectedProcessingIdMap = new Map<number, number>();
+    selectedRecords.forEach((r) => {
+      if (r.processingRecordId != null && !selectedProcessingIdMap.has(r.processingRecordId)) {
+        selectedProcessingIdMap.set(r.processingRecordId, r.processingLossWeight || 0);
+      }
+    });
+    const processingLostWeight = Array.from(selectedProcessingIdMap.values()).reduce(
+      (s, v) => s + v,
+      0,
+    );
     const sumLostWeight = refinementLostWeight + processingLostWeight;
 
     // 5. Sum of Spoilage Weight (B to 10 only)
@@ -723,7 +739,7 @@ const SemiExport: React.FC = () => {
         (x) => x.id === record.singleDoubleDrawnRecordId,
       );
 
-      let rowAmount = 0;
+      let rowAmountCNY = 0;
       if (sdd) {
         const wB = sdd.sizeBar || 0;
         const w28 = sdd.size28 || 0;
@@ -744,7 +760,7 @@ const SemiExport: React.FC = () => {
         const wLeftover = sdd.returnSize || 0;
         const wSpoil = sdd.spoilageSize || 0;
 
-        rowAmount =
+        rowAmountCNY =
           wB * (sdd.priceBar || 0) +
           w28 * (sdd.price28 || 0) +
           w26 * (sdd.price26 || 0) +
@@ -765,12 +781,17 @@ const SemiExport: React.FC = () => {
           wSpoil * (sdd.priceSpoilageSize || 0);
       }
 
+      // Use the rate stored at save time; fall back to current active rate
+      const rate = record.exchangeRateRate ?? cnyToMmkRate ?? 1;
+      const rowAmountMMK = rowAmountCNY * rate;
+
       if (!groups[marker]) {
         groups[marker] = {
           marker,
           warehouseNames: new Set(),
           categories: new Set(),
-          totalAmount: 0,
+          totalAmountCNY: 0,
+          totalAmountMMK: 0,
           totalWorkerFees: 0,
           latestDate: record.date,
           remark: record.remark,
@@ -778,7 +799,8 @@ const SemiExport: React.FC = () => {
         };
       }
 
-      groups[marker].totalAmount += rowAmount;
+      groups[marker].totalAmountCNY += rowAmountCNY;
+      groups[marker].totalAmountMMK += rowAmountMMK;
       groups[marker].totalWorkerFees += record.workerFees || 0;
       if (record.refinementRecordWarehouseName)
         groups[marker].warehouseNames.add(record.refinementRecordWarehouseName);
@@ -795,7 +817,7 @@ const SemiExport: React.FC = () => {
       (a: any, b: any) =>
         new Date(b.latestDate).getTime() - new Date(a.latestDate).getTime(),
     );
-  }, [savedExports, sddRecords]);
+  }, [savedExports, sddRecords, cnyToMmkRate]);
 
   const filteredHistory = useMemo(() => {
     if (selectedMarker) {
@@ -2332,29 +2354,7 @@ const SemiExport: React.FC = () => {
           )}
         </div>
 
-        <div style={{ marginTop: "auto", paddingTop: "12px" }}>
-          <button
-            onClick={() => setShowLedgerModal(true)}
-            className="btn btn-primary"
-            style={{
-              width: "100%",
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "center",
-              gap: "8px",
-              padding: "12px",
-              borderRadius: "10px",
-              fontSize: "14px",
-              fontWeight: "700",
-              cursor: "pointer",
-              transition: "all 0.2s",
-              boxShadow: "0 4px 6px -1px rgba(37, 99, 235, 0.2)",
-            }}
-          >
-            <FilePlus size={18} />
-            Create Ledger
-          </button>
-        </div>
+
       </aside>
 
       {/* Right Main Content */}
@@ -2380,6 +2380,25 @@ const SemiExport: React.FC = () => {
                   </span>
                 </button>
               </div>
+            </div>
+            <div className="rf-header-right">
+              <button
+                onClick={() => setShowLedgerModal(true)}
+                className="btn btn-primary"
+                style={{
+                  display: "flex",
+                  alignItems: "center",
+                  gap: "10px",
+                  padding: "11px 22px",
+                  borderRadius: "10px",
+                  fontSize: "15px",
+                  fontWeight: "700",
+                  cursor: "pointer",
+                }}
+              >
+                <FilePlus size={20} />
+                Create Ledger
+              </button>
             </div>
           </div>
 
@@ -2535,7 +2554,7 @@ const SemiExport: React.FC = () => {
                               }}
                             >
                               {(
-                                group.totalAmount + group.totalWorkerFees
+                                group.totalAmountMMK + group.totalWorkerFees
                               ).toLocaleString(undefined, {
                                 minimumFractionDigits: 2,
                                 maximumFractionDigits: 2,
