@@ -77,6 +77,17 @@ public class SingleDoubleDrawnRecord : BaseEntity
     [Column(TypeName = "decimal(18,4)")]
     public decimal ReturnWeight { get; set; }
 
+    [Column(TypeName = "decimal(18,4)")]
+    public decimal SingleDoubleLostWeight { get; set; }
+
+    public int? WorkerId { get; set; }
+
+    [ForeignKey("WorkerId")]
+    public SingleDoubleDrawnWorker? Worker { get; set; }
+
+    [MaxLength(500)]
+    public string? Note { get; set; }
+
     // Pricing for each size
     [Column(TypeName = "decimal(18,4)")]
     public decimal Price6 { get; set; }

@@ -21,6 +21,7 @@ import Purification from "./pages/Purification/index";
 import PurifierManagement from "./pages/PurifierManagement/index";
 import Refinement from "./pages/Refinement/index";
 import RefinementWorkerManagement from "./pages/RefinementWorkerManagement/index";
+import SingleDoubleDrawnWorkerManagement from "./pages/SingleDoubleDrawnWorkerManagement/index";
 import SingleDoubleDrawn from "./pages/SingleDoubleDrawn/index";
 import SemiExport from "./pages/SemiExport/index";
 import Sales6 from "./pages/Sales6/index";
@@ -93,6 +94,14 @@ const App: React.FC = () => {
                 element={
                   <ProtectedRoute permission="Warehouse.View">
                     <PurifierManagement />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="single-double-drawn-workers"
+                element={
+                  <ProtectedRoute permission="Warehouse.View">
+                    <SingleDoubleDrawnWorkerManagement />
                   </ProtectedRoute>
                 }
               />

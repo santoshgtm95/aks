@@ -35,6 +35,12 @@ public class SingleDoubleDrawnRecordDto
     public decimal LostWeight { get; set; }
     public decimal SpoilageWeight { get; set; }
     public decimal ReturnWeight { get; set; }
+    public decimal SingleDoubleLostWeight { get; set; }
+    
+    public int? WorkerId { get; set; }
+    public string WorkerName { get; set; } = string.Empty;
+    public string? Note { get; set; }
+
     /// <summary>LossWeight from the linked ProcessingRecord (Mess Labour lost weight in viss).</summary>
     public decimal ProcessingLossWeight { get; set; }
     /// <summary>ID of the linked ProcessingRecord — used by the frontend to deduplicate the loss weight across multiple SDD rows sharing the same ProcessingRecord.</summary>
@@ -94,6 +100,10 @@ public class CreateSingleDoubleDrawnRecordDto
     public decimal LostWeight { get; set; }
     public decimal SpoilageWeight { get; set; }
     public decimal ReturnWeight { get; set; }
+    public decimal SingleDoubleLostWeight { get; set; }
+
+    public int? WorkerId { get; set; }
+    public string? Note { get; set; }
 
     // Pricing for each size
     public decimal Price6 { get; set; }

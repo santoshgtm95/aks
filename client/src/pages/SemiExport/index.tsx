@@ -223,7 +223,7 @@ const SemiExport: React.FC = () => {
 
       // Sum refinement-level lost weight across all SDD records
       const refinementLostWeight = group.records.reduce(
-        (sum, r) => sum + (r.lostWeight || 0),
+        (sum, r) => sum + (r.lostWeight || 0) + (r.singleDoubleLostWeight || 0),
         0,
       );
       // Processing-level lost weight: deduplicate by processingRecordId so each
@@ -231,8 +231,14 @@ const SemiExport: React.FC = () => {
       // multiple ProcessingRecords (multiple Mess-Labour batches), all are summed.
       const processingIdMap = new Map<number, number>();
       group.records.forEach((r) => {
-        if (r.processingRecordId != null && !processingIdMap.has(r.processingRecordId)) {
-          processingIdMap.set(r.processingRecordId, r.processingLossWeight || 0);
+        if (
+          r.processingRecordId != null &&
+          !processingIdMap.has(r.processingRecordId)
+        ) {
+          processingIdMap.set(
+            r.processingRecordId,
+            r.processingLossWeight || 0,
+          );
         }
       });
       const processingLostWeight = Array.from(processingIdMap.values()).reduce(
@@ -494,19 +500,24 @@ const SemiExport: React.FC = () => {
     // ProcessingRecord's LossWeight is counted exactly once. If a product has
     // multiple ProcessingRecords (multiple Mess-Labour batches), all are summed.
     const refinementLostWeight = selectedRecords.reduce(
-      (sum, r) => sum + (r.lostWeight || 0),
+      (sum, r) => sum + (r.lostWeight || 0) + (r.singleDoubleLostWeight || 0),
       0,
     );
     const selectedProcessingIdMap = new Map<number, number>();
     selectedRecords.forEach((r) => {
-      if (r.processingRecordId != null && !selectedProcessingIdMap.has(r.processingRecordId)) {
-        selectedProcessingIdMap.set(r.processingRecordId, r.processingLossWeight || 0);
+      if (
+        r.processingRecordId != null &&
+        !selectedProcessingIdMap.has(r.processingRecordId)
+      ) {
+        selectedProcessingIdMap.set(
+          r.processingRecordId,
+          r.processingLossWeight || 0,
+        );
       }
     });
-    const processingLostWeight = Array.from(selectedProcessingIdMap.values()).reduce(
-      (s, v) => s + v,
-      0,
-    );
+    const processingLostWeight = Array.from(
+      selectedProcessingIdMap.values(),
+    ).reduce((s, v) => s + v, 0);
     const sumLostWeight = refinementLostWeight + processingLostWeight;
 
     // 5. Sum of Spoilage Weight (B to 10 only)
@@ -2353,8 +2364,6 @@ const SemiExport: React.FC = () => {
             })
           )}
         </div>
-
-
       </aside>
 
       {/* Right Main Content */}

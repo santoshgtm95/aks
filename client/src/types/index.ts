@@ -320,7 +320,22 @@ export interface CreatePurifierDto {
   name: string;
   warehouseId: number;
 }
+export interface SingleDoubleDrawnWorker {
+  id: number;
+  name: string;
+  warehouseId: number;
+  warehouseName: string;
+}
 
+export interface CreateSingleDoubleDrawnWorkerDto {
+  name: string;
+  warehouseId: number;
+}
+
+export interface UpdateSingleDoubleDrawnWorkerDto {
+  name: string;
+  warehouseId: number;
+}
 export interface UpdatePurifierDto {
   name: string;
   warehouseId: number;
@@ -408,6 +423,10 @@ export interface SingleDoubleDrawnRecord {
   lostWeight: number;
   spoilageWeight: number;
   returnWeight: number;
+  singleDoubleLostWeight: number;
+  workerId?: number;
+  workerName?: string;
+  note?: string;
   processingLossWeight: number;
   processingRecordId?: number;
   price6: number;
@@ -474,6 +493,9 @@ export interface CreateSingleDoubleDrawnRecordDto {
   lostWeight: number;
   spoilageWeight: number;
   returnWeight: number;
+  singleDoubleLostWeight?: number;
+  workerId?: number;
+  note?: string;
   price6: number;
   price7: number;
   price8: number;

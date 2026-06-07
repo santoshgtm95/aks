@@ -30,6 +30,7 @@ public class AKZDbContext : DbContext
     public DbSet<RefinementRecord> RefinementRecords { get; set; }
     public DbSet<RefinementWorker> RefinementWorkers { get; set; }
     public DbSet<SingleDoubleDrawnRecord> SingleDoubleDrawnRecords { get; set; }
+    public DbSet<SingleDoubleDrawnWorker> SingleDoubleDrawnWorkers { get; set; }
     public DbSet<SemiExportRecord> SemiExportRecords { get; set; }
     public DbSet<Ledger> Ledgers { get; set; }
     public DbSet<LedgerMarker> LedgerMarkers { get; set; }
@@ -189,6 +190,7 @@ public class AKZDbContext : DbContext
         modelBuilder.Entity<RefinementProcess>().HasQueryFilter(e => e.DeleteFlg == 0);
         modelBuilder.Entity<RefinementRecord>().HasQueryFilter(e => e.DeleteFlg == 0);
         modelBuilder.Entity<SingleDoubleDrawnRecord>().HasQueryFilter(e => e.DeleteFlg == 0);
+        modelBuilder.Entity<SingleDoubleDrawnWorker>().HasQueryFilter(e => e.DeleteFlg == 0);
         modelBuilder.Entity<SemiExportRecord>().HasQueryFilter(e => e.DeleteFlg == 0);
         modelBuilder.Entity<ExchangeRate>().HasQueryFilter(e => e.DeleteFlg == 0);
         modelBuilder.Entity<Export>().HasQueryFilter(e => e.DeleteFlg == 0);

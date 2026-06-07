@@ -23,6 +23,9 @@ import type {
   Purifier,
   CreatePurifierDto,
   UpdatePurifierDto,
+  SingleDoubleDrawnWorker,
+  CreateSingleDoubleDrawnWorkerDto,
+  UpdateSingleDoubleDrawnWorkerDto,
   RefinementWorker,
   CreateRefinementWorkerDto,
   UpdateRefinementWorkerDto,
@@ -336,6 +339,41 @@ export const purifiersAPI = {
   },
   delete: async (id: number): Promise<void> => {
     await api.delete(`/purifiers/${id}`);
+  },
+};
+
+export const singleDoubleDrawnWorkersAPI = {
+  getAll: async (): Promise<SingleDoubleDrawnWorker[]> => {
+    const response = await api.get<SingleDoubleDrawnWorker[]>(
+      "/singledoubledrawnworkers",
+    );
+    return response.data;
+  },
+  getByWarehouse: async (
+    warehouseId: number,
+  ): Promise<SingleDoubleDrawnWorker[]> => {
+    const response = await api.get<SingleDoubleDrawnWorker[]>(
+      `/singledoubledrawnworkers/warehouse/${warehouseId}`,
+    );
+    return response.data;
+  },
+  create: async (
+    data: CreateSingleDoubleDrawnWorkerDto,
+  ): Promise<SingleDoubleDrawnWorker> => {
+    const response = await api.post<SingleDoubleDrawnWorker>(
+      "/singledoubledrawnworkers",
+      data,
+    );
+    return response.data;
+  },
+  update: async (
+    id: number,
+    data: UpdateSingleDoubleDrawnWorkerDto,
+  ): Promise<void> => {
+    await api.put(`/singledoubledrawnworkers/${id}`, data);
+  },
+  delete: async (id: number): Promise<void> => {
+    await api.delete(`/singledoubledrawnworkers/${id}`);
   },
 };
 

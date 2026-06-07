@@ -35,6 +35,7 @@ public class SingleDoubleDrawnController : ControllerBase
                     .ThenInclude(p => p.ProcessingRecord)
                         .ThenInclude(pr => pr.Product)
                             .ThenInclude(prod => prod.Warehouse)
+            .Include(r => r.Worker)
             .OrderByDescending(r => r.Date)
             .ToListAsync();
 
@@ -99,6 +100,11 @@ public class SingleDoubleDrawnController : ControllerBase
                 ReturnWeight = r.ReturnWeight == 0 && r.RefinementRecord != null ? r.RefinementRecord.ReturnWeight : r.ReturnWeight,
                 ProcessingLossWeight = r.RefinementRecord?.PurifiedRecord?.ProcessingRecord?.LossWeight ?? 0,
                 ProcessingRecordId = r.RefinementRecord?.PurifiedRecord?.ProcessingRecord?.Id,
+
+                SingleDoubleLostWeight = r.SingleDoubleLostWeight,
+                WorkerId = r.WorkerId,
+                WorkerName = r.Worker != null ? r.Worker.Name : "",
+                Note = r.Note,
 
                 // Prices mapping
                 Price6 = r.Price6,
@@ -195,6 +201,9 @@ public class SingleDoubleDrawnController : ControllerBase
             LostWeight = refinementRecord.LostWeight,
             SpoilageWeight = refinementRecord.SpoilageWeight,
             ReturnWeight = refinementRecord.ReturnWeight,
+            SingleDoubleLostWeight = dto.SingleDoubleLostWeight,
+            WorkerId = dto.WorkerId,
+            Note = dto.Note,
 
             // Prices
             Price6 = dto.Price6,
@@ -269,6 +278,10 @@ public class SingleDoubleDrawnController : ControllerBase
             LostWeight = record.LostWeight,
             SpoilageWeight = record.SpoilageWeight,
             ReturnWeight = record.ReturnWeight,
+            SingleDoubleLostWeight = record.SingleDoubleLostWeight,
+            WorkerId = record.WorkerId,
+            WorkerName = record.Worker != null ? record.Worker.Name : "",
+            Note = record.Note,
 
             // Prices
             Price6 = record.Price6,
