@@ -589,3 +589,18 @@ export interface CreateExportDto {
   sellingPrice: number;
   sizeSellingPrices: string;
 }
+
+export interface ImportedSemiExport {
+  id: number;
+  markerName: string;
+  totalSortedWeight: number;
+  date: string;
+  dataJson: string;
+}
+
+export interface CreateImportedSemiExportDto {
+  markerName: string;
+  totalSortedWeight: number;
+  date: string;
+  dataJson: string;
+}

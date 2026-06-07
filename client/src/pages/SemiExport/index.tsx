@@ -7,6 +7,7 @@ import {
   salesAPI,
   ledgerAPI,
   exchangeRatesAPI,
+  importedSemiExportAPI,
 } from "../../services/api";
 import type {
   SingleDoubleDrawnRecord,
@@ -33,6 +34,7 @@ import {
   X,
   Layers,
   Clock,
+  Download,
 } from "lucide-react";
 import { formatDateTime } from "../../utils/format";
 import "./index.css";
@@ -77,16 +79,99 @@ const SemiExport: React.FC = () => {
     null,
   );
 
+  const [importedData, setImportedData] = useState<any[]>([]);
+  const [showImportModal, setShowImportModal] = useState(false);
+  const [importFormData, setImportFormData] = useState({
+    markerName: "",
+    totalSortedWeight: "",
+    date: new Date().toISOString().substring(0, 10),
+  });
+  const [importCategoriesData, setImportCategoriesData] = useState<any>({});
+  const importCategoryOptions = [
+    "Art",
+    "Red",
+    "White",
+    "Short",
+    "Simple",
+    "N.White",
+    "S.Cut",
+    "Natural",
+    "N.Red",
+  ];
+  const sizeOptions = [
+    "6",
+    "7",
+    "8",
+    "9",
+    "10",
+    "10B",
+    "12",
+    "14",
+    "16",
+    "18",
+    "20",
+    "22",
+    "24",
+    "26",
+    "28",
+    "Bar",
+  ];
+
   const [expandedRecords, setExpandedRecords] = useState<
     Record<number, boolean>
   >({});
 
   const selectedRecords = useMemo(() => {
     if (!selectedMarker) return [];
+
+    // Check if this is an imported marker
+    const imported = importedData.find((d) => d.markerName === selectedMarker);
+    if (imported) {
+      try {
+        const parsed = JSON.parse(imported.dataJson);
+        const records: SingleDoubleDrawnRecord[] = [];
+        let idCounter = -1000; // Negative IDs to distinguish imported
+
+        Object.entries(parsed).forEach(([colorName, sizes]: [string, any]) => {
+          const rec: any = {
+            id: idCounter--,
+            refinementRecordMarker: selectedMarker,
+            refinementRecordCategory: colorName,
+            date: imported.date,
+          };
+          // Map sizes
+          const szNames = [
+            "6",
+            "7",
+            "8",
+            "9",
+            "10",
+            "10B",
+            "12",
+            "14",
+            "16",
+            "18",
+            "20",
+            "22",
+            "24",
+            "26",
+            "28",
+            "Bar",
+          ];
+          szNames.forEach((sz) => {
+            rec[`size${sz}`] = sizes[sz] ? Number(sizes[sz].weight || 0) : 0;
+            rec[`price${sz}`] = sizes[sz] ? Number(sizes[sz].price || 0) : 0;
+          });
+          records.push(rec as SingleDoubleDrawnRecord);
+        });
+        return records;
+      } catch (e) {}
+    }
+
     return sddRecords.filter(
       (r) => r.refinementRecordMarker === selectedMarker,
     );
-  }, [sddRecords, selectedMarker]);
+  }, [sddRecords, selectedMarker, importedData]);
 
   useEffect(() => {
     loadData();
@@ -187,8 +272,24 @@ const SemiExport: React.FC = () => {
         );
       }
     });
+
+    importedData.forEach((record) => {
+      const marker = record.markerName || "---";
+
+      if (markersInLedgers.has(marker)) return;
+
+      if (!groups[marker]) {
+        groups[marker] = {
+          markerName: marker,
+          records: [], // We won't try to parse to SingleDoubleDrawnRecord yet
+          combinedWeight: record.totalSortedWeight,
+          date: record.date,
+          warehouseNames: ["Imported"],
+        };
+      }
+    });
     return Object.values(groups);
-  }, [sddRecords, ledgers]);
+  }, [sddRecords, ledgers, importedData]);
 
   const completedMarkers = useMemo(() => {
     return groupedRecords.filter((group) => {
@@ -435,6 +536,7 @@ const SemiExport: React.FC = () => {
         salesData,
         ledgerData,
         ratesData,
+        importedDataRes,
       ] = await Promise.all([
         singleDoubleDrawnAPI.getAll(),
         semiExportAPI.getAll(),
@@ -442,6 +544,7 @@ const SemiExport: React.FC = () => {
         salesAPI.getAll("Sales"),
         ledgerAPI.getAll(),
         exchangeRatesAPI.getActive(),
+        importedSemiExportAPI.getAll(),
       ]);
       setSddRecords(sddData);
       setSavedExports(exportData);
@@ -449,6 +552,7 @@ const SemiExport: React.FC = () => {
       setSales(salesData);
       setLedgers(ledgerData);
       setActiveRates(ratesData);
+      setImportedData(importedDataRes);
     } catch (error) {
       console.error("Failed to load data:", error);
     } finally {
@@ -865,6 +969,14 @@ const SemiExport: React.FC = () => {
 
   const handleSaveMarkerData = async () => {
     if (!selectedMarker || selectedRecords.length === 0) return;
+
+    // Quick check if imported
+    if (selectedRecords[0].id < 0) {
+      alert(
+        "Imported records are already saved. They do not require an additional Semi Export saving step.",
+      );
+      return;
+    }
 
     setSaving(true);
     setFormError("");
@@ -2390,7 +2502,31 @@ const SemiExport: React.FC = () => {
                 </button>
               </div>
             </div>
-            <div className="rf-header-right">
+            <div
+              className="rf-header-right"
+              style={{ display: "flex", gap: "12px" }}
+            >
+              <button
+                onClick={() => setShowImportModal(true)}
+                className="btn btn-secondary"
+                style={{
+                  display: "flex",
+                  alignItems: "center",
+                  gap: "8px",
+                  padding: "11px 22px",
+                  borderRadius: "10px",
+                  fontSize: "14px",
+                  fontWeight: "700",
+                  cursor: "pointer",
+                  background: "#f1f5f9",
+                  color: "#334155",
+                  border: "1px solid #cbd5e1",
+                  boxShadow: "0 2px 4px rgba(0,0,0,0.02)",
+                }}
+              >
+                <Download size={18} />
+                Import Data
+              </button>
               <button
                 onClick={() => setShowLedgerModal(true)}
                 className="btn btn-primary"
@@ -3009,6 +3145,436 @@ const SemiExport: React.FC = () => {
                 {saving
                   ? "Generating..."
                   : `Generate Ledger (${selectedLedgerMarkers.length})`}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Import Modal */}
+      {showImportModal && (
+        <div className="modal-overlay">
+          <div className="modal-content" style={{ maxWidth: "900px" }}>
+            <div className="modal-header">
+              <h2 className="modal-title">Import Semi Export Data</h2>
+              <button
+                className="modal-close"
+                onClick={() => setShowImportModal(false)}
+              >
+                <X size={20} />
+              </button>
+            </div>
+
+            <div className="modal-body" style={{ padding: "24px" }}>
+              <div
+                style={{
+                  display: "grid",
+                  gridTemplateColumns: "1fr 1fr 1fr",
+                  gap: "20px",
+                  marginBottom: "24px",
+                }}
+              >
+                <div>
+                  <label
+                    style={{
+                      display: "block",
+                      fontSize: "13px",
+                      fontWeight: "700",
+                      marginBottom: "8px",
+                      color: "#334155",
+                    }}
+                  >
+                    Marker Name
+                  </label>
+                  <input
+                    type="text"
+                    value={importFormData.markerName}
+                    onChange={(e) =>
+                      setImportFormData({
+                        ...importFormData,
+                        markerName: e.target.value,
+                      })
+                    }
+                    style={{
+                      width: "100%",
+                      padding: "10px",
+                      borderRadius: "8px",
+                      border: "1px solid #cbd5e1",
+                    }}
+                    placeholder="Enter Marker Name"
+                  />
+                </div>
+                <div>
+                  <label
+                    style={{
+                      display: "block",
+                      fontSize: "13px",
+                      fontWeight: "700",
+                      marginBottom: "8px",
+                      color: "#334155",
+                    }}
+                  >
+                    Total Sorted Weight (viss)
+                  </label>
+                  <input
+                    type="number"
+                    value={importFormData.totalSortedWeight}
+                    onChange={(e) =>
+                      setImportFormData({
+                        ...importFormData,
+                        totalSortedWeight: e.target.value,
+                      })
+                    }
+                    style={{
+                      width: "100%",
+                      padding: "10px",
+                      borderRadius: "8px",
+                      border: "1px solid #cbd5e1",
+                    }}
+                    placeholder="0.00"
+                  />
+                </div>
+                <div>
+                  <label
+                    style={{
+                      display: "block",
+                      fontSize: "13px",
+                      fontWeight: "700",
+                      marginBottom: "8px",
+                      color: "#334155",
+                    }}
+                  >
+                    Date
+                  </label>
+                  <input
+                    type="date"
+                    value={importFormData.date}
+                    onChange={(e) =>
+                      setImportFormData({
+                        ...importFormData,
+                        date: e.target.value,
+                      })
+                    }
+                    style={{
+                      width: "100%",
+                      padding: "10px",
+                      borderRadius: "8px",
+                      border: "1px solid #cbd5e1",
+                    }}
+                  />
+                </div>
+              </div>
+
+              <div style={{ marginBottom: "16px" }}>
+                <h3
+                  style={{
+                    fontSize: "15px",
+                    fontWeight: "700",
+                    color: "#0f172a",
+                    marginBottom: "12px",
+                    borderBottom: "1px solid #e2e8f0",
+                    paddingBottom: "8px",
+                  }}
+                >
+                  Color Categories & Sizes
+                </h3>
+
+                {importCategoryOptions.map((color) => {
+                  const isChecked = !!importCategoriesData[color];
+
+                  return (
+                    <div
+                      key={color}
+                      style={{
+                        marginBottom: "16px",
+                        background: "#f8fafc",
+                        borderRadius: "8px",
+                        border: "1px solid #e2e8f0",
+                        padding: "16px",
+                      }}
+                    >
+                      <label
+                        style={{
+                          display: "flex",
+                          alignItems: "center",
+                          gap: "10px",
+                          cursor: "pointer",
+                          fontWeight: 700,
+                          fontSize: "15px",
+                        }}
+                      >
+                        <input
+                          type="checkbox"
+                          checked={isChecked}
+                          onChange={(e) => {
+                            if (e.target.checked) {
+                              setImportCategoriesData({
+                                ...importCategoriesData,
+                                [color]: {},
+                              });
+                            } else {
+                              const newData = { ...importCategoriesData };
+                              delete newData[color];
+                              setImportCategoriesData(newData);
+                            }
+                          }}
+                          style={{ width: "18px", height: "18px" }}
+                        />
+                        {color}
+                      </label>
+
+                      {isChecked && (
+                        <div
+                          style={{
+                            marginTop: "16px",
+                            display: "grid",
+                            gridTemplateColumns:
+                              "repeat(auto-fill, minmax(220px, 1fr))",
+                            gap: "12px",
+                          }}
+                        >
+                          {sizeOptions.map((size) => {
+                            const sizeData = importCategoriesData[color][
+                              size
+                            ] || { weight: "", price: "", amount: "" };
+                            return (
+                              <div
+                                key={size}
+                                style={{
+                                  background: "white",
+                                  padding: "12px",
+                                  borderRadius: "8px",
+                                  border: "1px solid #cbd5e1",
+                                  display: "flex",
+                                  flexDirection: "column",
+                                  gap: "8px",
+                                }}
+                              >
+                                <div
+                                  style={{
+                                    fontWeight: 700,
+                                    color: "#3b82f6",
+                                    fontSize: "13px",
+                                  }}
+                                >
+                                  Size: {size}
+                                </div>
+
+                                <div
+                                  style={{
+                                    display: "flex",
+                                    alignItems: "center",
+                                    gap: "8px",
+                                  }}
+                                >
+                                  <label
+                                    style={{
+                                      fontSize: "11px",
+                                      width: "40px",
+                                      color: "#64748b",
+                                    }}
+                                  >
+                                    Wgt:
+                                  </label>
+                                  <input
+                                    type="number"
+                                    placeholder="0"
+                                    value={sizeData.weight}
+                                    onChange={(e) => {
+                                      const w = e.target.value;
+                                      const p = sizeData.price;
+                                      const amt =
+                                        Number(w || 0) * Number(p || 0);
+                                      setImportCategoriesData({
+                                        ...importCategoriesData,
+                                        [color]: {
+                                          ...importCategoriesData[color],
+                                          [size]: {
+                                            ...sizeData,
+                                            weight: w,
+                                            amount: amt > 0 ? amt : "",
+                                          },
+                                        },
+                                      });
+                                    }}
+                                    style={{
+                                      flex: 1,
+                                      padding: "4px 6px",
+                                      fontSize: "12px",
+                                      border: "1px solid #cbd5e1",
+                                      borderRadius: "4px",
+                                    }}
+                                  />
+                                </div>
+
+                                <div
+                                  style={{
+                                    display: "flex",
+                                    alignItems: "center",
+                                    gap: "8px",
+                                  }}
+                                >
+                                  <label
+                                    style={{
+                                      fontSize: "11px",
+                                      width: "40px",
+                                      color: "#64748b",
+                                    }}
+                                  >
+                                    Price:
+                                  </label>
+                                  <input
+                                    type="number"
+                                    placeholder="0"
+                                    value={sizeData.price}
+                                    onChange={(e) => {
+                                      const p = e.target.value;
+                                      const w = sizeData.weight;
+                                      const amt =
+                                        Number(w || 0) * Number(p || 0);
+                                      setImportCategoriesData({
+                                        ...importCategoriesData,
+                                        [color]: {
+                                          ...importCategoriesData[color],
+                                          [size]: {
+                                            ...sizeData,
+                                            price: p,
+                                            amount: amt > 0 ? amt : "",
+                                          },
+                                        },
+                                      });
+                                    }}
+                                    style={{
+                                      flex: 1,
+                                      padding: "4px 6px",
+                                      fontSize: "12px",
+                                      border: "1px solid #cbd5e1",
+                                      borderRadius: "4px",
+                                    }}
+                                  />
+                                </div>
+
+                                <div
+                                  style={{
+                                    display: "flex",
+                                    alignItems: "center",
+                                    gap: "8px",
+                                  }}
+                                >
+                                  <label
+                                    style={{
+                                      fontSize: "11px",
+                                      width: "40px",
+                                      color: "#64748b",
+                                    }}
+                                  >
+                                    Amt:
+                                  </label>
+                                  <input
+                                    type="number"
+                                    placeholder="0"
+                                    value={sizeData.amount}
+                                    onChange={(e) => {
+                                      const amt = e.target.value;
+                                      setImportCategoriesData({
+                                        ...importCategoriesData,
+                                        [color]: {
+                                          ...importCategoriesData[color],
+                                          [size]: { ...sizeData, amount: amt },
+                                        },
+                                      });
+                                    }}
+                                    style={{
+                                      flex: 1,
+                                      padding: "4px 6px",
+                                      fontSize: "12px",
+                                      border: "1px solid #cbd5e1",
+                                      borderRadius: "4px",
+                                      background: "#f1f5f9",
+                                    }}
+                                  />
+                                </div>
+                              </div>
+                            );
+                          })}
+                        </div>
+                      )}
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+
+            <div
+              className="modal-footer"
+              style={{
+                padding: "16px 24px",
+                borderTop: "1px solid #e2e8f0",
+                display: "flex",
+                justifyContent: "flex-end",
+                gap: "12px",
+                background: "#f8fafc",
+                borderRadius: "0 0 20px 20px",
+              }}
+            >
+              <button
+                onClick={() => setShowImportModal(false)}
+                style={{
+                  padding: "10px 20px",
+                  borderRadius: "8px",
+                  border: "1px solid #cbd5e1",
+                  background: "white",
+                  fontWeight: 600,
+                  cursor: "pointer",
+                }}
+              >
+                Cancel
+              </button>
+              <button
+                onClick={async () => {
+                  if (
+                    !importFormData.markerName ||
+                    !importFormData.totalSortedWeight
+                  ) {
+                    alert("Marker Name and Weight are required.");
+                    return;
+                  }
+                  try {
+                    setSaving(true);
+                    await importedSemiExportAPI.create({
+                      markerName: importFormData.markerName,
+                      totalSortedWeight: Number(
+                        importFormData.totalSortedWeight,
+                      ),
+                      date: importFormData.date,
+                      dataJson: JSON.stringify(importCategoriesData),
+                    });
+                    await loadData();
+                    setShowImportModal(false);
+                    setImportFormData({
+                      markerName: "",
+                      totalSortedWeight: "",
+                      date: new Date().toISOString().substring(0, 10),
+                    });
+                    setImportCategoriesData({});
+                  } catch (e) {
+                    alert("Failed to save imported data");
+                  } finally {
+                    setSaving(false);
+                  }
+                }}
+                disabled={saving}
+                style={{
+                  padding: "10px 24px",
+                  borderRadius: "8px",
+                  border: "none",
+                  background: "#0f172a",
+                  color: "white",
+                  fontWeight: 600,
+                  cursor: saving ? "not-allowed" : "pointer",
+                }}
+              >
+                {saving ? "Importing..." : "Save Data"}
               </button>
             </div>
           </div>

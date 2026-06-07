@@ -514,4 +514,18 @@ export const exportAPI = {
   },
 };
 
+export const importedSemiExportAPI = {
+  getAll: async (): Promise<any[]> => {
+    const response = await api.get<any[]>("/ImportedSemiExport");
+    return response.data;
+  },
+  create: async (data: any): Promise<any> => {
+    const response = await api.post<any>("/ImportedSemiExport", data);
+    return response.data;
+  },
+  delete: async (id: number): Promise<void> => {
+    await api.delete(`/ImportedSemiExport/${id}`);
+  },
+};
+
 export default api;

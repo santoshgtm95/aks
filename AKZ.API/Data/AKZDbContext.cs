@@ -37,6 +37,7 @@ public class AKZDbContext : DbContext
     public DbSet<ExchangeRate> ExchangeRates { get; set; }
     public DbSet<Export> Exports { get; set; }
     public DbSet<ExportColorPrice> ExportColorPrices { get; set; }
+    public DbSet<ImportedSemiExport> ImportedSemiExports { get; set; }
 
     public override Task<int> SaveChangesAsync(CancellationToken cancellationToken = default)
     {
