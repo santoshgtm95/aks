@@ -20,6 +20,7 @@ public class ExportDto
     public int? ExchangeRateId { get; set; }
     public decimal? ExchangeRateRate { get; set; }
     public decimal SellingPrice { get; set; }
+    public string SizeSellingPrices { get; set; } = string.Empty;
 }
 
 public class CreateExportDto
@@ -36,4 +37,5 @@ public class CreateExportDto
     public decimal GrandTotalMMK { get; set; }
     public int? ExchangeRateId { get; set; }
     public decimal SellingPrice { get; set; }
+    public string SizeSellingPrices { get; set; } = string.Empty;
 }

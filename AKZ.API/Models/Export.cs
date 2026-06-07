@@ -50,4 +50,8 @@ public class Export : BaseEntity
 
     [Column(TypeName = "decimal(18,2)")]
     public decimal SellingPrice { get; set; }
+
+    public string SizeSellingPrices { get; set; } = string.Empty;
+
+    public ICollection<ExportColorPrice> ColorPrices { get; set; } = new List<ExportColorPrice>();
 }

@@ -571,6 +571,7 @@ export interface Export {
   exchangeRateId?: number | null;
   exchangeRateRate?: number | null;
   sellingPrice: number;
+  sizeSellingPrices: string;
 }
 
 export interface CreateExportDto {
@@ -586,4 +587,5 @@ export interface CreateExportDto {
   grandTotalMMK: number;
   exchangeRateId?: number | null;
   sellingPrice: number;
+  sizeSellingPrices: string;
 }

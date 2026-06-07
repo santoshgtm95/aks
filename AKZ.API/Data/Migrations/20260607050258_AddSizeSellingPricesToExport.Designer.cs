@@ -4,16 +4,19 @@ using AKZ.API.Data;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 #nullable disable
 
-namespace AKZ.API.Migrations
+namespace AKZ.API.Data.Migrations
 {
     [DbContext(typeof(AKZDbContext))]
-    partial class AKZDbContextModelSnapshot : ModelSnapshot
+    [Migration("20260607050258_AddSizeSellingPricesToExport")]
+    partial class AddSizeSellingPricesToExport
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -153,77 +156,6 @@ namespace AKZ.API.Migrations
                     b.HasIndex("LedgerId");
 
                     b.ToTable("Exports");
-                });
-
-            modelBuilder.Entity("AKZ.API.Models.ExportColorPrice", b =>
-                {
-                    b.Property<int>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("int");
-
-                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
-
-                    b.Property<string>("ColorName")
-                        .IsRequired()
-                        .HasMaxLength(100)
-                        .HasColumnType("nvarchar(100)");
-
-                    b.Property<int>("ExportId")
-                        .HasColumnType("int");
-
-                    b.Property<decimal>("Price10")
-                        .HasColumnType("decimal(18,2)");
-
-                    b.Property<decimal>("Price10B")
-                        .HasColumnType("decimal(18,2)");
-
-                    b.Property<decimal>("Price12")
-                        .HasColumnType("decimal(18,2)");
-
-                    b.Property<decimal>("Price14")
-                        .HasColumnType("decimal(18,2)");
-
-                    b.Property<decimal>("Price16")
-                        .HasColumnType("decimal(18,2)");
-
-                    b.Property<decimal>("Price18")
-                        .HasColumnType("decimal(18,2)");
-
-                    b.Property<decimal>("Price20")
-                        .HasColumnType("decimal(18,2)");
-
-                    b.Property<decimal>("Price22")
-                        .HasColumnType("decimal(18,2)");
-
-                    b.Property<decimal>("Price24")
-                        .HasColumnType("decimal(18,2)");
-
-                    b.Property<decimal>("Price26")
-                        .HasColumnType("decimal(18,2)");
-
-                    b.Property<decimal>("Price28")
-                        .HasColumnType("decimal(18,2)");
-
-                    b.Property<decimal>("Price6")
-                        .HasColumnType("decimal(18,2)");
-
-                    b.Property<decimal>("Price7")
-                        .HasColumnType("decimal(18,2)");
-
-                    b.Property<decimal>("Price8")
-                        .HasColumnType("decimal(18,2)");
-
-                    b.Property<decimal>("Price9")
-                        .HasColumnType("decimal(18,2)");
-
-                    b.Property<decimal>("PriceBar")
-                        .HasColumnType("decimal(18,2)");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("ExportId");
-
-                    b.ToTable("ExportColorPrices");
                 });
 
             modelBuilder.Entity("AKZ.API.Models.Ledger", b =>
@@ -1704,17 +1636,6 @@ namespace AKZ.API.Migrations
                     b.Navigation("Ledger");
                 });
 
-            modelBuilder.Entity("AKZ.API.Models.ExportColorPrice", b =>
-                {
-                    b.HasOne("AKZ.API.Models.Export", "Export")
-                        .WithMany("ColorPrices")
-                        .HasForeignKey("ExportId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.Navigation("Export");
-                });
-
             modelBuilder.Entity("AKZ.API.Models.LedgerMarker", b =>
                 {
                     b.HasOne("AKZ.API.Models.Ledger", "Ledger")
@@ -1976,11 +1897,6 @@ namespace AKZ.API.Migrations
                     b.Navigation("Permission");
 
                     b.Navigation("User");
-                });
-
-            modelBuilder.Entity("AKZ.API.Models.Export", b =>
-                {
-                    b.Navigation("ColorPrices");
                 });
 
             modelBuilder.Entity("AKZ.API.Models.Ledger", b =>

@@ -33,6 +33,7 @@ import {
   TrendingUp,
   TrendingDown,
   Info,
+  X,
 } from "lucide-react";
 import "./index.css";
 
@@ -44,7 +45,9 @@ const Sales6: React.FC = () => {
   const [allRates, setAllRates] = useState<ExchangeRate[]>([]);
   const [exports, setExports] = useState<Export[]>([]);
   const [selectedColors, setSelectedColors] = useState<Set<string>>(new Set());
-  const [sellingPrice, setSellingPrice] = useState<string>("");
+  const [sizeSellingPrices, setSizeSellingPrices] = useState<
+    Record<string, Record<string, string>>
+  >({});
   const [sellingInProgress, setSellingInProgress] = useState(false);
   const [loading, setLoading] = useState(true);
   const [selectedLedgerId, setSelectedLedgerId] = useState<number | null>(null);
@@ -56,6 +59,8 @@ const Sales6: React.FC = () => {
   const [expandedColors, setExpandedColors] = useState<Record<string, boolean>>(
     {},
   );
+  const [selectedHistory, setSelectedHistory] = useState<Export | null>(null);
+  const [isHistoryModalOpen, setIsHistoryModalOpen] = useState(false);
 
   // Helper: get the exchange rate (CNY→MMK) for a given sdd record id
   const getRateForRecord = (sddId: number): number => {
@@ -69,7 +74,7 @@ const Sales6: React.FC = () => {
 
   useEffect(() => {
     setSelectedColors(new Set());
-    setSellingPrice("");
+    setSizeSellingPrices({});
   }, [selectedLedgerId]);
 
   const toggleSelectColor = (colorName: string) => {
@@ -336,6 +341,32 @@ const Sales6: React.FC = () => {
     return { weight, amountCNY, amountMMK, workerFees };
   }, [selectedColors, selectedLedger, sddRecords, savedExports, allRates]);
 
+  const averageRate = useMemo(() => {
+    if (selectedTotals.amountCNY > 0) {
+      return selectedTotals.amountMMK / selectedTotals.amountCNY;
+    }
+    return 1;
+  }, [selectedTotals]);
+
+  const calculatedSellingPriceCNY = useMemo(() => {
+    let total = 0;
+    selectedColors.forEach((colorName) => {
+      const colorDet = colorDetails.find((c) => c.colorName === colorName);
+      if (!colorDet) return;
+      Object.entries(colorDet.sizes).forEach(([sizeKey, weight]) => {
+        if (weight === 0) return;
+        const priceStr = sizeSellingPrices[colorName]?.[sizeKey];
+        const priceVal = parseFloat(priceStr || "0");
+        if (!isNaN(priceVal) && priceVal > 0) {
+          total += priceVal * weight;
+        }
+      });
+    });
+    return total;
+  }, [selectedColors, sizeSellingPrices, colorDetails]);
+
+  const calculatedSellingPriceMMK = calculatedSellingPriceCNY * averageRate;
+
   const ledgerStatusMap = useMemo(() => {
     const map: Record<number, boolean> = {};
     ledgers.forEach((l) => {
@@ -406,9 +437,11 @@ const Sales6: React.FC = () => {
       alert("Please select at least one color card to sell.");
       return;
     }
-    const priceVal = parseFloat(sellingPrice);
+    const priceVal = calculatedSellingPriceMMK;
     if (isNaN(priceVal) || priceVal <= 0) {
-      alert("Please enter a valid selling price greater than 0.");
+      alert(
+        "Please enter valid selling prices (CNY) in Size Breakdown for the selected colors.",
+      );
       return;
     }
 
@@ -416,6 +449,20 @@ const Sales6: React.FC = () => {
       setSellingInProgress(true);
 
       const selectedColorNames = Array.from(selectedColors);
+
+      // Ensure all selected colors are included in the payload, even with 0 prices
+      const fullSizeSellingPrices: Record<string, Record<string, string>> = {};
+      selectedColorNames.forEach((colorName) => {
+        fullSizeSellingPrices[colorName] = {};
+        const colorDet = colorDetails.find((c) => c.colorName === colorName);
+        if (colorDet) {
+          Object.keys(colorDet.sizes).forEach((sizeKey) => {
+            const val = sizeSellingPrices[colorName]?.[sizeKey];
+            fullSizeSellingPrices[colorName][sizeKey] = val || "0";
+          });
+        }
+      });
+
       const weight = selectedTotals.weight;
       const totalExportWeightViss = weight;
       const totalExportWeightKg = weight * 1.633;
@@ -437,13 +484,14 @@ const Sales6: React.FC = () => {
         grandTotalMMK,
         exchangeRateId: ledgerExchangeRateId,
         sellingPrice: priceVal,
+        sizeSellingPrices: JSON.stringify(fullSizeSellingPrices),
       };
 
       await exportAPI.create(payload);
       await loadData();
 
       setSelectedColors(new Set());
-      setSellingPrice("");
+      setSizeSellingPrices({});
 
       alert("Export sale saved successfully!");
     } catch (error) {
@@ -568,7 +616,6 @@ const Sales6: React.FC = () => {
   const activeLedgers = useMemo(() => {
     return filteredLedgers.filter((l) => !isLedgerFullySold(l.id));
   }, [filteredLedgers, isLedgerFullySold]);
-
 
   const grandTotal = useMemo(() => {
     if (!selectedLedger)
@@ -920,6 +967,39 @@ const Sales6: React.FC = () => {
                                             <span className="size-val">
                                               {weight.toFixed(3)}
                                             </span>
+                                            <div
+                                              className="size-price-input"
+                                              onClick={(e) =>
+                                                e.stopPropagation()
+                                              }
+                                            >
+                                              <span className="currency-symbol">
+                                                ¥
+                                              </span>
+                                              <input
+                                                type="number"
+                                                placeholder="0.00"
+                                                value={
+                                                  sizeSellingPrices[
+                                                    color.colorName
+                                                  ]?.[sizeKey] || ""
+                                                }
+                                                onChange={(e) => {
+                                                  const val = e.target.value;
+                                                  setSizeSellingPrices(
+                                                    (prev) => ({
+                                                      ...prev,
+                                                      [color.colorName]: {
+                                                        ...(prev[
+                                                          color.colorName
+                                                        ] || {}),
+                                                        [sizeKey]: val,
+                                                      },
+                                                    }),
+                                                  );
+                                                }}
+                                              />
+                                            </div>
                                           </div>
                                         );
                                       },
@@ -942,20 +1022,32 @@ const Sales6: React.FC = () => {
                         <div className="sell-panel-body">
                           <div className="sell-panel-inputs">
                             <div className="price-input-group">
-                              <label htmlFor="sellingPrice">
-                                Selling Price (MMK)
-                              </label>
-                              <div className="price-input-wrapper">
+                              <label>Calculated Selling Price</label>
+                              <div className="price-input-wrapper readonly-wrapper">
+                                <span className="currency-prefix">¥</span>
+                                <input
+                                  type="text"
+                                  disabled
+                                  value={calculatedSellingPriceCNY.toLocaleString(
+                                    undefined,
+                                    {
+                                      minimumFractionDigits: 2,
+                                      maximumFractionDigits: 2,
+                                    },
+                                  )}
+                                />
+                              </div>
+                              <div
+                                className="price-input-wrapper readonly-wrapper"
+                                style={{ marginTop: "8px" }}
+                              >
                                 <span className="currency-prefix">MMK</span>
                                 <input
-                                  type="number"
-                                  id="sellingPrice"
-                                  placeholder="Enter selling price..."
-                                  value={sellingPrice}
-                                  onChange={(e) =>
-                                    setSellingPrice(e.target.value)
-                                  }
-                                  disabled={sellingInProgress}
+                                  type="text"
+                                  disabled
+                                  value={Math.round(
+                                    calculatedSellingPriceMMK,
+                                  ).toLocaleString()}
                                 />
                               </div>
                             </div>
@@ -963,7 +1055,9 @@ const Sales6: React.FC = () => {
                               onClick={handleSellSelected}
                               className="btn-sell"
                               disabled={
-                                sellingInProgress || selectedColors.size === 0
+                                sellingInProgress ||
+                                selectedColors.size === 0 ||
+                                calculatedSellingPriceMMK <= 0
                               }
                             >
                               {sellingInProgress
@@ -1075,7 +1169,7 @@ const Sales6: React.FC = () => {
                                 </span>
                               </div>
                               {(() => {
-                                const sp = parseFloat(sellingPrice);
+                                const sp = calculatedSellingPriceMMK;
                                 const gt =
                                   selectedTotals.amountMMK +
                                   selectedTotals.workerFees;
@@ -1229,7 +1323,14 @@ const Sales6: React.FC = () => {
                             (l) => l.id === sale.ledgerId,
                           );
                           return (
-                            <tr key={sale.id}>
+                            <tr
+                              key={sale.id}
+                              style={{ cursor: "pointer" }}
+                              onClick={() => {
+                                setSelectedHistory(sale);
+                                setIsHistoryModalOpen(true);
+                              }}
+                            >
                               <td className="rf-td-date">
                                 {new Date(sale.date).toLocaleDateString()}
                               </td>
@@ -1258,17 +1359,22 @@ const Sales6: React.FC = () => {
                               </td>
                               <td>
                                 <div className="history-colors-list">
-                                  {saleLedger
-                                    ? saleLedger.markers.map((m) => (
-                                        <span
-                                          key={m.markerName}
-                                          className="history-color-tag"
-                                          style={{ background: "rgba(99,102,241,0.15)", color: "#a5b4fc" }}
-                                        >
-                                          {m.markerName}
-                                        </span>
-                                      ))
-                                    : <span className="history-color-tag">—</span>}
+                                  {saleLedger ? (
+                                    saleLedger.markers.map((m) => (
+                                      <span
+                                        key={m.markerName}
+                                        className="history-color-tag"
+                                        style={{
+                                          background: "rgba(99,102,241,0.15)",
+                                          color: "#a5b4fc",
+                                        }}
+                                      >
+                                        {m.markerName}
+                                      </span>
+                                    ))
+                                  ) : (
+                                    <span className="history-color-tag">—</span>
+                                  )}
                                 </div>
                               </td>
                               <td className="font-numeric">
@@ -1321,6 +1427,154 @@ const Sales6: React.FC = () => {
           )}
         </div>
       </main>
+
+      {/* History Detail Modal */}
+      {isHistoryModalOpen && selectedHistory && (
+        <div className="modal-overlay">
+          <div className="modal-content" style={{ maxWidth: "1000px" }}>
+            <div className="modal-header">
+              <h2 className="modal-title">Export Sale History Details</h2>
+              <button
+                className="modal-close"
+                onClick={() => setIsHistoryModalOpen(false)}
+              >
+                <X size={20} />
+              </button>
+            </div>
+            <div className="modal-body">
+              <div className="history-detail-grid">
+                <div className="detail-item">
+                  <span className="detail-label">Date</span>
+                  <span className="detail-value">
+                    {new Date(selectedHistory.date).toLocaleDateString()}
+                  </span>
+                </div>
+                <div className="detail-item">
+                  <span className="detail-label">Ledger</span>
+                  <span className="detail-value">
+                    {selectedHistory.ledgerName ||
+                      `Ledger #${selectedHistory.ledgerId}`}
+                  </span>
+                </div>
+                <div className="detail-item">
+                  <span className="detail-label">Selling Price</span>
+                  <span className="detail-value">
+                    {selectedHistory.sellingPrice.toLocaleString()} MMK
+                  </span>
+                </div>
+                <div className="detail-item">
+                  <span className="detail-label">Total Selected Weight</span>
+                  <span className="detail-value">
+                    {selectedHistory.selectedWeight.toFixed(3)} viss
+                  </span>
+                </div>
+                <div className="detail-item">
+                  <span className="detail-label">Total Export Weight</span>
+                  <span className="detail-value">
+                    {selectedHistory.totalExportWeightKg.toFixed(3)} kg
+                  </span>
+                </div>
+                <div className="detail-item">
+                  <span className="detail-label">Product Amount (CNY)</span>
+                  <span className="detail-value">
+                    ¥{selectedHistory.productAmountCNY.toLocaleString()}
+                  </span>
+                </div>
+                <div className="detail-item">
+                  <span className="detail-label">Product Amount (MMK)</span>
+                  <span className="detail-value">
+                    {Math.round(
+                      selectedHistory.productAmountMMK,
+                    ).toLocaleString()}{" "}
+                    MMK
+                  </span>
+                </div>
+                <div className="detail-item">
+                  <span className="detail-label">Worker Fees</span>
+                  <span className="detail-value">
+                    {selectedHistory.workerFees.toLocaleString()} MMK
+                  </span>
+                </div>
+                <div className="detail-item">
+                  <span className="detail-label">Grand Total</span>
+                  <span className="detail-value highlight">
+                    {Math.round(selectedHistory.grandTotalMMK).toLocaleString()}{" "}
+                    MMK
+                  </span>
+                </div>
+                <div className="detail-item">
+                  <span className="detail-label">P&amp;L</span>
+                  <span
+                    className={`detail-value ${selectedHistory.sellingPrice - selectedHistory.grandTotalMMK >= 0 ? "text-profit" : "text-loss"}`}
+                  >
+                    {selectedHistory.sellingPrice -
+                      selectedHistory.grandTotalMMK >=
+                    0
+                      ? "+"
+                      : ""}
+                    {Math.round(
+                      selectedHistory.sellingPrice -
+                        selectedHistory.grandTotalMMK,
+                    ).toLocaleString()}{" "}
+                    MMK
+                  </span>
+                </div>
+              </div>
+
+              <div className="history-detail-section">
+                <h3>Colors Sold</h3>
+                <div className="history-colors-list">
+                  {selectedHistory.selectedColors.split(", ").map((col) => (
+                    <span key={col} className="history-color-tag">
+                      {col}
+                    </span>
+                  ))}
+                </div>
+              </div>
+
+              <div className="history-detail-section">
+                <h3>Size Prices (CNY)</h3>
+                {(() => {
+                  try {
+                    const parsed = JSON.parse(
+                      selectedHistory.sizeSellingPrices || "{}",
+                    );
+                    return (
+                      <div className="size-prices-container">
+                        {Object.entries(parsed).map(
+                          ([colorName, sizes]: [string, any]) => (
+                            <div key={colorName} className="size-price-group">
+                              <h4 className="color-group-title">{colorName}</h4>
+                              <div className="sizes-grid history-sizes-grid">
+                                {Object.entries(sizes).map(
+                                  ([size, price]: [string, any]) => (
+                                    <div
+                                      key={size}
+                                      className="size-badge history-size-badge"
+                                      style={{ backgroundColor: "#f8fafc" }}
+                                    >
+                                      <span className="size-name">{size}</span>
+                                      <span className="size-val">
+                                        ¥{Number(price).toLocaleString()}
+                                      </span>
+                                    </div>
+                                  ),
+                                )}
+                              </div>
+                            </div>
+                          ),
+                        )}
+                      </div>
+                    );
+                  } catch (e) {
+                    return <span>No detailed size pricing available.</span>;
+                  }
+                })()}
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

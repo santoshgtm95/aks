@@ -4,6 +4,7 @@ using Microsoft.EntityFrameworkCore;
 using AKZ.API.Data;
 using AKZ.API.DTOs;
 using AKZ.API.Models;
+using System.Text.Json;
 
 namespace AKZ.API.Controllers;
 
@@ -42,7 +43,8 @@ public class ExportController : ControllerBase
                 GrandTotalMMK = e.GrandTotalMMK,
                 ExchangeRateId = e.ExchangeRateId,
                 ExchangeRateRate = e.ExchangeRate != null ? e.ExchangeRate.Rate : null,
-                SellingPrice = e.SellingPrice
+                SellingPrice = e.SellingPrice,
+                SizeSellingPrices = e.SizeSellingPrices
             })
             .ToListAsync();
 
@@ -73,7 +75,8 @@ public class ExportController : ControllerBase
                 GrandTotalMMK = e.GrandTotalMMK,
                 ExchangeRateId = e.ExchangeRateId,
                 ExchangeRateRate = e.ExchangeRate != null ? e.ExchangeRate.Rate : null,
-                SellingPrice = e.SellingPrice
+                SellingPrice = e.SellingPrice,
+                SizeSellingPrices = e.SizeSellingPrices
             })
             .ToListAsync();
 
@@ -102,11 +105,56 @@ public class ExportController : ControllerBase
             WorkerFees = dto.WorkerFees,
             GrandTotalMMK = dto.GrandTotalMMK,
             ExchangeRateId = dto.ExchangeRateId > 0 ? dto.ExchangeRateId : null,
-            SellingPrice = dto.SellingPrice
+            SellingPrice = dto.SellingPrice,
+            SizeSellingPrices = dto.SizeSellingPrices
         };
 
         _context.Exports.Add(export);
         await _context.SaveChangesAsync();
+
+        if (!string.IsNullOrEmpty(dto.SizeSellingPrices))
+        {
+            try
+            {
+                var dict = JsonSerializer.Deserialize<Dictionary<string, Dictionary<string, string>>>(dto.SizeSellingPrices);
+                if (dict != null)
+                {
+                    foreach (var kvp in dict)
+                    {
+                        var colorName = kvp.Key;
+                        var sizes = kvp.Value;
+
+                        var colorPrice = new ExportColorPrice
+                        {
+                            ExportId = export.Id,
+                            ColorName = colorName,
+                            Price6 = ParseDecimal(sizes, "6"),
+                            Price7 = ParseDecimal(sizes, "7"),
+                            Price8 = ParseDecimal(sizes, "8"),
+                            Price9 = ParseDecimal(sizes, "9"),
+                            Price10 = ParseDecimal(sizes, "10"),
+                            Price10B = ParseDecimal(sizes, "10B"),
+                            Price12 = ParseDecimal(sizes, "12"),
+                            Price14 = ParseDecimal(sizes, "14"),
+                            Price16 = ParseDecimal(sizes, "16"),
+                            Price18 = ParseDecimal(sizes, "18"),
+                            Price20 = ParseDecimal(sizes, "20"),
+                            Price22 = ParseDecimal(sizes, "22"),
+                            Price24 = ParseDecimal(sizes, "24"),
+                            Price26 = ParseDecimal(sizes, "26"),
+                            Price28 = ParseDecimal(sizes, "28"),
+                            PriceBar = ParseDecimal(sizes, "Bar")
+                        };
+                        _context.ExportColorPrices.Add(colorPrice);
+                    }
+                    await _context.SaveChangesAsync();
+                }
+            }
+            catch (Exception ex)
+            {
+                // Ignored - SizeSellingPrices is invalid JSON
+            }
+        }
 
         // Load reference
         await _context.Entry(export).Reference(e => e.ExchangeRate).LoadAsync();
@@ -127,9 +175,19 @@ public class ExportController : ControllerBase
             GrandTotalMMK = export.GrandTotalMMK,
             ExchangeRateId = export.ExchangeRateId,
             ExchangeRateRate = export.ExchangeRate != null ? export.ExchangeRate.Rate : null,
-            SellingPrice = export.SellingPrice
+            SellingPrice = export.SellingPrice,
+            SizeSellingPrices = export.SizeSellingPrices
         };
 
         return Ok(resultDto);
+    }
+
+    private decimal ParseDecimal(Dictionary<string, string> dict, string key)
+    {
+        if (dict != null && dict.TryGetValue(key, out var valStr) && decimal.TryParse(valStr, out var val))
+        {
+            return val;
+        }
+        return 0;
     }
 }
