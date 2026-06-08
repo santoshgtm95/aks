@@ -49,4 +49,7 @@ public class RefinementRecord : BaseEntity
 
     [Column(TypeName = "decimal(18,4)")]
     public decimal RemainingWeight { get; set; }
+
+    [Column(TypeName = "decimal(18,2)")]
+    public decimal WorkerFees { get; set; }
 }

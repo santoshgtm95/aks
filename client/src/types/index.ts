@@ -254,6 +254,7 @@ export interface PurificationProcess {
   purifierId?: number;
   purifierName?: string;
   isWeightFull: boolean;
+  workerFees?: number;
 }
 
 export interface PurifiedRecord {
@@ -268,6 +269,7 @@ export interface PurifiedRecord {
   purifierId?: number;
   purifierName?: string;
   isWeightFull: boolean;
+  workerFees?: number;
 }
 
 export interface CreatePurificationProcessDto {
@@ -277,6 +279,7 @@ export interface CreatePurificationProcessDto {
   purifyCount: number;
   purifierId?: number;
   isWeightFull: boolean;
+  workerFees?: number;
 }
 
 export interface AvailableCategory {
@@ -368,6 +371,7 @@ export interface RefinementProcess {
   warehouseName?: string;
   refinementWorkerId?: number;
   refinementWorkerName?: string;
+  workerFees?: number;
 }
 
 export interface RefinementRecord {
@@ -385,6 +389,7 @@ export interface RefinementRecord {
   warehouseName?: string;
   refinementWorkerId?: number;
   refinementWorkerName?: string;
+  workerFees?: number;
 }
 
 export interface CreateRefinementProcessDto {
@@ -397,6 +402,7 @@ export interface CreateRefinementProcessDto {
   spoilageWeight?: number;
   returnWeight?: number;
   refinementWorkerId?: number;
+  workerFees?: number;
 }
 
 export interface SingleDoubleDrawnRecord {

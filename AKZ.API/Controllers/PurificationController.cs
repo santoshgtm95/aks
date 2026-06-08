@@ -145,7 +145,8 @@ public class PurificationController : ControllerBase
                 WarehouseName = warehouseName,
                 PurifierId = p.PurifierId,
                 PurifierName = p.Purifier != null ? p.Purifier.Name : "",
-                IsWeightFull = p.IsWeightFull
+                IsWeightFull = p.IsWeightFull,
+                WorkerFees = p.WorkerFees
             });
         }
 
@@ -158,6 +159,7 @@ public class PurificationController : ControllerBase
         var warehouseId = GetCurrentUserWarehouseId();
 
         var records = await _context.PurifiedRecords
+            .Include(p => p.PurificationProcess)
             .Include(p => p.ProcessingRecord)
                 .ThenInclude(r => r.Product)
                     .ThenInclude(pr => pr.Warehouse)
@@ -191,7 +193,8 @@ public class PurificationController : ControllerBase
                 WarehouseName = warehouseName,
                 PurifierId = p.PurifierId,
                 PurifierName = p.Purifier != null ? p.Purifier.Name : "",
-                IsWeightFull = p.IsWeightFull
+                IsWeightFull = p.IsWeightFull,
+                WorkerFees = p.PurificationProcess != null ? p.PurificationProcess.WorkerFees : 0
             });
         }
 
@@ -261,7 +264,8 @@ public class PurificationController : ControllerBase
             WarehouseName = warehouseName,
             PurifierId = process.PurifierId,
             PurifierName = purifierName,
-            IsWeightFull = process.IsWeightFull
+            IsWeightFull = process.IsWeightFull,
+            WorkerFees = process.WorkerFees
         });
     }
 
@@ -313,8 +317,8 @@ public class PurificationController : ControllerBase
             purifiedRecord.IsWeightFull = dto.IsWeightFull;
         }
 
-        // We DO NOT update the 'process' (PurificationProcess) here 
-        // to keep it as an independent issue log.
+        // We update the 'process' (PurificationProcess) with WorkerFees
+        process.WorkerFees = dto.WorkerFees;
         
         await _context.SaveChangesAsync();
         return Ok();

@@ -138,7 +138,8 @@ public class RefinementController : ControllerBase
                 RemainingWeightAfter = r.RemainingWeightAfter,
                 WarehouseName = warehouseName,
                 RefinementWorkerId = r.RefinementWorkerId,
-                RefinementWorkerName = r.RefinementWorker?.Name ?? ""
+                RefinementWorkerName = r.RefinementWorker?.Name ?? "",
+                WorkerFees = r.WorkerFees
             });
         }
 
@@ -190,7 +191,8 @@ public class RefinementController : ControllerBase
                 RefinementWorkerName = r.RefinementWorker?.Name ?? "",
                 LostWeight = r.LostWeight,
                 SpoilageWeight = r.SpoilageWeight,
-                ReturnWeight = r.ReturnWeight
+                ReturnWeight = r.ReturnWeight,
+                WorkerFees = r.WorkerFees
             });
         }
 
@@ -288,9 +290,12 @@ public class RefinementController : ControllerBase
             RemainingCount = count,
             RemainingWeight = dto.Weight,
             RefinementWorkerId = dto.RefinementWorkerId,
-            RefinementProcessId = id
+            RefinementProcessId = id,
+            WorkerFees = dto.WorkerFees
         };
         _context.RefinementRecords.Add(refinementRecord);
+
+        process.WorkerFees = dto.WorkerFees;
 
         await _context.SaveChangesAsync();
         return Ok();
@@ -341,6 +346,7 @@ public class RefinementController : ControllerBase
         record.RemainingCount = count;
         record.RemainingWeight = dto.Weight;
         record.RefinementWorkerId = dto.RefinementWorkerId;
+        record.WorkerFees = dto.WorkerFees;
 
         // Sync process if exists
         if (record.RefinementProcessId.HasValue)
@@ -352,6 +358,7 @@ public class RefinementController : ControllerBase
                 process.Count = count;
                 process.Weight = dto.Weight;
                 process.RefinementWorkerId = dto.RefinementWorkerId;
+                process.WorkerFees = dto.WorkerFees;
             }
         }
 

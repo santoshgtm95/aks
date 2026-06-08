@@ -59,6 +59,7 @@ const Purification: React.FC = () => {
     purifierId: 0,
     isWeightFull: true,
     date: getMyanmarNow(),
+    workerFees: "",
   });
 
   useEffect(() => {
@@ -184,6 +185,7 @@ const Purification: React.FC = () => {
       date: dateStr,
       purifierId: p.purifierId || 0,
       isWeightFull: p.isWeightFull,
+      workerFees: p.workerFees !== undefined ? p.workerFees.toString() : "",
     });
     setShowPurifyModal(true);
   };
@@ -239,6 +241,7 @@ const Purification: React.FC = () => {
           purifyCount: count,
           purifierId: purifyForm.purifierId,
           isWeightFull: purifyForm.isWeightFull,
+          workerFees: Number(purifyForm.workerFees) || 0,
         });
       } else if (editingRecord) {
         await purificationAPI.updatePurifiedRecord(editingRecord.id, {
@@ -248,6 +251,7 @@ const Purification: React.FC = () => {
           purifyCount: count,
           purifierId: purifyForm.purifierId,
           isWeightFull: purifyForm.isWeightFull,
+          workerFees: Number(purifyForm.workerFees) || 0,
         });
       } else if (selectedCategory) {
         await purificationAPI.create({
@@ -257,6 +261,7 @@ const Purification: React.FC = () => {
           purifyCount: count,
           purifierId: purifyForm.purifierId,
           isWeightFull: purifyForm.isWeightFull,
+          workerFees: Number(purifyForm.workerFees) || 0,
         });
       }
       setShowPurifyModal(false);
@@ -559,6 +564,7 @@ const Purification: React.FC = () => {
                     <th>Category</th>
                     <th>Bundle Count</th>
                     <th>Weight (viss)</th>
+                    <th>Worker Fees</th>
                     <th>Purifier</th>
                     <th style={{ textAlign: "right" }}>Actions</th>
                   </tr>
@@ -569,6 +575,7 @@ const Purification: React.FC = () => {
                     <th>Category</th>
                     <th>Purified Count</th>
                     <th>Weight (Output)</th>
+                    <th>Worker Fees</th>
                     <th>Purifier</th>
                     <th>Weight Status</th>
                     <th style={{ textAlign: "right" }}>Actions</th>
@@ -638,6 +645,12 @@ const Purification: React.FC = () => {
                         </td>
                         <td style={{ fontWeight: 600, color: "#334155" }}>
                           {p.purifyWeight.toFixed(3)}
+                        </td>
+                        <td>
+                          {p.workerFees?.toLocaleString(undefined, {
+                            minimumFractionDigits: 2,
+                            maximumFractionDigits: 2,
+                          }) || "0.00"}
                         </td>
                         <td>
                           <div
@@ -740,6 +753,12 @@ const Purification: React.FC = () => {
                       </td>
                       <td style={{ fontWeight: 600, color: "#334155" }}>
                         {p.weight.toFixed(3)}
+                      </td>
+                      <td>
+                        {p.workerFees?.toLocaleString(undefined, {
+                          minimumFractionDigits: 2,
+                          maximumFractionDigits: 2,
+                        }) || "0.00"}
                       </td>
                       <td>
                         <div
@@ -993,6 +1012,25 @@ const Purification: React.FC = () => {
                       }))
                     }
                     required
+                  />
+                </div>
+
+                {/* Worker Fees */}
+                <div className="pm-form-group">
+                  <label className="pm-form-label">Worker Fees (MMK)</label>
+                  <input
+                    type="number"
+                    min="0"
+                    step="0.01"
+                    className="pm-form-control"
+                    value={purifyForm.workerFees}
+                    onChange={(e) =>
+                      setPurifyForm((prev) => ({
+                        ...prev,
+                        workerFees: e.target.value,
+                      }))
+                    }
+                    placeholder="Enter worker fees amount..."
                   />
                 </div>
 

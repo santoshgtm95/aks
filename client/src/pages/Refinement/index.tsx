@@ -65,6 +65,7 @@ const Refinement: React.FC = () => {
     returnWeight: "",
     refinementWorkerId: 0,
     date: getMyanmarNow(),
+    workerFees: "",
   });
   const [validationError, setValidationError] = useState<string | null>(null);
 
@@ -172,6 +173,7 @@ const Refinement: React.FC = () => {
       returnWeight: "",
       date: dateStr,
       refinementWorkerId: p.refinementWorkerId || 0,
+      workerFees: p.workerFees !== undefined ? p.workerFees.toString() : "",
     });
     setValidationError(null);
     setShowModal(true);
@@ -231,6 +233,7 @@ const Refinement: React.FC = () => {
         spoilageWeight,
         returnWeight,
         refinementWorkerId: form.refinementWorkerId,
+        workerFees: Number(form.workerFees) || 0,
       };
       if (editingProcess) await refinementAPI.update(editingProcess.id, dto);
       else if (editingRecord)
@@ -446,6 +449,7 @@ const Refinement: React.FC = () => {
                     <th>Category</th>
                     <th>Weight (viss)</th>
                     <th>Refinement Worker</th>
+                    <th>Worker Fees</th>
                     <th className="rf-th-right">Actions</th>
                   </tr>
                 ) : (
@@ -458,6 +462,7 @@ const Refinement: React.FC = () => {
                     <th>Spoilage Weight</th>
                     <th>Return Weight</th>
                     <th>Refinement Worker</th>
+                    <th>Worker Fees</th>
                     <th className="rf-th-right">Actions</th>
                   </tr>
                 )}
@@ -498,6 +503,12 @@ const Refinement: React.FC = () => {
                             <User size={13} />
                             {p.refinementWorkerName || "---"}
                           </div>
+                        </td>
+                        <td>
+                          {p.workerFees?.toLocaleString(undefined, {
+                            minimumFractionDigits: 2,
+                            maximumFractionDigits: 2,
+                          }) || "0.00"}
                         </td>
                         <td onClick={(e) => e.stopPropagation()}>
                           <div className="rf-actions">
@@ -561,6 +572,12 @@ const Refinement: React.FC = () => {
                           <User size={13} />
                           {p.refinementWorkerName || "---"}
                         </div>
+                      </td>
+                      <td>
+                        {p.workerFees?.toLocaleString(undefined, {
+                          minimumFractionDigits: 2,
+                          maximumFractionDigits: 2,
+                        }) || "0.00"}
                       </td>
                       <td>
                         <div className="rf-actions">
@@ -862,6 +879,25 @@ const Refinement: React.FC = () => {
                   </div>
                 );
               })()}
+
+              {/* Worker Fees */}
+              <div className="rf-form-group">
+                <label className="rf-form-label">Worker Fees (MMK)</label>
+                <input
+                  type="number"
+                  min="0"
+                  step="0.01"
+                  className="rf-form-control"
+                  value={form.workerFees}
+                  onChange={(e) =>
+                    setForm((prev) => ({
+                      ...prev,
+                      workerFees: e.target.value,
+                    }))
+                  }
+                  placeholder="Enter worker fees amount..."
+                />
+              </div>
 
               {/* Date */}
               <div className="rf-form-group">

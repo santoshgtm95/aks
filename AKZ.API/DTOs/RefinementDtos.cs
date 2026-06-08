@@ -14,6 +14,7 @@ public class RefinementProcessDto
     public decimal RemainingWeightAfter { get; set; }
     public int? RefinementWorkerId { get; set; }
     public string RefinementWorkerName { get; set; } = string.Empty;
+    public decimal WorkerFees { get; set; }
 }
 
 public class RefinementRecordDto
@@ -31,6 +32,7 @@ public class RefinementRecordDto
     public decimal LostWeight { get; set; }
     public decimal SpoilageWeight { get; set; }
     public decimal ReturnWeight { get; set; }
+    public decimal WorkerFees { get; set; }
 }
 
 public class CreateRefinementProcessDto
@@ -44,6 +46,7 @@ public class CreateRefinementProcessDto
     public decimal LostWeight { get; set; }
     public decimal SpoilageWeight { get; set; }
     public decimal ReturnWeight { get; set; }
+    public decimal WorkerFees { get; set; }
 }
 
 public class AvailablePurifiedCategoryDto

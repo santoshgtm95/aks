@@ -37,4 +37,7 @@ public class PurificationProcess : BaseEntity
     public Purifier? Purifier { get; set; }
 
     public ICollection<PurifiedRecord> PurifiedRecords { get; set; } = new List<PurifiedRecord>();
+
+    [Column(TypeName = "decimal(18,2)")]
+    public decimal WorkerFees { get; set; }
 }

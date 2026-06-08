@@ -4,16 +4,19 @@ using AKZ.API.Data;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 #nullable disable
 
-namespace AKZ.API.Migrations
+namespace AKZ.API.Data.Migrations
 {
     [DbContext(typeof(AKZDbContext))]
-    partial class AKZDbContextModelSnapshot : ModelSnapshot
+    [Migration("20260608144041_AddWorkerFeesToPurification")]
+    partial class AddWorkerFeesToPurification
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -978,9 +981,6 @@ namespace AKZ.API.Migrations
                     b.Property<decimal>("Weight")
                         .HasColumnType("decimal(18,4)");
 
-                    b.Property<decimal>("WorkerFees")
-                        .HasColumnType("decimal(18,2)");
-
                     b.HasKey("Id");
 
                     b.HasIndex("PurifiedRecordId");
@@ -1057,9 +1057,6 @@ namespace AKZ.API.Migrations
 
                     b.Property<decimal>("Weight")
                         .HasColumnType("decimal(18,4)");
-
-                    b.Property<decimal>("WorkerFees")
-                        .HasColumnType("decimal(18,2)");
 
                     b.HasKey("Id");
 
