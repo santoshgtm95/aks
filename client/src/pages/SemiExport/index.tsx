@@ -522,6 +522,26 @@ const SemiExport: React.FC = () => {
   const handleSubmitLedger = async () => {
     if (selectedLedgerMarkers.length === 0 || !ledgerName.trim()) return;
 
+    setFormError("");
+
+    const selectedGroups = completedMarkers.filter((g) =>
+      selectedLedgerMarkers.includes(g.markerName),
+    );
+
+    const hasImported = selectedGroups.some((g) =>
+      g.warehouseNames.includes("Imported"),
+    );
+    const hasWarehouse = selectedGroups.some((g) =>
+      g.warehouseNames.some((name) => name !== "Imported"),
+    );
+
+    if (hasImported && hasWarehouse) {
+      setFormError(
+        "Cannot generate a ledger mixing both Warehouse data and Imported data. Please select only one type at a time.",
+      );
+      return;
+    }
+
     setSaving(true);
     try {
       const markersPayload = selectedLedgerMarkers.map((markerName) => {
@@ -3462,55 +3482,81 @@ const SemiExport: React.FC = () => {
             <div
               style={{
                 display: "flex",
-                justifyContent: "flex-end",
+                flexDirection: "column",
                 gap: "12px",
               }}
             >
-              <button
-                onClick={() => setShowLedgerModal(false)}
+              {formError && (
+                <div
+                  style={{
+                    color: "#dc2626",
+                    background: "#fef2f2",
+                    padding: "10px",
+                    borderRadius: "8px",
+                    fontSize: "14px",
+                    border: "1px solid #f87171",
+                    textAlign: "center",
+                  }}
+                >
+                  {formError}
+                </div>
+              )}
+              <div
                 style={{
-                  padding: "10px 20px",
-                  borderRadius: "10px",
-                  border: "1.5px solid #e2e8f0",
-                  backgroundColor: "white",
-                  fontWeight: "600",
-                  cursor: "pointer",
+                  display: "flex",
+                  justifyContent: "flex-end",
+                  gap: "12px",
                 }}
               >
-                Cancel
-              </button>
-              <button
-                disabled={
-                  selectedLedgerMarkers.length === 0 ||
-                  !ledgerName.trim() ||
-                  saving
-                }
-                style={{
-                  padding: "10px 24px",
-                  borderRadius: "10px",
-                  border: "none",
-                  backgroundColor:
+                <button
+                  onClick={() => {
+                    setShowLedgerModal(false);
+                    setFormError("");
+                  }}
+                  style={{
+                    padding: "10px 20px",
+                    borderRadius: "10px",
+                    border: "1.5px solid #e2e8f0",
+                    backgroundColor: "white",
+                    fontWeight: "600",
+                    cursor: "pointer",
+                  }}
+                >
+                  Cancel
+                </button>
+                <button
+                  disabled={
                     selectedLedgerMarkers.length === 0 ||
                     !ledgerName.trim() ||
                     saving
-                      ? "#94a3b8"
-                      : "#0f172a",
-                  color: "white",
-                  fontWeight: "700",
-                  cursor:
-                    selectedLedgerMarkers.length === 0 ||
-                    !ledgerName.trim() ||
-                    saving
-                      ? "not-allowed"
-                      : "pointer",
-                  boxShadow: "0 4px 6px -1px rgba(15, 23, 42, 0.2)",
-                }}
-                onClick={handleSubmitLedger}
-              >
-                {saving
-                  ? "Generating..."
-                  : `Generate Ledger (${selectedLedgerMarkers.length})`}
-              </button>
+                  }
+                  style={{
+                    padding: "10px 24px",
+                    borderRadius: "10px",
+                    border: "none",
+                    backgroundColor:
+                      selectedLedgerMarkers.length === 0 ||
+                      !ledgerName.trim() ||
+                      saving
+                        ? "#94a3b8"
+                        : "#0f172a",
+                    color: "white",
+                    fontWeight: "700",
+                    cursor:
+                      selectedLedgerMarkers.length === 0 ||
+                      !ledgerName.trim() ||
+                      saving
+                        ? "not-allowed"
+                        : "pointer",
+                    boxShadow: "0 4px 6px -1px rgba(15, 23, 42, 0.2)",
+                  }}
+                  onClick={handleSubmitLedger}
+                >
+                  {saving
+                    ? "Generating..."
+                    : `Generate Ledger (${selectedLedgerMarkers.length})`}
+                </button>
+              </div>
             </div>
           </div>
         </div>
