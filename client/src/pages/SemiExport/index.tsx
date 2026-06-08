@@ -3551,178 +3551,200 @@ const SemiExport: React.FC = () => {
 
                       {isChecked && (
                         <div
+                          className="table-container"
                           style={{
+                            border: "1.5px solid #e2e8f0",
+                            borderRadius: "12px",
+                            overflow: "hidden",
+                            background: "white",
                             marginTop: "16px",
-                            display: "grid",
-                            gridTemplateColumns:
-                              "repeat(auto-fill, minmax(220px, 1fr))",
-                            gap: "12px",
                           }}
                         >
-                          {sizeOptions.map((size) => {
-                            const sizeData = importCategoriesData[color][
-                              size
-                            ] || { weight: "", price: "", amount: "" };
-                            return (
-                              <div
-                                key={size}
+                          <table
+                            className="table"
+                            style={{
+                              width: "100%",
+                              borderCollapse: "collapse",
+                              textAlign: "left",
+                              fontSize: "13.5px",
+                            }}
+                          >
+                            <thead>
+                              <tr
                                 style={{
-                                  background: "white",
-                                  padding: "12px",
-                                  borderRadius: "8px",
-                                  border: "1px solid #cbd5e1",
-                                  display: "flex",
-                                  flexDirection: "column",
-                                  gap: "8px",
+                                  background: "#f8fafc",
+                                  borderBottom: "1.5px solid #e2e8f0",
                                 }}
                               >
-                                <div
+                                <th
                                   style={{
-                                    fontWeight: 700,
-                                    color: "#3b82f6",
-                                    fontSize: "13px",
+                                    padding: "10px 16px",
+                                    fontWeight: "700",
+                                    color: "#475569",
                                   }}
                                 >
-                                  Size: {size}
-                                </div>
+                                  SIZE
+                                </th>
+                                <th
+                                  style={{
+                                    padding: "10px 16px",
+                                    fontWeight: "700",
+                                    color: "#475569",
+                                    width: "160px",
+                                  }}
+                                >
+                                  WEIGHT (viss)
+                                </th>
+                                <th
+                                  style={{
+                                    padding: "10px 16px",
+                                    fontWeight: "700",
+                                    color: "#475569",
+                                    width: "160px",
+                                  }}
+                                >
+                                  PRICE (CNY)
+                                </th>
+                                <th
+                                  style={{
+                                    padding: "10px 16px",
+                                    fontWeight: "700",
+                                    color: "#475569",
+                                    textAlign: "right",
+                                  }}
+                                >
+                                  AMOUNT (CNY)
+                                </th>
+                              </tr>
+                            </thead>
+                            <tbody>
+                              {sizeOptions.map((size) => {
+                                const sizeData = importCategoriesData[color][
+                                  size
+                                ] || { weight: "", price: "", amount: "" };
 
-                                <div
-                                  style={{
-                                    display: "flex",
-                                    alignItems: "center",
-                                    gap: "8px",
-                                  }}
-                                >
-                                  <label
+                                let displaySize = size;
+                                if (size === "Return") displaySize = "ပြန်ယူ";
+                                else if (size === "Spoilage")
+                                  displaySize = "အပယ်";
+                                else if (size === "Lost") displaySize = "လျော့";
+
+                                return (
+                                  <tr
+                                    key={size}
                                     style={{
-                                      fontSize: "11px",
-                                      width: "40px",
-                                      color: "#64748b",
+                                      borderBottom: "1px solid #f1f5f9",
                                     }}
                                   >
-                                    Wgt:
-                                  </label>
-                                  <input
-                                    type="number"
-                                    placeholder="0"
-                                    value={sizeData.weight}
-                                    onChange={(e) => {
-                                      const w = e.target.value;
-                                      const p = sizeData.price;
-                                      const amt =
-                                        Number(w || 0) * Number(p || 0);
-                                      setImportCategoriesData({
-                                        ...importCategoriesData,
-                                        [color]: {
-                                          ...importCategoriesData[color],
-                                          [size]: {
-                                            ...sizeData,
-                                            weight: w,
-                                            amount: amt > 0 ? amt : "",
-                                          },
-                                        },
-                                      });
-                                    }}
-                                    style={{
-                                      flex: 1,
-                                      padding: "4px 6px",
-                                      fontSize: "12px",
-                                      border: "1px solid #cbd5e1",
-                                      borderRadius: "4px",
-                                    }}
-                                  />
-                                </div>
-
-                                <div
-                                  style={{
-                                    display: "flex",
-                                    alignItems: "center",
-                                    gap: "8px",
-                                  }}
-                                >
-                                  <label
-                                    style={{
-                                      fontSize: "11px",
-                                      width: "40px",
-                                      color: "#64748b",
-                                    }}
-                                  >
-                                    Price:
-                                  </label>
-                                  <input
-                                    type="number"
-                                    placeholder="0"
-                                    value={sizeData.price}
-                                    onChange={(e) => {
-                                      const p = e.target.value;
-                                      const w = sizeData.weight;
-                                      const amt =
-                                        Number(w || 0) * Number(p || 0);
-                                      setImportCategoriesData({
-                                        ...importCategoriesData,
-                                        [color]: {
-                                          ...importCategoriesData[color],
-                                          [size]: {
-                                            ...sizeData,
-                                            price: p,
-                                            amount: amt > 0 ? amt : "",
-                                          },
-                                        },
-                                      });
-                                    }}
-                                    style={{
-                                      flex: 1,
-                                      padding: "4px 6px",
-                                      fontSize: "12px",
-                                      border: "1px solid #cbd5e1",
-                                      borderRadius: "4px",
-                                    }}
-                                  />
-                                </div>
-
-                                <div
-                                  style={{
-                                    display: "flex",
-                                    alignItems: "center",
-                                    gap: "8px",
-                                  }}
-                                >
-                                  <label
-                                    style={{
-                                      fontSize: "11px",
-                                      width: "40px",
-                                      color: "#64748b",
-                                    }}
-                                  >
-                                    Amt:
-                                  </label>
-                                  <input
-                                    type="number"
-                                    placeholder="0"
-                                    value={sizeData.amount}
-                                    onChange={(e) => {
-                                      const amt = e.target.value;
-                                      setImportCategoriesData({
-                                        ...importCategoriesData,
-                                        [color]: {
-                                          ...importCategoriesData[color],
-                                          [size]: { ...sizeData, amount: amt },
-                                        },
-                                      });
-                                    }}
-                                    style={{
-                                      flex: 1,
-                                      padding: "4px 6px",
-                                      fontSize: "12px",
-                                      border: "1px solid #cbd5e1",
-                                      borderRadius: "4px",
-                                      background: "#f1f5f9",
-                                    }}
-                                  />
-                                </div>
-                              </div>
-                            );
-                          })}
+                                    <td
+                                      style={{
+                                        padding: "10px 16px",
+                                        fontWeight: "700",
+                                        color: [
+                                          "Return",
+                                          "Spoilage",
+                                          "Lost",
+                                        ].includes(size)
+                                          ? "#ea580c"
+                                          : "#1e293b",
+                                      }}
+                                    >
+                                      {["Return", "Spoilage", "Lost"].includes(
+                                        size,
+                                      )
+                                        ? displaySize
+                                        : `Size ${size}`}
+                                    </td>
+                                    <td style={{ padding: "6px 16px" }}>
+                                      <input
+                                        type="number"
+                                        placeholder="0.000"
+                                        value={sizeData.weight}
+                                        onChange={(e) => {
+                                          const w = e.target.value;
+                                          const p = sizeData.price;
+                                          const amt =
+                                            Number(w || 0) * Number(p || 0);
+                                          setImportCategoriesData({
+                                            ...importCategoriesData,
+                                            [color]: {
+                                              ...importCategoriesData[color],
+                                              [size]: {
+                                                ...sizeData,
+                                                weight: w,
+                                                amount: amt > 0 ? amt : "",
+                                              },
+                                            },
+                                          });
+                                        }}
+                                        style={{
+                                          width: "100%",
+                                          padding: "8px 12px",
+                                          borderRadius: "8px",
+                                          border: "1.5px solid #cbd5e1",
+                                          fontSize: "13.5px",
+                                          fontWeight: "600",
+                                          outline: "none",
+                                          boxSizing: "border-box",
+                                        }}
+                                      />
+                                    </td>
+                                    <td style={{ padding: "6px 16px" }}>
+                                      <input
+                                        type="number"
+                                        placeholder="0"
+                                        value={sizeData.price}
+                                        onChange={(e) => {
+                                          const p = e.target.value;
+                                          const w = sizeData.weight;
+                                          const amt =
+                                            Number(w || 0) * Number(p || 0);
+                                          setImportCategoriesData({
+                                            ...importCategoriesData,
+                                            [color]: {
+                                              ...importCategoriesData[color],
+                                              [size]: {
+                                                ...sizeData,
+                                                price: p,
+                                                amount: amt > 0 ? amt : "",
+                                              },
+                                            },
+                                          });
+                                        }}
+                                        style={{
+                                          width: "100%",
+                                          padding: "8px 12px",
+                                          borderRadius: "8px",
+                                          border: "1.5px solid #cbd5e1",
+                                          fontSize: "13.5px",
+                                          fontWeight: "600",
+                                          outline: "none",
+                                          boxSizing: "border-box",
+                                        }}
+                                      />
+                                    </td>
+                                    <td
+                                      style={{
+                                        padding: "10px 16px",
+                                        textAlign: "right",
+                                        fontWeight: "700",
+                                        color: "#0f172a",
+                                      }}
+                                    >
+                                      {Number(sizeData.amount || 0) > 0
+                                        ? Number(
+                                            sizeData.amount,
+                                          ).toLocaleString(undefined, {
+                                            minimumFractionDigits: 2,
+                                            maximumFractionDigits: 2,
+                                          })
+                                        : "0.00"}
+                                    </td>
+                                  </tr>
+                                );
+                              })}
+                            </tbody>
+                          </table>
                         </div>
                       )}
                     </div>
