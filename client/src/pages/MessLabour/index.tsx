@@ -1425,7 +1425,7 @@ const MessLabour: React.FC = () => {
                             justifyContent: "center",
                           }}
                         >
-                          {hasPermission("MessLabour.Update") && (
+                          {hasPermission("MessLabour.Edit") && (
                             <button
                               className="rf-action-btn rf-action-edit"
                               onClick={(e) => {

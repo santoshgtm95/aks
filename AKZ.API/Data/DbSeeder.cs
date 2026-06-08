@@ -44,8 +44,8 @@ public static class DbSeeder
             context.SaveChanges();
         }
 
-        // Rename legacy MessLabour permissions
-        var legacyMessLabourPermissions = context.Permissions.Where(p => p.Name.StartsWith("MessLabour.")).ToList();
+        // Rename legacy Sales1 permissions
+        var legacyMessLabourPermissions = context.Permissions.Where(p => p.Name.StartsWith("Sales1.")).ToList();
         var existingPermNames2 = context.Permissions.Select(p => p.Name).ToList();
 
         if (legacyMessLabourPermissions.Any())
