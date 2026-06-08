@@ -69,6 +69,7 @@ public class SingleDoubleDrawnRecordDto
     public decimal ReturnSize { get; set; }
     public decimal PriceSpoilageSize { get; set; }
     public decimal PriceReturnSize { get; set; }
+    public decimal WorkerFees { get; set; }
 }
 
 public class CreateSingleDoubleDrawnRecordDto
@@ -128,4 +129,5 @@ public class CreateSingleDoubleDrawnRecordDto
     public decimal ReturnSize { get; set; }
     public decimal PriceSpoilageSize { get; set; }
     public decimal PriceReturnSize { get; set; }
+    public decimal WorkerFees { get; set; }
 }

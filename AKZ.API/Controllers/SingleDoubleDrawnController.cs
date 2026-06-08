@@ -128,7 +128,8 @@ public class SingleDoubleDrawnController : ControllerBase
                 SpoilageSize = r.SpoilageSize,
                 ReturnSize = r.ReturnSize,
                 PriceSpoilageSize = r.PriceSpoilageSize,
-                PriceReturnSize = r.PriceReturnSize
+                PriceReturnSize = r.PriceReturnSize,
+                WorkerFees = r.WorkerFees
             });
         }
 
@@ -227,7 +228,8 @@ public class SingleDoubleDrawnController : ControllerBase
             SpoilageSize = dto.SpoilageSize,
             ReturnSize = dto.ReturnSize,
             PriceSpoilageSize = dto.PriceSpoilageSize,
-            PriceReturnSize = dto.PriceReturnSize
+            PriceReturnSize = dto.PriceReturnSize,
+            WorkerFees = dto.WorkerFees
         };
 
         _context.SingleDoubleDrawnRecords.Add(record);
@@ -305,7 +307,8 @@ public class SingleDoubleDrawnController : ControllerBase
             SpoilageSize = record.SpoilageSize,
             ReturnSize = record.ReturnSize,
             PriceSpoilageSize = record.PriceSpoilageSize,
-            PriceReturnSize = record.PriceReturnSize
+            PriceReturnSize = record.PriceReturnSize,
+            WorkerFees = record.WorkerFees
         };
 
         return Ok(resultDto);
