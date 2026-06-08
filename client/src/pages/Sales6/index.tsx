@@ -505,7 +505,7 @@ const Sales6: React.FC = () => {
                     );
                     if (rateObj) rate = rateObj.rate;
                   } else if (allRates.length > 0) {
-                    const active = allRates.find((r) => r.isActive);
+                    const active = allRates.find((r) => r.activeStatus);
                     rate = active
                       ? active.rate
                       : allRates[allRates.length - 1].rate;
@@ -973,7 +973,7 @@ const Sales6: React.FC = () => {
                 if (rateObj) rate = rateObj.rate;
               } else if (allRates.length > 0) {
                 // if no ledger rate, use active or last rate
-                const active = allRates.find((r) => r.isActive);
+                const active = allRates.find((r) => r.activeStatus);
                 rate = active
                   ? active.rate
                   : allRates[allRates.length - 1].rate;
