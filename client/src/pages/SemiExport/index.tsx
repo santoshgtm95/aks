@@ -1052,7 +1052,6 @@ const SemiExport: React.FC = () => {
       "6",
       "Return",
       "Spoilage",
-      "Lost",
     ];
 
     let totalWt = 0;
@@ -1090,8 +1089,8 @@ const SemiExport: React.FC = () => {
         <head>
           <style>
             @media print {
-              @page { margin: 10mm; }
-              body { font-family: sans-serif; }
+              @page { margin: 0; }
+              body { font-family: sans-serif; padding: 10mm; }
             }
             .header { text-align: center; margin-bottom: 20px; }
             .header h3 { margin: 2px; }
@@ -1113,7 +1112,7 @@ const SemiExport: React.FC = () => {
           <table style="border: none; border-collapse: collapse; margin-bottom: 15px;">
             <tr>
               <td style="border: none; padding: 4px; vertical-align: top; width: 100px;">အမည်<br/>ခုံတင်ချိန်</td>
-              <td style="border: none; padding: 4px; vertical-align: top;">- ${importFormData.markerName} (${colorName})<br/>- ${importFormData.totalSortedWeight}</td>
+              <td style="border: none; padding: 4px; vertical-align: top;">- ${importFormData.markerName} (${colorName})<br/>- ${importFormData.totalSortedWeight} viss</td>
               <td style="border: none; padding: 4px; vertical-align: top; width: 100px;">ကုန်အပ်ရက်<br/>နေ့စွဲ</td>
               <td style="border: none; padding: 4px; vertical-align: top;">${importFormData.date}<br/>${new Date().toLocaleDateString("en-GB", { day: "numeric", month: "short", year: "numeric" })}</td>
             </tr>
@@ -1135,10 +1134,25 @@ const SemiExport: React.FC = () => {
                 <td colspan="2" style="text-align: right; border: 1px solid black; padding: 6px;">စုစုပေါင်း</td>
                 <td style="text-align: right; border: 1px solid black; padding: 6px;">${totalWt.toFixed(3)} viss</td>
                 <td style="border: 1px solid black;"></td>
-                <td style="text-align: right; border: 1px solid black; padding: 6px; font-weight: bold;">${totalAmt.toFixed(2)}</td>
+                <td style="text-align: right; border: 1px solid black; padding: 6px; font-weight: bold;">¥${totalAmt.toFixed(2)}</td>
               </tr>
             </tbody>
           </table>
+          
+          <div style="margin-top: 20px; font-size: 14px;">
+            ${(() => {
+              const rate = cnyToMmkRate || 0;
+              const totalMmk = totalAmt * rate;
+              const lostW = Number(data["Lost"]?.weight || 0);
+
+              return `
+                  <div style="margin-bottom: 8px;"><strong>Exchange Rate:</strong> 1 CNY = ${rate} MMK (${(1 / rate).toFixed(5)})</div>
+                  <div style="margin-bottom: 8px;"><strong>Total Amount (CNY):</strong> ¥${totalAmt.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</div>
+                  <div style="margin-bottom: 8px;"><strong>Total Amount (MMK):</strong> ${Math.round(totalMmk).toLocaleString()} MMK</div>
+                  <div style="margin-top: 15px; padding-top: 15px; border-top: 1px dashed black;"><strong>Lost Weight:</strong> ${lostW > 0 ? lostW.toFixed(3) : "0.000"} viss</div>
+                `;
+            })()}
+          </div>
         </body>
       </html>
     `;
@@ -1196,7 +1210,6 @@ const SemiExport: React.FC = () => {
       "6",
       "Return",
       "Spoilage",
-      "Lost",
     ];
 
     let totalWt = 0;
@@ -1234,8 +1247,8 @@ const SemiExport: React.FC = () => {
         <head>
           <style>
             @media print {
-              @page { margin: 10mm; }
-              body { font-family: sans-serif; }
+              @page { margin: 0; }
+              body { font-family: sans-serif; padding: 10mm; }
             }
             .header { text-align: center; margin-bottom: 20px; }
             .header h3 { margin: 2px; }
@@ -1279,10 +1292,25 @@ const SemiExport: React.FC = () => {
                 <td colspan="2" style="text-align: right; border: 1px solid black; padding: 6px;">စုစုပေါင်း</td>
                 <td style="text-align: right; border: 1px solid black; padding: 6px;">${totalWt.toFixed(3)} viss</td>
                 <td style="border: 1px solid black;"></td>
-                <td style="text-align: right; border: 1px solid black; padding: 6px; font-weight: bold;">${totalAmt.toFixed(2)}</td>
+                <td style="text-align: right; border: 1px solid black; padding: 6px; font-weight: bold;">¥${totalAmt.toFixed(2)}</td>
               </tr>
             </tbody>
           </table>
+          
+          <div style="margin-top: 20px; font-size: 14px;">
+            ${(() => {
+              const rate = cnyToMmkRate || 0;
+              const totalMmk = totalAmt * rate;
+              const lostW = Number(data[colorName]?.["Lost"]?.weight || 0);
+
+              return `
+                  <div style="margin-bottom: 8px;"><strong>Exchange Rate:</strong> 1 CNY = ${rate} MMK (${(1 / rate).toFixed(5)})</div>
+                  <div style="margin-bottom: 8px;"><strong>Total Amount (CNY):</strong> ¥${totalAmt.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</div>
+                  <div style="margin-bottom: 8px;"><strong>Total Amount (MMK):</strong> ${Math.round(totalMmk).toLocaleString()} MMK</div>
+                  <div style="margin-top: 15px; padding-top: 15px; border-top: 1px dashed black;"><strong>Lost Weight:</strong> ${lostW > 0 ? lostW.toFixed(3) : "0.000"} viss</div>
+                `;
+            })()}
+          </div>
         </body>
       </html>
     `;

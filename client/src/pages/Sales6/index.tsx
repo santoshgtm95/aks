@@ -6,6 +6,7 @@ import {
   semiExportAPI,
   exchangeRatesAPI,
   exportAPI,
+  importedSemiExportAPI,
 } from "../../services/api";
 import type {
   LedgerDto,
@@ -43,6 +44,7 @@ const Sales6: React.FC = () => {
   const { hasPermission } = useAuth();
   const [ledgers, setLedgers] = useState<LedgerDto[]>([]);
   const [sddRecords, setSddRecords] = useState<SingleDoubleDrawnRecord[]>([]);
+  const [importedData, setImportedData] = useState<any[]>([]);
   const [savedExports, setSavedExports] = useState<SemiExportRecord[]>([]);
   const [allRates, setAllRates] = useState<ExchangeRate[]>([]);
   const [exports, setExports] = useState<Export[]>([]);
@@ -109,17 +111,25 @@ const Sales6: React.FC = () => {
   const loadData = async () => {
     try {
       setLoading(true);
-      const [ledgerData, sddData, exportData, ratesData, exportRecordsData] =
-        await Promise.all([
-          ledgerAPI.getAll(),
-          singleDoubleDrawnAPI.getAll(),
-          semiExportAPI.getAll(),
-          exchangeRatesAPI.getAll(),
-          exportAPI.getAll(),
-        ]);
+      const [
+        ledgerData,
+        sddData,
+        exportData,
+        ratesData,
+        exportRecordsData,
+        importedDataRes,
+      ] = await Promise.all([
+        ledgerAPI.getAll(),
+        singleDoubleDrawnAPI.getAll(),
+        semiExportAPI.getAll(),
+        exchangeRatesAPI.getAll(),
+        exportAPI.getAll(),
+        importedSemiExportAPI.getAll(),
+      ]);
       setLedgers(ledgerData);
       setSddRecords(sddData);
       setSavedExports(exportData);
+      setImportedData(importedDataRes);
       setAllRates(ratesData);
       setExports(exportRecordsData);
     } catch (error) {
@@ -178,6 +188,9 @@ const Sales6: React.FC = () => {
             "26": { weight: 0, price: 0 },
             "28": { weight: 0, price: 0 },
             Bar: { weight: 0, price: 0 },
+            Return: { weight: 0, price: 0 },
+            Spoilage: { weight: 0, price: 0 },
+            Lost: { weight: 0, price: 0 },
           },
           totalAmount: 0,
           totalWorkerFees: 0,
@@ -280,8 +293,96 @@ const Sales6: React.FC = () => {
       }
     });
 
+    const ledgerImported = importedData.filter((i) =>
+      markerNames.includes(i.markerName || ""),
+    );
+
+    ledgerImported.forEach((i) => {
+      try {
+        const parsed = JSON.parse(i.dataJson || "{}");
+        const colors = Object.keys(parsed);
+        colors.forEach((color) => {
+          if (!groups[color]) {
+            groups[color] = {
+              colorName: color,
+              recordsCount: 0,
+              totalWeight: 0,
+              sizes: {
+                "6": { weight: 0, price: 0 },
+                "7": { weight: 0, price: 0 },
+                "8": { weight: 0, price: 0 },
+                "9": { weight: 0, price: 0 },
+                "10": { weight: 0, price: 0 },
+                "10B": { weight: 0, price: 0 },
+                "12": { weight: 0, price: 0 },
+                "14": { weight: 0, price: 0 },
+                "16": { weight: 0, price: 0 },
+                "18": { weight: 0, price: 0 },
+                "20": { weight: 0, price: 0 },
+                "22": { weight: 0, price: 0 },
+                "24": { weight: 0, price: 0 },
+                "26": { weight: 0, price: 0 },
+                "28": { weight: 0, price: 0 },
+                Bar: { weight: 0, price: 0 },
+                Return: { weight: 0, price: 0 },
+                Spoilage: { weight: 0, price: 0 },
+                Lost: { weight: 0, price: 0 },
+              },
+              totalAmount: 0,
+              totalWorkerFees: 0,
+              markers: [],
+            };
+          }
+          const g = groups[color];
+          g.recordsCount += 1;
+          if (i.markerName && !g.markers.includes(i.markerName)) {
+            g.markers.push(i.markerName);
+          }
+
+          const sizeOptions = [
+            "Bar",
+            "28",
+            "26",
+            "24",
+            "22",
+            "20",
+            "18",
+            "16",
+            "14",
+            "12",
+            "10B",
+            "10",
+            "9",
+            "8",
+            "7",
+            "6",
+          ];
+
+          let recordWeight = 0;
+          let recordAmount = 0;
+
+          sizeOptions.forEach((size) => {
+            const sData = parsed[color][size];
+            if (sData) {
+              const w = Number(sData.weight || 0);
+              const p = Number(sData.price || 0);
+              g.sizes[size].weight += w;
+              if (p) g.sizes[size].price = p; // take the last price
+              recordWeight += w;
+              recordAmount += w * p;
+            }
+          });
+
+          g.totalWeight += recordWeight;
+          g.totalAmount += recordAmount;
+        });
+      } catch (e) {
+        console.error("Error parsing imported data json:", e);
+      }
+    });
+
     return Object.values(groups);
-  }, [selectedLedger, sddRecords, savedExports]);
+  }, [selectedLedger, sddRecords, savedExports, importedData]);
 
   const ledgerExchangeRateId = useMemo(() => {
     if (!selectedLedger) return null;
@@ -359,10 +460,77 @@ const Sales6: React.FC = () => {
       colorExports.forEach((x) => {
         workerFees += x.workerFees || 0;
       });
+
+      // Handle imported data math
+      const ledgerImported = importedData.filter((i) =>
+        markerNames.includes(i.markerName || ""),
+      );
+
+      ledgerImported.forEach((i) => {
+        try {
+          const parsed = JSON.parse(i.dataJson || "{}");
+          if (parsed[colorName]) {
+            const sizes = parsed[colorName];
+            const sizeOptions = [
+              "Bar",
+              "28",
+              "26",
+              "24",
+              "22",
+              "20",
+              "18",
+              "16",
+              "14",
+              "12",
+              "10B",
+              "10",
+              "9",
+              "8",
+              "7",
+              "6",
+            ];
+            sizeOptions.forEach((size) => {
+              const sData = sizes[size];
+              if (sData) {
+                const w = Number(sData.weight || 0);
+                const p = Number(sData.price || 0);
+                weight += w;
+                const amt = w * p;
+                amountCNY += amt;
+                if (amt > 0) {
+                  let rate = 1;
+                  if (ledgerExchangeRateId) {
+                    const rateObj = allRates.find(
+                      (r) => r.id === ledgerExchangeRateId,
+                    );
+                    if (rateObj) rate = rateObj.rate;
+                  } else if (allRates.length > 0) {
+                    const active = allRates.find((r) => r.isActive);
+                    rate = active
+                      ? active.rate
+                      : allRates[allRates.length - 1].rate;
+                  }
+                  amountMMK += amt * rate;
+                }
+              }
+            });
+          }
+        } catch (e) {
+          console.error("Error parsing imported data json:", e);
+        }
+      });
     });
 
     return { weight, amountCNY, amountMMK, workerFees };
-  }, [selectedColors, selectedLedger, sddRecords, savedExports, allRates]);
+  }, [
+    selectedColors,
+    selectedLedger,
+    sddRecords,
+    savedExports,
+    allRates,
+    importedData,
+    ledgerExchangeRateId,
+  ]);
 
   const averageRate = useMemo(() => {
     if (selectedTotals.amountCNY > 0) {
@@ -778,8 +946,56 @@ const Sales6: React.FC = () => {
       totalWorkerFees += x.workerFees || 0;
     });
 
+    const ledgerImported = importedData.filter((i) =>
+      markerNames.includes(i.markerName || ""),
+    );
+
+    ledgerImported.forEach((i) => {
+      try {
+        const parsed = JSON.parse(i.dataJson || "{}");
+        const colors = Object.keys(parsed);
+        colors.forEach((color) => {
+          const sizes = parsed[color];
+          Object.keys(sizes).forEach((size) => {
+            const w = Number(sizes[size].weight || 0);
+            const amt = Number(sizes[size].amount || 0); // amt is in CNY? Actually Semi Export shows AMOUNT (CNY)
+            totalWeight += w;
+            if (amt > 0) {
+              // What rate to use? Since imported data doesn't have a linked rate directly,
+              // we can use the ledgerExchangeRateId or activeRate, or just rate = 1 if none found
+              // However, since imported are directly imported, they might not have native MMK amount yet.
+              // We'll use ledgerExchangeRateId's rate or a fallback if available
+              let rate = 1;
+              if (ledgerExchangeRateId) {
+                const rateObj = allRates.find(
+                  (r) => r.id === ledgerExchangeRateId,
+                );
+                if (rateObj) rate = rateObj.rate;
+              } else if (allRates.length > 0) {
+                // if no ledger rate, use active or last rate
+                const active = allRates.find((r) => r.isActive);
+                rate = active
+                  ? active.rate
+                  : allRates[allRates.length - 1].rate;
+              }
+              totalAmountMMK += amt * rate;
+            }
+          });
+        });
+      } catch (e) {
+        console.error("Error parsing imported data json:", e);
+      }
+    });
+
     return { totalWeight, totalAmountMMK, totalWorkerFees };
-  }, [selectedLedger, sddRecords, savedExports, allRates]);
+  }, [
+    selectedLedger,
+    sddRecords,
+    savedExports,
+    allRates,
+    importedData,
+    ledgerExchangeRateId,
+  ]);
 
   if (loading) {
     return (
