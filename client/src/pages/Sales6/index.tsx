@@ -48,7 +48,7 @@ const Sales6: React.FC = () => {
   const [exports, setExports] = useState<Export[]>([]);
   const [selectedColors, setSelectedColors] = useState<Set<string>>(new Set());
   const [sizeSellingPrices, setSizeSellingPrices] = useState<
-    Record<string, Record<string, string>>
+    Record<string, Record<string, any>>
   >({});
   const [sellingInProgress, setSellingInProgress] = useState(false);
   const [loading, setLoading] = useState(true);
@@ -147,7 +147,7 @@ const Sales6: React.FC = () => {
         colorName: string;
         recordsCount: number;
         totalWeight: number;
-        sizes: Record<string, number>;
+        sizes: Record<string, { weight: number; price: number }>;
         totalAmount: number;
         totalWorkerFees: number;
         markers: string[];
@@ -376,10 +376,10 @@ const Sales6: React.FC = () => {
     selectedColors.forEach((colorName) => {
       const colorDet = colorDetails.find((c) => c.colorName === colorName);
       if (!colorDet) return;
-      Object.entries(colorDet.sizes).forEach(([sizeKey, sizeData]) => {
+      Object.entries(colorDet.sizes).forEach(([sizeKey]) => {
         const sizeInput = sizeSellingPrices[colorName]?.[sizeKey];
-        const inputWeight = parseFloat(sizeInput?.weight || "0");
-        const inputPrice = parseFloat(sizeInput?.price || "0");
+        const inputWeight = sizeInput ? Number(sizeInput.weight) : 0;
+        const inputPrice = sizeInput ? Number(sizeInput.price) : 0;
         if (
           !isNaN(inputWeight) &&
           !isNaN(inputPrice) &&
@@ -398,9 +398,9 @@ const Sales6: React.FC = () => {
     selectedColors.forEach((colorName) => {
       const colorDet = colorDetails.find((c) => c.colorName === colorName);
       if (!colorDet) return;
-      Object.entries(colorDet.sizes).forEach(([sizeKey, sizeData]) => {
+      Object.entries(colorDet.sizes).forEach(([sizeKey]) => {
         const sizeInput = sizeSellingPrices[colorName]?.[sizeKey];
-        const inputWeight = parseFloat(sizeInput?.weight || "0");
+        const inputWeight = sizeInput ? Number(sizeInput.weight) : 0;
         if (!isNaN(inputWeight) && inputWeight > 0) {
           totalWeight += inputWeight;
         }
@@ -493,8 +493,8 @@ const Sales6: React.FC = () => {
               const sizeInput = sizeSellingPrices[colorName]?.[sizeKey];
               if (
                 !sizeInput ||
-                sizeInput.weight === "" ||
-                sizeInput.price === "" ||
+                (sizeInput.weight as any) === "" ||
+                (sizeInput.price as any) === "" ||
                 sizeInput.weight === undefined ||
                 sizeInput.price === undefined
               ) {
@@ -1123,9 +1123,10 @@ const Sales6: React.FC = () => {
                                                   type="number"
                                                   placeholder="0.00"
                                                   value={
-                                                    sizeSellingPrices[
+                                                    (sizeSellingPrices[
                                                       color.colorName
-                                                    ]?.[sizeKey]?.weight || ""
+                                                    ]?.[sizeKey]
+                                                      ?.weight as any) || ""
                                                   }
                                                   style={{
                                                     width: "100%",
@@ -1174,9 +1175,10 @@ const Sales6: React.FC = () => {
                                                   type="number"
                                                   placeholder="0.00"
                                                   value={
-                                                    sizeSellingPrices[
+                                                    (sizeSellingPrices[
                                                       color.colorName
-                                                    ]?.[sizeKey]?.price || ""
+                                                    ]?.[sizeKey]
+                                                      ?.price as any) || ""
                                                   }
                                                   style={{
                                                     width: "100%",
