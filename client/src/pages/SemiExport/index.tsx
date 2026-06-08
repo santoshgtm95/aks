@@ -115,6 +115,9 @@ const SemiExport: React.FC = () => {
     "26",
     "28",
     "Bar",
+    "Return",
+    "Spoilage",
+    "Lost",
   ];
 
   const [expandedRecords, setExpandedRecords] = useState<
@@ -162,6 +165,27 @@ const SemiExport: React.FC = () => {
             rec[`size${sz}`] = sizes[sz] ? Number(sizes[sz].weight || 0) : 0;
             rec[`price${sz}`] = sizes[sz] ? Number(sizes[sz].price || 0) : 0;
           });
+
+          rec.returnSize = sizes["Return"]
+            ? Number(sizes["Return"].weight || 0)
+            : 0;
+          rec.priceReturnSize = sizes["Return"]
+            ? Number(sizes["Return"].price || 0)
+            : 0;
+
+          rec.spoilageSize = sizes["Spoilage"]
+            ? Number(sizes["Spoilage"].weight || 0)
+            : 0;
+          rec.priceSpoilageSize = sizes["Spoilage"]
+            ? Number(sizes["Spoilage"].price || 0)
+            : 0;
+
+          rec.lostWeight = sizes["Lost"]
+            ? Number(sizes["Lost"].weight || 0)
+            : 0;
+          // No price standard for lost on SingleDoubleDrawnRecord but just mapped
+          // if we needed.
+
           records.push(rec as SingleDoubleDrawnRecord);
         });
         return records;
@@ -966,6 +990,175 @@ const SemiExport: React.FC = () => {
       pnl,
     };
   }, [selectedMarkerStats, markerTotalAmountMmk]);
+
+  const printColorPdf = (colorName: string) => {
+    const data = importCategoriesData[colorName] || {};
+
+    // Create an iframe
+    const iframe = document.createElement("iframe");
+    iframe.style.position = "fixed";
+    iframe.style.right = "0";
+    iframe.style.bottom = "0";
+    iframe.style.width = "0";
+    iframe.style.height = "0";
+    iframe.style.border = "none";
+    document.body.appendChild(iframe);
+
+    const doc = iframe.contentWindow?.document;
+    if (!doc) return;
+
+    let rowsHtml = "";
+    let idx = 1;
+
+    const sortedSizes = [
+      "Bar",
+      "28",
+      "26",
+      "24",
+      "22",
+      "20",
+      "18",
+      "16",
+      "14",
+      "12",
+      "10",
+      "10B",
+      "9",
+      "8",
+      "7",
+      "6",
+      "Return",
+      "Spoilage",
+      "Lost",
+    ];
+
+    let totalWt = 0;
+    let totalAmt = 0;
+
+    sortedSizes.forEach((s) => {
+      const w = Number(data[s]?.weight || 0);
+      const p = Number(data[s]?.price || 0);
+      let amt = 0;
+      if (w > 0 && p > 0) {
+        amt = w * p;
+        totalWt += w;
+        totalAmt += amt;
+      }
+
+      let displaySize = s;
+      if (s === "Bar") displaySize = "B";
+      else if (s === "Return") displaySize = "ပြန်ယူ";
+      else if (s === "Spoilage") displaySize = "အပယ်";
+      else if (s === "Lost") displaySize = "လျော့";
+
+      rowsHtml += `
+        <tr>
+          <td style="text-align: center; border: 1px solid black; padding: 4px;">${idx++}</td>
+          <td style="text-align: center; border: 1px solid black; padding: 4px;">${displaySize}</td>
+          <td style="text-align: right; border: 1px solid black; padding: 4px;">${w > 0 ? w.toFixed(3) + " viss" : ""}</td>
+          <td style="text-align: right; border: 1px solid black; padding: 4px;">${p > 0 ? p.toFixed(2) : ""}</td>
+          <td style="text-align: right; border: 1px solid black; padding: 4px;">${amt > 0 ? amt.toFixed(4) : ""}</td>
+        </tr>
+      `;
+    });
+
+    const outputHtml = `
+      <html>
+        <head>
+          <style>
+            @media print {
+              @page { margin: 10mm; }
+              body { font-family: sans-serif; }
+            }
+            .header { text-align: center; margin-bottom: 20px; }
+            .header h3 { margin: 2px; }
+            .header h2 { margin: 5px; }
+            .header p { margin: 2px; font-size: 14px; }
+            .content { width: 100%; font-size: 14px; }
+            table { width: 100%; border-collapse: collapse; margin-top: 10px; font-size: 13px; }
+            th, td { border: 1px solid black; padding: 6px; }
+          </style>
+        </head>
+        <body>
+          <div class="header">
+            <h3>AKZ</h3>
+            <h2 style="font-size: 24px;">အောင်ကြွယ်စင်</h2>
+            <h3 style="font-size: 18px;">ဆံပင်ရောင်းဝယ်ရေး</h3>
+            <p>ဖုန်း - 09 400900608 / 09 400900609</p>
+          </div>
+          
+          <table style="border: none; border-collapse: collapse; margin-bottom: 15px;">
+            <tr>
+              <td style="border: none; padding: 4px; vertical-align: top; width: 100px;">အမည်<br/>ခုံတင်ချိန်</td>
+              <td style="border: none; padding: 4px; vertical-align: top;">- ${importFormData.markerName} (${colorName})<br/>- ${importFormData.totalSortedWeight}</td>
+              <td style="border: none; padding: 4px; vertical-align: top; width: 100px;">ကုန်အပ်ရက်<br/>နေ့စွဲ</td>
+              <td style="border: none; padding: 4px; vertical-align: top;">${importFormData.date}<br/>${new Date().toLocaleDateString("en-GB", { day: "numeric", month: "short", year: "numeric" })}</td>
+            </tr>
+          </table>
+
+          <table>
+            <thead>
+              <tr>
+                <th>စဉ်</th>
+                <th>ဆိုဒ်</th>
+                <th>အလေးချိန်</th>
+                <th>နှုန်း</th>
+                <th>သင့်ငွေ</th>
+              </tr>
+            </thead>
+            <tbody>
+              ${rowsHtml}
+              <tr>
+                <td colspan="2" style="text-align: right; border: 1px solid black; padding: 6px;">စုစုပေါင်း</td>
+                <td style="text-align: right; border: 1px solid black; padding: 6px;">${totalWt.toFixed(3)} viss</td>
+                <td style="border: 1px solid black;"></td>
+                <td style="text-align: right; border: 1px solid black; padding: 6px; font-weight: bold;">${totalAmt.toFixed(2)}</td>
+              </tr>
+            </tbody>
+          </table>
+        </body>
+      </html>
+    `;
+
+    doc.open();
+    doc.write(outputHtml);
+    doc.close();
+
+    setTimeout(() => {
+      iframe.contentWindow?.focus();
+      iframe.contentWindow?.print();
+      setTimeout(() => document.body.removeChild(iframe), 1000);
+    }, 500);
+  };
+
+  const handleSaveAndPrintColor = async (colorName: string) => {
+    if (!importFormData.markerName || !importFormData.totalSortedWeight) {
+      alert("Marker Name and Weight are required.");
+      return;
+    }
+    try {
+      setSaving(true);
+      await importedSemiExportAPI.create({
+        markerName: importFormData.markerName,
+        totalSortedWeight: Number(importFormData.totalSortedWeight),
+        date: importFormData.date,
+        dataJson: JSON.stringify(importCategoriesData),
+      });
+      await loadData();
+      printColorPdf(colorName);
+      setShowImportModal(false);
+      setImportFormData({
+        markerName: "",
+        totalSortedWeight: "",
+        date: new Date().toISOString().substring(0, 10),
+      });
+      setImportCategoriesData({});
+    } catch (e) {
+      alert("Failed to save imported data");
+    } finally {
+      setSaving(false);
+    }
+  };
 
   const handleSaveMarkerData = async () => {
     if (!selectedMarker || selectedRecords.length === 0) return;
@@ -2174,16 +2367,22 @@ const SemiExport: React.FC = () => {
                               amt: rowAmounts.amt6,
                             },
                             {
-                              label: "Leftover",
+                              label: "Return",
                               w: calculations.wLeftover,
                               price: record.priceReturnSize,
                               amt: rowAmounts.amtLeftover,
                             },
                             {
-                              label: "Spoil",
+                              label: "Spoilage",
                               w: calculations.wSpoil,
                               price: record.priceSpoilageSize,
                               amt: rowAmounts.amtSpoil,
+                            },
+                            {
+                              label: "Lost",
+                              w: calculations.wLoss,
+                              price: 0,
+                              amt: 0,
                             },
                           ]
                             .filter((row) => row.w > 0)
@@ -3293,35 +3492,62 @@ const SemiExport: React.FC = () => {
                         padding: "16px",
                       }}
                     >
-                      <label
+                      <div
                         style={{
                           display: "flex",
+                          justifyContent: "space-between",
                           alignItems: "center",
-                          gap: "10px",
-                          cursor: "pointer",
-                          fontWeight: 700,
-                          fontSize: "15px",
                         }}
                       >
-                        <input
-                          type="checkbox"
-                          checked={isChecked}
-                          onChange={(e) => {
-                            if (e.target.checked) {
-                              setImportCategoriesData({
-                                ...importCategoriesData,
-                                [color]: {},
-                              });
-                            } else {
-                              const newData = { ...importCategoriesData };
-                              delete newData[color];
-                              setImportCategoriesData(newData);
-                            }
+                        <label
+                          style={{
+                            display: "flex",
+                            alignItems: "center",
+                            gap: "10px",
+                            cursor: "pointer",
+                            fontWeight: 700,
+                            fontSize: "15px",
                           }}
-                          style={{ width: "18px", height: "18px" }}
-                        />
-                        {color}
-                      </label>
+                        >
+                          <input
+                            type="checkbox"
+                            checked={isChecked}
+                            onChange={(e) => {
+                              if (e.target.checked) {
+                                setImportCategoriesData({
+                                  ...importCategoriesData,
+                                  [color]: {},
+                                });
+                              } else {
+                                const newData = { ...importCategoriesData };
+                                delete newData[color];
+                                setImportCategoriesData(newData);
+                              }
+                            }}
+                            style={{ width: "18px", height: "18px" }}
+                          />
+                          {color}
+                        </label>
+
+                        {isChecked && (
+                          <button
+                            onClick={() => handleSaveAndPrintColor(color)}
+                            disabled={saving}
+                            style={{
+                              padding: "6px 12px",
+                              borderRadius: "6px",
+                              border: "none",
+                              background: "#3b82f6",
+                              color: "white",
+                              fontWeight: 600,
+                              cursor: saving ? "not-allowed" : "pointer",
+                              fontSize: "13px",
+                            }}
+                          >
+                            Save and Print
+                          </button>
+                        )}
+                      </div>
 
                       {isChecked && (
                         <div

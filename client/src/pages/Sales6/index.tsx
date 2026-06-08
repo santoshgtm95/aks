@@ -735,6 +735,7 @@ const Sales6: React.FC = () => {
         (r.size26 || 0) * (r.price26 || 0) +
         (r.size28 || 0) * (r.price28 || 0) +
         (r.sizeBar || 0) * (r.priceBar || 0);
+
       totalAmountMMK +=
         (r.size10B || 0) +
         (r.size12 || 0) +
@@ -751,6 +752,11 @@ const Sales6: React.FC = () => {
           : 0;
 
       totalWeight +=
+        (r.size6 || 0) +
+        (r.size7 || 0) +
+        (r.size8 || 0) +
+        (r.size9 || 0) +
+        (r.size10 || 0) +
         (r.size10B || 0) +
         (r.size12 || 0) +
         (r.size14 || 0) +
@@ -1644,281 +1650,353 @@ const Sales6: React.FC = () => {
       </main>
 
       {/* History Detail Modal */}
-      {isHistoryModalOpen && selectedHistory && (
-        <div className="modal-overlay">
-          <div className="modal-content" style={{ maxWidth: "1000px" }}>
-            <div className="modal-header">
-              <h2 className="modal-title">Export Sale History Details</h2>
-              <button
-                className="modal-close"
-                onClick={() => setIsHistoryModalOpen(false)}
-              >
-                <X size={20} />
-              </button>
-            </div>
-            <div className="modal-body">
-              <div className="history-detail-grid">
-                <div className="detail-item">
-                  <span className="detail-label">Date</span>
-                  <span className="detail-value">
-                    {new Date(selectedHistory.date).toLocaleDateString()}
-                  </span>
-                </div>
-                <div className="detail-item">
-                  <span className="detail-label">Ledger</span>
-                  <span className="detail-value">
-                    {selectedHistory.ledgerName ||
-                      `Ledger #${selectedHistory.ledgerId}`}
-                  </span>
-                </div>
-                <div className="detail-item">
-                  <span className="detail-label">Selling Price</span>
-                  <span className="detail-value">
-                    {selectedHistory.sellingPrice.toLocaleString()} MMK
-                  </span>
-                </div>
-                <div className="detail-item">
-                  <span className="detail-label">Total Selected Weight</span>
-                  <span className="detail-value">
-                    {selectedHistory.selectedWeight.toFixed(3)} viss
-                  </span>
-                </div>
-                <div className="detail-item">
-                  <span className="detail-label">Total Export Weight</span>
-                  <span className="detail-value">
-                    {selectedHistory.totalExportWeightViss?.toFixed(3) ??
-                      (selectedHistory.totalExportWeightKg / 1.633).toFixed(
-                        3,
-                      )}{" "}
-                    viss / {selectedHistory.totalExportWeightKg.toFixed(3)} kg
-                  </span>
-                </div>
-                <div className="detail-item">
-                  <span className="detail-label">Product Amount (CNY)</span>
-                  <span className="detail-value">
-                    ¥{selectedHistory.productAmountCNY.toLocaleString()}
-                  </span>
-                </div>
-                <div className="detail-item">
-                  <span className="detail-label">Product Amount (MMK)</span>
-                  <span className="detail-value">
-                    {Math.round(
-                      selectedHistory.productAmountMMK,
-                    ).toLocaleString()}{" "}
-                    MMK
-                  </span>
-                </div>
-                <div className="detail-item">
-                  <span className="detail-label">Worker Fees</span>
-                  <span className="detail-value">
-                    {selectedHistory.workerFees.toLocaleString()} MMK
-                  </span>
-                </div>
-                <div className="detail-item">
-                  <span className="detail-label">Grand Total</span>
-                  <span className="detail-value highlight">
-                    {Math.round(selectedHistory.grandTotalMMK).toLocaleString()}{" "}
-                    MMK
-                  </span>
-                </div>
-                <div className="detail-item">
-                  <span className="detail-label">P&amp;L</span>
-                  <span
-                    className={`detail-value ${selectedHistory.sellingPrice - selectedHistory.grandTotalMMK >= 0 ? "text-profit" : "text-loss"}`}
+      {isHistoryModalOpen &&
+        selectedHistory &&
+        (() => {
+          let historicalInputtedWeight = 0;
+          let historicalSellingPriceCNY = 0;
+          try {
+            const parsed = JSON.parse(
+              selectedHistory.sizeSellingPrices || "{}",
+            );
+            Object.values(parsed).forEach((sizes: any) => {
+              Object.values(sizes).forEach((data: any) => {
+                let w = 0,
+                  p = 0;
+                if (typeof data === "object" && data !== null) {
+                  w = parseFloat(data.weight || "0");
+                  p = parseFloat(data.price || "0");
+                } else {
+                  p = parseFloat(data || "0");
+                }
+                if (!isNaN(w) && w > 0) historicalInputtedWeight += w;
+                if (!isNaN(w) && !isNaN(p) && w > 0 && p > 0)
+                  historicalSellingPriceCNY += w * p;
+              });
+            });
+          } catch (e) {}
+
+          const impliedRate =
+            selectedHistory.productAmountCNY > 0
+              ? selectedHistory.productAmountMMK /
+                selectedHistory.productAmountCNY
+              : 1;
+          const historicalSellingPriceMMK =
+            historicalSellingPriceCNY * impliedRate;
+
+          return (
+            <div className="modal-overlay">
+              <div className="modal-content" style={{ maxWidth: "1000px" }}>
+                <div className="modal-header">
+                  <h2 className="modal-title">Export Sale History Details</h2>
+                  <button
+                    className="modal-close"
+                    onClick={() => setIsHistoryModalOpen(false)}
                   >
-                    {selectedHistory.sellingPrice -
-                      selectedHistory.grandTotalMMK >=
-                    0
-                      ? "+"
-                      : ""}
-                    {Math.round(
-                      selectedHistory.sellingPrice -
-                        selectedHistory.grandTotalMMK,
-                    ).toLocaleString()}{" "}
-                    MMK
-                  </span>
+                    <X size={20} />
+                  </button>
                 </div>
-              </div>
+                <div className="modal-body">
+                  <div className="history-detail-grid">
+                    <div className="detail-item">
+                      <span className="detail-label">Date</span>
+                      <span className="detail-value">
+                        {new Date(selectedHistory.date).toLocaleDateString()}
+                      </span>
+                    </div>
+                    <div className="detail-item">
+                      <span className="detail-label">Ledger</span>
+                      <span className="detail-value">
+                        {selectedHistory.ledgerName ||
+                          `Ledger #${selectedHistory.ledgerId}`}
+                      </span>
+                    </div>
+                    <div className="detail-item">
+                      <span className="detail-label">Selling Price</span>
+                      <span className="detail-value">
+                        {selectedHistory.sellingPrice.toLocaleString()} MMK
+                      </span>
+                    </div>
+                    <div className="detail-item">
+                      <span className="detail-label">
+                        Total Inputted Weight
+                      </span>
+                      <span className="detail-value">
+                        {historicalInputtedWeight.toFixed(3)} viss
+                      </span>
+                    </div>
+                    <div className="detail-item">
+                      <span className="detail-label">
+                        Total Selected Weight
+                      </span>
+                      <span className="detail-value">
+                        {selectedHistory.totalExportWeightViss?.toFixed(3) ??
+                          (selectedHistory.totalExportWeightKg / 1.633).toFixed(
+                            3,
+                          )}{" "}
+                        viss / {selectedHistory.totalExportWeightKg.toFixed(3)}{" "}
+                        kg
+                      </span>
+                    </div>
+                    <div className="detail-item">
+                      <span className="detail-label">
+                        Total Selling Price (CNY)
+                      </span>
+                      <span className="detail-value">
+                        ¥{historicalSellingPriceCNY.toLocaleString()}
+                      </span>
+                    </div>
+                    <div className="detail-item">
+                      <span className="detail-label">
+                        Total Selling Price (MMK)
+                      </span>
+                      <span className="detail-value">
+                        {Math.round(historicalSellingPriceMMK).toLocaleString()}{" "}
+                        MMK
+                      </span>
+                    </div>
+                    <div className="detail-item">
+                      <span className="detail-label">Product Amount (CNY)</span>
+                      <span className="detail-value">
+                        ¥{selectedHistory.productAmountCNY.toLocaleString()}
+                      </span>
+                    </div>
+                    <div className="detail-item">
+                      <span className="detail-label">Product Amount (MMK)</span>
+                      <span className="detail-value">
+                        {Math.round(
+                          selectedHistory.productAmountMMK,
+                        ).toLocaleString()}{" "}
+                        MMK
+                      </span>
+                    </div>
+                    <div className="detail-item">
+                      <span className="detail-label">Worker Fees</span>
+                      <span className="detail-value">
+                        {selectedHistory.workerFees.toLocaleString()} MMK
+                      </span>
+                    </div>
+                    <div className="detail-item">
+                      <span className="detail-label">Grand Total</span>
+                      <span className="detail-value highlight">
+                        {Math.round(
+                          selectedHistory.grandTotalMMK,
+                        ).toLocaleString()}{" "}
+                        MMK
+                      </span>
+                    </div>
+                    <div className="detail-item">
+                      <span className="detail-label">P&amp;L</span>
+                      <span
+                        className={`detail-value ${selectedHistory.sellingPrice - selectedHistory.grandTotalMMK >= 0 ? "text-profit" : "text-loss"}`}
+                      >
+                        {selectedHistory.sellingPrice -
+                          selectedHistory.grandTotalMMK >=
+                        0
+                          ? "+"
+                          : ""}
+                        {Math.round(
+                          selectedHistory.sellingPrice -
+                            selectedHistory.grandTotalMMK,
+                        ).toLocaleString()}{" "}
+                        MMK
+                      </span>
+                    </div>
+                  </div>
 
-              <div className="history-detail-section">
-                <h3>Colors Sold</h3>
-                <div className="history-colors-list">
-                  {selectedHistory.selectedColors.split(", ").map((col) => (
-                    <span key={col} className="history-color-tag">
-                      {col}
-                    </span>
-                  ))}
-                </div>
-              </div>
+                  <div className="history-detail-section">
+                    <h3>Colors Sold</h3>
+                    <div className="history-colors-list">
+                      {selectedHistory.selectedColors.split(", ").map((col) => (
+                        <span key={col} className="history-color-tag">
+                          {col}
+                        </span>
+                      ))}
+                    </div>
+                  </div>
 
-              <div className="history-detail-section">
-                <h3>Size Details (Weight & Prices)</h3>
-                {(() => {
-                  try {
-                    const parsed = JSON.parse(
-                      selectedHistory.sizeSellingPrices || "{}",
-                    );
-                    return (
-                      <div className="size-prices-container">
-                        {Object.entries(parsed).map(
-                          ([colorName, sizes]: [string, any]) => (
-                            <div key={colorName} className="size-price-group">
-                              <h4 className="color-group-title">{colorName}</h4>
-                              <div
-                                className="history-sizes-grid fade-in"
-                                style={{
-                                  display: "grid",
-                                  gridTemplateColumns:
-                                    "repeat(auto-fill, minmax(130px, 1fr))",
-                                  gap: "8px",
-                                  marginTop: "10px",
-                                }}
-                              >
-                                {Object.entries(sizes).map(
-                                  ([size, data]: [string, any]) => {
-                                    let w = 0,
-                                      p = 0;
-                                    if (
-                                      typeof data === "object" &&
-                                      data !== null
-                                    ) {
-                                      w = parseFloat(data.weight || "0");
-                                      p = parseFloat(data.price || "0");
-                                    } else {
-                                      p = parseFloat(data || "0");
-                                    }
+                  <div className="history-detail-section">
+                    <h3>Size Details (Weight & Prices)</h3>
+                    {(() => {
+                      try {
+                        const parsed = JSON.parse(
+                          selectedHistory.sizeSellingPrices || "{}",
+                        );
+                        return (
+                          <div className="size-prices-container">
+                            {Object.entries(parsed).map(
+                              ([colorName, sizes]: [string, any]) => (
+                                <div
+                                  key={colorName}
+                                  className="size-price-group"
+                                >
+                                  <h4 className="color-group-title">
+                                    {colorName}
+                                  </h4>
+                                  <div
+                                    className="history-sizes-grid fade-in"
+                                    style={{
+                                      display: "grid",
+                                      gridTemplateColumns:
+                                        "repeat(auto-fill, minmax(130px, 1fr))",
+                                      gap: "8px",
+                                      marginTop: "10px",
+                                    }}
+                                  >
+                                    {Object.entries(sizes).map(
+                                      ([size, data]: [string, any]) => {
+                                        let w = 0,
+                                          p = 0;
+                                        if (
+                                          typeof data === "object" &&
+                                          data !== null
+                                        ) {
+                                          w = parseFloat(data.weight || "0");
+                                          p = parseFloat(data.price || "0");
+                                        } else {
+                                          p = parseFloat(data || "0");
+                                        }
 
-                                    if (w === 0 && p === 0) return null;
+                                        if (w === 0 && p === 0) return null;
 
-                                    return (
-                                      <div
-                                        key={size}
-                                        className="size-badge history-size-badge"
-                                        style={{
-                                          backgroundColor: "#f8fafc",
-                                          display: "flex",
-                                          flexDirection: "column",
-                                          alignItems: "flex-start",
-                                          padding: "10px",
-                                          border: "1px solid #e2e8f0",
-                                          borderRadius: "8px",
-                                          boxShadow:
-                                            "0 1px 2px rgba(0,0,0,0.02)",
-                                        }}
-                                      >
-                                        <div
-                                          style={{
-                                            fontWeight: "700",
-                                            color: "#1e293b",
-                                            marginBottom: "6px",
-                                          }}
-                                        >
-                                          Size {size}
-                                        </div>
-                                        <div
-                                          style={{
-                                            fontSize: "12px",
-                                            color: "#475569",
-                                            width: "100%",
-                                          }}
-                                        >
+                                        return (
                                           <div
+                                            key={size}
+                                            className="size-badge history-size-badge"
                                             style={{
+                                              backgroundColor: "#f8fafc",
                                               display: "flex",
-                                              justifyContent: "space-between",
-                                              marginBottom: "4px",
+                                              flexDirection: "column",
+                                              alignItems: "flex-start",
+                                              padding: "10px",
+                                              border: "1px solid #e2e8f0",
+                                              borderRadius: "8px",
+                                              boxShadow:
+                                                "0 1px 2px rgba(0,0,0,0.02)",
                                             }}
                                           >
-                                            <span style={{ color: "#64748b" }}>
-                                              Wgt:
-                                            </span>
-                                            <span
-                                              style={{
-                                                fontWeight: "600",
-                                                color: "#1e293b",
-                                              }}
-                                            >
-                                              {w > 0
-                                                ? `${w.toFixed(3)} kg`
-                                                : "-"}
-                                            </span>
-                                          </div>
-                                          <div
-                                            style={{
-                                              display: "flex",
-                                              justifyContent: "space-between",
-                                              marginBottom: "4px",
-                                            }}
-                                          >
-                                            <span style={{ color: "#64748b" }}>
-                                              Price:
-                                            </span>
-                                            <span
-                                              style={{
-                                                fontWeight: "600",
-                                                color: "#1e293b",
-                                              }}
-                                            >
-                                              {p > 0
-                                                ? `¥${p.toLocaleString()}`
-                                                : "-"}
-                                            </span>
-                                          </div>
-                                          {w > 0 && p > 0 && (
                                             <div
                                               style={{
-                                                display: "flex",
-                                                justifyContent: "space-between",
-                                                marginTop: "6px",
-                                                paddingTop: "4px",
-                                                borderTop: "1px dashed #e2e8f0",
+                                                fontWeight: "700",
+                                                color: "#1e293b",
+                                                marginBottom: "6px",
                                               }}
                                             >
-                                              <span
-                                                style={{
-                                                  color: "#64748b",
-                                                  fontWeight: "500",
-                                                }}
-                                              >
-                                                Total:
-                                              </span>
-                                              <span
-                                                style={{
-                                                  fontWeight: "700",
-                                                  color: "#059669",
-                                                }}
-                                              >
-                                                ¥
-                                                {(w * p).toLocaleString(
-                                                  undefined,
-                                                  {
-                                                    minimumFractionDigits: 2,
-                                                    maximumFractionDigits: 2,
-                                                  },
-                                                )}
-                                              </span>
+                                              Size {size}
                                             </div>
-                                          )}
-                                        </div>
-                                      </div>
-                                    );
-                                  },
-                                )}
-                              </div>
-                            </div>
-                          ),
-                        )}
-                      </div>
-                    );
-                  } catch (e) {
-                    return <span>No detailed size pricing available.</span>;
-                  }
-                })()}
+                                            <div
+                                              style={{
+                                                fontSize: "12px",
+                                                color: "#475569",
+                                                width: "100%",
+                                              }}
+                                            >
+                                              <div
+                                                style={{
+                                                  display: "flex",
+                                                  justifyContent:
+                                                    "space-between",
+                                                  marginBottom: "4px",
+                                                }}
+                                              >
+                                                <span
+                                                  style={{ color: "#64748b" }}
+                                                >
+                                                  Wgt:
+                                                </span>
+                                                <span
+                                                  style={{
+                                                    fontWeight: "600",
+                                                    color: "#1e293b",
+                                                  }}
+                                                >
+                                                  {w > 0
+                                                    ? `${w.toFixed(3)} kg`
+                                                    : "-"}
+                                                </span>
+                                              </div>
+                                              <div
+                                                style={{
+                                                  display: "flex",
+                                                  justifyContent:
+                                                    "space-between",
+                                                  marginBottom: "4px",
+                                                }}
+                                              >
+                                                <span
+                                                  style={{ color: "#64748b" }}
+                                                >
+                                                  Price:
+                                                </span>
+                                                <span
+                                                  style={{
+                                                    fontWeight: "600",
+                                                    color: "#1e293b",
+                                                  }}
+                                                >
+                                                  {p > 0
+                                                    ? `¥${p.toLocaleString()}`
+                                                    : "-"}
+                                                </span>
+                                              </div>
+                                              {w > 0 && p > 0 && (
+                                                <div
+                                                  style={{
+                                                    display: "flex",
+                                                    justifyContent:
+                                                      "space-between",
+                                                    marginTop: "6px",
+                                                    paddingTop: "4px",
+                                                    borderTop:
+                                                      "1px dashed #e2e8f0",
+                                                  }}
+                                                >
+                                                  <span
+                                                    style={{
+                                                      color: "#64748b",
+                                                      fontWeight: "500",
+                                                    }}
+                                                  >
+                                                    Total:
+                                                  </span>
+                                                  <span
+                                                    style={{
+                                                      fontWeight: "700",
+                                                      color: "#059669",
+                                                    }}
+                                                  >
+                                                    ¥
+                                                    {(w * p).toLocaleString(
+                                                      undefined,
+                                                      {
+                                                        minimumFractionDigits: 2,
+                                                        maximumFractionDigits: 2,
+                                                      },
+                                                    )}
+                                                  </span>
+                                                </div>
+                                              )}
+                                            </div>
+                                          </div>
+                                        );
+                                      },
+                                    )}
+                                  </div>
+                                </div>
+                              ),
+                            )}
+                          </div>
+                        );
+                      } catch (e) {
+                        return <span>No detailed size pricing available.</span>;
+                      }
+                    })()}
+                  </div>
+                </div>
               </div>
             </div>
-          </div>
-        </div>
-      )}
+          );
+        })()}
 
       {/* Success Modal */}
       {isSuccessModalOpen && (
