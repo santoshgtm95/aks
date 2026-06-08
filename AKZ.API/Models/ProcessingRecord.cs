@@ -107,4 +107,7 @@ public class ProcessingRecord : BaseEntity
     public decimal RemArtificialWeight { get; set; }
     [Column(TypeName = "decimal(18,4)")]
     public decimal RemShortWeight { get; set; }
+
+    [Column(TypeName = "decimal(18,2)")]
+    public decimal WorkerFees { get; set; }
 }

@@ -19,6 +19,7 @@ import {
   X,
   Save,
   Search,
+  DollarSign,
 } from "lucide-react";
 import { combineDateWithMyanmarTime, formatDateTime } from "../../utils/format";
 import { useNotification } from "../../context/NotificationContext";
@@ -72,6 +73,7 @@ const MessLabour: React.FC = () => {
     artificial: 0,
     short: 0,
     lossWeight: 0,
+    workerFees: 0,
     selectedStaff: [] as string[],
   });
 
@@ -88,6 +90,7 @@ const MessLabour: React.FC = () => {
     artificial: "",
     short: "",
     lossWeight: "",
+    workerFees: "",
   });
 
   const selectedProduct = useMemo(
@@ -339,6 +342,7 @@ const MessLabour: React.FC = () => {
       artificial,
       short,
       lossWeight: record.lossWeight,
+      workerFees: record.workerFees || 0,
       selectedStaff: record.workerNames
         ? record.workerNames.split(", ").filter((n) => n.trim() !== "")
         : [],
@@ -533,6 +537,7 @@ const MessLabour: React.FC = () => {
           : undefined;
       })(),
       difference: editingRecord.difference,
+      workerFees: editFormData.workerFees,
     };
 
     try {
@@ -624,6 +629,7 @@ const MessLabour: React.FC = () => {
             ? Number((totals.remainingWeight * 1.633).toFixed(4))
             : undefined,
         difference: totals.diff,
+        workerFees: Number(formData.workerFees) || 0,
       };
 
       await processingAPI.create(dto);
@@ -642,6 +648,7 @@ const MessLabour: React.FC = () => {
         artificial: "",
         short: "",
         lossWeight: "",
+        workerFees: "",
       });
       setSelectedStaff([]);
       setSelectedProductId(null);
@@ -1240,6 +1247,42 @@ const MessLabour: React.FC = () => {
                     </div>
                   </div>
 
+                  {/* 4. Worker Fees */}
+                  <section className="form-section">
+                    <h3 className="section-label">4. Worker Fees</h3>
+                    <div className="count-unit-cards">
+                      <div
+                        className="cu-card cu-card-fees"
+                        style={{ width: "100%", maxWidth: "400px" }}
+                      >
+                        <div className="cu-card-icon">
+                          <DollarSign size={22} />
+                        </div>
+                        <div className="cu-card-body">
+                          <label className="cu-label">Total Fee Amount</label>
+                          <div className="cu-value-wrapper">
+                            <input
+                              type="number"
+                              min="0"
+                              step="0.01"
+                              value={formData.workerFees}
+                              onChange={(e) =>
+                                setFormData({
+                                  ...formData,
+                                  workerFees: e.target.value,
+                                })
+                              }
+                              placeholder="Enter amount..."
+                              className="cu-input"
+                              style={{ width: "100%" }}
+                            />
+                            <span className="cu-unit">MMK</span>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  </section>
+
                   <button
                     type="submit"
                     className="submit-btn"
@@ -1321,6 +1364,7 @@ const MessLabour: React.FC = () => {
                     <th>Date</th>
                     <th>Marker</th>
                     <th>Staff</th>
+                    <th>Worker Fees</th>
                     <th>Categories</th>
                     <th style={{ textAlign: "center" }}>Lost (viss)</th>
                     <th style={{ textAlign: "center" }}>Actions</th>
@@ -1340,6 +1384,12 @@ const MessLabour: React.FC = () => {
                       <td>{formatDateTime(record.date)}</td>
                       <td>{record.productMarker}</td>
                       <td>{record.workerNames}</td>
+                      <td>
+                        {record.workerFees?.toLocaleString(undefined, {
+                          minimumFractionDigits: 2,
+                          maximumFractionDigits: 2,
+                        })}
+                      </td>
                       <td>
                         <div
                           style={{
@@ -1833,6 +1883,19 @@ const MessLabour: React.FC = () => {
                 <span className="vm-stat-label">Unit Weight</span>
                 <span className="vm-stat-value">
                   {viewingRecord.unitWeight.toFixed(4)} viss
+                </span>
+              </div>
+              <div className="vm-stat-card">
+                <span className="vm-stat-label">Worker Fees</span>
+                <span
+                  className="vm-stat-value"
+                  style={{ color: "var(--amber)", fontWeight: 700 }}
+                >
+                  {viewingRecord.workerFees?.toLocaleString(undefined, {
+                    minimumFractionDigits: 2,
+                    maximumFractionDigits: 2,
+                  }) || "0.00"}{" "}
+                  MMK
                 </span>
               </div>
             </div>

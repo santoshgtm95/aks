@@ -57,6 +57,7 @@ public class ProcessingRecordDto
     public decimal RemArtificialWeight { get; set; }
     public decimal RemShortWeight { get; set; }
     public bool IsLocked { get; set; }
+    public decimal WorkerFees { get; set; }
 }
 
 public class CreateProcessingRecordDto
@@ -90,4 +91,5 @@ public class CreateProcessingRecordDto
     public decimal RemainingWeight { get; set; }
     public decimal? RemainingWeightKg { get; set; }
     public decimal Difference { get; set; }
+    public decimal WorkerFees { get; set; }
 }

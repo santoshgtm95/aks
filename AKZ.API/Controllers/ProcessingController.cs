@@ -70,6 +70,7 @@ public class ProcessingController : ControllerBase
                 RemainingWeight = r.RemainingWeight,
                 RemainingWeightKg = r.RemainingWeightKg,
                 Difference = r.Difference,
+                WorkerFees = r.WorkerFees,
                 RemRedCount = r.RemRedCount,
                 RemWhiteCount = r.RemWhiteCount,
                 RemSpecialCount = r.RemSpecialCount,
@@ -136,6 +137,7 @@ public class ProcessingController : ControllerBase
             RemainingWeight = dto.RemainingWeight,
             RemainingWeightKg = dto.RemainingWeightKg,
             Difference = dto.Difference,
+            WorkerFees = dto.WorkerFees,
             // Initialize remaining fields with original counts/weights
             RemRedCount = dto.RedCount,
             RemWhiteCount = dto.WhiteCount,
@@ -222,7 +224,8 @@ public class ProcessingController : ControllerBase
             TotalWeight = record.TotalWeight,
             RemainingWeight = record.RemainingWeight,
             RemainingWeightKg = record.RemainingWeightKg,
-            Difference = record.Difference
+            Difference = record.Difference,
+            WorkerFees = record.WorkerFees
         };
 
         return Ok(resultDto);
@@ -294,6 +297,7 @@ public class ProcessingController : ControllerBase
         record.RemainingWeight = dto.RemainingWeight;
         record.RemainingWeightKg = dto.RemainingWeightKg;
         record.Difference = dto.Difference;
+        record.WorkerFees = dto.WorkerFees;
 
         await _context.SaveChangesAsync();
 
@@ -329,7 +333,8 @@ public class ProcessingController : ControllerBase
             TotalWeight = record.TotalWeight,
             RemainingWeight = record.RemainingWeight,
             RemainingWeightKg = record.RemainingWeightKg,
-            Difference = record.Difference
+            Difference = record.Difference,
+            WorkerFees = record.WorkerFees
         };
 
         return Ok(resultDto);

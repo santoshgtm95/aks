@@ -197,6 +197,7 @@ export interface ProcessingRecord {
   remShortWeight: number;
   warehouseName?: string;
   isLocked?: boolean;
+  workerFees?: number;
 }
 
 export interface CreateProcessingRecordDto {
@@ -229,6 +230,7 @@ export interface CreateProcessingRecordDto {
   remainingWeight: number;
   remainingWeightKg?: number;
   difference: number;
+  workerFees: number;
 }
 
 export interface Worker {

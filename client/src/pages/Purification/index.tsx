@@ -524,7 +524,7 @@ const Purification: React.FC = () => {
                   className={`premium-tab ${activeTab === "history" ? "active" : ""}`}
                   onClick={() => setActiveTab("history")}
                 >
-                  <h1>Purification History</h1>
+                  <h1>Purification</h1>
                   <p className="header-subtitle">
                     Process log of raw hair bundles
                   </p>

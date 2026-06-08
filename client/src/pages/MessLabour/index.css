@@ -379,6 +379,10 @@
     background: linear-gradient(135deg, #f0fdf4 0%, #ecfdf5 100%);
   }
 
+  .cu-card-fees {
+    border-left: 5px solid #d97706;
+  }
+
   .cu-card-icon {
     display: flex;
     align-items: center;
@@ -404,6 +408,11 @@
   .cu-card-total .cu-card-icon {
     background: linear-gradient(135deg, #d1fae5 0%, #a7f3d0 100%);
     color: #059669;
+  }
+
+  .cu-card-fees .cu-card-icon {
+    background: linear-gradient(135deg, #fef3c7 0%, #fde68a 100%);
+    color: #d97706;
   }
 
   .cu-card-body {
@@ -2574,6 +2583,10 @@
   background: linear-gradient(135deg, #f0fdf4 0%, #ecfdf5 100%);
 }
 
+.cu-card-fees {
+  border-left: 4px solid #d97706;
+}
+
 .cu-card-icon {
   display: flex;
   align-items: center;
@@ -2598,6 +2611,11 @@
 .cu-card-total .cu-card-icon {
   background: #d1fae5;
   color: #10b981;
+}
+
+.cu-card-fees .cu-card-icon {
+  background: #fef3c7;
+  color: #d97706;
 }
 
 .cu-card-body {
@@ -4452,7 +4470,7 @@
   padding: 24px;
   background: #f1f5f9;
   min-height: calc(100vh - 64px);
-  font-family: 'Inter', sans-serif;
+  font-family: "Inter", sans-serif;
   box-sizing: border-box;
 }
 
@@ -4461,8 +4479,14 @@
 }
 
 @keyframes rf-fadeIn {
-  from { opacity: 0; transform: translateY(8px); }
-  to   { opacity: 1; transform: translateY(0); }
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
 
 .rf-sidebar {
@@ -4485,7 +4509,7 @@
   font-size: 14px;
   font-weight: 700;
   color: #0f172a;
-  box-shadow: 0 1px 4px rgba(0,0,0,0.05);
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.05);
 }
 
 .rf-sidebar-header svg {
@@ -4513,11 +4537,11 @@
   border: 1.5px solid #e2e8f0;
   background: white;
   font-size: 13.5px;
-  font-family: 'Inter', sans-serif;
+  font-family: "Inter", sans-serif;
   color: #0f172a;
   transition: all 0.2s ease;
   box-sizing: border-box;
-  box-shadow: 0 1px 3px rgba(0,0,0,0.04);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
 }
 
 .rf-search-input:focus {
@@ -4526,8 +4550,12 @@
   box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.12);
 }
 
-.rf-search-input::placeholder { color: #94a3b8; }
-.rf-search-box:focus-within .rf-search-icon { color: #2563eb; }
+.rf-search-input::placeholder {
+  color: #94a3b8;
+}
+.rf-search-box:focus-within .rf-search-icon {
+  color: #2563eb;
+}
 
 .rf-card-list {
   display: flex;
@@ -4538,8 +4566,13 @@
   padding-right: 4px;
 }
 
-.rf-card-list::-webkit-scrollbar { width: 4px; }
-.rf-card-list::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 4px; }
+.rf-card-list::-webkit-scrollbar {
+  width: 4px;
+}
+.rf-card-list::-webkit-scrollbar-thumb {
+  background: #cbd5e1;
+  border-radius: 4px;
+}
 
 .rf-empty-sidebar {
   padding: 36px 16px;
@@ -4562,7 +4595,7 @@
   background: white;
   border-radius: 18px;
   padding: 28px 32px;
-  box-shadow: 0 4px 24px rgba(0,0,0,0.06);
+  box-shadow: 0 4px 24px rgba(0, 0, 0, 0.06);
   border: 1px solid #e2e8f0;
   height: 100%;
   display: flex;
@@ -4613,7 +4646,7 @@
   background: transparent;
   cursor: pointer;
   transition: all 0.2s ease;
-  font-family: 'Inter', sans-serif;
+  font-family: "Inter", sans-serif;
 }
 
 .rf-tab-title {
@@ -4633,12 +4666,18 @@
 
 .rf-tab-active {
   background: white;
-  box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
 }
 
-.rf-tab-active .rf-tab-title { color: #0f172a; }
-.rf-tab-active .rf-tab-sub   { color: #64748b; }
-.rf-tab-active.rf-tab-green .rf-tab-title { color: #2563eb; }
+.rf-tab-active .rf-tab-title {
+  color: #0f172a;
+}
+.rf-tab-active .rf-tab-sub {
+  color: #64748b;
+}
+.rf-tab-active.rf-tab-green .rf-tab-title {
+  color: #2563eb;
+}
 
 .rf-header-badge {
   display: flex;
@@ -4679,7 +4718,9 @@
   white-space: nowrap;
 }
 
-.rf-th-right { text-align: right !important; }
+.rf-th-right {
+  text-align: right !important;
+}
 
 .rf-table td {
   padding: 14px 16px;
@@ -4689,11 +4730,19 @@
   vertical-align: middle;
 }
 
-.rf-table tr:last-child td { border-bottom: none; }
-.rf-table tbody tr:hover td { background: #f8fafc; }
+.rf-table tr:last-child td {
+  border-bottom: none;
+}
+.rf-table tbody tr:hover td {
+  background: #f8fafc;
+}
 
-.rf-clickable-row { cursor: pointer; }
-.rf-clickable-row:hover td { background: #f0fdf4 !important; }
+.rf-clickable-row {
+  cursor: pointer;
+}
+.rf-clickable-row:hover td {
+  background: #f0fdf4 !important;
+}
 
 .rf-td-date {
   font-size: 12.5px;
@@ -4721,7 +4770,9 @@
   white-space: nowrap;
 }
 
-.rf-green { color: #10b981 !important; }
+.rf-green {
+  color: #10b981 !important;
+}
 
 .rf-td-lost {
   font-size: 13.5px;
@@ -4795,7 +4846,14 @@
 }
 
 @media (max-width: 768px) {
-  .rf-container { padding: 16px; gap: 16px; }
-  .rf-main-card { padding: 18px 16px; }
-  .rf-tab-group { flex-direction: column; }
+  .rf-container {
+    padding: 16px;
+    gap: 16px;
+  }
+  .rf-main-card {
+    padding: 18px 16px;
+  }
+  .rf-tab-group {
+    flex-direction: column;
+  }
 }
