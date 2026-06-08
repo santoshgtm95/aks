@@ -1,62 +1,67 @@
 .warehouse {
-    width: 100%;
+  width: 100%;
 }
 
 .registration-card {
-    margin-bottom: 32px;
+  margin-bottom: 32px;
 }
 
 .form-grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-    gap: 20px;
-    margin-bottom: 24px;
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 20px;
+  margin-bottom: 24px;
 }
 
 .price-input-group {
-    display: flex;
-    gap: 8px;
+  display: flex;
+  gap: 8px;
 }
 
 .currency-select {
-    width: 100px;
+  width: 100px;
 }
 
 .form-actions {
-    display: flex;
-    gap: 12px;
+  display: flex;
+  gap: 12px;
 }
 
 .list-card {
-    margin-bottom: 32px;
+  margin-bottom: 32px;
 }
 
 .action-buttons {
-    display: flex;
-    gap: 8px;
+  display: flex;
+  gap: 8px;
 }
 
 .btn-icon {
-    background: none;
-    border: none;
-    font-size: 18px;
-    cursor: pointer;
-    padding: 4px;
-    border-radius: 4px;
-    transition: all 0.2s ease;
+  background: none;
+  border: none;
+  font-size: 18px;
+  cursor: pointer;
+  padding: 4px;
+  border-radius: 4px;
+  transition: all 0.2s ease;
 }
 
 .btn-icon:hover {
-    background: var(--light);
-    transform: scale(1.1);
+  background: var(--light);
+  transform: scale(1.1);
 }
 
 .btn-icon-danger:hover {
-    background: #fee2e2;
+  background: #fee2e2;
+}
+
+.table.inventory-table thead th {
+  color: #000;
+  border-bottom: none;
 }
 
 @media (max-width: 768px) {
-    .form-grid {
-        grid-template-columns: 1fr;
-    }
+  .form-grid {
+    grid-template-columns: 1fr;
+  }
 }

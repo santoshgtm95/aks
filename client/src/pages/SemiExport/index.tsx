@@ -1892,7 +1892,7 @@ const SemiExport: React.FC = () => {
               />
             </div>
 
-            {!isModal && (
+            {!isModal && hasPermission("SemiExport.Create") && (
               <div style={{ display: "flex", justifyContent: "flex-end" }}>
                 <button
                   type="button"
@@ -2919,44 +2919,48 @@ const SemiExport: React.FC = () => {
               className="rf-header-right"
               style={{ display: "flex", gap: "12px" }}
             >
-              <button
-                onClick={() => setShowImportModal(true)}
-                className="btn btn-secondary"
-                style={{
-                  display: "flex",
-                  alignItems: "center",
-                  gap: "8px",
-                  padding: "11px 22px",
-                  borderRadius: "10px",
-                  fontSize: "14px",
-                  fontWeight: "700",
-                  cursor: "pointer",
-                  background: "#f1f5f9",
-                  color: "#334155",
-                  border: "1px solid #cbd5e1",
-                  boxShadow: "0 2px 4px rgba(0,0,0,0.02)",
-                }}
-              >
-                <Download size={18} />
-                Import Data
-              </button>
-              <button
-                onClick={() => setShowLedgerModal(true)}
-                className="btn btn-primary"
-                style={{
-                  display: "flex",
-                  alignItems: "center",
-                  gap: "10px",
-                  padding: "11px 22px",
-                  borderRadius: "10px",
-                  fontSize: "15px",
-                  fontWeight: "700",
-                  cursor: "pointer",
-                }}
-              >
-                <FilePlus size={20} />
-                Create Ledger
-              </button>
+              {hasPermission("SemiExport.Create") && (
+                <button
+                  onClick={() => setShowImportModal(true)}
+                  className="btn btn-secondary"
+                  style={{
+                    display: "flex",
+                    alignItems: "center",
+                    gap: "8px",
+                    padding: "11px 22px",
+                    borderRadius: "10px",
+                    fontSize: "14px",
+                    fontWeight: "700",
+                    cursor: "pointer",
+                    background: "#f1f5f9",
+                    color: "#334155",
+                    border: "1px solid #cbd5e1",
+                    boxShadow: "0 2px 4px rgba(0,0,0,0.02)",
+                  }}
+                >
+                  <Download size={18} />
+                  Import Data
+                </button>
+              )}
+              {hasPermission("SemiExport.Create") && (
+                <button
+                  onClick={() => setShowLedgerModal(true)}
+                  className="btn btn-primary"
+                  style={{
+                    display: "flex",
+                    alignItems: "center",
+                    gap: "10px",
+                    padding: "11px 22px",
+                    borderRadius: "10px",
+                    fontSize: "15px",
+                    fontWeight: "700",
+                    cursor: "pointer",
+                  }}
+                >
+                  <FilePlus size={20} />
+                  Create Ledger
+                </button>
+              )}
             </div>
           </div>
 

@@ -1501,31 +1501,35 @@ const MessLabour: React.FC = () => {
 
             <div className="rw-body">
               {/* Left Panel: Register Form */}
-              <div className="rw-panel rw-form-panel">
-                <h3 className="rw-panel-title">Add New Worker</h3>
-                <form onSubmit={handleRegisterWorker} className="rw-form">
-                  <div className="rw-form-group">
-                    <label className="rw-form-label">Worker Name</label>
-                    <input
-                      type="text"
-                      className="rw-form-control"
-                      value={newWorkerName}
-                      onChange={(e) => setNewWorkerName(e.target.value)}
-                      placeholder="e.g. Aung Aung"
-                      required
-                      autoFocus
-                    />
-                  </div>
-                  <div className="rw-form-actions">
-                    <button type="submit" className="rw-btn-submit">
-                      <Plus size={15} /> Add to Directory
-                    </button>
-                  </div>
-                </form>
-              </div>
+              {hasPermission("MessLabour.Create") && (
+                <div className="rw-panel rw-form-panel">
+                  <h3 className="rw-panel-title">Add New Worker</h3>
+                  <form onSubmit={handleRegisterWorker} className="rw-form">
+                    <div className="rw-form-group">
+                      <label className="rw-form-label">Worker Name</label>
+                      <input
+                        type="text"
+                        className="rw-form-control"
+                        value={newWorkerName}
+                        onChange={(e) => setNewWorkerName(e.target.value)}
+                        placeholder="e.g. Aung Aung"
+                        required
+                        autoFocus
+                      />
+                    </div>
+                    <div className="rw-form-actions">
+                      <button type="submit" className="rw-btn-submit">
+                        <Plus size={15} /> Add to Directory
+                      </button>
+                    </div>
+                  </form>
+                </div>
+              )}
 
               {/* Divider */}
-              <div className="rw-panel-divider" />
+              {hasPermission("MessLabour.Create") && (
+                <div className="rw-panel-divider" />
+              )}
 
               {/* Right Panel: Registered List */}
               <div className="rw-panel rw-list-panel">

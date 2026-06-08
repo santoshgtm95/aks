@@ -1486,19 +1486,21 @@ const Sales6: React.FC = () => {
                                 />
                               </div>
                             </div>
-                            <button
-                              onClick={handleSellSelected}
-                              className="btn-sell"
-                              disabled={
-                                sellingInProgress ||
-                                selectedColors.size === 0 ||
-                                calculatedSellingPriceMMK <= 0
-                              }
-                            >
-                              {sellingInProgress
-                                ? "Saving..."
-                                : "Sell Selected"}
-                            </button>
+                            {hasPermission("Sales6.Create") && (
+                              <button
+                                onClick={handleSellSelected}
+                                className="btn-sell"
+                                disabled={
+                                  sellingInProgress ||
+                                  selectedColors.size === 0 ||
+                                  calculatedSellingPriceMMK <= 0
+                                }
+                              >
+                                {sellingInProgress
+                                  ? "Saving..."
+                                  : "Sell Selected"}
+                              </button>
+                            )}
                           </div>
 
                           {selectedColors.size === 0 ? (
