@@ -237,6 +237,7 @@ const SingleDoubleDrawn: React.FC = () => {
 
   const [singleDoubleLostWeight, setSingleDoubleLostWeight] = useState("");
   const [workerId, setWorkerId] = useState("");
+  const [workerFees, setWorkerFees] = useState("");
   const [note, setNote] = useState("");
   const [workers, setWorkers] = useState<SingleDoubleDrawnWorker[]>([]);
 
@@ -564,6 +565,7 @@ const SingleDoubleDrawn: React.FC = () => {
         returnWeight: selectedRecord.returnWeight || 0,
         singleDoubleLostWeight: parseFloat(singleDoubleLostWeight) || 0,
         workerId: workerId ? parseInt(workerId) : undefined,
+        workerFees: parseFloat(workerFees) || 0,
         note: note,
 
         // Spoilage and Return sizes
@@ -621,6 +623,7 @@ const SingleDoubleDrawn: React.FC = () => {
       setReturnSizeWeight("");
       setReturnSizePrice("");
       setSingleDoubleLostWeight("");
+      setWorkerFees("");
       setWorkerId("");
       setNote("");
       setFormError("");
@@ -1531,6 +1534,25 @@ const SingleDoubleDrawn: React.FC = () => {
                           </select>
                         </div>
                         <div className="form-group">
+                          <label>Worker Fees (MMK)</label>
+                          <input
+                            type="number"
+                            min="0"
+                            step="0.01"
+                            placeholder="Enter worker fees amount..."
+                            value={workerFees}
+                            onChange={(e) => setWorkerFees(e.target.value)}
+                            className="form-input"
+                            style={{
+                              width: "100%",
+                              padding: "8px 12px",
+                              border: "1.5px solid #cbd5e1",
+                              borderRadius: "8px",
+                              boxSizing: "border-box",
+                            }}
+                          />
+                        </div>
+                        <div className="form-group">
                           <label>Note</label>
                           <input
                             type="text"
@@ -1822,6 +1844,7 @@ const SingleDoubleDrawn: React.FC = () => {
                             <th>Return Weight</th>
                             <th>Worker</th>
                             <th>Note</th>
+                            <th>Worker Fees (MMK)</th>
                             <th className="rf-th-right">Total Amount</th>
                             <th style={{ textAlign: "center" }}>Actions</th>
                           </tr>
@@ -1921,6 +1944,20 @@ const SingleDoubleDrawn: React.FC = () => {
                                       {record.note || "---"}
                                     </div>
                                   </td>
+                                  <td
+                                    style={{
+                                      color: "#0f172a",
+                                      fontWeight: "600",
+                                    }}
+                                  >
+                                    {record.workerFees?.toLocaleString(
+                                      undefined,
+                                      {
+                                        minimumFractionDigits: 2,
+                                        maximumFractionDigits: 2,
+                                      },
+                                    ) || "0.00"}
+                                  </td>
                                   <td className="rf-td-weight rf-green rf-th-right">
                                     {calculateRecordTotalAmount(
                                       record,
@@ -1996,6 +2033,7 @@ const SingleDoubleDrawn: React.FC = () => {
                             <th>Return Weight</th>
                             <th>Worker</th>
                             <th>Note</th>
+                            <th>Worker Fees (MMK)</th>
                             <th className="rf-th-right">Total Amount</th>
                             <th style={{ textAlign: "center" }}>Actions</th>
                           </tr>

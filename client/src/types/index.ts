@@ -435,6 +435,7 @@ export interface SingleDoubleDrawnRecord {
   workerId?: number;
   workerName?: string;
   note?: string;
+  workerFees?: number;
   processingLossWeight: number;
   processingRecordId?: number;
   price6: number;
