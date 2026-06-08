@@ -23,6 +23,8 @@ import {
   ChevronRight,
   ClipboardList,
   Layers,
+  CheckCircle,
+  AlertCircle,
   ChevronDown,
   ChevronUp,
   CheckSquare,
@@ -61,6 +63,10 @@ const Sales6: React.FC = () => {
   );
   const [selectedHistory, setSelectedHistory] = useState<Export | null>(null);
   const [isHistoryModalOpen, setIsHistoryModalOpen] = useState(false);
+  const [isSuccessModalOpen, setIsSuccessModalOpen] = useState(false);
+  const [successMessage, setSuccessMessage] = useState("");
+  const [isErrorModalOpen, setIsErrorModalOpen] = useState(false);
+  const [errorMessage, setErrorMessage] = useState("");
 
   // Helper: get the exchange rate (CNY→MMK) for a given sdd record id
   const getRateForRecord = (sddId: number): number => {
@@ -156,22 +162,22 @@ const Sales6: React.FC = () => {
           recordsCount: 0,
           totalWeight: 0,
           sizes: {
-            "6": 0,
-            "7": 0,
-            "8": 0,
-            "9": 0,
-            "10": 0,
-            "10B": 0,
-            "12": 0,
-            "14": 0,
-            "16": 0,
-            "18": 0,
-            "20": 0,
-            "22": 0,
-            "24": 0,
-            "26": 0,
-            "28": 0,
-            Bar: 0,
+            "6": { weight: 0, price: 0 },
+            "7": { weight: 0, price: 0 },
+            "8": { weight: 0, price: 0 },
+            "9": { weight: 0, price: 0 },
+            "10": { weight: 0, price: 0 },
+            "10B": { weight: 0, price: 0 },
+            "12": { weight: 0, price: 0 },
+            "14": { weight: 0, price: 0 },
+            "16": { weight: 0, price: 0 },
+            "18": { weight: 0, price: 0 },
+            "20": { weight: 0, price: 0 },
+            "22": { weight: 0, price: 0 },
+            "24": { weight: 0, price: 0 },
+            "26": { weight: 0, price: 0 },
+            "28": { weight: 0, price: 0 },
+            Bar: { weight: 0, price: 0 },
           },
           totalAmount: 0,
           totalWorkerFees: 0,
@@ -202,22 +208,39 @@ const Sales6: React.FC = () => {
 
       g.totalWeight += recordWeight;
 
-      g.sizes["6"] += r.size6 || 0;
-      g.sizes["7"] += r.size7 || 0;
-      g.sizes["8"] += r.size8 || 0;
-      g.sizes["9"] += r.size9 || 0;
-      g.sizes["10"] += r.size10 || 0;
-      g.sizes["10B"] += r.size10B || 0;
-      g.sizes["12"] += r.size12 || 0;
-      g.sizes["14"] += r.size14 || 0;
-      g.sizes["16"] += r.size16 || 0;
-      g.sizes["18"] += r.size18 || 0;
-      g.sizes["20"] += r.size20 || 0;
-      g.sizes["22"] += r.size22 || 0;
-      g.sizes["24"] += r.size24 || 0;
-      g.sizes["26"] += r.size26 || 0;
-      g.sizes["28"] += r.size28 || 0;
-      g.sizes["Bar"] += r.sizeBar || 0;
+      g.sizes["6"].weight += r.size6 || 0;
+      g.sizes["7"].weight += r.size7 || 0;
+      g.sizes["8"].weight += r.size8 || 0;
+      g.sizes["9"].weight += r.size9 || 0;
+      g.sizes["10"].weight += r.size10 || 0;
+      g.sizes["10B"].weight += r.size10B || 0;
+      g.sizes["12"].weight += r.size12 || 0;
+      g.sizes["14"].weight += r.size14 || 0;
+      g.sizes["16"].weight += r.size16 || 0;
+      g.sizes["18"].weight += r.size18 || 0;
+      g.sizes["20"].weight += r.size20 || 0;
+      g.sizes["22"].weight += r.size22 || 0;
+      g.sizes["24"].weight += r.size24 || 0;
+      g.sizes["26"].weight += r.size26 || 0;
+      g.sizes["28"].weight += r.size28 || 0;
+      g.sizes["Bar"].weight += r.sizeBar || 0;
+
+      if (r.price6) g.sizes["6"].price = r.price6;
+      if (r.price7) g.sizes["7"].price = r.price7;
+      if (r.price8) g.sizes["8"].price = r.price8;
+      if (r.price9) g.sizes["9"].price = r.price9;
+      if (r.price10) g.sizes["10"].price = r.price10;
+      if (r.price10B) g.sizes["10B"].price = r.price10B;
+      if (r.price12) g.sizes["12"].price = r.price12;
+      if (r.price14) g.sizes["14"].price = r.price14;
+      if (r.price16) g.sizes["16"].price = r.price16;
+      if (r.price18) g.sizes["18"].price = r.price18;
+      if (r.price20) g.sizes["20"].price = r.price20;
+      if (r.price22) g.sizes["22"].price = r.price22;
+      if (r.price24) g.sizes["24"].price = r.price24;
+      if (r.price26) g.sizes["26"].price = r.price26;
+      if (r.price28) g.sizes["28"].price = r.price28;
+      if (r.priceBar) g.sizes["Bar"].price = r.priceBar;
 
       const recordAmount =
         (r.size10B || 0) * (r.price10B || 0) +
@@ -353,16 +376,37 @@ const Sales6: React.FC = () => {
     selectedColors.forEach((colorName) => {
       const colorDet = colorDetails.find((c) => c.colorName === colorName);
       if (!colorDet) return;
-      Object.entries(colorDet.sizes).forEach(([sizeKey, weight]) => {
-        if (weight === 0) return;
-        const priceStr = sizeSellingPrices[colorName]?.[sizeKey];
-        const priceVal = parseFloat(priceStr || "0");
-        if (!isNaN(priceVal) && priceVal > 0) {
-          total += priceVal * weight;
+      Object.entries(colorDet.sizes).forEach(([sizeKey, sizeData]) => {
+        const sizeInput = sizeSellingPrices[colorName]?.[sizeKey];
+        const inputWeight = parseFloat(sizeInput?.weight || "0");
+        const inputPrice = parseFloat(sizeInput?.price || "0");
+        if (
+          !isNaN(inputWeight) &&
+          !isNaN(inputPrice) &&
+          inputWeight > 0 &&
+          inputPrice > 0
+        ) {
+          total += inputWeight * inputPrice;
         }
       });
     });
     return total;
+  }, [selectedColors, sizeSellingPrices, colorDetails]);
+
+  const calculatedInputtedWeight = useMemo(() => {
+    let totalWeight = 0;
+    selectedColors.forEach((colorName) => {
+      const colorDet = colorDetails.find((c) => c.colorName === colorName);
+      if (!colorDet) return;
+      Object.entries(colorDet.sizes).forEach(([sizeKey, sizeData]) => {
+        const sizeInput = sizeSellingPrices[colorName]?.[sizeKey];
+        const inputWeight = parseFloat(sizeInput?.weight || "0");
+        if (!isNaN(inputWeight) && inputWeight > 0) {
+          totalWeight += inputWeight;
+        }
+      });
+    });
+    return totalWeight;
   }, [selectedColors, sizeSellingPrices, colorDetails]);
 
   const calculatedSellingPriceMMK = calculatedSellingPriceCNY * averageRate;
@@ -434,14 +478,56 @@ const Sales6: React.FC = () => {
   const handleSellSelected = async () => {
     if (!selectedLedgerId) return;
     if (selectedColors.size === 0) {
-      alert("Please select at least one color card to sell.");
+      setErrorMessage("Please select at least one color card to sell.");
+      setIsErrorModalOpen(true);
       return;
     }
+
+    let missingInput = false;
+    selectedColors.forEach((colorName) => {
+      const colorDet = colorDetails.find((c) => c.colorName === colorName);
+      if (colorDet) {
+        Object.entries(colorDet.sizes).forEach(
+          ([sizeKey, sizeData]: [string, any]) => {
+            if (sizeData.weight > 0) {
+              const sizeInput = sizeSellingPrices[colorName]?.[sizeKey];
+              if (
+                !sizeInput ||
+                sizeInput.weight === "" ||
+                sizeInput.price === "" ||
+                sizeInput.weight === undefined ||
+                sizeInput.price === undefined
+              ) {
+                missingInput = true;
+              }
+            }
+          },
+        );
+      }
+    });
+
+    if (missingInput) {
+      setErrorMessage(
+        "Please fill in both Wgt (kg) and Price (¥) for all sizes of the selected colors.",
+      );
+      setIsErrorModalOpen(true);
+      return;
+    }
+
+    if (calculatedInputtedWeight > selectedTotals.weight * 1.633 + 0.001) {
+      setErrorMessage(
+        "Total Inputted Weight must not be greater than Total Export Weight.",
+      );
+      setIsErrorModalOpen(true);
+      return;
+    }
+
     const priceVal = calculatedSellingPriceMMK;
     if (isNaN(priceVal) || priceVal <= 0) {
-      alert(
+      setErrorMessage(
         "Please enter valid selling prices (CNY) in Size Breakdown for the selected colors.",
       );
+      setIsErrorModalOpen(true);
       return;
     }
 
@@ -451,14 +537,17 @@ const Sales6: React.FC = () => {
       const selectedColorNames = Array.from(selectedColors);
 
       // Ensure all selected colors are included in the payload, even with 0 prices
-      const fullSizeSellingPrices: Record<string, Record<string, string>> = {};
+      const fullSizeSellingPrices: Record<string, Record<string, any>> = {};
       selectedColorNames.forEach((colorName) => {
         fullSizeSellingPrices[colorName] = {};
         const colorDet = colorDetails.find((c) => c.colorName === colorName);
         if (colorDet) {
           Object.keys(colorDet.sizes).forEach((sizeKey) => {
             const val = sizeSellingPrices[colorName]?.[sizeKey];
-            fullSizeSellingPrices[colorName][sizeKey] = val || "0";
+            fullSizeSellingPrices[colorName][sizeKey] = val || {
+              weight: "0",
+              price: "0",
+            };
           });
         }
       });
@@ -493,10 +582,12 @@ const Sales6: React.FC = () => {
       setSelectedColors(new Set());
       setSizeSellingPrices({});
 
-      alert("Export sale saved successfully!");
+      setSuccessMessage("Export sale saved successfully!");
+      setIsSuccessModalOpen(true);
     } catch (error) {
       console.error("Failed to save export sale:", error);
-      alert("Failed to save export sale. Please try again.");
+      setErrorMessage("Failed to save export sale. Please try again.");
+      setIsErrorModalOpen(true);
     } finally {
       setSellingInProgress(false);
     }
@@ -810,7 +901,9 @@ const Sales6: React.FC = () => {
                     </span>
                     <span className="grand-total-value">
                       {grandTotal.totalWeight.toFixed(3)}{" "}
-                      <span className="grand-total-unit">viss</span>
+                      <span className="grand-total-unit">viss</span> /{" "}
+                      {(grandTotal.totalWeight * 1.633).toFixed(3)}{" "}
+                      <span className="grand-total-unit">kg</span>
                     </span>
                   </div>
                   <div className="grand-total-divider" />
@@ -918,7 +1011,8 @@ const Sales6: React.FC = () => {
                                   </span>
                                 </div>
                                 <span className="color-badge weight-badge">
-                                  {color.totalWeight.toFixed(3)} viss
+                                  {color.totalWeight.toFixed(4)} viss /{" "}
+                                  {(color.totalWeight * 1.633).toFixed(4)} kg
                                 </span>
                               </div>
 
@@ -938,7 +1032,7 @@ const Sales6: React.FC = () => {
                                       (
                                       {
                                         Object.values(color.sizes).filter(
-                                          (w) => w > 0,
+                                          (sz: any) => sz.weight > 0,
                                         ).length
                                       }{" "}
                                       Active)
@@ -954,51 +1048,155 @@ const Sales6: React.FC = () => {
                                 {expandedColors[color.colorName] && (
                                   <div className="sizes-grid fade-in">
                                     {Object.entries(color.sizes).map(
-                                      ([sizeKey, weight]) => {
-                                        if (weight === 0) return null;
+                                      ([sizeKey, sizeData]: [string, any]) => {
+                                        if (sizeData.weight === 0) return null;
                                         return (
                                           <div
                                             key={sizeKey}
                                             className="size-badge"
+                                            style={{ flexWrap: "wrap" }}
                                           >
                                             <span className="size-name">
                                               {sizeKey}
                                             </span>
                                             <span className="size-val">
-                                              {weight.toFixed(3)}
+                                              {(
+                                                sizeData.weight * 1.633
+                                              ).toFixed(4)}{" "}
+                                              kg
+                                            </span>
+                                            <span
+                                              className="size-price"
+                                              style={{
+                                                marginLeft: "4px",
+                                                fontSize: "11px",
+                                                color: "#64748b",
+                                              }}
+                                            >
+                                              (
+                                              {sizeData.price > 0
+                                                ? `¥${sizeData.price.toLocaleString()}`
+                                                : "No Price"}
+                                              )
                                             </span>
                                             <div
                                               className="size-price-input"
                                               onClick={(e) =>
                                                 e.stopPropagation()
                                               }
+                                              style={{
+                                                display: "flex",
+                                                gap: "12px",
+                                                width: "100%",
+                                                marginTop:
+                                                  "8px" /* Push inputs below the headers */,
+                                                marginLeft:
+                                                  "0" /* override flex auto margin for wrap */,
+                                                paddingLeft: "0",
+                                                borderLeft: "none",
+                                              }}
                                             >
-                                              <span className="currency-symbol">
-                                                ¥
-                                              </span>
-                                              <input
-                                                type="number"
-                                                placeholder="0.00"
-                                                value={
-                                                  sizeSellingPrices[
-                                                    color.colorName
-                                                  ]?.[sizeKey] || ""
-                                                }
-                                                onChange={(e) => {
-                                                  const val = e.target.value;
-                                                  setSizeSellingPrices(
-                                                    (prev) => ({
-                                                      ...prev,
-                                                      [color.colorName]: {
-                                                        ...(prev[
-                                                          color.colorName
-                                                        ] || {}),
-                                                        [sizeKey]: val,
-                                                      },
-                                                    }),
-                                                  );
+                                              <div
+                                                style={{
+                                                  display: "flex",
+                                                  alignItems: "center",
+                                                  gap: "6px",
+                                                  flex: 1,
                                                 }}
-                                              />
+                                              >
+                                                <span
+                                                  className="currency-symbol"
+                                                  style={{
+                                                    fontSize: "11px",
+                                                    fontWeight: "700",
+                                                  }}
+                                                >
+                                                  Wgt (kg):
+                                                </span>
+                                                <input
+                                                  type="number"
+                                                  placeholder="0.00"
+                                                  value={
+                                                    sizeSellingPrices[
+                                                      color.colorName
+                                                    ]?.[sizeKey]?.weight || ""
+                                                  }
+                                                  style={{
+                                                    width: "100%",
+                                                    flex: 1,
+                                                  }}
+                                                  onChange={(e) => {
+                                                    const val = e.target.value;
+                                                    setSizeSellingPrices(
+                                                      (prev: any) => ({
+                                                        ...prev,
+                                                        [color.colorName]: {
+                                                          ...(prev[
+                                                            color.colorName
+                                                          ] || {}),
+                                                          [sizeKey]: {
+                                                            ...(prev[
+                                                              color.colorName
+                                                            ]?.[sizeKey] || {}),
+                                                            weight: val,
+                                                          },
+                                                        },
+                                                      }),
+                                                    );
+                                                  }}
+                                                />
+                                              </div>
+
+                                              <div
+                                                style={{
+                                                  display: "flex",
+                                                  alignItems: "center",
+                                                  gap: "6px",
+                                                  flex: 1,
+                                                }}
+                                              >
+                                                <span
+                                                  className="currency-symbol"
+                                                  style={{
+                                                    fontSize: "11px",
+                                                    fontWeight: "700",
+                                                  }}
+                                                >
+                                                  Price: ¥
+                                                </span>
+                                                <input
+                                                  type="number"
+                                                  placeholder="0.00"
+                                                  value={
+                                                    sizeSellingPrices[
+                                                      color.colorName
+                                                    ]?.[sizeKey]?.price || ""
+                                                  }
+                                                  style={{
+                                                    width: "100%",
+                                                    flex: 1,
+                                                  }}
+                                                  onChange={(e) => {
+                                                    const val = e.target.value;
+                                                    setSizeSellingPrices(
+                                                      (prev: any) => ({
+                                                        ...prev,
+                                                        [color.colorName]: {
+                                                          ...(prev[
+                                                            color.colorName
+                                                          ] || {}),
+                                                          [sizeKey]: {
+                                                            ...(prev[
+                                                              color.colorName
+                                                            ]?.[sizeKey] || {}),
+                                                            price: val,
+                                                          },
+                                                        },
+                                                      }),
+                                                    );
+                                                  }}
+                                                />
+                                              </div>
                                             </div>
                                           </div>
                                         );
@@ -1021,6 +1219,19 @@ const Sales6: React.FC = () => {
                         </div>
                         <div className="sell-panel-body">
                           <div className="sell-panel-inputs">
+                            <div className="price-input-group">
+                              <label>Total Inputted Weight</label>
+                              <div className="price-input-wrapper readonly-wrapper">
+                                <span className="currency-prefix">
+                                  <Scale size={14} />
+                                </span>
+                                <input
+                                  type="text"
+                                  disabled
+                                  value={`${(calculatedInputtedWeight / 1.633).toFixed(3)} viss / ${calculatedInputtedWeight.toFixed(3)} kg`}
+                                />
+                              </div>
+                            </div>
                             <div className="price-input-group">
                               <label>Calculated Selling Price</label>
                               <div className="price-input-wrapper readonly-wrapper">
@@ -1112,6 +1323,8 @@ const Sales6: React.FC = () => {
                                   </span>
                                 </div>
                                 <span className="summary-val">
+                                  {selectedTotals.weight.toFixed(3)}{" "}
+                                  <span className="val-unit">viss</span> /{" "}
                                   {(selectedTotals.weight * 1.633).toFixed(3)}{" "}
                                   <span className="val-unit">kg</span>
                                 </span>
@@ -1233,7 +1446,9 @@ const Sales6: React.FC = () => {
                                 style={{ color: "#059669" }}
                               >
                                 {details.totalSortedWeight.toFixed(3)}{" "}
-                                <span className="metric-unit">viss</span>
+                                <span className="metric-unit">viss</span> /{" "}
+                                {(details.totalSortedWeight * 1.633).toFixed(3)}{" "}
+                                <span className="metric-unit">kg</span>
                               </div>
                             </div>
                             <div className="metric-box">
@@ -1471,7 +1686,11 @@ const Sales6: React.FC = () => {
                 <div className="detail-item">
                   <span className="detail-label">Total Export Weight</span>
                   <span className="detail-value">
-                    {selectedHistory.totalExportWeightKg.toFixed(3)} kg
+                    {selectedHistory.totalExportWeightViss?.toFixed(3) ??
+                      (selectedHistory.totalExportWeightKg / 1.633).toFixed(
+                        3,
+                      )}{" "}
+                    viss / {selectedHistory.totalExportWeightKg.toFixed(3)} kg
                   </span>
                 </div>
                 <div className="detail-item">
@@ -1533,7 +1752,7 @@ const Sales6: React.FC = () => {
               </div>
 
               <div className="history-detail-section">
-                <h3>Size Prices (CNY)</h3>
+                <h3>Size Details (Weight & Prices)</h3>
                 {(() => {
                   try {
                     const parsed = JSON.parse(
@@ -1545,20 +1764,145 @@ const Sales6: React.FC = () => {
                           ([colorName, sizes]: [string, any]) => (
                             <div key={colorName} className="size-price-group">
                               <h4 className="color-group-title">{colorName}</h4>
-                              <div className="sizes-grid history-sizes-grid">
+                              <div
+                                className="history-sizes-grid fade-in"
+                                style={{
+                                  display: "grid",
+                                  gridTemplateColumns:
+                                    "repeat(auto-fill, minmax(130px, 1fr))",
+                                  gap: "8px",
+                                  marginTop: "10px",
+                                }}
+                              >
                                 {Object.entries(sizes).map(
-                                  ([size, price]: [string, any]) => (
-                                    <div
-                                      key={size}
-                                      className="size-badge history-size-badge"
-                                      style={{ backgroundColor: "#f8fafc" }}
-                                    >
-                                      <span className="size-name">{size}</span>
-                                      <span className="size-val">
-                                        ¥{Number(price).toLocaleString()}
-                                      </span>
-                                    </div>
-                                  ),
+                                  ([size, data]: [string, any]) => {
+                                    let w = 0,
+                                      p = 0;
+                                    if (
+                                      typeof data === "object" &&
+                                      data !== null
+                                    ) {
+                                      w = parseFloat(data.weight || "0");
+                                      p = parseFloat(data.price || "0");
+                                    } else {
+                                      p = parseFloat(data || "0");
+                                    }
+
+                                    if (w === 0 && p === 0) return null;
+
+                                    return (
+                                      <div
+                                        key={size}
+                                        className="size-badge history-size-badge"
+                                        style={{
+                                          backgroundColor: "#f8fafc",
+                                          display: "flex",
+                                          flexDirection: "column",
+                                          alignItems: "flex-start",
+                                          padding: "10px",
+                                          border: "1px solid #e2e8f0",
+                                          borderRadius: "8px",
+                                          boxShadow:
+                                            "0 1px 2px rgba(0,0,0,0.02)",
+                                        }}
+                                      >
+                                        <div
+                                          style={{
+                                            fontWeight: "700",
+                                            color: "#1e293b",
+                                            marginBottom: "6px",
+                                          }}
+                                        >
+                                          Size {size}
+                                        </div>
+                                        <div
+                                          style={{
+                                            fontSize: "12px",
+                                            color: "#475569",
+                                            width: "100%",
+                                          }}
+                                        >
+                                          <div
+                                            style={{
+                                              display: "flex",
+                                              justifyContent: "space-between",
+                                              marginBottom: "4px",
+                                            }}
+                                          >
+                                            <span style={{ color: "#64748b" }}>
+                                              Wgt:
+                                            </span>
+                                            <span
+                                              style={{
+                                                fontWeight: "600",
+                                                color: "#1e293b",
+                                              }}
+                                            >
+                                              {w > 0
+                                                ? `${w.toFixed(3)} kg`
+                                                : "-"}
+                                            </span>
+                                          </div>
+                                          <div
+                                            style={{
+                                              display: "flex",
+                                              justifyContent: "space-between",
+                                              marginBottom: "4px",
+                                            }}
+                                          >
+                                            <span style={{ color: "#64748b" }}>
+                                              Price:
+                                            </span>
+                                            <span
+                                              style={{
+                                                fontWeight: "600",
+                                                color: "#1e293b",
+                                              }}
+                                            >
+                                              {p > 0
+                                                ? `¥${p.toLocaleString()}`
+                                                : "-"}
+                                            </span>
+                                          </div>
+                                          {w > 0 && p > 0 && (
+                                            <div
+                                              style={{
+                                                display: "flex",
+                                                justifyContent: "space-between",
+                                                marginTop: "6px",
+                                                paddingTop: "4px",
+                                                borderTop: "1px dashed #e2e8f0",
+                                              }}
+                                            >
+                                              <span
+                                                style={{
+                                                  color: "#64748b",
+                                                  fontWeight: "500",
+                                                }}
+                                              >
+                                                Total:
+                                              </span>
+                                              <span
+                                                style={{
+                                                  fontWeight: "700",
+                                                  color: "#059669",
+                                                }}
+                                              >
+                                                ¥
+                                                {(w * p).toLocaleString(
+                                                  undefined,
+                                                  {
+                                                    minimumFractionDigits: 2,
+                                                    maximumFractionDigits: 2,
+                                                  },
+                                                )}
+                                              </span>
+                                            </div>
+                                          )}
+                                        </div>
+                                      </div>
+                                    );
+                                  },
                                 )}
                               </div>
                             </div>
@@ -1572,6 +1916,123 @@ const Sales6: React.FC = () => {
                 })()}
               </div>
             </div>
+          </div>
+        </div>
+      )}
+
+      {/* Success Modal */}
+      {isSuccessModalOpen && (
+        <div className="modal-overlay">
+          <div
+            className="modal-content"
+            style={{
+              maxWidth: "400px",
+              textAlign: "center",
+              padding: "24px",
+              borderRadius: "16px",
+            }}
+          >
+            <div
+              style={{
+                width: "48px",
+                height: "48px",
+                borderRadius: "50%",
+                background: "#dcfce7",
+                color: "#16a34a",
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                margin: "0 auto 16px",
+              }}
+            >
+              <CheckCircle size={24} />
+            </div>
+            <h3
+              style={{
+                fontSize: "18px",
+                fontWeight: "700",
+                color: "#1e293b",
+                marginBottom: "8px",
+              }}
+            >
+              Success
+            </h3>
+            <p style={{ color: "#475569", marginBottom: "24px" }}>
+              {successMessage}
+            </p>
+            <button
+              onClick={() => setIsSuccessModalOpen(false)}
+              style={{
+                width: "100%",
+                padding: "10px",
+                background: "#2563eb",
+                color: "white",
+                fontWeight: "600",
+                borderRadius: "8px",
+                border: "none",
+                cursor: "pointer",
+              }}
+            >
+              OK
+            </button>
+          </div>
+        </div>
+      )}
+      {/* Error Modal */}
+      {isErrorModalOpen && (
+        <div className="modal-overlay">
+          <div
+            className="modal-content"
+            style={{
+              maxWidth: "400px",
+              textAlign: "center",
+              padding: "24px",
+              borderRadius: "16px",
+            }}
+          >
+            <div
+              style={{
+                width: "48px",
+                height: "48px",
+                borderRadius: "50%",
+                background: "#fee2e2",
+                color: "#dc2626",
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                margin: "0 auto 16px",
+              }}
+            >
+              <AlertCircle size={24} />
+            </div>
+            <h3
+              style={{
+                fontSize: "18px",
+                fontWeight: "700",
+                color: "#1e293b",
+                marginBottom: "8px",
+              }}
+            >
+              Validation Error
+            </h3>
+            <p style={{ color: "#475569", marginBottom: "24px" }}>
+              {errorMessage}
+            </p>
+            <button
+              onClick={() => setIsErrorModalOpen(false)}
+              style={{
+                width: "100%",
+                padding: "10px",
+                background: "#dc2626",
+                color: "white",
+                fontWeight: "600",
+                borderRadius: "8px",
+                border: "none",
+                cursor: "pointer",
+              }}
+            >
+              Close
+            </button>
           </div>
         </div>
       )}

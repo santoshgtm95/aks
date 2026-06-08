@@ -35,4 +35,21 @@ public class ExportColorPrice
     [Column(TypeName = "decimal(18,2)")] public decimal Price26 { get; set; }
     [Column(TypeName = "decimal(18,2)")] public decimal Price28 { get; set; }
     [Column(TypeName = "decimal(18,2)")] public decimal PriceBar { get; set; }
+
+    [Column(TypeName = "decimal(18,2)")] public decimal Weight6 { get; set; }
+    [Column(TypeName = "decimal(18,2)")] public decimal Weight7 { get; set; }
+    [Column(TypeName = "decimal(18,2)")] public decimal Weight8 { get; set; }
+    [Column(TypeName = "decimal(18,2)")] public decimal Weight9 { get; set; }
+    [Column(TypeName = "decimal(18,2)")] public decimal Weight10 { get; set; }
+    [Column(TypeName = "decimal(18,2)")] public decimal Weight10B { get; set; }
+    [Column(TypeName = "decimal(18,2)")] public decimal Weight12 { get; set; }
+    [Column(TypeName = "decimal(18,2)")] public decimal Weight14 { get; set; }
+    [Column(TypeName = "decimal(18,2)")] public decimal Weight16 { get; set; }
+    [Column(TypeName = "decimal(18,2)")] public decimal Weight18 { get; set; }
+    [Column(TypeName = "decimal(18,2)")] public decimal Weight20 { get; set; }
+    [Column(TypeName = "decimal(18,2)")] public decimal Weight22 { get; set; }
+    [Column(TypeName = "decimal(18,2)")] public decimal Weight24 { get; set; }
+    [Column(TypeName = "decimal(18,2)")] public decimal Weight26 { get; set; }
+    [Column(TypeName = "decimal(18,2)")] public decimal Weight28 { get; set; }
+    [Column(TypeName = "decimal(18,2)")] public decimal WeightBar { get; set; }
 }

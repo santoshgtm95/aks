@@ -116,7 +116,7 @@ public class ExportController : ControllerBase
         {
             try
             {
-                var dict = JsonSerializer.Deserialize<Dictionary<string, Dictionary<string, string>>>(dto.SizeSellingPrices);
+                var dict = JsonSerializer.Deserialize<Dictionary<string, Dictionary<string, JsonElement>>>(dto.SizeSellingPrices);
                 if (dict != null)
                 {
                     foreach (var kvp in dict)
@@ -128,22 +128,39 @@ public class ExportController : ControllerBase
                         {
                             ExportId = export.Id,
                             ColorName = colorName,
-                            Price6 = ParseDecimal(sizes, "6"),
-                            Price7 = ParseDecimal(sizes, "7"),
-                            Price8 = ParseDecimal(sizes, "8"),
-                            Price9 = ParseDecimal(sizes, "9"),
-                            Price10 = ParseDecimal(sizes, "10"),
-                            Price10B = ParseDecimal(sizes, "10B"),
-                            Price12 = ParseDecimal(sizes, "12"),
-                            Price14 = ParseDecimal(sizes, "14"),
-                            Price16 = ParseDecimal(sizes, "16"),
-                            Price18 = ParseDecimal(sizes, "18"),
-                            Price20 = ParseDecimal(sizes, "20"),
-                            Price22 = ParseDecimal(sizes, "22"),
-                            Price24 = ParseDecimal(sizes, "24"),
-                            Price26 = ParseDecimal(sizes, "26"),
-                            Price28 = ParseDecimal(sizes, "28"),
-                            PriceBar = ParseDecimal(sizes, "Bar")
+                            Price6 = ParseDecimalFromJson(sizes, "6", "price"),
+                            Price7 = ParseDecimalFromJson(sizes, "7", "price"),
+                            Price8 = ParseDecimalFromJson(sizes, "8", "price"),
+                            Price9 = ParseDecimalFromJson(sizes, "9", "price"),
+                            Price10 = ParseDecimalFromJson(sizes, "10", "price"),
+                            Price10B = ParseDecimalFromJson(sizes, "10B", "price"),
+                            Price12 = ParseDecimalFromJson(sizes, "12", "price"),
+                            Price14 = ParseDecimalFromJson(sizes, "14", "price"),
+                            Price16 = ParseDecimalFromJson(sizes, "16", "price"),
+                            Price18 = ParseDecimalFromJson(sizes, "18", "price"),
+                            Price20 = ParseDecimalFromJson(sizes, "20", "price"),
+                            Price22 = ParseDecimalFromJson(sizes, "22", "price"),
+                            Price24 = ParseDecimalFromJson(sizes, "24", "price"),
+                            Price26 = ParseDecimalFromJson(sizes, "26", "price"),
+                            Price28 = ParseDecimalFromJson(sizes, "28", "price"),
+                            PriceBar = ParseDecimalFromJson(sizes, "Bar", "price"),
+
+                            Weight6 = ParseDecimalFromJson(sizes, "6", "weight"),
+                            Weight7 = ParseDecimalFromJson(sizes, "7", "weight"),
+                            Weight8 = ParseDecimalFromJson(sizes, "8", "weight"),
+                            Weight9 = ParseDecimalFromJson(sizes, "9", "weight"),
+                            Weight10 = ParseDecimalFromJson(sizes, "10", "weight"),
+                            Weight10B = ParseDecimalFromJson(sizes, "10B", "weight"),
+                            Weight12 = ParseDecimalFromJson(sizes, "12", "weight"),
+                            Weight14 = ParseDecimalFromJson(sizes, "14", "weight"),
+                            Weight16 = ParseDecimalFromJson(sizes, "16", "weight"),
+                            Weight18 = ParseDecimalFromJson(sizes, "18", "weight"),
+                            Weight20 = ParseDecimalFromJson(sizes, "20", "weight"),
+                            Weight22 = ParseDecimalFromJson(sizes, "22", "weight"),
+                            Weight24 = ParseDecimalFromJson(sizes, "24", "weight"),
+                            Weight26 = ParseDecimalFromJson(sizes, "26", "weight"),
+                            Weight28 = ParseDecimalFromJson(sizes, "28", "weight"),
+                            WeightBar = ParseDecimalFromJson(sizes, "Bar", "weight")
                         };
                         _context.ExportColorPrices.Add(colorPrice);
                     }
@@ -182,11 +199,24 @@ public class ExportController : ControllerBase
         return Ok(resultDto);
     }
 
-    private decimal ParseDecimal(Dictionary<string, string> dict, string key)
+    private decimal ParseDecimalFromJson(Dictionary<string, JsonElement> sizes, string sizeKey, string propKey)
     {
-        if (dict != null && dict.TryGetValue(key, out var valStr) && decimal.TryParse(valStr, out var val))
+        if (sizes != null && sizes.TryGetValue(sizeKey, out var valElement))
         {
-            return val;
+            if (valElement.ValueKind == JsonValueKind.Object && valElement.TryGetProperty(propKey, out var prop))
+            {
+                if (prop.ValueKind == JsonValueKind.Number && prop.TryGetDecimal(out var dec))
+                    return dec;
+                if (prop.ValueKind == JsonValueKind.String && decimal.TryParse(prop.GetString(), out var strDec))
+                    return strDec;
+            }
+            else if (propKey == "price") // fallback for old format where it was just text
+            {
+                if (valElement.ValueKind == JsonValueKind.Number && valElement.TryGetDecimal(out var dec))
+                    return dec;
+                if (valElement.ValueKind == JsonValueKind.String && decimal.TryParse(valElement.GetString(), out var strDec))
+                    return strDec;
+            }
         }
         return 0;
     }
