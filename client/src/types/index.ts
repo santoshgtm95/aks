@@ -436,6 +436,13 @@ export interface SingleDoubleDrawnRecord {
   workerName?: string;
   note?: string;
   workerFees?: number;
+  messLabourWorkerNames?: string;
+  messLabourWorkerFees?: number;
+  purificationWorkerName?: string;
+  purificationWorkerFees?: number;
+  purifiedRecordId?: number;
+  refinementWorkerName?: string;
+  refinementWorkerFees?: number;
   processingLossWeight: number;
   processingRecordId?: number;
   price6: number;

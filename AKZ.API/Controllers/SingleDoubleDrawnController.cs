@@ -35,6 +35,14 @@ public class SingleDoubleDrawnController : ControllerBase
                     .ThenInclude(p => p.ProcessingRecord)
                         .ThenInclude(pr => pr.Product)
                             .ThenInclude(prod => prod.Warehouse)
+            .Include(r => r.RefinementRecord)
+                .ThenInclude(rr => rr.RefinementWorker)
+            .Include(r => r.RefinementRecord)
+                .ThenInclude(rr => rr.PurifiedRecord)
+                    .ThenInclude(p => p.Purifier)
+            .Include(r => r.RefinementRecord)
+                .ThenInclude(rr => rr.PurifiedRecord)
+                    .ThenInclude(p => p.PurificationProcess)
             .Include(r => r.Worker)
             .OrderByDescending(r => r.Date)
             .ToListAsync();
@@ -129,7 +137,15 @@ public class SingleDoubleDrawnController : ControllerBase
                 ReturnSize = r.ReturnSize,
                 PriceSpoilageSize = r.PriceSpoilageSize,
                 PriceReturnSize = r.PriceReturnSize,
-                WorkerFees = r.WorkerFees
+                WorkerFees = r.WorkerFees,
+
+                MessLabourWorkerNames = r.RefinementRecord?.PurifiedRecord?.ProcessingRecord?.WorkerNames ?? "",
+                MessLabourWorkerFees = r.RefinementRecord?.PurifiedRecord?.ProcessingRecord?.WorkerFees ?? 0M,
+                PurificationWorkerName = r.RefinementRecord?.PurifiedRecord?.Purifier?.Name ?? "",
+                PurificationWorkerFees = r.RefinementRecord?.PurifiedRecord?.PurificationProcess?.WorkerFees ?? 0M,
+                PurifiedRecordId = r.RefinementRecord?.PurifiedRecord?.Id,
+                RefinementWorkerName = r.RefinementRecord?.RefinementWorker?.Name ?? "",
+                RefinementWorkerFees = r.RefinementRecord?.WorkerFees ?? 0M
             });
         }
 
@@ -145,6 +161,11 @@ public class SingleDoubleDrawnController : ControllerBase
                 .ThenInclude(p => p.ProcessingRecord)
                     .ThenInclude(pr => pr.Product)
                         .ThenInclude(prod => prod.Warehouse)
+            .Include(rr => rr.RefinementWorker)
+            .Include(rr => rr.PurifiedRecord)
+                .ThenInclude(p => p.Purifier)
+            .Include(rr => rr.PurifiedRecord)
+                .ThenInclude(p => p.PurificationProcess)
             .FirstOrDefaultAsync(rr => rr.Id == dto.RefinementRecordId);
 
         if (refinementRecord == null)
@@ -308,7 +329,15 @@ public class SingleDoubleDrawnController : ControllerBase
             ReturnSize = record.ReturnSize,
             PriceSpoilageSize = record.PriceSpoilageSize,
             PriceReturnSize = record.PriceReturnSize,
-            WorkerFees = record.WorkerFees
+            WorkerFees = record.WorkerFees,
+
+            MessLabourWorkerNames = refinementRecord.PurifiedRecord?.ProcessingRecord?.WorkerNames ?? "",
+            MessLabourWorkerFees = refinementRecord.PurifiedRecord?.ProcessingRecord?.WorkerFees ?? 0M,
+            PurificationWorkerName = refinementRecord.PurifiedRecord?.Purifier?.Name ?? "",
+            PurificationWorkerFees = refinementRecord.PurifiedRecord?.PurificationProcess?.WorkerFees ?? 0M,
+            PurifiedRecordId = refinementRecord.PurifiedRecord?.Id,
+            RefinementWorkerName = refinementRecord.RefinementWorker?.Name ?? "",
+            RefinementWorkerFees = refinementRecord.WorkerFees
         };
 
         return Ok(resultDto);

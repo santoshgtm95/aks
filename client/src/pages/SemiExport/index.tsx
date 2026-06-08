@@ -210,6 +210,7 @@ const SemiExport: React.FC = () => {
 
       // Calculate initial marker worker fees and get common remark
       let totalFees = 0;
+      let hasSaved = false;
       let commonRemark = "";
 
       selectedRecords.forEach((record) => {
@@ -217,6 +218,7 @@ const SemiExport: React.FC = () => {
           (x) => x.singleDoubleDrawnRecordId === record.id,
         );
         if (saved) {
+          hasSaved = true;
           totalFees += saved.workerFees || 0;
           if (saved.remark && !commonRemark) {
             commonRemark = saved.remark;
@@ -224,6 +226,27 @@ const SemiExport: React.FC = () => {
         }
         newExpanded[record.id] = false;
       });
+
+      if (!hasSaved && selectedMarker !== "Imported") {
+        // Auto-sum if new marker
+        const pMap = new Map<number, number>();
+        const puMap = new Map<number, number>();
+        const rMap = new Map<number, number>();
+        let sdSum = 0;
+        selectedRecords.forEach((r) => {
+          if (r.processingRecordId && r.messLabourWorkerFees)
+            pMap.set(r.processingRecordId, r.messLabourWorkerFees);
+          if (r.purifiedRecordId && r.purificationWorkerFees)
+            puMap.set(r.purifiedRecordId, r.purificationWorkerFees);
+          if (r.refinementRecordId && r.refinementWorkerFees)
+            rMap.set(r.refinementRecordId, r.refinementWorkerFees);
+          if (r.workerFees) sdSum += r.workerFees;
+        });
+        const pSum = [...pMap.values()].reduce((a, b) => a + b, 0);
+        const puSum = [...puMap.values()].reduce((a, b) => a + b, 0);
+        const rSum = [...rMap.values()].reduce((a, b) => a + b, 0);
+        totalFees = pSum + puSum + rSum + sdSum;
+      }
 
       setMarkerWorkerFees(totalFees.toString());
       setMarkerRemark(commonRemark);
@@ -987,6 +1010,77 @@ const SemiExport: React.FC = () => {
     }
     return groupedHistory;
   }, [groupedHistory, selectedMarker]);
+
+  const markerWorkerFeesInfo = useMemo(() => {
+    let sum = 0;
+    const details: { label: string; name: string; amount: number }[] = [];
+    if (!selectedMarker || selectedMarker === "Imported")
+      return { sum, details };
+
+    const processingMap = new Map<number, { name: string; amount: number }>();
+    const purifiedMap = new Map<number, { name: string; amount: number }>();
+    const refinementMap = new Map<number, { name: string; amount: number }>();
+
+    selectedRecords.forEach((r) => {
+      // 1) Processing (Mess Labour)
+      if (r.processingRecordId && r.messLabourWorkerFees) {
+        processingMap.set(r.processingRecordId, {
+          name: r.messLabourWorkerNames || "N/A",
+          amount: r.messLabourWorkerFees,
+        });
+      }
+      // 2) Purification
+      if (r.purifiedRecordId && r.purificationWorkerFees) {
+        purifiedMap.set(r.purifiedRecordId, {
+          name: r.purificationWorkerName || "N/A",
+          amount: r.purificationWorkerFees,
+        });
+      }
+      // 3) Refinement
+      if (r.refinementRecordId && r.refinementWorkerFees) {
+        refinementMap.set(r.refinementRecordId, {
+          name: r.refinementWorkerName || "N/A",
+          amount: r.refinementWorkerFees,
+        });
+      }
+      // 4) SingleDoubleDrawn
+      if (r.workerFees) {
+        details.push({
+          label: `Sorting Size`,
+          name: r.workerName || "N/A",
+          amount: r.workerFees,
+        });
+        sum += r.workerFees;
+      }
+    });
+
+    for (const info of processingMap.values()) {
+      details.unshift({
+        label: `Mess-Labour`,
+        name: info.name,
+        amount: info.amount,
+      });
+      sum += info.amount;
+    }
+    for (const info of purifiedMap.values()) {
+      details.unshift({
+        label: `Purification`,
+        name: info.name,
+        amount: info.amount,
+      });
+      sum += info.amount;
+    }
+    for (const info of refinementMap.values()) {
+      details.unshift({
+        label: `Refinement`,
+        name: info.name,
+        amount: info.amount,
+      });
+      sum += info.amount;
+    }
+
+    return { sum, details };
+  }, [selectedRecords, selectedMarker]);
 
   const markerTotalAmount = useMemo(() => {
     const sumRecords = Object.values(recordAmounts).reduce(
@@ -1834,7 +1928,7 @@ const SemiExport: React.FC = () => {
                     color: "#334155",
                   }}
                 >
-                  WORKER FEES (SUM):
+                  WORKER FEES (SUM) - MANUAL OVERRIDE:
                 </span>
               </div>
               <input
@@ -1855,6 +1949,75 @@ const SemiExport: React.FC = () => {
                 }}
               />
             </div>
+            {selectedMarker !== "Imported" &&
+              markerWorkerFeesInfo.details.length > 0 && (
+                <div
+                  style={{
+                    marginTop: "-8px",
+                    padding: "16px",
+                    backgroundColor: "#fff",
+                    borderRadius: "8px",
+                    border: "1px dashed #cbd5e1",
+                  }}
+                >
+                  <h4
+                    style={{
+                      fontSize: "14px",
+                      fontWeight: "600",
+                      marginBottom: "12px",
+                      color: "#334155",
+                    }}
+                  >
+                    Worker Fees Breakdown
+                  </h4>
+                  <div
+                    style={{
+                      display: "flex",
+                      flexDirection: "column",
+                      gap: "8px",
+                    }}
+                  >
+                    {markerWorkerFeesInfo.details.map((fi, i) => (
+                      <div
+                        key={i}
+                        style={{
+                          display: "flex",
+                          justifyContent: "space-between",
+                          fontSize: "13px",
+                          color: "#475569",
+                        }}
+                      >
+                        <span>
+                          <span style={{ fontWeight: "600", color: "#0f172a" }}>
+                            {fi.label}
+                          </span>{" "}
+                          ({fi.name}):
+                        </span>
+                        <span style={{ fontWeight: "600" }}>
+                          {fi.amount.toLocaleString()}
+                        </span>
+                      </div>
+                    ))}
+                    <div
+                      style={{
+                        marginTop: "8px",
+                        paddingTop: "8px",
+                        borderTop: "1px solid #cbd5e1",
+                        display: "flex",
+                        justifyContent: "space-between",
+                        fontSize: "14px",
+                        fontWeight: "700",
+                        color: "#0f172a",
+                      }}
+                    >
+                      <span>Total Calculated Worker Fees:</span>
+                      <span style={{ color: "#2563eb" }}>
+                        {markerWorkerFeesInfo.sum.toLocaleString()}
+                      </span>
+                    </div>
+                  </div>
+                </div>
+              )}
 
             <div style={{ display: "flex", flexDirection: "column" }}>
               <label

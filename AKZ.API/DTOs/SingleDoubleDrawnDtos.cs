@@ -70,6 +70,14 @@ public class SingleDoubleDrawnRecordDto
     public decimal PriceSpoilageSize { get; set; }
     public decimal PriceReturnSize { get; set; }
     public decimal WorkerFees { get; set; }
+
+    public string MessLabourWorkerNames { get; set; } = string.Empty;
+    public decimal MessLabourWorkerFees { get; set; }
+    public string PurificationWorkerName { get; set; } = string.Empty;
+    public decimal PurificationWorkerFees { get; set; }
+    public int? PurifiedRecordId { get; set; }
+    public string RefinementWorkerName { get; set; } = string.Empty;
+    public decimal RefinementWorkerFees { get; set; }
 }
 
 public class CreateSingleDoubleDrawnRecordDto
