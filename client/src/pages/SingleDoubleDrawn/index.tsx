@@ -1854,7 +1854,7 @@ const SingleDoubleDrawn: React.FC = () => {
                             (r) => r.refinementRecordId === selectedRecordId,
                           ).length === 0 ? (
                             <tr>
-                              <td colSpan={11} className="rf-empty-row">
+                              <td colSpan={12} className="rf-empty-row">
                                 <Package size={44} className="rf-empty-icon" />
                                 <span>
                                   No sorting history recorded for this stock
@@ -2041,7 +2041,7 @@ const SingleDoubleDrawn: React.FC = () => {
                         <tbody>
                           {savedRecords.length === 0 ? (
                             <tr>
-                              <td colSpan={12} className="rf-empty-row">
+                              <td colSpan={13} className="rf-empty-row">
                                 <Package size={44} className="rf-empty-icon" />
                                 <span>No sorting history recorded.</span>
                               </td>
@@ -2132,6 +2132,20 @@ const SingleDoubleDrawn: React.FC = () => {
                                   >
                                     {record.note || "---"}
                                   </div>
+                                </td>
+                                <td
+                                  style={{
+                                    color: "#0f172a",
+                                    fontWeight: "600",
+                                  }}
+                                >
+                                  {record.workerFees?.toLocaleString(
+                                    undefined,
+                                    {
+                                      minimumFractionDigits: 2,
+                                      maximumFractionDigits: 2,
+                                    },
+                                  ) || "0.00"}
                                 </td>
                                 <td className="rf-td-weight rf-green rf-th-right">
                                   {calculateRecordTotalAmount(

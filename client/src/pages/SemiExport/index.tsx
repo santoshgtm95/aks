@@ -75,6 +75,7 @@ const SemiExport: React.FC = () => {
     "processing",
   );
   const [showHistoryModal, setShowHistoryModal] = useState(false);
+  const [showWorkerFeesBreakdown, setShowWorkerFeesBreakdown] = useState(false);
   const [prevSelectedMarker, setPrevSelectedMarker] = useState<string | null>(
     null,
   );
@@ -1046,7 +1047,7 @@ const SemiExport: React.FC = () => {
       // 4) SingleDoubleDrawn
       if (r.workerFees) {
         details.push({
-          label: `Sorting Size`,
+          label: `Single & Double Drawn Sorting`,
           name: r.workerName || "N/A",
           amount: r.workerFees,
         });
@@ -1960,62 +1961,90 @@ const SemiExport: React.FC = () => {
                     border: "1px dashed #cbd5e1",
                   }}
                 >
-                  <h4
-                    style={{
-                      fontSize: "14px",
-                      fontWeight: "600",
-                      marginBottom: "12px",
-                      color: "#334155",
-                    }}
-                  >
-                    Worker Fees Breakdown
-                  </h4>
-                  <div
+                  <button
+                    type="button"
+                    onClick={() =>
+                      setShowWorkerFeesBreakdown(!showWorkerFeesBreakdown)
+                    }
                     style={{
                       display: "flex",
-                      flexDirection: "column",
-                      gap: "8px",
+                      alignItems: "center",
+                      justifyContent: "space-between",
+                      width: "100%",
+                      background: "none",
+                      border: "none",
+                      padding: "0",
+                      cursor: "pointer",
                     }}
                   >
-                    {markerWorkerFeesInfo.details.map((fi, i) => (
-                      <div
-                        key={i}
-                        style={{
-                          display: "flex",
-                          justifyContent: "space-between",
-                          fontSize: "13px",
-                          color: "#475569",
-                        }}
-                      >
-                        <span>
-                          <span style={{ fontWeight: "600", color: "#0f172a" }}>
-                            {fi.label}
-                          </span>{" "}
-                          ({fi.name}):
-                        </span>
-                        <span style={{ fontWeight: "600" }}>
-                          {fi.amount.toLocaleString()}
-                        </span>
-                      </div>
-                    ))}
-                    <div
+                    <h4
                       style={{
-                        marginTop: "8px",
-                        paddingTop: "8px",
-                        borderTop: "1px solid #cbd5e1",
-                        display: "flex",
-                        justifyContent: "space-between",
                         fontSize: "14px",
-                        fontWeight: "700",
-                        color: "#0f172a",
+                        fontWeight: "600",
+                        margin: 0,
+                        color: "#334155",
                       }}
                     >
-                      <span>Total Calculated Worker Fees:</span>
-                      <span style={{ color: "#2563eb" }}>
-                        {markerWorkerFeesInfo.sum.toLocaleString()}
-                      </span>
+                      Worker Fees Breakdown
+                    </h4>
+                    {showWorkerFeesBreakdown ? (
+                      <ChevronUp size={16} color="#64748b" />
+                    ) : (
+                      <ChevronDown size={16} color="#64748b" />
+                    )}
+                  </button>
+
+                  {showWorkerFeesBreakdown && (
+                    <div
+                      style={{
+                        display: "flex",
+                        flexDirection: "column",
+                        gap: "8px",
+                        marginTop: "12px",
+                      }}
+                    >
+                      {markerWorkerFeesInfo.details.map((fi, i) => (
+                        <div
+                          key={i}
+                          style={{
+                            display: "flex",
+                            justifyContent: "space-between",
+                            fontSize: "13px",
+                            color: "#475569",
+                          }}
+                        >
+                          <span>
+                            <span
+                              style={{ fontWeight: "600", color: "#0f172a" }}
+                            >
+                              {fi.label}
+                            </span>{" "}
+                            ({fi.name}):
+                          </span>
+                          <span style={{ fontWeight: "600" }}>
+                            {fi.amount.toLocaleString()}
+                          </span>
+                        </div>
+                      ))}
+                      <div
+                        style={{
+                          marginTop: "8px",
+                          paddingTop: "8px",
+                          borderTop: "1px solid #cbd5e1",
+                          display: "flex",
+                          justifyContent: "space-between",
+                          fontSize: "14px",
+                          fontWeight: "700",
+                          color: "#0f172a",
+                        }}
+                      >
+                        <span>Total Calculated Worker Fees:</span>
+                        <span style={{ color: "#2563eb" }}>
+                          {markerWorkerFeesInfo.sum.toLocaleString()}
+                        </span>
+                      </div>
                     </div>
-                  </div>
+                  )}
                 </div>
               )}
 
@@ -2542,7 +2571,7 @@ const SemiExport: React.FC = () => {
                       <strong style={{ color: "#2563eb" }}>
                         {rowAmounts.totalAmount.toLocaleString()}
                       </strong>{" "}
-                      MMK
+                      CNY
                     </span>
                   </div>
                   <div
