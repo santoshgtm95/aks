@@ -26,6 +26,7 @@ import SingleDoubleDrawn from "./pages/SingleDoubleDrawn/index";
 import SemiExport from "./pages/SemiExport/index";
 import Sales6 from "./pages/Sales6/index";
 import ExchangeRates from "./pages/ExchangeRates/index";
+import CashFlow from "./pages/CashFlow/index";
 
 const ProtectedRoute: React.FC<{
   children: React.ReactNode;
@@ -166,6 +167,14 @@ const App: React.FC = () => {
                 element={
                   <ProtectedRoute permission="Sales6.View">
                     <Sales6 />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="cash-flow"
+                element={
+                  <ProtectedRoute permission="Staff.View">
+                    <CashFlow />
                   </ProtectedRoute>
                 }
               />

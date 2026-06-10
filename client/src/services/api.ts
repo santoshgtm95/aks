@@ -550,3 +550,17 @@ export const importedSemiExportAPI = {
 };
 
 export default api;
+export const cashFlowAPI = {
+  getAll: async (): Promise<any[]> => {
+    const response = await api.get<any[]>("/cashFlow");
+    return response.data;
+  },
+  makePayment: async (data: {
+    workerName: string;
+    amount: number;
+    note?: string;
+  }): Promise<any> => {
+    const response = await api.post<any>("/cashFlow/pay", data);
+    return response.data;
+  },
+};

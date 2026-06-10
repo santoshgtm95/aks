@@ -190,6 +190,17 @@ const Layout: React.FC = () => {
 
           {(hasPermission("Staff.View") || hasPermission("Staff.Create")) && (
             <Link
+              to="/cash-flow"
+              className={`nav-item ${isActive("/cash-flow") ? "active" : ""}`}
+              onClick={closeMobileMenu}
+            >
+              <DollarSign className="nav-icon" size={24} />
+              Cash Flow
+            </Link>
+          )}
+
+          {(hasPermission("Staff.View") || hasPermission("Staff.Create")) && (
+            <Link
               to="/staff"
               className={`nav-item ${isActive("/staff") ? "active" : ""}`}
               onClick={closeMobileMenu}
