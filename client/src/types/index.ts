@@ -255,6 +255,13 @@ export interface PurificationProcess {
   placeName?: string;
   isWeightFull: boolean;
   workerFees?: number;
+  workers?: {
+    id: number;
+    purifierId: number;
+    purifierName: string;
+    count: number;
+    workerFees: number;
+  }[];
 }
 
 export interface PurifiedRecord {
@@ -270,6 +277,13 @@ export interface PurifiedRecord {
   placeName?: string;
   isWeightFull: boolean;
   workerFees?: number;
+  workers?: {
+    id: number;
+    purifierId: number;
+    purifierName: string;
+    count: number;
+    workerFees: number;
+  }[];
 }
 
 export interface CreatePurificationProcessDto {
@@ -281,6 +295,7 @@ export interface CreatePurificationProcessDto {
   purifierId?: number;
   isWeightFull: boolean;
   workerFees?: number;
+  workers?: { purifierId: number; count: number; workerFees: number }[];
 }
 
 export interface AvailableCategory {

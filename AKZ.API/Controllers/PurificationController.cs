@@ -109,6 +109,8 @@ public class PurificationController : ControllerBase
                     .ThenInclude(pr => pr.Warehouse)
             .Include(p => p.Place)
             .Include(p => p.PurifiedRecords)
+                .ThenInclude(pr => pr.PurificationWorkers)
+                    .ThenInclude(pw => pw.Purifier)
             .Where(p => p.DeleteFlg == 0)
             .Where(p => warehouseId == null || p.ProcessingRecord.Product.WarehouseId == warehouseId)
             .OrderByDescending(p => p.Date)
@@ -146,7 +148,19 @@ public class PurificationController : ControllerBase
                 PlaceId = p.PlaceId,
                 PlaceName = p.Place != null ? p.Place.Name : "",
                 IsWeightFull = p.IsWeightFull,
-                WorkerFees = p.WorkerFees
+                WorkerFees = p.WorkerFees,
+                Workers = p.PurifiedRecords
+                    .Where(pr => pr.DeleteFlg == 0)
+                    .SelectMany(pr => pr.PurificationWorkers)
+                    .Where(pw => pw.DeleteFlg == 0)
+                    .Select(pw => new PurificationWorkerDto
+                    {
+                        Id = pw.Id,
+                        PurifierId = pw.PurifierId,
+                        PurifierName = pw.Purifier?.Name ?? "",
+                        Count = pw.Count,
+                        WorkerFees = pw.WorkerFees
+                    }).ToList()
             });
         }
 
@@ -164,7 +178,8 @@ public class PurificationController : ControllerBase
                 .ThenInclude(r => r.Product)
                     .ThenInclude(pr => pr.Warehouse)
             .Include(p => p.Place)
-            .Include(p => p.Purifier)
+            .Include(p => p.PurificationWorkers)
+                .ThenInclude(pw => pw.Purifier)
             .Where(p => p.DeleteFlg == 0)
             .Where(p => warehouseId == null || p.ProcessingRecord.Product.WarehouseId == warehouseId)
             .OrderByDescending(p => p.Date)
@@ -194,10 +209,16 @@ public class PurificationController : ControllerBase
                 WarehouseName = warehouseName,
                 PlaceId = p.PlaceId,
                 PlaceName = p.Place != null ? p.Place.Name : "",
-                PurifierId = p.PurifierId,
-                PurifierName = p.Purifier != null ? p.Purifier.Name : "",
                 IsWeightFull = p.IsWeightFull,
-                WorkerFees = p.PurificationProcess != null ? p.PurificationProcess.WorkerFees : 0
+                WorkerFees = p.PurificationProcess != null ? p.PurificationProcess.WorkerFees : 0,
+                Workers = p.PurificationWorkers.Where(pw => pw.DeleteFlg == 0).Select(pw => new PurificationWorkerDto
+                {
+                    Id = pw.Id,
+                    PurifierId = pw.PurifierId,
+                    PurifierName = pw.Purifier?.Name ?? "",
+                    Count = pw.Count,
+                    WorkerFees = pw.WorkerFees
+                }).ToList()
             });
         }
 
@@ -285,6 +306,7 @@ public class PurificationController : ControllerBase
 
         // Check if a record already exists for this specific process
         var purifiedRecord = await _context.PurifiedRecords
+            .Include(p => p.PurificationWorkers)
             .FirstOrDefaultAsync(p => p.PurificationProcessId == id);
 
         decimal unitWeight = process.ProcessingRecord.UnitWeight;
@@ -303,10 +325,24 @@ public class PurificationController : ControllerBase
                 RemainingCount = dto.PurifyCount,
                 RemainingWeight = newWeight,
                 PlaceId = dto.PlaceId,
-                PurifierId = dto.PurifierId,
                 IsWeightFull = dto.IsWeightFull,
                 PurificationProcessId = id
             };
+            
+            if (dto.Workers != null && dto.Workers.Any())
+            {
+                foreach (var worker in dto.Workers)
+                {
+                    purifiedRecord.PurificationWorkers.Add(new PurificationWorker
+                    {
+                        PlaceId = dto.PlaceId ?? 0,
+                        PurifierId = worker.PurifierId,
+                        Count = worker.Count,
+                        WorkerFees = worker.WorkerFees
+                    });
+                }
+            }
+
             _context.PurifiedRecords.Add(purifiedRecord);
         }
         else
@@ -319,8 +355,24 @@ public class PurificationController : ControllerBase
             purifiedRecord.RemainingCount = dto.PurifyCount;
             purifiedRecord.RemainingWeight = newWeight;
             purifiedRecord.PlaceId = dto.PlaceId;
-            purifiedRecord.PurifierId = dto.PurifierId;
             purifiedRecord.IsWeightFull = dto.IsWeightFull;
+            
+            // Delete all and Re-add workers
+            _context.PurificationWorkers.RemoveRange(purifiedRecord.PurificationWorkers);
+
+            if (dto.Workers != null && dto.Workers.Any())
+            {
+                foreach (var worker in dto.Workers)
+                {
+                    purifiedRecord.PurificationWorkers.Add(new PurificationWorker
+                    {
+                        PlaceId = dto.PlaceId ?? 0,
+                        PurifierId = worker.PurifierId,
+                        Count = worker.Count,
+                        WorkerFees = worker.WorkerFees
+                    });
+                }
+            }
         }
 
         // We update the 'process' (PurificationProcess) with WorkerFees
@@ -363,6 +415,7 @@ public class PurificationController : ControllerBase
     {
         var record = await _context.PurifiedRecords
             .Include(p => p.ProcessingRecord)
+            .Include(p => p.PurificationWorkers)
             .FirstOrDefaultAsync(p => p.Id == id);
 
         if (record == null) return NotFound();
@@ -396,8 +449,23 @@ public class PurificationController : ControllerBase
         record.RemainingCount = dto.PurifyCount;
         record.RemainingWeight = newWeight;
         record.PlaceId = dto.PlaceId;
-        record.PurifierId = dto.PurifierId;
         record.IsWeightFull = dto.IsWeightFull;
+
+        _context.PurificationWorkers.RemoveRange(record.PurificationWorkers);
+
+        if (dto.Workers != null && dto.Workers.Any())
+        {
+            foreach (var worker in dto.Workers)
+            {
+                record.PurificationWorkers.Add(new PurificationWorker
+                {
+                    PlaceId = dto.PlaceId ?? 0,
+                    PurifierId = worker.PurifierId,
+                    Count = worker.Count,
+                    WorkerFees = worker.WorkerFees
+                });
+            }
+        }
 
         if (process != null)
         {

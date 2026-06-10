@@ -46,4 +46,6 @@ public class PurifiedRecord : BaseEntity
 
     [Column(TypeName = "decimal(18,4)")]
     public decimal RemainingWeight { get; set; }
+
+    public ICollection<PurificationWorker> PurificationWorkers { get; set; } = new List<PurificationWorker>();
 }

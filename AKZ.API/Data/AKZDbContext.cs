@@ -27,6 +27,7 @@ public class AKZDbContext : DbContext
     public DbSet<Purifier> Purifiers { get; set; }
     public DbSet<Place> Places { get; set; }
     public DbSet<PurifiedRecord> PurifiedRecords { get; set; }
+    public DbSet<PurificationWorker> PurificationWorkers { get; set; }
     public DbSet<RefinementProcess> RefinementProcesses { get; set; }
     public DbSet<RefinementRecord> RefinementRecords { get; set; }
     public DbSet<RefinementWorker> RefinementWorkers { get; set; }

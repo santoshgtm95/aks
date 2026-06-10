@@ -56,13 +56,22 @@ const Purification: React.FC = () => {
   const [editingRecord, setEditingRecord] = useState<PurifiedRecord | null>(
     null,
   );
-  const [purifyForm, setPurifyForm] = useState({
+  const [purifyForm, setPurifyForm] = useState<{
+    count: string;
+    placeId: number;
+    purifierId: number;
+    isWeightFull: boolean;
+    date: string;
+    workerFees: string;
+    workers: { purifierId: number; count: number; workerFees: number }[];
+  }>({
     count: "",
     placeId: 0,
     purifierId: 0,
     isWeightFull: true,
     date: getMyanmarNow(),
     workerFees: "",
+    workers: [],
   });
 
   useEffect(() => {
@@ -193,6 +202,13 @@ const Purification: React.FC = () => {
       purifierId: 0,
       isWeightFull: p.isWeightFull,
       workerFees: p.workerFees !== undefined ? p.workerFees.toString() : "",
+      workers: p.workers
+        ? p.workers.map((w) => ({
+            purifierId: w.purifierId,
+            count: w.count,
+            workerFees: w.workerFees,
+          }))
+        : [],
     });
     setShowPurifyModal(true);
   };
@@ -247,9 +263,9 @@ const Purification: React.FC = () => {
           category: editingProcess.category,
           purifyCount: count,
           placeId: editingProcess.placeId,
-          purifierId: purifyForm.purifierId || undefined,
           isWeightFull: purifyForm.isWeightFull,
           workerFees: Number(purifyForm.workerFees) || 0,
+          workers: purifyForm.workers,
         });
       } else if (editingRecord) {
         await purificationAPI.updatePurifiedRecord(editingRecord.id, {
@@ -258,9 +274,9 @@ const Purification: React.FC = () => {
           category: editingRecord.category,
           purifyCount: count,
           placeId: editingRecord.placeId,
-          purifierId: purifyForm.purifierId || undefined,
           isWeightFull: purifyForm.isWeightFull,
           workerFees: Number(purifyForm.workerFees) || 0,
+          workers: purifyForm.workers,
         });
       } else if (selectedCategory) {
         await purificationAPI.create({
@@ -271,6 +287,7 @@ const Purification: React.FC = () => {
           placeId: purifyForm.placeId,
           isWeightFull: purifyForm.isWeightFull,
           workerFees: Number(purifyForm.workerFees) || 0,
+          workers: purifyForm.workers,
         });
       }
       setShowPurifyModal(false);
@@ -947,21 +964,39 @@ const Purification: React.FC = () => {
                   </div>
                 )}
 
-                {/* Purifier (Only when editing) */}
+                {/* Purifier Workers (Only when editing) */}
                 {(editingProcess || editingRecord) && (
-                  <div className="pm-form-group">
-                    <label className="pm-form-label">Purifier Worker</label>
+                  <div
+                    className="pm-form-group"
+                    style={{
+                      display: "flex",
+                      flexDirection: "column",
+                      gap: "10px",
+                    }}
+                  >
+                    <label className="pm-form-label">Purifier Workers</label>
                     <select
                       className="pm-form-control"
-                      value={purifyForm.purifierId || ""}
-                      onChange={(e) =>
+                      value=""
+                      onChange={(e) => {
+                        const newId = parseInt(e.target.value);
+                        if (!newId || isNaN(newId)) return;
+
+                        if (
+                          purifyForm.workers.some((w) => w.purifierId === newId)
+                        )
+                          return;
+
                         setPurifyForm((prev) => ({
                           ...prev,
-                          purifierId: parseInt(e.target.value),
-                        }))
-                      }
+                          workers: [
+                            ...prev.workers,
+                            { purifierId: newId, count: 0, workerFees: 0 },
+                          ],
+                        }));
+                      }}
                     >
-                      <option value="">-- Select purifier worker --</option>
+                      <option value="">-- Add a purifier worker --</option>
                       {purifiers
                         .filter(
                           (p) =>
@@ -974,6 +1009,105 @@ const Purification: React.FC = () => {
                           </option>
                         ))}
                     </select>
+
+                    <div
+                      style={{
+                        marginTop: "10px",
+                        display: "flex",
+                        flexDirection: "column",
+                        gap: "12px",
+                      }}
+                    >
+                      {purifyForm.workers.map((worker, index) => {
+                        const purifierName =
+                          purifiers.find((p) => p.id === worker.purifierId)
+                            ?.name || "Unknown";
+                        return (
+                          <div
+                            key={worker.purifierId}
+                            style={{
+                              display: "flex",
+                              gap: "10px",
+                              alignItems: "center",
+                              background: "#f8fafc",
+                              padding: "10px",
+                              borderRadius: "8px",
+                              border: "1px solid #e2e8f0",
+                            }}
+                          >
+                            <div
+                              style={{
+                                flex: 1,
+                                fontWeight: 500,
+                                fontSize: "14px",
+                                color: "#334155",
+                              }}
+                            >
+                              {purifierName}
+                            </div>
+                            <input
+                              type="number"
+                              placeholder="Bundle count"
+                              required
+                              min="0"
+                              step="any"
+                              className="pm-form-control"
+                              style={{ width: "120px", margin: 0 }}
+                              value={worker.count === 0 ? "" : worker.count}
+                              onChange={(e) => {
+                                const newWorkers = [...purifyForm.workers];
+                                newWorkers[index].count =
+                                  parseFloat(e.target.value) || 0;
+                                setPurifyForm((prev) => ({
+                                  ...prev,
+                                  workers: newWorkers,
+                                }));
+                              }}
+                            />
+                            <input
+                              type="number"
+                              placeholder="Fees (MMK)"
+                              min="0"
+                              step="any"
+                              className="pm-form-control"
+                              style={{ width: "140px", margin: 0 }}
+                              value={
+                                worker.workerFees === 0 ? "" : worker.workerFees
+                              }
+                              onChange={(e) => {
+                                const newWorkers = [...purifyForm.workers];
+                                newWorkers[index].workerFees =
+                                  parseFloat(e.target.value) || 0;
+                                setPurifyForm((prev) => ({
+                                  ...prev,
+                                  workers: newWorkers,
+                                }));
+                              }}
+                            />
+                            <button
+                              type="button"
+                              onClick={() => {
+                                setPurifyForm((prev) => ({
+                                  ...prev,
+                                  workers: prev.workers.filter(
+                                    (w) => w.purifierId !== worker.purifierId,
+                                  ),
+                                }));
+                              }}
+                              style={{
+                                background: "none",
+                                border: "none",
+                                color: "#ef4444",
+                                cursor: "pointer",
+                                padding: "4px",
+                              }}
+                            >
+                              <Trash2 size={16} />
+                            </button>
+                          </div>
+                        );
+                      })}
+                    </div>
                   </div>
                 )}
 
@@ -1059,25 +1193,6 @@ const Purification: React.FC = () => {
                       }))
                     }
                     required
-                  />
-                </div>
-
-                {/* Worker Fees */}
-                <div className="pm-form-group">
-                  <label className="pm-form-label">Worker Fees (MMK)</label>
-                  <input
-                    type="number"
-                    min="0"
-                    step="0.01"
-                    className="pm-form-control"
-                    value={purifyForm.workerFees}
-                    onChange={(e) =>
-                      setPurifyForm((prev) => ({
-                        ...prev,
-                        workerFees: e.target.value,
-                      }))
-                    }
-                    placeholder="Enter worker fees amount..."
                   />
                 </div>
 
