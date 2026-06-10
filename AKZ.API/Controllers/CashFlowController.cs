@@ -54,20 +54,38 @@ public class CashFlowController : ControllerBase
         };
 
         // 1. Mess-Labour
-        var processingRecords = await _context.ProcessingRecords.ToListAsync();
+        var processingRecords = await _context.ProcessingRecords
+            .Include(r => r.Workers)
+                .ThenInclude(w => w.MessLabourWorker)
+            .ToListAsync();
+        
         foreach (var record in processingRecords)
         {
-            if (string.IsNullOrWhiteSpace(record.WorkerNames)) continue;
-            
-            var names = record.WorkerNames.Split(',').Select(n => n.Trim()).Where(n => !string.IsNullOrEmpty(n)).ToList();
-            if (names.Count == 0) continue;
-
-            // Assuming we divide fee among workers equally when it's a team
-            var feePerWorker = record.WorkerFees / names.Count; 
-            foreach (var name in names)
+            if (record.Workers != null && record.Workers.Count > 0)
             {
-                var cf = EnsureWorker(name);
-                cf.MessLabourFees += feePerWorker;
+                foreach (var worker in record.Workers)
+                {
+                    if (worker.MessLabourWorker != null)
+                    {
+                        var cf = EnsureWorker(worker.MessLabourWorker.Name);
+                        cf.MessLabourFees += worker.WorkerFee;
+                    }
+                }
+            }
+            else
+            {
+                // Fallback for legacy string-based workers if they exist and haven't been migrated
+                if (string.IsNullOrWhiteSpace(record.WorkerNames)) continue;
+                
+                var names = record.WorkerNames.Split(',').Select(n => n.Trim()).Where(n => !string.IsNullOrEmpty(n)).ToList();
+                if (names.Count == 0 || record.WorkerFees == 0) continue;
+
+                var feePerWorker = record.WorkerFees / names.Count; 
+                foreach (var name in names)
+                {
+                    var cf = EnsureWorker(name);
+                    cf.MessLabourFees += feePerWorker;
+                }
             }
         }
 
