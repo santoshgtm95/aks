@@ -19,7 +19,7 @@ import {
   X,
   Save,
   Search,
-  DollarSign,
+  AlertCircle,
 } from "lucide-react";
 import { combineDateWithMyanmarTime, formatDateTime } from "../../utils/format";
 import { useNotification } from "../../context/NotificationContext";
@@ -1166,21 +1166,32 @@ const MessLabour: React.FC = () => {
                           {totals.shortWeight.toFixed(3)} viss
                         </span>
                       </div>
-                      <div className="category-input-box box-lost">
-                        <span className="box-label label-lost">lost</span>
+                    </div>
+                  </section>
+
+                  {/* Lost Weight Section */}
+                  <section className="form-section">
+                    <h3 className="section-label">Lost Weight</h3>
+                    <div className="lost-weight-container">
+                      <div className="lost-weight-icon-wrapper">
+                        <AlertCircle size={20} className="lost-icon" />
+                      </div>
+                      <div className="lost-weight-content">
+                        <label>Lost (viss)</label>
+                        <p className="lost-weight-msg">
+                          This is the box to input lost weight. Input Lost
+                          Weight in Viss only. Do not input the bundles count
+                        </p>
                         <input
                           type="number"
                           name="lossWeight"
                           step="0.0001"
                           min="0"
-                          className="box-input"
+                          className="rw-form-control lost-weight-input"
                           value={formData.lossWeight || ""}
                           onChange={handleInputChange}
-                          placeholder="0"
+                          placeholder="0.0000"
                         />
-                        <span className="box-weight-hint hint-lost">
-                          {(Number(formData.lossWeight) || 0).toFixed(3)} viss
-                        </span>
                       </div>
                     </div>
                   </section>
@@ -1207,7 +1218,7 @@ const MessLabour: React.FC = () => {
                         <span>=</span>
                       </div>
                       <div className="calc-right">
-                        {totals.remainingWeight.toFixed(3)}
+                        {totals.remainingWeight.toFixed(3)} viss
                       </div>
                     </div>
                     {(selectedProduct?.unit?.toLowerCase() === "kg" ||
@@ -1249,37 +1260,25 @@ const MessLabour: React.FC = () => {
 
                   {/* 4. Worker Fees */}
                   <section className="form-section">
-                    <h3 className="section-label">4. Worker Fees</h3>
-                    <div className="count-unit-cards">
-                      <div
-                        className="cu-card cu-card-fees"
-                        style={{ width: "100%", maxWidth: "400px" }}
-                      >
-                        <div className="cu-card-icon">
-                          <DollarSign size={22} />
-                        </div>
-                        <div className="cu-card-body">
-                          <label className="cu-label">Total Fee Amount</label>
-                          <div className="cu-value-wrapper">
-                            <input
-                              type="number"
-                              min="0"
-                              step="0.01"
-                              value={formData.workerFees}
-                              onChange={(e) =>
-                                setFormData({
-                                  ...formData,
-                                  workerFees: e.target.value,
-                                })
-                              }
-                              placeholder="Enter amount..."
-                              className="cu-input"
-                              style={{ width: "100%" }}
-                            />
-                            <span className="cu-unit">MMK</span>
-                          </div>
-                        </div>
-                      </div>
+                    <h3 className="section-label">
+                      4. Worker Fees (for each worker)
+                    </h3>
+                    <div style={{ maxWidth: "400px" }}>
+                      <input
+                        type="number"
+                        min="0"
+                        step="0.01"
+                        className="rw-form-control"
+                        value={formData.workerFees}
+                        onChange={(e) =>
+                          setFormData({
+                            ...formData,
+                            workerFees: e.target.value,
+                          })
+                        }
+                        placeholder="Enter fee amount (MMK)..."
+                        style={{ padding: "0.75rem 1rem", fontSize: "1.1rem" }}
+                      />
                     </div>
                   </section>
 
@@ -1743,15 +1742,33 @@ const MessLabour: React.FC = () => {
                       </span>
                     </div>
                   ))}
-                  {/* Lost weight — direct viss input, not count-based */}
-                  <div className="em-cat-card em-cat-lost">
-                    <span className="em-cat-label">Lost</span>
+                </div>
+              </div>
+
+              {/* Edit Lost Weight Section */}
+              <div className="em-section">
+                <p className="em-section-title">
+                  <AlertCircle size={15} /> Lost Weight
+                </p>
+                <div
+                  className="lost-weight-container"
+                  style={{ maxWidth: "100%" }}
+                >
+                  <div className="lost-weight-icon-wrapper">
+                    <AlertCircle size={20} className="lost-icon" />
+                  </div>
+                  <div className="lost-weight-content">
+                    <label>Lost (viss)</label>
+                    <p className="lost-weight-msg">
+                      This is the box to input lost weight. Input Lost Weight in
+                      Viss only. Do not input the bundles count
+                    </p>
                     <input
                       type="number"
                       name="lossWeight"
                       step="0.0001"
                       min="0"
-                      className="em-cat-input"
+                      className="rw-form-control lost-weight-input"
                       value={editFormData.lossWeight || ""}
                       onChange={(e) =>
                         setEditFormData((prev) => ({
@@ -1759,11 +1776,8 @@ const MessLabour: React.FC = () => {
                           lossWeight: Number(e.target.value) || 0,
                         }))
                       }
-                      placeholder="0"
+                      placeholder="0.0000"
                     />
-                    <span className="em-cat-weight">
-                      {Number(editFormData.lossWeight || 0).toFixed(3)} v
-                    </span>
                   </div>
                 </div>
               </div>
