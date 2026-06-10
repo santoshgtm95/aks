@@ -1172,9 +1172,9 @@ const SemiExport: React.FC = () => {
         <tr>
           <td style="text-align: center; border: 1px solid black; padding: 4px;">${idx++}</td>
           <td style="text-align: center; border: 1px solid black; padding: 4px;">${displaySize}</td>
-          <td style="text-align: right; border: 1px solid black; padding: 4px;">${w > 0 ? w.toFixed(3) + " viss" : ""}</td>
-          <td style="text-align: right; border: 1px solid black; padding: 4px;">${p > 0 ? p.toFixed(2) : ""}</td>
-          <td style="text-align: right; border: 1px solid black; padding: 4px;">${amt > 0 ? amt.toFixed(4) : ""}</td>
+          <td style="text-align: right; border: 1px solid black; padding: 4px;">${w > 0 ? w.toFixed(3) + " viss" : "0"}</td>
+          <td style="text-align: right; border: 1px solid black; padding: 4px;">${p > 0 ? p.toFixed(2) : "0"}</td>
+          <td style="text-align: right; border: 1px solid black; padding: 4px;">${amt > 0 ? amt.toFixed(4) : "0"}</td>
         </tr>
       `;
     });
@@ -1330,9 +1330,9 @@ const SemiExport: React.FC = () => {
         <tr>
           <td style="text-align: center; border: 1px solid black; padding: 4px;">${idx++}</td>
           <td style="text-align: center; border: 1px solid black; padding: 4px;">${displaySize}</td>
-          <td style="text-align: right; border: 1px solid black; padding: 4px;">${w > 0 ? w.toFixed(3) + " viss" : ""}</td>
-          <td style="text-align: right; border: 1px solid black; padding: 4px;">${p > 0 ? p.toFixed(2) : ""}</td>
-          <td style="text-align: right; border: 1px solid black; padding: 4px;">${amt > 0 ? amt.toFixed(4) : ""}</td>
+          <td style="text-align: right; border: 1px solid black; padding: 4px;">${w > 0 ? w.toFixed(3) + " viss" : "0"}</td>
+          <td style="text-align: right; border: 1px solid black; padding: 4px;">${p > 0 ? p.toFixed(2) : "0"}</td>
+          <td style="text-align: right; border: 1px solid black; padding: 4px;">${amt > 0 ? amt.toFixed(4) : "0"}</td>
         </tr>
       `;
     });
