@@ -670,10 +670,15 @@ const Purification: React.FC = () => {
                           {p.purifyWeight.toFixed(3)}
                         </td>
                         <td>
-                          {p.workerFees?.toLocaleString(undefined, {
+                          {(
+                            p.workers?.reduce(
+                              (sum, w) => sum + (w.workerFees || 0),
+                              0,
+                            ) || 0
+                          ).toLocaleString(undefined, {
                             minimumFractionDigits: 2,
                             maximumFractionDigits: 2,
-                          }) || "0.00"}
+                          })}
                         </td>
                         <td>
                           <div
@@ -778,10 +783,15 @@ const Purification: React.FC = () => {
                         {p.weight.toFixed(3)}
                       </td>
                       <td>
-                        {p.workerFees?.toLocaleString(undefined, {
+                        {(
+                          p.workers?.reduce(
+                            (sum, w) => sum + (w.workerFees || 0),
+                            0,
+                          ) || 0
+                        ).toLocaleString(undefined, {
                           minimumFractionDigits: 2,
                           maximumFractionDigits: 2,
-                        }) || "0.00"}
+                        })}
                       </td>
                       <td>
                         <div
