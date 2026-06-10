@@ -30,6 +30,10 @@ public class PurifiedRecord : BaseEntity
     [ForeignKey("PlaceId")]
     public Place? Place { get; set; }
 
+    public int? PurifierId { get; set; }
+    [ForeignKey("PurifierId")]
+    public Purifier? Purifier { get; set; }
+
     public bool IsWeightFull { get; set; } = true;
     
     public int? PurificationProcessId { get; set; }

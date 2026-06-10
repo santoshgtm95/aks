@@ -278,6 +278,7 @@ export interface CreatePurificationProcessDto {
   category: string;
   purifyCount: number;
   placeId?: number;
+  purifierId?: number;
   isWeightFull: boolean;
   workerFees?: number;
 }

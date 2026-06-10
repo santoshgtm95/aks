@@ -164,6 +164,7 @@ public class PurificationController : ControllerBase
                 .ThenInclude(r => r.Product)
                     .ThenInclude(pr => pr.Warehouse)
             .Include(p => p.Place)
+            .Include(p => p.Purifier)
             .Where(p => p.DeleteFlg == 0)
             .Where(p => warehouseId == null || p.ProcessingRecord.Product.WarehouseId == warehouseId)
             .OrderByDescending(p => p.Date)
@@ -193,6 +194,8 @@ public class PurificationController : ControllerBase
                 WarehouseName = warehouseName,
                 PlaceId = p.PlaceId,
                 PlaceName = p.Place != null ? p.Place.Name : "",
+                PurifierId = p.PurifierId,
+                PurifierName = p.Purifier != null ? p.Purifier.Name : "",
                 IsWeightFull = p.IsWeightFull,
                 WorkerFees = p.PurificationProcess != null ? p.PurificationProcess.WorkerFees : 0
             });
@@ -300,6 +303,7 @@ public class PurificationController : ControllerBase
                 RemainingCount = dto.PurifyCount,
                 RemainingWeight = newWeight,
                 PlaceId = dto.PlaceId,
+                PurifierId = dto.PurifierId,
                 IsWeightFull = dto.IsWeightFull,
                 PurificationProcessId = id
             };
@@ -315,6 +319,7 @@ public class PurificationController : ControllerBase
             purifiedRecord.RemainingCount = dto.PurifyCount;
             purifiedRecord.RemainingWeight = newWeight;
             purifiedRecord.PlaceId = dto.PlaceId;
+            purifiedRecord.PurifierId = dto.PurifierId;
             purifiedRecord.IsWeightFull = dto.IsWeightFull;
         }
 
@@ -391,6 +396,7 @@ public class PurificationController : ControllerBase
         record.RemainingCount = dto.PurifyCount;
         record.RemainingWeight = newWeight;
         record.PlaceId = dto.PlaceId;
+        record.PurifierId = dto.PurifierId;
         record.IsWeightFull = dto.IsWeightFull;
 
         if (process != null)

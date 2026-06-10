@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from "react";
-import { purificationAPI, placesAPI } from "../../services/api";
+import { purificationAPI, placesAPI, purifiersAPI } from "../../services/api";
 import { useAuth } from "../../context/AuthContext";
 import { useNotification } from "../../context/NotificationContext";
 import type {
@@ -7,6 +7,7 @@ import type {
   PurificationProcess,
   PurifiedRecord,
   Place,
+  Purifier,
 } from "../../types";
 import {
   Package,
@@ -38,6 +39,7 @@ const Purification: React.FC = () => {
   const [purifiedRecords, setPurifiedRecords] = useState<PurifiedRecord[]>([]);
   const [activeTab, setActiveTab] = useState<"history" | "stock">("history");
   const [places, setPlaces] = useState<Place[]>([]);
+  const [purifiers, setPurifiers] = useState<Purifier[]>([]);
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState<string | null>(null);
   const [inputCounts, setInputCounts] = useState<Record<string, string>>({});
@@ -57,6 +59,7 @@ const Purification: React.FC = () => {
   const [purifyForm, setPurifyForm] = useState({
     count: "",
     placeId: 0,
+    purifierId: 0,
     isWeightFull: true,
     date: getMyanmarNow(),
     workerFees: "",
@@ -115,17 +118,19 @@ const Purification: React.FC = () => {
 
   const loadData = async () => {
     try {
-      const [availData, processData, purifiedData, placeData] =
+      const [availData, processData, purifiedData, placeData, purifierData] =
         await Promise.all([
           purificationAPI.getAvailableCategories(),
           purificationAPI.getAll(),
           purificationAPI.getPurifiedRecords(),
           placesAPI.getAll(),
+          purifiersAPI.getAll(),
         ]);
       setAvailableCategories(availData);
       setProcesses(processData);
       setPurifiedRecords(purifiedData);
       setPlaces(placeData);
+      setPurifiers(purifierData);
     } catch (error) {
       console.error("Failed to load data:", error);
     } finally {
@@ -185,6 +190,7 @@ const Purification: React.FC = () => {
       count: p.purifyCount.toString(),
       date: dateStr,
       placeId: p.placeId || 0,
+      purifierId: 0,
       isWeightFull: p.isWeightFull,
       workerFees: p.workerFees !== undefined ? p.workerFees.toString() : "",
     });
@@ -240,7 +246,8 @@ const Purification: React.FC = () => {
           processingRecordId: editingProcess.processingRecordId,
           category: editingProcess.category,
           purifyCount: count,
-          placeId: purifyForm.placeId,
+          placeId: editingProcess.placeId,
+          purifierId: purifyForm.purifierId || undefined,
           isWeightFull: purifyForm.isWeightFull,
           workerFees: Number(purifyForm.workerFees) || 0,
         });
@@ -250,7 +257,8 @@ const Purification: React.FC = () => {
           processingRecordId: editingRecord.processingRecordId,
           category: editingRecord.category,
           purifyCount: count,
-          placeId: purifyForm.placeId,
+          placeId: editingRecord.placeId,
+          purifierId: purifyForm.purifierId || undefined,
           isWeightFull: purifyForm.isWeightFull,
           workerFees: Number(purifyForm.workerFees) || 0,
         });
@@ -904,27 +912,70 @@ const Purification: React.FC = () => {
 
               <form onSubmit={handleSubmitPurify} className="pm-body">
                 {/* place */}
-                <div className="pm-form-group">
-                  <label className="pm-form-label">Hair place</label>
-                  <select
-                    className="pm-form-control"
-                    value={purifyForm.placeId || ""}
-                    onChange={(e) =>
-                      setPurifyForm((prev) => ({
-                        ...prev,
-                        placeId: parseInt(e.target.value),
-                      }))
-                    }
-                    required
-                  >
-                    <option value="">-- Select place --</option>
-                    {places.map((p) => (
-                      <option key={p.id} value={p.id}>
-                        {p.name}
-                      </option>
-                    ))}
-                  </select>
-                </div>
+                {editingProcess || editingRecord ? (
+                  <div className="pm-form-group">
+                    <label className="pm-form-label">Hair Place</label>
+                    <div className="pm-readonly-box">
+                      <span className="pm-info-value">
+                        {editingProcess?.placeName ||
+                          editingRecord?.placeName ||
+                          "---"}
+                      </span>
+                    </div>
+                  </div>
+                ) : (
+                  <div className="pm-form-group">
+                    <label className="pm-form-label">Hair place</label>
+                    <select
+                      className="pm-form-control"
+                      value={purifyForm.placeId || ""}
+                      onChange={(e) =>
+                        setPurifyForm((prev) => ({
+                          ...prev,
+                          placeId: parseInt(e.target.value),
+                        }))
+                      }
+                      required
+                    >
+                      <option value="">-- Select place --</option>
+                      {places.map((p) => (
+                        <option key={p.id} value={p.id}>
+                          {p.name}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                )}
+
+                {/* Purifier (Only when editing) */}
+                {(editingProcess || editingRecord) && (
+                  <div className="pm-form-group">
+                    <label className="pm-form-label">Purifier Worker</label>
+                    <select
+                      className="pm-form-control"
+                      value={purifyForm.purifierId || ""}
+                      onChange={(e) =>
+                        setPurifyForm((prev) => ({
+                          ...prev,
+                          purifierId: parseInt(e.target.value),
+                        }))
+                      }
+                    >
+                      <option value="">-- Select purifier worker --</option>
+                      {purifiers
+                        .filter(
+                          (p) =>
+                            p.placeId ===
+                            (editingProcess?.placeId || editingRecord?.placeId),
+                        )
+                        .map((p) => (
+                          <option key={p.id} value={p.id}>
+                            {p.name}
+                          </option>
+                        ))}
+                    </select>
+                  </div>
+                )}
 
                 {/* Category Display */}
                 <div className="pm-form-group">
