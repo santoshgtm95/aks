@@ -1,9 +1,13 @@
 import React, { useEffect, useState, useMemo } from "react";
 import { useAuth } from "../../context/AuthContext";
-import { productsAPI, workersAPI, processingAPI } from "../../services/api";
+import {
+  productsAPI,
+  messLabourWorkersAPI,
+  processingAPI,
+} from "../../services/api";
 import type {
   Product,
-  Worker,
+  MessLabourWorker,
   ProcessingRecord,
   CreateProcessingRecordDto,
 } from "../../types";
@@ -13,14 +17,15 @@ import {
   Calculator,
   ArrowRight,
   Scissors,
-  Plus,
   Pencil,
   Trash2,
   X,
   Save,
   Search,
   AlertCircle,
+  Settings,
 } from "lucide-react";
+import MessLabourWorkerManagement from "../MessLabourWorkerManagement";
 import { combineDateWithMyanmarTime, formatDateTime } from "../../utils/format";
 import { useNotification } from "../../context/NotificationContext";
 import "./index.css";
@@ -29,19 +34,25 @@ const MessLabour: React.FC = () => {
   const { hasPermission } = useAuth();
   const { showAlert, showConfirm } = useNotification();
   const [products, setProducts] = useState<Product[]>([]);
-  const [workers, setWorkers] = useState<Worker[]>([]);
+  const [workers, setWorkers] = useState<MessLabourWorker[]>([]);
   const [records, setRecords] = useState<ProcessingRecord[]>([]);
   const [loading, setLoading] = useState(true);
   const [selectedProductId, setSelectedProductId] = useState<number | null>(
     null,
   );
-  const [selectedStaff, setSelectedStaff] = useState<string[]>([]);
-  const [showWorkerModal, setShowWorkerModal] = useState(false);
-  const [newWorkerName, setNewWorkerName] = useState("");
+  const [selectedWorkerId, setSelectedWorkerId] = useState<number | null>(null);
+
   const [activeTab, setActiveTab] = useState<"processing" | "history">(
     "processing",
   );
+  const [showMessLabourWorkerManagement, setShowMessLabourWorkerManagement] =
+    useState(false);
   const [searchTerm, setSearchTerm] = useState("");
+
+  const handleCloseMessLabourWorkerManagement = () => {
+    setShowMessLabourWorkerManagement(false);
+    loadData();
+  };
 
   const filteredProducts = useMemo(() => {
     return products.filter((product) => {
@@ -62,6 +73,7 @@ const MessLabour: React.FC = () => {
     null,
   );
   const [editFormData, setEditFormData] = useState({
+    messLabourWorkerId: 0,
     workerNames: "",
     red: 0,
     white: 0,
@@ -74,7 +86,6 @@ const MessLabour: React.FC = () => {
     short: 0,
     lossWeight: 0,
     workerFees: 0,
-    selectedStaff: [] as string[],
   });
 
   const [formData, setFormData] = useState({
@@ -158,7 +169,7 @@ const MessLabour: React.FC = () => {
     try {
       const [productsData, workersData, recordsData] = await Promise.all([
         productsAPI.getAll(),
-        workersAPI.getAll(),
+        messLabourWorkersAPI.getAll(),
         processingAPI.getAll(),
       ]);
       setProducts(productsData);
@@ -235,11 +246,6 @@ const MessLabour: React.FC = () => {
   };
 
   // Count is now in formData
-  const toggleStaff = (name: string) => {
-    setSelectedStaff((prev) =>
-      prev.includes(name) ? prev.filter((s) => s !== name) : [...prev, name],
-    );
-  };
 
   const totals = useMemo(() => {
     const uw = Number(formData.unitWeight) || 0;
@@ -343,19 +349,8 @@ const MessLabour: React.FC = () => {
       short,
       lossWeight: record.lossWeight,
       workerFees: record.workerFees || 0,
-      selectedStaff: record.workerNames
-        ? record.workerNames.split(", ").filter((n) => n.trim() !== "")
-        : [],
+      messLabourWorkerId: record.messLabourWorkerId || 0,
     });
-  };
-
-  const toggleEditStaff = (name: string) => {
-    setEditFormData((prev) => ({
-      ...prev,
-      selectedStaff: prev.selectedStaff.includes(name)
-        ? prev.selectedStaff.filter((s) => s !== name)
-        : [...prev.selectedStaff, name],
-    }));
   };
 
   const getOriginalTotalCount = (record: ProcessingRecord) => {
@@ -500,7 +495,8 @@ const MessLabour: React.FC = () => {
     const dto: CreateProcessingRecordDto = {
       date: editingRecord.date,
       productId: editingRecord.productId,
-      workerNames: editFormData.selectedStaff.join(", "),
+      workerNames: "",
+      messLabourWorkerId: editFormData.messLabourWorkerId,
       count: originalTotal,
       remainingCount: normalCount,
       unitWeight: uw,
@@ -571,26 +567,9 @@ const MessLabour: React.FC = () => {
     );
   };
 
-  // ──────────────────────────────────────────────────────────────────────────
-
-  const handleRegisterWorker = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!newWorkerName.trim()) return;
-    try {
-      await workersAPI.create({ name: newWorkerName });
-      setNewWorkerName("");
-      setShowWorkerModal(false);
-      const workersData = await workersAPI.getAll();
-      setWorkers(workersData);
-    } catch (error) {
-      console.error("Failed to register worker:", error);
-      showAlert("Error", "Failed to register worker", "error");
-    }
-  };
-
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!selectedProductId || selectedStaff.length === 0) return;
+    if (!selectedProductId || !selectedWorkerId) return;
 
     try {
       const dto: CreateProcessingRecordDto = {
@@ -598,7 +577,8 @@ const MessLabour: React.FC = () => {
           new Date().toISOString().split("T")[0],
         ),
         productId: selectedProductId,
-        workerNames: selectedStaff.join(", "),
+        workerNames: "",
+        messLabourWorkerId: selectedWorkerId,
         count: Number(formData.count),
         remainingCount: totals.remainingCount,
         unitWeight: Number(formData.unitWeight),
@@ -650,7 +630,7 @@ const MessLabour: React.FC = () => {
         lossWeight: "",
         workerFees: "",
       });
-      setSelectedStaff([]);
+      setSelectedWorkerId(null);
       setSelectedProductId(null);
 
       loadData();
@@ -767,6 +747,16 @@ const MessLabour: React.FC = () => {
                   <span className="rf-tab-sub">View recent records</span>
                 </button>
               </div>
+            </div>
+
+            <div className="rf-header-right">
+              <button
+                className="btn-manage-messlabour-workers"
+                onClick={() => setShowMessLabourWorkerManagement(true)}
+              >
+                <Settings size={16} />
+                Manage Mess-Labour Workers
+              </button>
             </div>
 
             <div className="rf-header-badge">
@@ -896,39 +886,27 @@ const MessLabour: React.FC = () => {
                       }}
                     >
                       <h3 className="section-label" style={{ margin: 0 }}>
-                        1. Worker Names
+                        1. Mess-Labour Worker
                       </h3>
-                      {hasPermission("MessLabour.Create") && (
-                        <button
-                          type="button"
-                          className="btn-add-worker"
-                          onClick={() => setShowWorkerModal(true)}
-                          style={{
-                            padding: "6px 12px",
-                            fontSize: "12.5px",
-                            fontWeight: "600",
-                            color: "#2563eb",
-                            background: "white",
-                            border: "1.5px solid #cbd5e1",
-                            borderRadius: "8px",
-                            cursor: "pointer",
-                          }}
-                        >
-                          + Add Worker
-                        </button>
-                      )}
                     </div>
-                    <div className="staff-grid">
-                      {workers.map((worker) => (
-                        <div
-                          key={worker.id}
-                          className={`staff-chip ${selectedStaff.includes(worker.name) ? "selected" : ""}`}
-                          onClick={() => toggleStaff(worker.name)}
-                        >
-                          <Users size={14} />
-                          {worker.name}
-                        </div>
-                      ))}
+                    <div style={{ maxWidth: "400px" }}>
+                      <select
+                        className="rw-form-control"
+                        value={selectedWorkerId || ""}
+                        onChange={(e) =>
+                          setSelectedWorkerId(parseInt(e.target.value))
+                        }
+                        style={{ padding: "0.75rem 1rem", fontSize: "1.1rem" }}
+                      >
+                        <option value="" disabled>
+                          Select a worker...
+                        </option>
+                        {workers.map((worker) => (
+                          <option key={worker.id} value={worker.id}>
+                            {worker.name}
+                          </option>
+                        ))}
+                      </select>
                     </div>
                   </section>
 
@@ -1287,7 +1265,7 @@ const MessLabour: React.FC = () => {
                     className="submit-btn"
                     disabled={
                       !selectedProductId ||
-                      selectedStaff.length === 0 ||
+                      !selectedWorkerId ||
                       totals.diff < -(Number(formData.unitWeight) || 0) + 0.0001
                     }
                   >
@@ -1362,7 +1340,7 @@ const MessLabour: React.FC = () => {
                   <tr>
                     <th>Date</th>
                     <th>Marker</th>
-                    <th>Staff</th>
+                    <th>Worker</th>
                     <th>Worker Fees</th>
                     <th>Categories</th>
                     <th style={{ textAlign: "center" }}>Lost (viss)</th>
@@ -1382,7 +1360,7 @@ const MessLabour: React.FC = () => {
                     >
                       <td>{formatDateTime(record.date)}</td>
                       <td>{record.productMarker}</td>
-                      <td>{record.workerNames}</td>
+                      <td>{record.messLabourWorkerName || "---"}</td>
                       <td>
                         {record.workerFees?.toLocaleString(undefined, {
                           minimumFractionDigits: 2,
@@ -1519,98 +1497,7 @@ const MessLabour: React.FC = () => {
         </div>
       </main>
 
-      {/* Worker Registration Modal */}
-
-      {showWorkerModal && (
-        <div
-          className="modal-overlay"
-          onClick={(e) => {
-            if (e.target === e.currentTarget) setShowWorkerModal(false);
-          }}
-        >
-          <div className="rw-modal">
-            {/* Header */}
-            <div className="rw-header">
-              <div className="rw-header-left">
-                <div className="rw-header-icon">
-                  <Users size={20} />
-                </div>
-                <div>
-                  <h2 className="rw-header-title">Worker Directory</h2>
-                  <p className="rw-header-pre">Manage and register workers</p>
-                </div>
-              </div>
-              <button
-                className="rw-close-btn"
-                onClick={() => setShowWorkerModal(false)}
-              >
-                <X size={20} />
-              </button>
-            </div>
-
-            <div className="rw-body">
-              {/* Left Panel: Register Form */}
-              {hasPermission("MessLabour.Create") && (
-                <div className="rw-panel rw-form-panel">
-                  <h3 className="rw-panel-title">Add New Worker</h3>
-                  <form onSubmit={handleRegisterWorker} className="rw-form">
-                    <div className="rw-form-group">
-                      <label className="rw-form-label">Worker Name</label>
-                      <input
-                        type="text"
-                        className="rw-form-control"
-                        value={newWorkerName}
-                        onChange={(e) => setNewWorkerName(e.target.value)}
-                        placeholder="e.g. Aung Aung"
-                        required
-                        autoFocus
-                      />
-                    </div>
-                    <div className="rw-form-actions">
-                      <button type="submit" className="rw-btn-submit">
-                        <Plus size={15} /> Add to Directory
-                      </button>
-                    </div>
-                  </form>
-                </div>
-              )}
-
-              {/* Divider */}
-              {hasPermission("MessLabour.Create") && (
-                <div className="rw-panel-divider" />
-              )}
-
-              {/* Right Panel: Registered List */}
-              <div className="rw-panel rw-list-panel">
-                <div className="rw-list-header">
-                  <h3 className="rw-panel-title">Registered List</h3>
-                  <span className="rw-count-badge">{workers.length} Total</span>
-                </div>
-                <div className="rw-workers-scroll">
-                  {workers.length === 0 ? (
-                    <div className="rw-empty-state">
-                      No workers registered yet.
-                    </div>
-                  ) : (
-                    <div className="rw-workers-list">
-                      {workers.map((worker) => (
-                        <div key={worker.id} className="rw-worker-card">
-                          <div className="rw-worker-avatar">
-                            {worker.name.charAt(0).toUpperCase()}
-                          </div>
-                          <span className="rw-worker-name">{worker.name}</span>
-                        </div>
-                      ))}
-                    </div>
-                  )}
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* ─── Edit Record Modal ─────────────────────────────────────── */}
+      {/* â”€â”€â”€ Edit Record Modal â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */}
       {editingRecord && (
         <div
           className="modal-overlay"
@@ -1663,19 +1550,29 @@ const MessLabour: React.FC = () => {
               {/* Worker Selection */}
               <div className="em-section">
                 <p className="em-section-title">
-                  <Users size={15} /> Worker Names
+                  <Users size={15} /> Mess-Labour Worker
                 </p>
-                <div className="em-worker-grid">
-                  {workers.map((worker) => (
-                    <div
-                      key={worker.id}
-                      className={`em-worker-chip ${editFormData.selectedStaff.includes(worker.name) ? "em-worker-selected" : ""}`}
-                      onClick={() => toggleEditStaff(worker.name)}
-                    >
-                      <Users size={13} />
-                      {worker.name}
-                    </div>
-                  ))}
+                <div style={{ maxWidth: "400px" }}>
+                  <select
+                    className="rw-form-control"
+                    value={editFormData.messLabourWorkerId || ""}
+                    onChange={(e) =>
+                      setEditFormData((prev) => ({
+                        ...prev,
+                        messLabourWorkerId: parseInt(e.target.value),
+                      }))
+                    }
+                    style={{ padding: "0.75rem 1rem", fontSize: "1.1rem" }}
+                  >
+                    <option value="" disabled>
+                      Select a worker...
+                    </option>
+                    {workers.map((worker) => (
+                      <option key={worker.id} value={worker.id}>
+                        {worker.name}
+                      </option>
+                    ))}
+                  </select>
                 </div>
               </div>
 
@@ -2067,6 +1964,66 @@ const MessLabour: React.FC = () => {
               >
                 Close Details
               </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Worker Management Modal */}
+      {showMessLabourWorkerManagement && (
+        <div
+          className="modal-overlay"
+          style={{ zIndex: 1200 }}
+          onClick={handleCloseMessLabourWorkerManagement}
+        >
+          <div
+            className="worker-manager-modal"
+            onClick={(e) => e.stopPropagation()}
+            style={{
+              background: "#f8fafc",
+              borderRadius: "16px",
+              boxShadow: "0 25px 50px -12px rgba(0, 0, 0, 0.25)",
+              width: "90%",
+              maxWidth: "1100px",
+              maxHeight: "90vh",
+              display: "flex",
+              flexDirection: "column",
+              position: "relative",
+            }}
+          >
+            <div
+              style={{
+                display: "flex",
+                justifyContent: "flex-end",
+                padding: "16px 16px 0 16px",
+              }}
+            >
+              <button
+                className="pm-close-btn"
+                style={{
+                  background: "#e2e8f0",
+                  border: "none",
+                  borderRadius: "50%",
+                  width: "36px",
+                  height: "36px",
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  cursor: "pointer",
+                  transition: "all 0.2s",
+                }}
+                onClick={handleCloseMessLabourWorkerManagement}
+              >
+                <X size={20} color="#475569" />
+              </button>
+            </div>
+            <div
+              style={{
+                overflowY: "auto",
+                paddingBottom: "16px",
+              }}
+            >
+              <MessLabourWorkerManagement />
             </div>
           </div>
         </div>

@@ -58,6 +58,8 @@ public class ProcessingRecordDto
     public decimal RemShortWeight { get; set; }
     public bool IsLocked { get; set; }
     public decimal WorkerFees { get; set; }
+    public int? MessLabourWorkerId { get; set; }
+    public string? MessLabourWorkerName { get; set; }
 }
 
 public class CreateProcessingRecordDto
@@ -65,6 +67,7 @@ public class CreateProcessingRecordDto
     public DateTime Date { get; set; }
     public int ProductId { get; set; }
     public string WorkerNames { get; set; } = string.Empty;
+    public int? MessLabourWorkerId { get; set; }
     public double Count { get; set; }
     public double RemainingCount { get; set; }
     public decimal UnitWeight { get; set; }

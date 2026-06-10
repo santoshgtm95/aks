@@ -21,6 +21,7 @@ import Purification from "./pages/Purification/index";
 import PurifierManagement from "./pages/PurifierManagement/index";
 import Refinement from "./pages/Refinement/index";
 import RefinementWorkerManagement from "./pages/RefinementWorkerManagement/index";
+import MessLabourWorkerManagement from "./pages/MessLabourWorkerManagement/index";
 import SingleDoubleDrawnWorkerManagement from "./pages/SingleDoubleDrawnWorkerManagement/index";
 import SingleDoubleDrawn from "./pages/SingleDoubleDrawn/index";
 import SemiExport from "./pages/SemiExport/index";
@@ -143,6 +144,14 @@ const App: React.FC = () => {
                 element={
                   <ProtectedRoute permission="Warehouse.View">
                     <RefinementWorkerManagement />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="mess-labour-workers"
+                element={
+                  <ProtectedRoute permission="Warehouse.View">
+                    <MessLabourWorkerManagement />
                   </ProtectedRoute>
                 }
               />

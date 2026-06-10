@@ -110,4 +110,9 @@ public class ProcessingRecord : BaseEntity
 
     [Column(TypeName = "decimal(18,2)")]
     public decimal WorkerFees { get; set; }
+
+    public int? MessLabourWorkerId { get; set; }
+
+    [ForeignKey("MessLabourWorkerId")]
+    public MessLabourWorker? MessLabourWorker { get; set; }
 }

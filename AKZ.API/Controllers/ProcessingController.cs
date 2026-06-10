@@ -34,6 +34,7 @@ public class ProcessingController : ControllerBase
         var records = await _context.ProcessingRecords
             .Include(r => r.Product)
                 .ThenInclude(p => p.Warehouse)
+            .Include(r => r.MessLabourWorker)
             .Where(r => warehouseId == null || r.Product.WarehouseId == warehouseId)
             .OrderByDescending(r => r.Date)
             .Select(r => new ProcessingRecordDto
@@ -71,6 +72,8 @@ public class ProcessingController : ControllerBase
                 RemainingWeightKg = r.RemainingWeightKg,
                 Difference = r.Difference,
                 WorkerFees = r.WorkerFees,
+                MessLabourWorkerId = r.MessLabourWorkerId,
+                MessLabourWorkerName = r.MessLabourWorker != null ? r.MessLabourWorker.Name : null,
                 RemRedCount = r.RemRedCount,
                 RemWhiteCount = r.RemWhiteCount,
                 RemSpecialCount = r.RemSpecialCount,
@@ -138,6 +141,7 @@ public class ProcessingController : ControllerBase
             RemainingWeightKg = dto.RemainingWeightKg,
             Difference = dto.Difference,
             WorkerFees = dto.WorkerFees,
+            MessLabourWorkerId = dto.MessLabourWorkerId,
             // Initialize remaining fields with original counts/weights
             RemRedCount = dto.RedCount,
             RemWhiteCount = dto.WhiteCount,
@@ -298,6 +302,7 @@ public class ProcessingController : ControllerBase
         record.RemainingWeightKg = dto.RemainingWeightKg;
         record.Difference = dto.Difference;
         record.WorkerFees = dto.WorkerFees;
+        record.MessLabourWorkerId = dto.MessLabourWorkerId;
 
         await _context.SaveChangesAsync();
 

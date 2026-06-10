@@ -198,12 +198,15 @@ export interface ProcessingRecord {
   warehouseName?: string;
   isLocked?: boolean;
   workerFees?: number;
+  messLabourWorkerId?: number;
+  messLabourWorkerName?: string;
 }
 
 export interface CreateProcessingRecordDto {
   date: string;
   productId: number;
   workerNames: string;
+  messLabourWorkerId?: number;
   count: number;
   remainingCount: number;
   unitWeight: number;
@@ -656,4 +659,23 @@ export interface CreateImportedSemiExportDto {
   totalSortedWeight: number;
   date: string;
   dataJson: string;
+}
+
+export interface MessLabourWorker {
+  id: number;
+  name: string;
+  warehouseId: number;
+  warehouseName: string;
+  isActive: boolean;
+}
+
+export interface CreateMessLabourWorkerDto {
+  name: string;
+  warehouseId: number;
+}
+
+export interface UpdateMessLabourWorkerDto {
+  name: string;
+  warehouseId: number;
+  isActive: boolean;
 }

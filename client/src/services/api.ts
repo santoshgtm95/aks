@@ -564,3 +564,26 @@ export const cashFlowAPI = {
     return response.data;
   },
 };
+
+export const messLabourWorkersAPI = {
+  getAll: async (): Promise<any[]> => {
+    const response = await api.get<any[]>("/messlabourworkers");
+    return response.data;
+  },
+  getByWarehouse: async (warehouseId: number): Promise<any[]> => {
+    const response = await api.get<any[]>(
+      `/messlabourworkers/warehouse/${warehouseId}`,
+    );
+    return response.data;
+  },
+  create: async (data: any): Promise<any> => {
+    const response = await api.post<any>("/messlabourworkers", data);
+    return response.data;
+  },
+  update: async (id: number, data: any): Promise<void> => {
+    await api.put(`/messlabourworkers/${id}`, data);
+  },
+  delete: async (id: number): Promise<void> => {
+    await api.delete(`/messlabourworkers/${id}`);
+  },
+};
