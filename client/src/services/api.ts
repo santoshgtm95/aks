@@ -20,6 +20,9 @@ import type {
   PurificationProcess,
   CreatePurificationProcessDto,
   AvailableCategory,
+  Place,
+  CreatePlaceDto,
+  UpdatePlaceDto,
   Purifier,
   CreatePurifierDto,
   UpdatePurifierDto,
@@ -315,6 +318,24 @@ export const refinementWorkersAPI = {
   },
   delete: async (id: number): Promise<void> => {
     await api.delete(`/refinementworkers/${id}`);
+  },
+};
+
+// Places API
+export const placesAPI = {
+  getAll: async (): Promise<Place[]> => {
+    const response = await api.get<Place[]>("/places");
+    return response.data;
+  },
+  create: async (data: CreatePlaceDto): Promise<Place> => {
+    const response = await api.post<Place>("/places", data);
+    return response.data;
+  },
+  update: async (id: number, data: UpdatePlaceDto): Promise<void> => {
+    await api.put(`/places/${id}`, data);
+  },
+  delete: async (id: number): Promise<void> => {
+    await api.delete(`/places/${id}`);
   },
 };
 

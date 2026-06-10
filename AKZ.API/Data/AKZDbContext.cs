@@ -25,6 +25,7 @@ public class AKZDbContext : DbContext
     public DbSet<UserPermission> UserPermissions { get; set; }
     public DbSet<PurificationProcess> PurificationProcesses { get; set; }
     public DbSet<Purifier> Purifiers { get; set; }
+    public DbSet<Place> Places { get; set; }
     public DbSet<PurifiedRecord> PurifiedRecords { get; set; }
     public DbSet<RefinementProcess> RefinementProcesses { get; set; }
     public DbSet<RefinementRecord> RefinementRecords { get; set; }
@@ -184,9 +185,9 @@ public class AKZDbContext : DbContext
             .OnDelete(DeleteBehavior.Restrict);
 
         modelBuilder.Entity<PurificationProcess>()
-            .HasOne(p => p.Purifier)
+            .HasOne(p => p.Place)
             .WithMany()
-            .HasForeignKey(p => p.PurifierId)
+            .HasForeignKey(p => p.PlaceId)
             .OnDelete(DeleteBehavior.Restrict);
         modelBuilder.Entity<PurifiedRecord>().HasQueryFilter(e => e.DeleteFlg == 0);
         modelBuilder.Entity<RefinementProcess>().HasQueryFilter(e => e.DeleteFlg == 0);

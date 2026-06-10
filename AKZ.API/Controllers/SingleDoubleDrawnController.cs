@@ -39,7 +39,7 @@ public class SingleDoubleDrawnController : ControllerBase
                 .ThenInclude(rr => rr.RefinementWorker)
             .Include(r => r.RefinementRecord)
                 .ThenInclude(rr => rr.PurifiedRecord)
-                    .ThenInclude(p => p.Purifier)
+                    .ThenInclude(p => p.Place)
             .Include(r => r.RefinementRecord)
                 .ThenInclude(rr => rr.PurifiedRecord)
                     .ThenInclude(p => p.PurificationProcess)
@@ -141,7 +141,7 @@ public class SingleDoubleDrawnController : ControllerBase
 
                 MessLabourWorkerNames = r.RefinementRecord?.PurifiedRecord?.ProcessingRecord?.WorkerNames ?? "",
                 MessLabourWorkerFees = r.RefinementRecord?.PurifiedRecord?.ProcessingRecord?.WorkerFees ?? 0M,
-                PurificationWorkerName = r.RefinementRecord?.PurifiedRecord?.Purifier?.Name ?? "",
+                PurificationWorkerName = r.RefinementRecord?.PurifiedRecord?.Place?.Name ?? "",
                 PurificationWorkerFees = r.RefinementRecord?.PurifiedRecord?.PurificationProcess?.WorkerFees ?? 0M,
                 PurifiedRecordId = r.RefinementRecord?.PurifiedRecord?.Id,
                 RefinementWorkerName = r.RefinementRecord?.RefinementWorker?.Name ?? "",
@@ -163,7 +163,7 @@ public class SingleDoubleDrawnController : ControllerBase
                         .ThenInclude(prod => prod.Warehouse)
             .Include(rr => rr.RefinementWorker)
             .Include(rr => rr.PurifiedRecord)
-                .ThenInclude(p => p.Purifier)
+                .ThenInclude(p => p.Place)
             .Include(rr => rr.PurifiedRecord)
                 .ThenInclude(p => p.PurificationProcess)
             .FirstOrDefaultAsync(rr => rr.Id == dto.RefinementRecordId);
@@ -333,7 +333,7 @@ public class SingleDoubleDrawnController : ControllerBase
 
             MessLabourWorkerNames = refinementRecord.PurifiedRecord?.ProcessingRecord?.WorkerNames ?? "",
             MessLabourWorkerFees = refinementRecord.PurifiedRecord?.ProcessingRecord?.WorkerFees ?? 0M,
-            PurificationWorkerName = refinementRecord.PurifiedRecord?.Purifier?.Name ?? "",
+            PurificationWorkerName = refinementRecord.PurifiedRecord?.Place?.Name ?? "",
             PurificationWorkerFees = refinementRecord.PurifiedRecord?.PurificationProcess?.WorkerFees ?? 0M,
             PurifiedRecordId = refinementRecord.PurifiedRecord?.Id,
             RefinementWorkerName = refinementRecord.RefinementWorker?.Name ?? "",

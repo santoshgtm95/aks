@@ -251,8 +251,8 @@ export interface PurificationProcess {
   remainingCountAfter: number;
   remainingWeightAfter: number;
   warehouseName?: string;
-  purifierId?: number;
-  purifierName?: string;
+  placeId?: number;
+  placeName?: string;
   isWeightFull: boolean;
   workerFees?: number;
 }
@@ -266,8 +266,8 @@ export interface PurifiedRecord {
   count: number;
   weight: number;
   warehouseName?: string;
-  purifierId?: number;
-  purifierName?: string;
+  placeId?: number;
+  placeName?: string;
   isWeightFull: boolean;
   workerFees?: number;
 }
@@ -277,7 +277,7 @@ export interface CreatePurificationProcessDto {
   processingRecordId: number;
   category: string;
   purifyCount: number;
-  purifierId?: number;
+  placeId?: number;
   isWeightFull: boolean;
   workerFees?: number;
 }
@@ -318,12 +318,39 @@ export interface Purifier {
   name: string;
   warehouseId: number;
   warehouseName: string;
+  placeId?: number;
+  placeName?: string;
   isActive: boolean;
+}
+
+export interface Place {
+  id: number;
+  name: string;
+  warehouseId: number;
+  warehouseName: string;
+}
+
+export interface CreatePlaceDto {
+  name: string;
+  warehouseId: number;
+}
+
+export interface UpdatePlaceDto {
+  name: string;
+  warehouseId: number;
 }
 
 export interface CreatePurifierDto {
   name: string;
   warehouseId: number;
+  placeId?: number;
+}
+
+export interface UpdatePurifierDto {
+  name: string;
+  warehouseId: number;
+  placeId?: number;
+  isActive: boolean;
 }
 export interface SingleDoubleDrawnWorker {
   id: number;
@@ -341,12 +368,6 @@ export interface UpdateSingleDoubleDrawnWorkerDto {
   name: string;
   warehouseId: number;
 }
-export interface UpdatePurifierDto {
-  name: string;
-  warehouseId: number;
-  isActive: boolean;
-}
-
 export interface AvailablePurifiedCategory {
   purifiedRecordId: number;
   productMarker: string;
@@ -375,7 +396,7 @@ export interface RefinementProcess {
 }
 
 export interface RefinementRecord {
-  purifierName: string;
+  placeName: string;
   id: number;
   date: string;
   purifiedRecordId: number;

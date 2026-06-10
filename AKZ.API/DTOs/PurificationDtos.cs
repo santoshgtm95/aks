@@ -12,8 +12,8 @@ public class PurificationProcessDto
     public decimal PurifyWeight { get; set; }
     public double RemainingCountAfter { get; set; }
     public decimal RemainingWeightAfter { get; set; }
-    public int? PurifierId { get; set; }
-    public string PurifierName { get; set; } = string.Empty;
+    public int? PlaceId { get; set; }
+    public string PlaceName { get; set; } = string.Empty;
     public bool IsWeightFull { get; set; }
     public decimal WorkerFees { get; set; }
 }
@@ -28,8 +28,8 @@ public class PurifiedRecordDto
     public string Category { get; set; } = string.Empty;
     public double Count { get; set; }
     public decimal Weight { get; set; }
-    public int? PurifierId { get; set; }
-    public string PurifierName { get; set; } = string.Empty;
+    public int? PlaceId { get; set; }
+    public string PlaceName { get; set; } = string.Empty;
     public bool IsWeightFull { get; set; }
     public decimal WorkerFees { get; set; }
 }
@@ -40,7 +40,7 @@ public class CreatePurificationProcessDto
     public int ProcessingRecordId { get; set; }
     public string Category { get; set; } = string.Empty;
     public double PurifyCount { get; set; }
-    public int? PurifierId { get; set; }
+    public int? PlaceId { get; set; }
     public bool IsWeightFull { get; set; }
     public decimal WorkerFees { get; set; }
 }

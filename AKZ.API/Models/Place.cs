@@ -3,8 +3,8 @@ using System.ComponentModel.DataAnnotations.Schema;
 
 namespace AKZ.API.Models;
 
-[Table("Purifiers")]
-public class Purifier : BaseEntity
+[Table("Places")]
+public class Place : BaseEntity
 {
     [Key]
     public int Id { get; set; }
@@ -17,11 +17,4 @@ public class Purifier : BaseEntity
 
     [ForeignKey("WarehouseId")]
     public Warehouse Warehouse { get; set; } = null!;
-
-    public int? PlaceId { get; set; }
-
-    [ForeignKey("PlaceId")]
-    public Place? Place { get; set; }
-
-    public bool IsActive { get; set; } = true;
 }

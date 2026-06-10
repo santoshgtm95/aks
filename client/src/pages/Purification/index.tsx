@@ -1,12 +1,12 @@
 import React, { useEffect, useState } from "react";
-import { purificationAPI, purifiersAPI } from "../../services/api";
+import { purificationAPI, placesAPI } from "../../services/api";
 import { useAuth } from "../../context/AuthContext";
 import { useNotification } from "../../context/NotificationContext";
 import type {
   AvailableCategory,
   PurificationProcess,
   PurifiedRecord,
-  Purifier,
+  Place,
 } from "../../types";
 import {
   Package,
@@ -37,15 +37,15 @@ const Purification: React.FC = () => {
   const [processes, setProcesses] = useState<PurificationProcess[]>([]);
   const [purifiedRecords, setPurifiedRecords] = useState<PurifiedRecord[]>([]);
   const [activeTab, setActiveTab] = useState<"history" | "stock">("history");
-  const [purifiers, setPurifiers] = useState<Purifier[]>([]);
+  const [places, setPlaces] = useState<Place[]>([]);
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState<string | null>(null);
   const [inputCounts, setInputCounts] = useState<Record<string, string>>({});
-  const [selectedPurifiers, setSelectedPurifiers] = useState<
-    Record<string, number>
-  >({});
+  const [selectedPlaces, setSelectedPlaces] = useState<Record<string, number>>(
+    {},
+  );
   const [searchTerm, setSearchTerm] = useState("");
-  const [showPurifierManagement, setShowPurifierManagement] = useState(false);
+  const [showPlaceManagement, setshowPlaceManagement] = useState(false);
   const [showPurifyModal, setShowPurifyModal] = useState(false);
   const [selectedCategory, setSelectedCategory] =
     useState<AvailableCategory | null>(null);
@@ -56,7 +56,7 @@ const Purification: React.FC = () => {
   );
   const [purifyForm, setPurifyForm] = useState({
     count: "",
-    purifierId: 0,
+    placeId: 0,
     isWeightFull: true,
     date: getMyanmarNow(),
     workerFees: "",
@@ -85,12 +85,12 @@ const Purification: React.FC = () => {
     const key = `${avail.processingRecordId}-${avail.category}`;
     const countStr = inputCounts[key];
     const count = parseFloat(countStr);
-    const purifierId = selectedPurifiers[key];
+    const placeId = selectedPlaces[key];
 
     if (isNaN(count) || count <= 0)
       return showAlert("Validation", "Please enter a valid count", "error");
-    if (!purifierId)
-      return showAlert("Validation", "Please select a purifier", "error");
+    if (!placeId)
+      return showAlert("Validation", "Please select a place", "error");
 
     setSubmitting(key);
     try {
@@ -99,8 +99,9 @@ const Purification: React.FC = () => {
         processingRecordId: avail.processingRecordId,
         category: avail.category,
         purifyCount: count,
-        purifierId: purifierId,
+        placeId: placeId,
         isWeightFull: true,
+        workerFees: 0,
       });
       await loadData();
       setInputCounts((prev) => ({ ...prev, [key]: "" }));
@@ -114,17 +115,17 @@ const Purification: React.FC = () => {
 
   const loadData = async () => {
     try {
-      const [availData, processData, purifiedData, purifierData] =
+      const [availData, processData, purifiedData, placeData] =
         await Promise.all([
           purificationAPI.getAvailableCategories(),
           purificationAPI.getAll(),
           purificationAPI.getPurifiedRecords(),
-          purifiersAPI.getAll(),
+          placesAPI.getAll(),
         ]);
       setAvailableCategories(availData);
       setProcesses(processData);
       setPurifiedRecords(purifiedData);
-      setPurifiers(purifierData);
+      setPlaces(placeData);
     } catch (error) {
       console.error("Failed to load data:", error);
     } finally {
@@ -148,8 +149,8 @@ const Purification: React.FC = () => {
     );
   };
 
-  const handleClosePurifierManagement = () => {
-    setShowPurifierManagement(false);
+  const handleClosePlaceManagement = () => {
+    setshowPlaceManagement(false);
     loadData();
   };
 
@@ -183,7 +184,7 @@ const Purification: React.FC = () => {
     setPurifyForm({
       count: p.purifyCount.toString(),
       date: dateStr,
-      purifierId: p.purifierId || 0,
+      placeId: p.placeId || 0,
       isWeightFull: p.isWeightFull,
       workerFees: p.workerFees !== undefined ? p.workerFees.toString() : "",
     });
@@ -199,8 +200,8 @@ const Purification: React.FC = () => {
         "Please enter a valid bundle count",
         "error",
       );
-    if (!purifyForm.purifierId)
-      return showAlert("Validation", "Please select a purifier", "error");
+    if (!purifyForm.placeId)
+      return showAlert("Validation", "Please select a place", "error");
 
     if (selectedCategory) {
       if (count > selectedCategory.remainingCount) {
@@ -239,7 +240,7 @@ const Purification: React.FC = () => {
           processingRecordId: editingProcess.processingRecordId,
           category: editingProcess.category,
           purifyCount: count,
-          purifierId: purifyForm.purifierId,
+          placeId: purifyForm.placeId,
           isWeightFull: purifyForm.isWeightFull,
           workerFees: Number(purifyForm.workerFees) || 0,
         });
@@ -249,7 +250,7 @@ const Purification: React.FC = () => {
           processingRecordId: editingRecord.processingRecordId,
           category: editingRecord.category,
           purifyCount: count,
-          purifierId: purifyForm.purifierId,
+          placeId: purifyForm.placeId,
           isWeightFull: purifyForm.isWeightFull,
           workerFees: Number(purifyForm.workerFees) || 0,
         });
@@ -259,7 +260,7 @@ const Purification: React.FC = () => {
           processingRecordId: selectedCategory.processingRecordId,
           category: selectedCategory.category,
           purifyCount: count,
-          purifierId: purifyForm.purifierId,
+          placeId: purifyForm.placeId,
           isWeightFull: purifyForm.isWeightFull,
           workerFees: Number(purifyForm.workerFees) || 0,
         });
@@ -386,31 +387,28 @@ const Purification: React.FC = () => {
                   </div>
 
                   <div
-                    className="purifier-selection"
+                    className="place-selection"
                     style={{ marginBottom: "12px" }}
                   >
                     <div
                       className="sidebar-details-label"
                       style={{ marginBottom: "4px" }}
                     >
-                      Purifier
+                      place
                     </div>
                     <select
                       className="sidebar-select"
-                      value={selectedPurifiers[key] || ""}
+                      value={selectedPlaces[key] || ""}
                       onChange={(e) =>
-                        setSelectedPurifiers((prev) => ({
+                        setSelectedPlaces((prev) => ({
                           ...prev,
                           [key]: parseInt(e.target.value),
                         }))
                       }
                     >
-                      <option value="">-- Select Purifier --</option>
-                      {purifiers
-                        .filter(
-                          (p) =>
-                            p.warehouseId === avail.warehouseId && p.isActive,
-                        )
+                      <option value="">-- Select place --</option>
+                      {places
+                        .filter((p) => p.warehouseId === avail.warehouseId)
                         .map((p) => (
                           <option key={p.id} value={p.id}>
                             {p.name}
@@ -547,7 +545,7 @@ const Purification: React.FC = () => {
             </div>
             <button
               className="btn-manage-purifiers"
-              onClick={() => setShowPurifierManagement(true)}
+              onClick={() => setshowPlaceManagement(true)}
             >
               <Settings size={16} />
               Manage Purifiers
@@ -565,7 +563,7 @@ const Purification: React.FC = () => {
                     <th>Bundle Count</th>
                     <th>Weight (viss)</th>
                     <th>Worker Fees</th>
-                    <th>Purifier</th>
+                    <th>place</th>
                     <th style={{ textAlign: "right" }}>Actions</th>
                   </tr>
                 ) : (
@@ -576,7 +574,7 @@ const Purification: React.FC = () => {
                     <th>Purified Count</th>
                     <th>Weight (Output)</th>
                     <th>Worker Fees</th>
-                    <th>Purifier</th>
+                    <th>place</th>
                     <th>Weight Status</th>
                     <th style={{ textAlign: "right" }}>Actions</th>
                   </tr>
@@ -663,7 +661,7 @@ const Purification: React.FC = () => {
                             }}
                           >
                             <User size={14} style={{ color: "#64748b" }} />
-                            {p.purifierName || "---"}
+                            {p.placeName || "---"}
                           </div>
                         </td>
                         <td style={{ textAlign: "right" }}>
@@ -771,7 +769,7 @@ const Purification: React.FC = () => {
                           }}
                         >
                           <User size={14} style={{ color: "#64748b" }} />
-                          {p.purifierName || "---"}
+                          {p.placeName || "---"}
                         </div>
                       </td>
                       <td>
@@ -812,12 +810,12 @@ const Purification: React.FC = () => {
         </div>
       </main>
 
-      {/* Purifier Management Modal */}
-      {showPurifierManagement && (
+      {/* place Management Modal */}
+      {showPlaceManagement && (
         <div
           className="modal-overlay"
           style={{ zIndex: 1100 }}
-          onClick={handleClosePurifierManagement}
+          onClick={handleClosePlaceManagement}
         >
           <div
             className="purifier-manager-modal"
@@ -831,7 +829,7 @@ const Purification: React.FC = () => {
                 top: "24px",
                 zIndex: 10,
               }}
-              onClick={handleClosePurifierManagement}
+              onClick={handleClosePlaceManagement}
             >
               <X size={20} />
             </button>
@@ -905,28 +903,26 @@ const Purification: React.FC = () => {
               </div>
 
               <form onSubmit={handleSubmitPurify} className="pm-body">
-                {/* Purifier */}
+                {/* place */}
                 <div className="pm-form-group">
-                  <label className="pm-form-label">Hair Purifier</label>
+                  <label className="pm-form-label">Hair place</label>
                   <select
                     className="pm-form-control"
-                    value={purifyForm.purifierId || ""}
+                    value={purifyForm.placeId || ""}
                     onChange={(e) =>
                       setPurifyForm((prev) => ({
                         ...prev,
-                        purifierId: parseInt(e.target.value),
+                        placeId: parseInt(e.target.value),
                       }))
                     }
                     required
                   >
-                    <option value="">-- Select Purifier --</option>
-                    {purifiers
-                      .filter((p) => p.isActive)
-                      .map((p) => (
-                        <option key={p.id} value={p.id}>
-                          {p.name}
-                        </option>
-                      ))}
+                    <option value="">-- Select place --</option>
+                    {places.map((p) => (
+                      <option key={p.id} value={p.id}>
+                        {p.name}
+                      </option>
+                    ))}
                   </select>
                 </div>
 

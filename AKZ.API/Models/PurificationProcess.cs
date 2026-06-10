@@ -30,11 +30,11 @@ public class PurificationProcess : BaseEntity
     [Column(TypeName = "decimal(18,4)")]
     public decimal RemainingWeightAfter { get; set; }
 
-    public int? PurifierId { get; set; }
+    public int? PlaceId { get; set; }
     public bool IsWeightFull { get; set; } = true;
 
-    [ForeignKey("PurifierId")]
-    public Purifier? Purifier { get; set; }
+    [ForeignKey("PlaceId")]
+    public Place? Place { get; set; }
 
     public ICollection<PurifiedRecord> PurifiedRecords { get; set; } = new List<PurifiedRecord>();
 

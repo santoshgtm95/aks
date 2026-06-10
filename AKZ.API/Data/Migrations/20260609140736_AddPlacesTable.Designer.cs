@@ -4,16 +4,19 @@ using AKZ.API.Data;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 #nullable disable
 
-namespace AKZ.API.Migrations
+namespace AKZ.API.Data.Migrations
 {
     [DbContext(typeof(AKZDbContext))]
-    partial class AKZDbContextModelSnapshot : ModelSnapshot
+    [Migration("20260609140736_AddPlacesTable")]
+    partial class AddPlacesTable
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -809,10 +812,10 @@ namespace AKZ.API.Migrations
                     b.Property<bool>("IsWeightFull")
                         .HasColumnType("bit");
 
-                    b.Property<int?>("PlaceId")
+                    b.Property<int>("ProcessingRecordId")
                         .HasColumnType("int");
 
-                    b.Property<int>("ProcessingRecordId")
+                    b.Property<int?>("PurifierId")
                         .HasColumnType("int");
 
                     b.Property<double>("PurifyCount")
@@ -839,9 +842,9 @@ namespace AKZ.API.Migrations
 
                     b.HasKey("Id");
 
-                    b.HasIndex("PlaceId");
-
                     b.HasIndex("ProcessingRecordId");
+
+                    b.HasIndex("PurifierId");
 
                     b.ToTable("PurificationProcesses");
                 });
@@ -883,13 +886,13 @@ namespace AKZ.API.Migrations
                     b.Property<bool>("IsWeightFull")
                         .HasColumnType("bit");
 
-                    b.Property<int?>("PlaceId")
-                        .HasColumnType("int");
-
                     b.Property<int>("ProcessingRecordId")
                         .HasColumnType("int");
 
                     b.Property<int?>("PurificationProcessId")
+                        .HasColumnType("int");
+
+                    b.Property<int?>("PurifierId")
                         .HasColumnType("int");
 
                     b.Property<double>("RemainingCount")
@@ -910,11 +913,11 @@ namespace AKZ.API.Migrations
 
                     b.HasKey("Id");
 
-                    b.HasIndex("PlaceId");
-
                     b.HasIndex("ProcessingRecordId");
 
                     b.HasIndex("PurificationProcessId");
+
+                    b.HasIndex("PurifierId");
 
                     b.ToTable("PurifiedRecords");
                 });
@@ -951,9 +954,6 @@ namespace AKZ.API.Migrations
                         .HasMaxLength(100)
                         .HasColumnType("nvarchar(100)");
 
-                    b.Property<int?>("PlaceId")
-                        .HasColumnType("int");
-
                     b.Property<string>("UpdateBy")
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
@@ -965,8 +965,6 @@ namespace AKZ.API.Migrations
                         .HasColumnType("int");
 
                     b.HasKey("Id");
-
-                    b.HasIndex("PlaceId");
 
                     b.HasIndex("WarehouseId");
 
@@ -1931,28 +1929,24 @@ namespace AKZ.API.Migrations
 
             modelBuilder.Entity("AKZ.API.Models.PurificationProcess", b =>
                 {
-                    b.HasOne("AKZ.API.Models.Place", "Place")
-                        .WithMany()
-                        .HasForeignKey("PlaceId")
-                        .OnDelete(DeleteBehavior.Restrict);
-
                     b.HasOne("AKZ.API.Models.ProcessingRecord", "ProcessingRecord")
                         .WithMany()
                         .HasForeignKey("ProcessingRecordId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
-                    b.Navigation("Place");
+                    b.HasOne("AKZ.API.Models.Purifier", "Purifier")
+                        .WithMany()
+                        .HasForeignKey("PurifierId")
+                        .OnDelete(DeleteBehavior.Restrict);
 
                     b.Navigation("ProcessingRecord");
+
+                    b.Navigation("Purifier");
                 });
 
             modelBuilder.Entity("AKZ.API.Models.PurifiedRecord", b =>
                 {
-                    b.HasOne("AKZ.API.Models.Place", "Place")
-                        .WithMany()
-                        .HasForeignKey("PlaceId");
-
                     b.HasOne("AKZ.API.Models.ProcessingRecord", "ProcessingRecord")
                         .WithMany()
                         .HasForeignKey("ProcessingRecordId")
@@ -1963,26 +1957,24 @@ namespace AKZ.API.Migrations
                         .WithMany("PurifiedRecords")
                         .HasForeignKey("PurificationProcessId");
 
-                    b.Navigation("Place");
+                    b.HasOne("AKZ.API.Models.Purifier", "Purifier")
+                        .WithMany()
+                        .HasForeignKey("PurifierId");
 
                     b.Navigation("ProcessingRecord");
 
                     b.Navigation("PurificationProcess");
+
+                    b.Navigation("Purifier");
                 });
 
             modelBuilder.Entity("AKZ.API.Models.Purifier", b =>
                 {
-                    b.HasOne("AKZ.API.Models.Place", "Place")
-                        .WithMany()
-                        .HasForeignKey("PlaceId");
-
                     b.HasOne("AKZ.API.Models.Warehouse", "Warehouse")
                         .WithMany()
                         .HasForeignKey("WarehouseId")
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
-
-                    b.Navigation("Place");
 
                     b.Navigation("Warehouse");
                 });

@@ -898,7 +898,7 @@ const SingleDoubleDrawn: React.FC = () => {
                     <div className="detail-info-card card-worker">
                       <div className="detail-label">Refinement Worker</div>
                       <div className="detail-value">
-                        {selectedRecord.purifierName || "—"}
+                        {selectedRecord.placeName || "—"}
                       </div>
                     </div>
                   </div>
