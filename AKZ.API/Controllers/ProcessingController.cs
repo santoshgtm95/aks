@@ -34,7 +34,8 @@ public class ProcessingController : ControllerBase
         var records = await _context.ProcessingRecords
             .Include(r => r.Product)
                 .ThenInclude(p => p.Warehouse)
-            .Include(r => r.MessLabourWorker)
+            .Include(r => r.Workers)
+                .ThenInclude(w => w.MessLabourWorker)
             .Where(r => warehouseId == null || r.Product.WarehouseId == warehouseId)
             .OrderByDescending(r => r.Date)
             .Select(r => new ProcessingRecordDto
@@ -72,8 +73,12 @@ public class ProcessingController : ControllerBase
                 RemainingWeightKg = r.RemainingWeightKg,
                 Difference = r.Difference,
                 WorkerFees = r.WorkerFees,
-                MessLabourWorkerId = r.MessLabourWorkerId,
-                MessLabourWorkerName = r.MessLabourWorker != null ? r.MessLabourWorker.Name : null,
+                Workers = r.Workers.Select(w => new ProcessingRecordWorkerDto 
+                {
+                    MessLabourWorkerId = w.MessLabourWorkerId,
+                    MessLabourWorkerName = w.MessLabourWorker.Name,
+                    WorkerFee = w.WorkerFee
+                }).ToList(),
                 RemRedCount = r.RemRedCount,
                 RemWhiteCount = r.RemWhiteCount,
                 RemSpecialCount = r.RemSpecialCount,
@@ -141,7 +146,11 @@ public class ProcessingController : ControllerBase
             RemainingWeightKg = dto.RemainingWeightKg,
             Difference = dto.Difference,
             WorkerFees = dto.WorkerFees,
-            MessLabourWorkerId = dto.MessLabourWorkerId,
+            Workers = dto.Workers.Select(w => new ProcessingRecordWorker
+            {
+                MessLabourWorkerId = w.MessLabourWorkerId,
+                WorkerFee = w.WorkerFee
+            }).ToList(),
             // Initialize remaining fields with original counts/weights
             RemRedCount = dto.RedCount,
             RemWhiteCount = dto.WhiteCount,
@@ -229,7 +238,12 @@ public class ProcessingController : ControllerBase
             RemainingWeight = record.RemainingWeight,
             RemainingWeightKg = record.RemainingWeightKg,
             Difference = record.Difference,
-            WorkerFees = record.WorkerFees
+            WorkerFees = record.WorkerFees,
+            Workers = record.Workers?.Select(w => new ProcessingRecordWorkerDto 
+            {
+                MessLabourWorkerId = w.MessLabourWorkerId,
+                WorkerFee = w.WorkerFee
+            }).ToList() ?? new List<ProcessingRecordWorkerDto>()
         };
 
         return Ok(resultDto);
@@ -240,6 +254,7 @@ public class ProcessingController : ControllerBase
     {
         var record = await _context.ProcessingRecords
             .Include(r => r.Product)
+            .Include(r => r.Workers)
             .FirstOrDefaultAsync(r => r.Id == id);
 
         if (record == null)
@@ -302,7 +317,13 @@ public class ProcessingController : ControllerBase
         record.RemainingWeightKg = dto.RemainingWeightKg;
         record.Difference = dto.Difference;
         record.WorkerFees = dto.WorkerFees;
-        record.MessLabourWorkerId = dto.MessLabourWorkerId;
+
+        _context.ProcessingRecordWorkers.RemoveRange(record.Workers);
+        record.Workers = dto.Workers.Select(w => new ProcessingRecordWorker
+        {
+            MessLabourWorkerId = w.MessLabourWorkerId,
+            WorkerFee = w.WorkerFee
+        }).ToList();
 
         await _context.SaveChangesAsync();
 

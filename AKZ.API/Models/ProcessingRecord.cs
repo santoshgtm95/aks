@@ -109,10 +109,7 @@ public class ProcessingRecord : BaseEntity
     public decimal RemShortWeight { get; set; }
 
     [Column(TypeName = "decimal(18,2)")]
-    public decimal WorkerFees { get; set; }
+    public decimal WorkerFees { get; set; } // Kept for aggregate/historical compatibility, or we sum it up
 
-    public int? MessLabourWorkerId { get; set; }
-
-    [ForeignKey("MessLabourWorkerId")]
-    public MessLabourWorker? MessLabourWorker { get; set; }
+    public ICollection<ProcessingRecordWorker> Workers { get; set; } = new List<ProcessingRecordWorker>();
 }

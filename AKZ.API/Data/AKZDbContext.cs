@@ -42,6 +42,7 @@ public class AKZDbContext : DbContext
     public DbSet<ImportedSemiExport> ImportedSemiExports { get; set; }
     public DbSet<WorkerPayment> WorkerPayments { get; set; }
     public DbSet<MessLabourWorker> MessLabourWorkers { get; set; }
+    public DbSet<ProcessingRecordWorker> ProcessingRecordWorkers { get; set; }
 
     public override Task<int> SaveChangesAsync(CancellationToken cancellationToken = default)
     {

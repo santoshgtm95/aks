@@ -40,7 +40,9 @@ const MessLabour: React.FC = () => {
   const [selectedProductId, setSelectedProductId] = useState<number | null>(
     null,
   );
-  const [selectedWorkerId, setSelectedWorkerId] = useState<number | null>(null);
+  const [selectedWorkers, setSelectedWorkers] = useState<
+    { messLabourWorkerId: number; workerFee: number }[]
+  >([]);
 
   const [activeTab, setActiveTab] = useState<"processing" | "history">(
     "processing",
@@ -73,7 +75,7 @@ const MessLabour: React.FC = () => {
     null,
   );
   const [editFormData, setEditFormData] = useState({
-    messLabourWorkerId: 0,
+    workers: [] as { messLabourWorkerId: number; workerFee: number }[],
     workerNames: "",
     red: 0,
     white: 0,
@@ -85,7 +87,6 @@ const MessLabour: React.FC = () => {
     artificial: 0,
     short: 0,
     lossWeight: 0,
-    workerFees: 0,
   });
 
   const [formData, setFormData] = useState({
@@ -101,7 +102,6 @@ const MessLabour: React.FC = () => {
     artificial: "",
     short: "",
     lossWeight: "",
-    workerFees: "",
   });
 
   const selectedProduct = useMemo(
@@ -337,6 +337,11 @@ const MessLabour: React.FC = () => {
     const artificial = uw > 0 ? Math.round(record.artificialWeight / uw) : 0;
     const short = uw > 0 ? Math.round(record.shortWeight / uw) : 0;
     setEditFormData({
+      workers:
+        record.workers?.map((w) => ({
+          messLabourWorkerId: w.messLabourWorkerId,
+          workerFee: w.workerFee,
+        })) || [],
       workerNames: record.workerNames,
       red,
       white,
@@ -348,8 +353,6 @@ const MessLabour: React.FC = () => {
       artificial,
       short,
       lossWeight: record.lossWeight,
-      workerFees: record.workerFees || 0,
-      messLabourWorkerId: record.messLabourWorkerId || 0,
     });
   };
 
@@ -496,7 +499,7 @@ const MessLabour: React.FC = () => {
       date: editingRecord.date,
       productId: editingRecord.productId,
       workerNames: "",
-      messLabourWorkerId: editFormData.messLabourWorkerId,
+      workers: editFormData.workers,
       count: originalTotal,
       remainingCount: normalCount,
       unitWeight: uw,
@@ -533,7 +536,6 @@ const MessLabour: React.FC = () => {
           : undefined;
       })(),
       difference: editingRecord.difference,
-      workerFees: editFormData.workerFees,
     };
 
     try {
@@ -569,7 +571,14 @@ const MessLabour: React.FC = () => {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!selectedProductId || !selectedWorkerId) return;
+    if (!selectedProductId || selectedWorkers.length === 0) {
+      showAlert(
+        "Validation",
+        "Please select a product and at least one worker",
+        "error",
+      );
+      return;
+    }
 
     try {
       const dto: CreateProcessingRecordDto = {
@@ -578,7 +587,7 @@ const MessLabour: React.FC = () => {
         ),
         productId: selectedProductId,
         workerNames: "",
-        messLabourWorkerId: selectedWorkerId,
+        workers: selectedWorkers,
         count: Number(formData.count),
         remainingCount: totals.remainingCount,
         unitWeight: Number(formData.unitWeight),
@@ -609,7 +618,6 @@ const MessLabour: React.FC = () => {
             ? Number((totals.remainingWeight * 1.633).toFixed(4))
             : undefined,
         difference: totals.diff,
-        workerFees: Number(formData.workerFees) || 0,
       };
 
       await processingAPI.create(dto);
@@ -628,9 +636,8 @@ const MessLabour: React.FC = () => {
         artificial: "",
         short: "",
         lossWeight: "",
-        workerFees: "",
       });
-      setSelectedWorkerId(null);
+      setSelectedWorkers([]);
       setSelectedProductId(null);
 
       loadData();
@@ -758,23 +765,6 @@ const MessLabour: React.FC = () => {
                 Manage Mess-Labour Workers
               </button>
             </div>
-
-            <div className="rf-header-badge">
-              <span
-                className="rf-count-badge"
-                style={{
-                  background: "#dbeafe",
-                  color: "#2563eb",
-                  borderColor: "#bfdbfe",
-                }}
-              >
-                {activeTab === "processing"
-                  ? selectedProduct
-                    ? "Active Selection"
-                    : "No Selection"
-                  : `${records.length} records`}
-              </span>
-            </div>
           </div>
 
           {/* Tab Content */}
@@ -874,49 +864,13 @@ const MessLabour: React.FC = () => {
                     gap: "20px",
                   }}
                 >
-                  {/* 1. Worker Names */}
-                  <section className="form-section">
-                    <div
-                      className="section-header"
-                      style={{
-                        display: "flex",
-                        justifyContent: "space-between",
-                        alignItems: "center",
-                        marginBottom: "12px",
-                      }}
-                    >
-                      <h3 className="section-label" style={{ margin: 0 }}>
-                        1. Mess-Labour Worker
-                      </h3>
-                    </div>
-                    <div style={{ maxWidth: "400px" }}>
-                      <select
-                        className="rw-form-control"
-                        value={selectedWorkerId || ""}
-                        onChange={(e) =>
-                          setSelectedWorkerId(parseInt(e.target.value))
-                        }
-                        style={{ padding: "0.75rem 1rem", fontSize: "1.1rem" }}
-                      >
-                        <option value="" disabled>
-                          Select a worker...
-                        </option>
-                        {workers.map((worker) => (
-                          <option key={worker.id} value={worker.id}>
-                            {worker.name}
-                          </option>
-                        ))}
-                      </select>
-                    </div>
-                  </section>
-
                   {/* 2. Count & Unit Weight */}
                   <section className="form-section">
                     <h3
                       className="section-label"
                       style={{ marginBottom: "16px" }}
                     >
-                      2. Count &amp; Unit Weight
+                      1. Count &amp; Unit Weight
                     </h3>
                     <div className="count-unit-cards">
                       <div className="cu-card cu-card-count">
@@ -998,7 +952,7 @@ const MessLabour: React.FC = () => {
                   {/* 3. Categories */}
                   <section className="form-section">
                     <h3 className="section-label">
-                      3. Short / Deduction Categories
+                      2. Short / Deduction Categories
                     </h3>
                     <div className="category-grid">
                       <div className="category-input-box box-red">
@@ -1236,27 +1190,123 @@ const MessLabour: React.FC = () => {
                     </div>
                   </div>
 
-                  {/* 4. Worker Fees */}
+                  {/* 1. Worker Names */}
                   <section className="form-section">
-                    <h3 className="section-label">
-                      4. Worker Fees (for each worker)
-                    </h3>
-                    <div style={{ maxWidth: "400px" }}>
-                      <input
-                        type="number"
-                        min="0"
-                        step="0.01"
-                        className="rw-form-control"
-                        value={formData.workerFees}
-                        onChange={(e) =>
-                          setFormData({
-                            ...formData,
-                            workerFees: e.target.value,
-                          })
+                    <div
+                      className="section-header"
+                      style={{
+                        display: "flex",
+                        justifyContent: "space-between",
+                        alignItems: "center",
+                        marginBottom: "12px",
+                      }}
+                    >
+                      <h3 className="section-label" style={{ margin: 0 }}>
+                        3. Mess-Labour Workers & Fees
+                      </h3>
+                    </div>
+                    <div
+                      style={{
+                        display: "flex",
+                        flexDirection: "column",
+                        gap: "10px",
+                        maxWidth: "600px",
+                      }}
+                    >
+                      {selectedWorkers.map((sw, index) => (
+                        <div
+                          key={index}
+                          style={{
+                            display: "flex",
+                            gap: "10px",
+                            alignItems: "center",
+                          }}
+                        >
+                          <select
+                            className="rw-form-control"
+                            value={sw.messLabourWorkerId || ""}
+                            onChange={(e) => {
+                              const newWorkers = [...selectedWorkers];
+                              newWorkers[index].messLabourWorkerId = parseInt(
+                                e.target.value,
+                              );
+                              setSelectedWorkers(newWorkers);
+                            }}
+                            style={{
+                              padding: "0.75rem 1rem",
+                              fontSize: "1.1rem",
+                              flex: 1,
+                            }}
+                          >
+                            <option value="" disabled>
+                              Select a worker...
+                            </option>
+                            {workers.map((worker) => (
+                              <option key={worker.id} value={worker.id}>
+                                {worker.name}
+                              </option>
+                            ))}
+                          </select>
+                          <input
+                            type="number"
+                            className="rw-form-control"
+                            value={sw.workerFee || ""}
+                            onChange={(e) => {
+                              const newWorkers = [...selectedWorkers];
+                              newWorkers[index].workerFee =
+                                Number(e.target.value) || 0;
+                              setSelectedWorkers(newWorkers);
+                            }}
+                            placeholder="Fee (MMK)"
+                            style={{
+                              padding: "0.75rem 1rem",
+                              fontSize: "1.1rem",
+                              width: "150px",
+                            }}
+                          />
+                          <button
+                            type="button"
+                            className="rf-action-btn rf-action-delete"
+                            onClick={() => {
+                              const newWorkers = selectedWorkers.filter(
+                                (_, i) => i !== index,
+                              );
+                              setSelectedWorkers(newWorkers);
+                            }}
+                            style={{ height: "42px", width: "42px" }}
+                          >
+                            <Trash2 size={16} />
+                          </button>
+                        </div>
+                      ))}
+                      <button
+                        type="button"
+                        onClick={() =>
+                          setSelectedWorkers([
+                            ...selectedWorkers,
+                            { messLabourWorkerId: 0, workerFee: 0 },
+                          ])
                         }
-                        placeholder="Enter fee amount (MMK)..."
-                        style={{ padding: "0.75rem 1rem", fontSize: "1.1rem" }}
-                      />
+                        style={{
+                          alignSelf: "flex-start",
+                          background: "#eff6ff",
+                          color: "#2563eb",
+                          border: "1.5px dashed #bfdbfe",
+                          padding: "8px 16px",
+                          borderRadius: "8px",
+                          cursor: "pointer",
+                          fontWeight: 600,
+                          transition: "all 0.2s",
+                        }}
+                        onMouseOver={(e) => {
+                          e.currentTarget.style.background = "#dbeafe";
+                        }}
+                        onMouseOut={(e) => {
+                          e.currentTarget.style.background = "#eff6ff";
+                        }}
+                      >
+                        + Add Worker
+                      </button>
                     </div>
                   </section>
 
@@ -1265,7 +1315,7 @@ const MessLabour: React.FC = () => {
                     className="submit-btn"
                     disabled={
                       !selectedProductId ||
-                      !selectedWorkerId ||
+                      selectedWorkers.length === 0 ||
                       totals.diff < -(Number(formData.unitWeight) || 0) + 0.0001
                     }
                   >
@@ -1360,9 +1410,21 @@ const MessLabour: React.FC = () => {
                     >
                       <td>{formatDateTime(record.date)}</td>
                       <td>{record.productMarker}</td>
-                      <td>{record.messLabourWorkerName || "---"}</td>
                       <td>
-                        {record.workerFees?.toLocaleString(undefined, {
+                        {record.workers && record.workers.length > 0
+                          ? record.workers
+                              .map((w) => w.messLabourWorkerName)
+                              .join(", ")
+                          : (record as any).messLabourWorkerName || "---"}
+                      </td>
+                      <td>
+                        {(record.workers && record.workers.length > 0
+                          ? record.workers.reduce(
+                              (sum, w) => sum + w.workerFee,
+                              0,
+                            )
+                          : record.workerFees || 0
+                        ).toLocaleString(undefined, {
                           minimumFractionDigits: 2,
                           maximumFractionDigits: 2,
                         })}
@@ -1547,35 +1609,6 @@ const MessLabour: React.FC = () => {
             </div>
 
             <div className="em-body">
-              {/* Worker Selection */}
-              <div className="em-section">
-                <p className="em-section-title">
-                  <Users size={15} /> Mess-Labour Worker
-                </p>
-                <div style={{ maxWidth: "400px" }}>
-                  <select
-                    className="rw-form-control"
-                    value={editFormData.messLabourWorkerId || ""}
-                    onChange={(e) =>
-                      setEditFormData((prev) => ({
-                        ...prev,
-                        messLabourWorkerId: parseInt(e.target.value),
-                      }))
-                    }
-                    style={{ padding: "0.75rem 1rem", fontSize: "1.1rem" }}
-                  >
-                    <option value="" disabled>
-                      Select a worker...
-                    </option>
-                    {workers.map((worker) => (
-                      <option key={worker.id} value={worker.id}>
-                        {worker.name}
-                      </option>
-                    ))}
-                  </select>
-                </div>
-              </div>
-
               {/* Category Inputs */}
               <div className="em-section">
                 <p className="em-section-title">
@@ -1676,6 +1709,128 @@ const MessLabour: React.FC = () => {
                       placeholder="0.0000"
                     />
                   </div>
+                </div>
+              </div>
+
+              {/* Worker Selection */}
+              <div className="em-section">
+                <p className="em-section-title">
+                  <Users size={15} /> Mess-Labour Workers
+                </p>
+                <div
+                  style={{
+                    display: "flex",
+                    flexDirection: "column",
+                    gap: "10px",
+                    maxWidth: "600px",
+                  }}
+                >
+                  {editFormData.workers.map((sw, index) => (
+                    <div
+                      key={index}
+                      style={{
+                        display: "flex",
+                        gap: "10px",
+                        alignItems: "center",
+                      }}
+                    >
+                      <select
+                        className="rw-form-control"
+                        value={sw.messLabourWorkerId || ""}
+                        onChange={(e) => {
+                          const newWorkers = [...editFormData.workers];
+                          newWorkers[index].messLabourWorkerId = parseInt(
+                            e.target.value,
+                          );
+                          setEditFormData((prev) => ({
+                            ...prev,
+                            workers: newWorkers,
+                          }));
+                        }}
+                        style={{
+                          padding: "0.75rem 1rem",
+                          fontSize: "1.1rem",
+                          flex: 1,
+                        }}
+                      >
+                        <option value="" disabled>
+                          Select a worker...
+                        </option>
+                        {workers.map((worker) => (
+                          <option key={worker.id} value={worker.id}>
+                            {worker.name}
+                          </option>
+                        ))}
+                      </select>
+                      <input
+                        type="number"
+                        className="rw-form-control"
+                        value={sw.workerFee || ""}
+                        onChange={(e) => {
+                          const newWorkers = [...editFormData.workers];
+                          newWorkers[index].workerFee =
+                            Number(e.target.value) || 0;
+                          setEditFormData((prev) => ({
+                            ...prev,
+                            workers: newWorkers,
+                          }));
+                        }}
+                        placeholder="Fee (MMK)"
+                        style={{
+                          padding: "0.75rem 1rem",
+                          fontSize: "1.1rem",
+                          width: "150px",
+                        }}
+                      />
+                      <button
+                        type="button"
+                        className="rf-action-btn rf-action-delete"
+                        onClick={() => {
+                          const newWorkers = editFormData.workers.filter(
+                            (_, i) => i !== index,
+                          );
+                          setEditFormData((prev) => ({
+                            ...prev,
+                            workers: newWorkers,
+                          }));
+                        }}
+                        style={{ height: "42px", width: "42px" }}
+                      >
+                        <Trash2 size={16} />
+                      </button>
+                    </div>
+                  ))}
+                  <button
+                    type="button"
+                    onClick={() =>
+                      setEditFormData((prev) => ({
+                        ...prev,
+                        workers: [
+                          ...prev.workers,
+                          { messLabourWorkerId: 0, workerFee: 0 },
+                        ],
+                      }))
+                    }
+                    style={{
+                      alignSelf: "flex-start",
+                      background: "#eff6ff",
+                      color: "#2563eb",
+                      border: "1.5px dashed #bfdbfe",
+                      padding: "8px 16px",
+                      borderRadius: "8px",
+                      cursor: "pointer",
+                      fontWeight: 600,
+                      transition: "all 0.2s",
+                    }}
+                    onMouseOver={(e) => {
+                      e.currentTarget.style.background = "#dbeafe";
+                    }}
+                    onMouseOut={(e) => {
+                      e.currentTarget.style.background = "#eff6ff";
+                    }}
+                  >
+                    + Add Worker
+                  </button>
                 </div>
               </div>
 
@@ -1787,7 +1942,13 @@ const MessLabour: React.FC = () => {
               <div className="vm-stat-card vm-stat-span-2">
                 <span className="vm-stat-label">Workers</span>
                 <span className="vm-stat-value">
-                  {viewingRecord.workerNames || "---"}
+                  {viewingRecord.workers && viewingRecord.workers.length > 0
+                    ? viewingRecord.workers
+                        .map((w) => w.messLabourWorkerName)
+                        .join(", ")
+                    : (viewingRecord as any).messLabourWorkerName ||
+                      viewingRecord.workerNames ||
+                      "---"}
                 </span>
               </div>
               <div className="vm-stat-card">
@@ -1802,10 +1963,16 @@ const MessLabour: React.FC = () => {
                   className="vm-stat-value"
                   style={{ color: "var(--amber)", fontWeight: 700 }}
                 >
-                  {viewingRecord.workerFees?.toLocaleString(undefined, {
+                  {(viewingRecord.workers && viewingRecord.workers.length > 0
+                    ? viewingRecord.workers.reduce(
+                        (sum, w) => sum + w.workerFee,
+                        0,
+                      )
+                    : viewingRecord.workerFees || 0
+                  ).toLocaleString(undefined, {
                     minimumFractionDigits: 2,
                     maximumFractionDigits: 2,
-                  }) || "0.00"}{" "}
+                  })}{" "}
                   MMK
                 </span>
               </div>

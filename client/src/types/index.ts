@@ -198,15 +198,18 @@ export interface ProcessingRecord {
   warehouseName?: string;
   isLocked?: boolean;
   workerFees?: number;
-  messLabourWorkerId?: number;
-  messLabourWorkerName?: string;
+  workers?: {
+    messLabourWorkerId: number;
+    messLabourWorkerName?: string;
+    workerFee: number;
+  }[];
 }
 
 export interface CreateProcessingRecordDto {
   date: string;
   productId: number;
   workerNames: string;
-  messLabourWorkerId?: number;
+  workers?: { messLabourWorkerId: number; workerFee: number }[];
   count: number;
   remainingCount: number;
   unitWeight: number;
@@ -233,7 +236,6 @@ export interface CreateProcessingRecordDto {
   remainingWeight: number;
   remainingWeightKg?: number;
   difference: number;
-  workerFees: number;
 }
 
 export interface Worker {
