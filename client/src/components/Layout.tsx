@@ -130,18 +130,6 @@ const Layout: React.FC = () => {
             </Link>
           )}
 
-          {(hasPermission("Warehouse.View") ||
-            hasPermission("Warehouse.Create")) && (
-            <Link
-              to="/mess-labour-workers"
-              className={`nav-item ${isActive("/mess-labour-workers") ? "active" : ""}`}
-              onClick={closeMobileMenu}
-            >
-              <Users className="nav-icon" size={24} />
-              Mess-Labour Workers
-            </Link>
-          )}
-
           {(hasPermission("Sales2.View") || hasPermission("Sales2.Create")) && (
             <Link
               to="/purification"
@@ -241,6 +229,17 @@ const Layout: React.FC = () => {
             >
               <DollarSign className="nav-icon" size={24} />
               Exchange Rates
+            </Link>
+          )}
+
+          {user?.roleName === "Owner" && (
+            <Link
+              to="/audit-logs"
+              className={`nav-item ${isActive("/audit-logs") ? "active" : ""}`}
+              onClick={closeMobileMenu}
+            >
+              <Shield className="nav-icon" size={24} />
+              Audit Logs
             </Link>
           )}
         </nav>

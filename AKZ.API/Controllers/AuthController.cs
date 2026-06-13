@@ -13,11 +13,13 @@ public class AuthController : ControllerBase
 {
     private readonly AKZDbContext _context;
     private readonly IJwtService _jwtService;
+    private readonly IAuditLogService _auditLogService;
 
-    public AuthController(AKZDbContext context, IJwtService jwtService)
+    public AuthController(AKZDbContext context, IJwtService jwtService, IAuditLogService auditLogService)
     {
         _context = context;
         _jwtService = jwtService;
+        _auditLogService = auditLogService;
     }
 
     [HttpPost("login")]
@@ -54,6 +56,8 @@ public class AuthController : ControllerBase
 
         var token = _jwtService.GenerateToken(user, permissions);
 
+        await _auditLogService.LogCustomActionAsync("Login", "User", user.Id.ToString(), null, null);
+
         var response = new LoginResponseDto
         {
             Token = token,
@@ -72,6 +76,17 @@ public class AuthController : ControllerBase
         };
 
         return Ok(response);
+    }
+
+    [HttpPost("logout")]
+    public async Task<IActionResult> Logout()
+    {
+        var userId = User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value;
+        if (userId != null)
+        {
+            await _auditLogService.LogCustomActionAsync("Logout", "User", userId, null, null);
+        }
+        return Ok(new { message = "Logged out successfully" });
     }
 
     [HttpPost("change-password")]

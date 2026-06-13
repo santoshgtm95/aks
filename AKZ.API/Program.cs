@@ -57,6 +57,7 @@ builder.Services.AddCors(options =>
 // Add custom services
 builder.Services.AddScoped<IJwtService, JwtService>();
 builder.Services.AddScoped<ICurrentUserService, CurrentUserService>();
+builder.Services.AddScoped<IAuditLogService, AuditLogService>();
 
 var app = builder.Build();
 

@@ -5,6 +5,7 @@ namespace AKZ.API.Services;
 public interface ICurrentUserService
 {
     string? GetUsername();
+    int? GetUserId();
 }
 
 public class CurrentUserService : ICurrentUserService
@@ -18,6 +19,16 @@ public class CurrentUserService : ICurrentUserService
 
     public string? GetUsername()
     {
-        return _httpContextAccessor.HttpContext?.User?.Identity?.Name;
+        return _httpContextAccessor.HttpContext?.User?.FindFirstValue(ClaimTypes.Name);
+    }
+
+    public int? GetUserId()
+    {
+        var idString = _httpContextAccessor.HttpContext?.User?.FindFirstValue(ClaimTypes.NameIdentifier);
+        if (int.TryParse(idString, out var id))
+        {
+            return id;
+        }
+        return null;
     }
 }

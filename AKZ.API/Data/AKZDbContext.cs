@@ -43,14 +43,20 @@ public class AKZDbContext : DbContext
     public DbSet<WorkerPayment> WorkerPayments { get; set; }
     public DbSet<MessLabourWorker> MessLabourWorkers { get; set; }
     public DbSet<ProcessingRecordWorker> ProcessingRecordWorkers { get; set; }
+    public DbSet<AuditLog> AuditLogs { get; set; }
 
-    public override Task<int> SaveChangesAsync(CancellationToken cancellationToken = default)
+    public override async Task<int> SaveChangesAsync(CancellationToken cancellationToken = default)
     {
         var username = _currentUserService.GetUsername() ?? "System";
+        var userId = _currentUserService.GetUserId();
         var now = DateTime.UtcNow.AddHours(6.5);
+
+        var auditEntries = OnBeforeSaveChanges(username, userId);
 
         foreach (var entry in ChangeTracker.Entries<BaseEntity>())
         {
+            if (entry.Entity is AuditLog) continue; // Do not audit the AuditLog itself
+
             switch (entry.State)
             {
                 case EntityState.Added:
@@ -77,7 +83,137 @@ public class AKZDbContext : DbContext
             }
         }
 
-        return base.SaveChangesAsync(cancellationToken);
+        var result = await base.SaveChangesAsync(cancellationToken);
+        await OnAfterSaveChanges(auditEntries);
+        return result;
+    }
+
+    private List<AuditEntry> OnBeforeSaveChanges(string username, int? userId)
+    {
+        ChangeTracker.DetectChanges();
+        var auditEntries = new List<AuditEntry>();
+
+        foreach (var entry in ChangeTracker.Entries())
+        {
+            if (entry.Entity is AuditLog || entry.State == EntityState.Detached || entry.State == EntityState.Unchanged)
+                continue;
+
+            var auditEntry = new AuditEntry(entry)
+            {
+                EntityName = entry.Entity.GetType().Name,
+                Username = username,
+                UserId = userId,
+                Action = entry.State == EntityState.Added ? "Insert" : entry.State == EntityState.Deleted ? "Delete" : "Update"
+            };
+
+            // Exception for logical delete
+            if (entry.State == EntityState.Modified && entry.Entity is BaseEntity entity && entry.Property("DeleteFlg").IsModified)
+            {
+                if (entity.DeleteFlg == 1)
+                {
+                    auditEntry.Action = "Delete";
+                }
+            }
+
+            auditEntries.Add(auditEntry);
+
+            foreach (var property in entry.Properties)
+            {
+                if (property.IsTemporary)
+                {
+                    auditEntry.TemporaryProperties.Add(property);
+                    continue;
+                }
+
+                string propertyName = property.Metadata.Name;
+                if (property.Metadata.IsPrimaryKey())
+                {
+                    auditEntry.KeyValues[propertyName] = property.CurrentValue;
+                }
+
+                if (property.CurrentValue is float or double or decimal)
+                {
+                    var doubleVal = Convert.ToDecimal(property.CurrentValue);
+                    if (propertyName.Contains("Count", StringComparison.OrdinalIgnoreCase) && auditEntry.Action != "Delete")
+                    {
+                        if (property.IsModified && entry.State == EntityState.Modified)
+                        {
+                            var oldVal = Convert.ToDecimal(property.OriginalValue);
+                            if (doubleVal != oldVal)
+                            {
+                                auditEntry.Amount = doubleVal - oldVal; // Difference
+                                auditEntry.Action = "Count Update";
+                            }
+                        }
+                    }
+                    if (propertyName.Contains("Fee", StringComparison.OrdinalIgnoreCase) || propertyName.Contains("Payment", StringComparison.OrdinalIgnoreCase))
+                    {
+                        if (property.IsModified && entry.State == EntityState.Modified)
+                        {
+                            var oldVal = Convert.ToDecimal(property.OriginalValue);
+                            if (doubleVal != oldVal)
+                            {
+                                auditEntry.Amount = doubleVal - oldVal;
+                                auditEntry.Action = "Fee Update";
+                            }
+                        }
+                        else if (entry.State == EntityState.Added)
+                        {
+                            auditEntry.Amount = doubleVal;
+                        }
+                    }
+                }
+
+                switch (entry.State)
+                {
+                    case EntityState.Added:
+                        auditEntry.NewValues[propertyName] = property.CurrentValue;
+                        break;
+                    case EntityState.Deleted:
+                        auditEntry.OldValues[propertyName] = property.OriginalValue;
+                        break;
+                    case EntityState.Modified:
+                        if (property.IsModified)
+                        {
+                            auditEntry.OldValues[propertyName] = property.OriginalValue;
+                            auditEntry.NewValues[propertyName] = property.CurrentValue;
+                        }
+                        break;
+                }
+            }
+        }
+
+        foreach (var auditEntry in auditEntries.Where(_ => !_.HasTemporaryProperties))
+        {
+            AuditLogs.Add(auditEntry.ToAuditLog());
+        }
+
+        return auditEntries.Where(_ => _.HasTemporaryProperties).ToList();
+    }
+
+    private Task OnAfterSaveChanges(List<AuditEntry> auditEntries)
+    {
+        if (auditEntries == null || auditEntries.Count == 0)
+            return Task.CompletedTask;
+
+        foreach (var auditEntry in auditEntries)
+        {
+            foreach (var prop in auditEntry.TemporaryProperties)
+            {
+                if (prop.Metadata.IsPrimaryKey())
+                {
+                    auditEntry.KeyValues[prop.Metadata.Name] = prop.CurrentValue;
+                }
+                else
+                {
+                    auditEntry.NewValues[prop.Metadata.Name] = prop.CurrentValue;
+                }
+            }
+
+            AuditLogs.Add(auditEntry.ToAuditLog());
+        }
+
+        return base.SaveChangesAsync();
     }
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
@@ -100,6 +236,7 @@ public class AKZDbContext : DbContext
         modelBuilder.Entity<RefinementWorker>().HasQueryFilter(e => e.DeleteFlg == 0);
         modelBuilder.Entity<Ledger>().HasQueryFilter(e => e.DeleteFlg == 0);
         modelBuilder.Entity<LedgerMarker>().HasQueryFilter(e => e.DeleteFlg == 0);
+        modelBuilder.Entity<AuditLog>().HasQueryFilter(e => e.DeleteFlg == 0);
 
         // Configure ProcessingRecord relationship
         modelBuilder.Entity<ProcessingRecord>()

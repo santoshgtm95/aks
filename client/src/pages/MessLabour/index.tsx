@@ -58,6 +58,10 @@ const MessLabour: React.FC = () => {
 
   const filteredProducts = useMemo(() => {
     return products.filter((product) => {
+      // Don't show used products (remaining weight close to or <= 0)
+      if (product.remainingWeight <= 0.0001) {
+        return false;
+      }
       return (
         product.marker.toLowerCase().includes(searchTerm.toLowerCase()) ||
         (product.warehouseName || "")

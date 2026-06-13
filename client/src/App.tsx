@@ -28,12 +28,14 @@ import SemiExport from "./pages/SemiExport/index";
 import Sales6 from "./pages/Sales6/index";
 import ExchangeRates from "./pages/ExchangeRates/index";
 import CashFlow from "./pages/CashFlow/index";
+import AuditLogs from "./pages/AuditLogs/index";
 
 const ProtectedRoute: React.FC<{
   children: React.ReactNode;
   permission?: string;
-}> = ({ children, permission }) => {
-  const { isAuthenticated, hasPermission, loading } = useAuth();
+  adminOnly?: boolean;
+}> = ({ children, permission, adminOnly }) => {
+  const { user, isAuthenticated, hasPermission, loading } = useAuth();
 
   if (loading) {
     return <div className="spinner"></div>;
@@ -41,6 +43,10 @@ const ProtectedRoute: React.FC<{
 
   if (!isAuthenticated) {
     return <Navigate to="/login" />;
+  }
+
+  if (adminOnly && user?.roleName !== "Owner") {
+    return <Navigate to="/dashboard" />;
   }
 
   if (permission && !hasPermission(permission)) {
@@ -208,6 +214,14 @@ const App: React.FC = () => {
                 element={
                   <ProtectedRoute permission="Permissions.Manage">
                     <ExchangeRates />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="audit-logs"
+                element={
+                  <ProtectedRoute adminOnly={true}>
+                    <AuditLogs />
                   </ProtectedRoute>
                 }
               />

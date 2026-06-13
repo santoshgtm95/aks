@@ -86,6 +86,13 @@ export const authAPI = {
     const response = await api.post<LoginResponse>("/auth/login", data);
     return response.data;
   },
+  logout: async () => {
+    try {
+      await api.post("/auth/logout");
+    } catch {
+      // ignore
+    }
+  },
   changePassword: async (currentPassword: string, newPassword: string) => {
     const response = await api.post("/auth/change-password", {
       currentPassword,

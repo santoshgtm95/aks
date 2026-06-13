@@ -1,0 +1,166 @@
+.audit-logs-container {
+  padding: 20px;
+}
+
+.audit-logs-container h2 {
+  margin-bottom: 20px;
+  color: #333;
+}
+
+.table-responsive {
+  overflow-x: auto;
+  background: white;
+  border-radius: 8px;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+}
+
+.data-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.95rem;
+}
+
+.data-table th,
+.data-table td {
+  padding: 12px 15px;
+  text-align: left;
+  border-bottom: 1px solid #eee;
+}
+
+.data-table th {
+  background-color: #f8f9fa;
+  font-weight: 600;
+  color: #555;
+}
+
+.data-table tbody tr:hover {
+  background-color: #f5f5f5;
+}
+
+.badge {
+  padding: 4px 8px;
+  border-radius: 4px;
+  font-size: 0.85rem;
+  font-weight: 500;
+}
+
+.badge.insert {
+  background-color: #d4edda;
+  color: #155724;
+}
+
+.badge.update {
+  background-color: #fff3cd;
+  color: #856404;
+}
+
+.badge.delete {
+  background-color: #f8d7da;
+  color: #721c24;
+}
+
+.badge.login {
+  background-color: #cce5ff;
+  color: #004085;
+}
+
+.badge.logout {
+  background-color: #e2e3e5;
+  color: #383d41;
+}
+
+.badge.count-update {
+  background-color: #e8daef;
+  color: #492a54;
+}
+
+.badge.fee-update {
+  background-color: #d1ecf1;
+  color: #0c5460;
+}
+
+.details-cell {
+  max-width: 150px;
+}
+
+.details-content {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  cursor: pointer;
+  color: #007bff;
+  text-decoration: underline;
+}
+
+.audit-details-modal-content {
+  padding: 10px;
+}
+
+.audit-table-wrapper {
+  overflow-x: auto;
+  border-radius: 6px;
+  border: 1px solid #e0e0e0;
+}
+
+.audit-changes-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.95rem;
+}
+
+.audit-changes-table th,
+.audit-changes-table td {
+  padding: 10px 15px;
+  text-align: left;
+  border-bottom: 1px solid #e0e0e0;
+}
+
+.audit-changes-table th {
+  background-color: #f7f9fc;
+  font-weight: 600;
+  color: #333;
+}
+
+.audit-changes-table tbody tr:last-child td {
+  border-bottom: none;
+}
+
+.audit-changes-table .field-name {
+  font-weight: 600;
+  color: #555;
+  background-color: #fafafa;
+  width: 30%;
+}
+
+.audit-changes-table .old-value,
+.audit-changes-table .new-value {
+  width: 35%;
+  word-break: break-word;
+}
+
+.highlight-old {
+  background-color: #fbeded;
+  color: #a12b2b;
+}
+
+.highlight-new {
+  background-color: #edfbed;
+  color: #2b7a2f;
+}
+
+.fallback-pre {
+  background-color: #f4f4f4;
+  padding: 15px;
+  border-radius: 5px;
+  overflow-x: auto;
+  white-space: pre-wrap;
+  word-wrap: break-word;
+  font-size: 0.9em;
+}
+
+.no-details-msg {
+  color: #666;
+  font-style: italic;
+  text-align: center;
+  padding: 20px;
+}
