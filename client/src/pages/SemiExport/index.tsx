@@ -91,6 +91,7 @@ const SemiExport: React.FC = () => {
     date: new Date().toISOString().substring(0, 10),
   });
   const [importCategoriesData, setImportCategoriesData] = useState<any>({});
+  const [lastPrepopulated, setLastPrepopulated] = useState<{ marker: string; color: string } | null>(null);
   const importCategoryOptions = [
     "Art",
     "Red",
@@ -258,6 +259,105 @@ const SemiExport: React.FC = () => {
       setExpandedRecords({});
     }
   }, [selectedMarker, selectedRecords, savedExports]);
+
+  const getLatestImportedPrices = (marker: string, color: string) => {
+    if (!color) return null;
+
+    // 1. If marker is specified, look for imports of this marker that have the selected color
+    if (marker) {
+      const markerImports = importedData
+        .filter((d) => d.markerName?.toLowerCase() === marker.toLowerCase())
+        .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
+
+      for (const imp of markerImports) {
+        try {
+          const parsed = JSON.parse(imp.dataJson || "{}");
+          const parsedColorKey = Object.keys(parsed).find(
+            (k) => k.toLowerCase() === color.toLowerCase()
+          );
+          if (parsedColorKey && parsed[parsedColorKey]) {
+            return parsed[parsedColorKey];
+          }
+        } catch (e) {
+          console.error("Failed to parse import dataJson:", e);
+        }
+      }
+    }
+
+    // 2. Fallback: Search all imports (sorted by date descending) for the latest one containing the selected color
+    const allImportsSorted = [...importedData].sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
+    for (const imp of allImportsSorted) {
+      try {
+        const parsed = JSON.parse(imp.dataJson || "{}");
+        const parsedColorKey = Object.keys(parsed).find(
+          (k) => k.toLowerCase() === color.toLowerCase()
+        );
+        if (parsedColorKey && parsed[parsedColorKey]) {
+          return parsed[parsedColorKey];
+        }
+      } catch (e) {
+        console.error("Failed to parse import dataJson:", e);
+      }
+    }
+
+    // 3. Last fallback: Just get the absolute latest import's first available color prices if nothing else matches
+    if (allImportsSorted.length > 0) {
+      try {
+        const parsed = JSON.parse(allImportsSorted[0].dataJson || "{}");
+        const firstColorKey = Object.keys(parsed)[0];
+        if (firstColorKey && parsed[firstColorKey]) {
+          return parsed[firstColorKey];
+        }
+      } catch (e) {}
+    }
+
+    return null;
+  };
+
+  useEffect(() => {
+    if (!showImportModal) {
+      setLastPrepopulated(null);
+      return;
+    }
+
+    const currentMarker = importFormData.markerName;
+    const currentColor = importFormData.color;
+
+    if (currentColor) {
+      if (!lastPrepopulated || lastPrepopulated.marker !== currentMarker || lastPrepopulated.color !== currentColor) {
+        setLastPrepopulated({ marker: currentMarker, color: currentColor });
+
+        const latestPrices = getLatestImportedPrices(currentMarker, currentColor);
+        if (latestPrices) {
+          setImportCategoriesData((prev: any) => {
+            const currentCategoryData = prev[currentColor] || {};
+            const newCategoryData = { ...currentCategoryData };
+
+            sizeOptions.forEach((sz) => {
+              if (sz !== "Lost") {
+                const latestSizeData = latestPrices[sz];
+                const latestPrice = latestSizeData && latestSizeData.price !== undefined ? latestSizeData.price.toString() : "";
+                
+                const currentSizeData = currentCategoryData[sz] || { weight: "", price: "", amount: "" };
+                const w = currentSizeData.weight || "";
+                const amt = Number(w || 0) * Number(latestPrice || 0);
+                newCategoryData[sz] = {
+                  ...currentSizeData,
+                  price: latestPrice,
+                  amount: amt > 0 ? amt : "",
+                };
+              }
+            });
+
+            return {
+              ...prev,
+              [currentColor]: newCategoryData,
+            };
+          });
+        }
+      }
+    }
+  }, [showImportModal, importFormData.markerName, importFormData.color, importedData, lastPrepopulated]);
 
   // Calculate the total sorted weights for sidebar display (Export sizes: 10B to Bar)
   const getSortedTotal = (record: SingleDoubleDrawnRecord) => {

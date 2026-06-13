@@ -36,6 +36,11 @@ public class SingleDoubleDrawnController : ControllerBase
                         .ThenInclude(pr => pr.Product)
                             .ThenInclude(prod => prod.Warehouse)
             .Include(r => r.RefinementRecord)
+                .ThenInclude(rr => rr.PurifiedRecord)
+                    .ThenInclude(p => p.ProcessingRecord)
+                        .ThenInclude(pr => pr.Workers)
+                            .ThenInclude(w => w.MessLabourWorker)
+            .Include(r => r.RefinementRecord)
                 .ThenInclude(rr => rr.RefinementWorker)
             .Include(r => r.RefinementRecord)
                 .ThenInclude(rr => rr.PurifiedRecord)
@@ -43,6 +48,10 @@ public class SingleDoubleDrawnController : ControllerBase
             .Include(r => r.RefinementRecord)
                 .ThenInclude(rr => rr.PurifiedRecord)
                     .ThenInclude(p => p.PurificationProcess)
+            .Include(r => r.RefinementRecord)
+                .ThenInclude(rr => rr.PurifiedRecord)
+                    .ThenInclude(p => p.PurificationWorkers)
+                        .ThenInclude(pw => pw.Purifier)
             .Include(r => r.Worker)
             .OrderByDescending(r => r.Date)
             .ToListAsync();
@@ -139,10 +148,18 @@ public class SingleDoubleDrawnController : ControllerBase
                 PriceReturnSize = r.PriceReturnSize,
                 WorkerFees = r.WorkerFees,
 
-                MessLabourWorkerNames = r.RefinementRecord?.PurifiedRecord?.ProcessingRecord?.WorkerNames ?? "",
-                MessLabourWorkerFees = r.RefinementRecord?.PurifiedRecord?.ProcessingRecord?.WorkerFees ?? 0M,
-                PurificationWorkerName = r.RefinementRecord?.PurifiedRecord?.Place?.Name ?? "",
-                PurificationWorkerFees = r.RefinementRecord?.PurifiedRecord?.PurificationProcess?.WorkerFees ?? 0M,
+                MessLabourWorkerNames = r.RefinementRecord?.PurifiedRecord?.ProcessingRecord?.Workers != null && r.RefinementRecord.PurifiedRecord.ProcessingRecord.Workers.Any()
+                    ? string.Join(", ", r.RefinementRecord.PurifiedRecord.ProcessingRecord.Workers.Where(w => w.MessLabourWorker != null).Select(w => w.MessLabourWorker.Name).Distinct())
+                    : (r.RefinementRecord?.PurifiedRecord?.ProcessingRecord?.WorkerNames ?? ""),
+                MessLabourWorkerFees = r.RefinementRecord?.PurifiedRecord?.ProcessingRecord?.Workers != null && r.RefinementRecord.PurifiedRecord.ProcessingRecord.Workers.Any()
+                    ? r.RefinementRecord.PurifiedRecord.ProcessingRecord.Workers.Sum(w => w.WorkerFee)
+                    : (r.RefinementRecord?.PurifiedRecord?.ProcessingRecord?.WorkerFees ?? 0M),
+                PurificationWorkerName = r.RefinementRecord?.PurifiedRecord?.PurificationWorkers != null && r.RefinementRecord.PurifiedRecord.PurificationWorkers.Any()
+                    ? string.Join(", ", r.RefinementRecord.PurifiedRecord.PurificationWorkers.Where(pw => pw.Purifier != null).Select(pw => pw.Purifier.Name).Distinct())
+                    : (r.RefinementRecord?.PurifiedRecord?.Place?.Name ?? ""),
+                PurificationWorkerFees = r.RefinementRecord?.PurifiedRecord?.PurificationWorkers != null && r.RefinementRecord.PurifiedRecord.PurificationWorkers.Any()
+                    ? r.RefinementRecord.PurifiedRecord.PurificationWorkers.Sum(pw => pw.WorkerFees)
+                    : (r.RefinementRecord?.PurifiedRecord?.PurificationProcess?.WorkerFees ?? 0M),
                 PurifiedRecordId = r.RefinementRecord?.PurifiedRecord?.Id,
                 RefinementWorkerName = r.RefinementRecord?.RefinementWorker?.Name ?? "",
                 RefinementWorkerFees = r.RefinementRecord?.WorkerFees ?? 0M
@@ -161,11 +178,18 @@ public class SingleDoubleDrawnController : ControllerBase
                 .ThenInclude(p => p.ProcessingRecord)
                     .ThenInclude(pr => pr.Product)
                         .ThenInclude(prod => prod.Warehouse)
+            .Include(rr => rr.PurifiedRecord)
+                .ThenInclude(p => p.ProcessingRecord)
+                    .ThenInclude(pr => pr.Workers)
+                        .ThenInclude(w => w.MessLabourWorker)
             .Include(rr => rr.RefinementWorker)
             .Include(rr => rr.PurifiedRecord)
                 .ThenInclude(p => p.Place)
             .Include(rr => rr.PurifiedRecord)
                 .ThenInclude(p => p.PurificationProcess)
+            .Include(rr => rr.PurifiedRecord)
+                .ThenInclude(p => p.PurificationWorkers)
+                    .ThenInclude(pw => pw.Purifier)
             .FirstOrDefaultAsync(rr => rr.Id == dto.RefinementRecordId);
 
         if (refinementRecord == null)
@@ -331,10 +355,18 @@ public class SingleDoubleDrawnController : ControllerBase
             PriceReturnSize = record.PriceReturnSize,
             WorkerFees = record.WorkerFees,
 
-            MessLabourWorkerNames = refinementRecord.PurifiedRecord?.ProcessingRecord?.WorkerNames ?? "",
-            MessLabourWorkerFees = refinementRecord.PurifiedRecord?.ProcessingRecord?.WorkerFees ?? 0M,
-            PurificationWorkerName = refinementRecord.PurifiedRecord?.Place?.Name ?? "",
-            PurificationWorkerFees = refinementRecord.PurifiedRecord?.PurificationProcess?.WorkerFees ?? 0M,
+            MessLabourWorkerNames = refinementRecord.PurifiedRecord?.ProcessingRecord?.Workers != null && refinementRecord.PurifiedRecord.ProcessingRecord.Workers.Any()
+                ? string.Join(", ", refinementRecord.PurifiedRecord.ProcessingRecord.Workers.Where(w => w.MessLabourWorker != null).Select(w => w.MessLabourWorker.Name).Distinct())
+                : (refinementRecord.PurifiedRecord?.ProcessingRecord?.WorkerNames ?? ""),
+            MessLabourWorkerFees = refinementRecord.PurifiedRecord?.ProcessingRecord?.Workers != null && refinementRecord.PurifiedRecord.ProcessingRecord.Workers.Any()
+                ? refinementRecord.PurifiedRecord.ProcessingRecord.Workers.Sum(w => w.WorkerFee)
+                : (refinementRecord.PurifiedRecord?.ProcessingRecord?.WorkerFees ?? 0M),
+            PurificationWorkerName = refinementRecord.PurifiedRecord?.PurificationWorkers != null && refinementRecord.PurifiedRecord.PurificationWorkers.Any()
+                ? string.Join(", ", refinementRecord.PurifiedRecord.PurificationWorkers.Where(pw => pw.Purifier != null).Select(pw => pw.Purifier.Name).Distinct())
+                : (refinementRecord.PurifiedRecord?.Place?.Name ?? ""),
+            PurificationWorkerFees = refinementRecord.PurifiedRecord?.PurificationWorkers != null && refinementRecord.PurifiedRecord.PurificationWorkers.Any()
+                ? refinementRecord.PurifiedRecord.PurificationWorkers.Sum(pw => pw.WorkerFees)
+                : (refinementRecord.PurifiedRecord?.PurificationProcess?.WorkerFees ?? 0M),
             PurifiedRecordId = refinementRecord.PurifiedRecord?.Id,
             RefinementWorkerName = refinementRecord.RefinementWorker?.Name ?? "",
             RefinementWorkerFees = refinementRecord.WorkerFees
