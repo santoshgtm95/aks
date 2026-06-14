@@ -347,17 +347,20 @@ export interface Purifier {
 export interface Place {
   id: number;
   name: string;
+  supervisorName?: string;
   warehouseId: number;
   warehouseName: string;
 }
 
 export interface CreatePlaceDto {
   name: string;
+  supervisorName?: string;
   warehouseId: number;
 }
 
 export interface UpdatePlaceDto {
   name: string;
+  supervisorName?: string;
   warehouseId: number;
 }
 

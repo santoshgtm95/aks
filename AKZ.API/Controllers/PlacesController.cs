@@ -29,7 +29,8 @@ public class PlacesController : ControllerBase
                 Id = p.Id,
                 Name = p.Name,
                 WarehouseId = p.WarehouseId,
-                WarehouseName = p.Warehouse.Name
+                WarehouseName = p.Warehouse.Name,
+                SupervisorName = p.SupervisorName
             })
             .ToListAsync();
     }
@@ -40,7 +41,8 @@ public class PlacesController : ControllerBase
         var place = new Place
         {
             Name = dto.Name,
-            WarehouseId = dto.WarehouseId
+            WarehouseId = dto.WarehouseId,
+            SupervisorName = dto.SupervisorName
         };
 
         _context.Places.Add(place);
@@ -53,7 +55,8 @@ public class PlacesController : ControllerBase
             Id = place.Id,
             Name = place.Name,
             WarehouseId = place.WarehouseId,
-            WarehouseName = place.Warehouse.Name
+            WarehouseName = place.Warehouse.Name,
+            SupervisorName = place.SupervisorName
         });
     }
 
@@ -65,6 +68,7 @@ public class PlacesController : ControllerBase
 
         place.Name = dto.Name;
         place.WarehouseId = dto.WarehouseId;
+        place.SupervisorName = dto.SupervisorName;
 
         await _context.SaveChangesAsync();
         return NoContent();

@@ -37,6 +37,7 @@ const PurifierManagement: React.FC = () => {
   const [placeFormData, setPlaceFormData] = useState<CreatePlaceDto>({
     name: "",
     warehouseId: 0,
+    supervisorName: "",
   });
 
   useEffect(() => {
@@ -74,7 +75,7 @@ const PurifierManagement: React.FC = () => {
     e.preventDefault();
     try {
       await placesAPI.create(placeFormData);
-      setPlaceFormData({ name: "", warehouseId: 0 });
+      setPlaceFormData({ name: "", warehouseId: 0, supervisorName: "" });
       loadData();
     } catch (error) {
       console.error("Failed to save place:", error);
@@ -86,17 +87,20 @@ const PurifierManagement: React.FC = () => {
     e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>,
   ) => {
     const { name, value } = e.target;
-    setFormData((prev) => ({
-      ...prev,
-      [name]:
-        name === "warehouseId" || name === "placeId"
-          ? value === "0"
-            ? name === "placeId"
-              ? undefined
-              : 0
-            : parseInt(value)
-          : value,
-    }));
+    if (name === "placeId") {
+      const pId = value ? parseInt(value) : undefined;
+      const selectedPlace = places.find((p) => p.id === pId);
+      setFormData((prev) => ({
+        ...prev,
+        placeId: pId,
+        warehouseId: selectedPlace ? selectedPlace.warehouseId : 0,
+      }));
+    } else {
+      setFormData((prev) => ({
+        ...prev,
+        [name]: name === "warehouseId" ? parseInt(value) : value,
+      }));
+    }
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -113,7 +117,7 @@ const PurifierManagement: React.FC = () => {
       }
       setShowModal(false);
       setEditingPurifier(null);
-      setFormData({ name: "", warehouseId: 0 });
+      setFormData({ name: "", warehouseId: 0, placeId: undefined });
       loadData();
     } catch (error) {
       console.error("Failed to save purifier:", error);
@@ -307,6 +311,17 @@ const PurifierManagement: React.FC = () => {
                   ))}
                 </select>
               </div>
+              <div className="form-group">
+                <label className="form-label">Supervisor Name</label>
+                <input
+                  type="text"
+                  name="supervisorName"
+                  className="form-control"
+                  value={placeFormData.supervisorName || ""}
+                  onChange={handlePlaceInputChange}
+                  placeholder="Enter supervisor name"
+                />
+              </div>
               <div className="modal-footer">
                 <button
                   type="button"
@@ -338,6 +353,7 @@ const PurifierManagement: React.FC = () => {
                       <tr>
                         <th>Name</th>
                         <th>Warehouse</th>
+                        <th>Supervisor</th>
                         <th style={{ textAlign: "right" }}>Actions</th>
                       </tr>
                     </thead>
@@ -360,6 +376,7 @@ const PurifierManagement: React.FC = () => {
                               {place.warehouseName}
                             </div>
                           </td>
+                          <td>{place.supervisorName || "-"}</td>
                           <td style={{ textAlign: "right" }}>
                             {hasPermission("Warehouse.Delete") && (
                               <button
@@ -412,41 +429,33 @@ const PurifierManagement: React.FC = () => {
                 />
               </div>
               <div className="form-group">
-                <label className="form-label">Assigned Warehouse</label>
-                <select
-                  name="warehouseId"
-                  className="form-select"
-                  value={formData.warehouseId}
-                  onChange={handleInputChange}
-                  required
-                >
-                  <option value="0">-- Select Warehouse --</option>
-                  {warehouses.map((w) => (
-                    <option key={w.id} value={w.id}>
-                      {w.name}
-                    </option>
-                  ))}
-                </select>
-              </div>
-              <div className="form-group">
                 <label className="form-label">Assigned Place</label>
                 <select
                   name="placeId"
                   className="form-select"
-                  value={formData.placeId || "0"}
+                  value={formData.placeId || ""}
                   onChange={handleInputChange}
-                  disabled={!formData.warehouseId}
+                  required
                 >
-                  <option value="0">-- Select Place (Optional) --</option>
-                  {places
-                    .filter((p) => p.warehouseId === formData.warehouseId)
-                    .map((p) => (
-                      <option key={p.id} value={p.id}>
-                        {p.name}
-                      </option>
-                    ))}
+                  <option value="">-- Select Place --</option>
+                  {places.map((p) => (
+                    <option key={p.id} value={p.id}>
+                      {p.name} ({p.warehouseName})
+                    </option>
+                  ))}
                 </select>
               </div>
+              {formData.placeId && (
+                <div className="form-group">
+                  <label className="form-label">Assigned Warehouse</label>
+                  <input
+                    type="text"
+                    className="form-control"
+                    value={places.find((p) => p.id === formData.placeId)?.warehouseName || ""}
+                    disabled
+                  />
+                </div>
+              )}
               <div className="modal-footer">
                 <button
                   type="button"

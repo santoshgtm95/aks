@@ -13,6 +13,9 @@ public class Place : BaseEntity
     [MaxLength(100)]
     public string Name { get; set; } = string.Empty;
 
+    [MaxLength(100)]
+    public string? SupervisorName { get; set; }
+
     public int WarehouseId { get; set; }
 
     [ForeignKey("WarehouseId")]
