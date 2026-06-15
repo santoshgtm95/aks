@@ -1020,14 +1020,7 @@ const Purification: React.FC = () => {
                         ))}
                     </select>
 
-                    <div
-                      style={{
-                        marginTop: "10px",
-                        display: "flex",
-                        flexDirection: "column",
-                        gap: "12px",
-                      }}
-                    >
+                    <div className="pm-worker-list">
                       {purifyForm.workers.map((worker, index) => {
                         const purifierName =
                           purifiers.find((p) => p.id === worker.purifierId)
@@ -1035,24 +1028,9 @@ const Purification: React.FC = () => {
                         return (
                           <div
                             key={worker.purifierId}
-                            style={{
-                              display: "flex",
-                              gap: "10px",
-                              alignItems: "center",
-                              background: "#f8fafc",
-                              padding: "10px",
-                              borderRadius: "8px",
-                              border: "1px solid #e2e8f0",
-                            }}
+                            className="pm-worker-row"
                           >
-                            <div
-                              style={{
-                                flex: 1,
-                                fontWeight: 500,
-                                fontSize: "14px",
-                                color: "#334155",
-                              }}
-                            >
+                            <div className="pm-worker-name">
                               {purifierName}
                             </div>
                             <input
@@ -1062,7 +1040,7 @@ const Purification: React.FC = () => {
                               min="0"
                               step="any"
                               className="pm-form-control"
-                              style={{ width: "120px", margin: 0 }}
+                              style={{ margin: 0 }}
                               value={worker.count === 0 ? "" : worker.count}
                               onChange={(e) => {
                                 const newWorkers = [...purifyForm.workers];
@@ -1080,7 +1058,7 @@ const Purification: React.FC = () => {
                               min="0"
                               step="any"
                               className="pm-form-control"
-                              style={{ width: "140px", margin: 0 }}
+                              style={{ margin: 0 }}
                               value={
                                 worker.workerFees === 0 ? "" : worker.workerFees
                               }
