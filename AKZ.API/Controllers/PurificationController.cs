@@ -147,8 +147,10 @@ public class PurificationController : ControllerBase
                 WarehouseName = warehouseName,
                 PlaceId = p.PlaceId,
                 PlaceName = p.Place != null ? p.Place.Name : "",
+                SupervisorName = p.Place != null ? p.Place.SupervisorName : "",
                 IsWeightFull = p.IsWeightFull,
                 WorkerFees = p.WorkerFees,
+                SupervisorFees = p.SupervisorFees,
                 Workers = p.PurifiedRecords
                     .Where(pr => pr.DeleteFlg == 0)
                     .SelectMany(pr => pr.PurificationWorkers)
@@ -209,8 +211,10 @@ public class PurificationController : ControllerBase
                 WarehouseName = warehouseName,
                 PlaceId = p.PlaceId,
                 PlaceName = p.Place != null ? p.Place.Name : "",
+                SupervisorName = p.Place != null ? p.Place.SupervisorName : "",
                 IsWeightFull = p.IsWeightFull,
                 WorkerFees = p.PurificationProcess != null ? p.PurificationProcess.WorkerFees : 0,
+                SupervisorFees = p.SupervisorFees,
                 Workers = p.PurificationWorkers.Where(pw => pw.DeleteFlg == 0).Select(pw => new PurificationWorkerDto
                 {
                     Id = pw.Id,
@@ -255,7 +259,8 @@ public class PurificationController : ControllerBase
             RemainingWeightAfter = remWeight,
             PlaceId = dto.PlaceId,
             IsWeightFull = dto.IsWeightFull,
-            WorkerFees = dto.WorkerFees
+            WorkerFees = dto.WorkerFees,
+            SupervisorFees = dto.SupervisorFees
         };
 
         _context.PurificationProcesses.Add(process);
@@ -269,10 +274,15 @@ public class PurificationController : ControllerBase
         }
 
         string placeName = "";
+        string supervisorName = "";
         if (process.PlaceId.HasValue)
         {
             var place = await _context.Places.FindAsync(process.PlaceId.Value);
-            if (place != null) placeName = place.Name;
+            if (place != null)
+            {
+                placeName = place.Name;
+                supervisorName = place.SupervisorName;
+            }
         }
 
         return Ok(new PurificationProcessDto
@@ -289,8 +299,10 @@ public class PurificationController : ControllerBase
             WarehouseName = warehouseName,
             PlaceId = process.PlaceId,
             PlaceName = placeName,
+            SupervisorName = supervisorName,
             IsWeightFull = process.IsWeightFull,
-            WorkerFees = process.WorkerFees
+            WorkerFees = process.WorkerFees,
+            SupervisorFees = process.SupervisorFees
         });
     }
 
@@ -326,7 +338,8 @@ public class PurificationController : ControllerBase
                 RemainingWeight = newWeight,
                 PlaceId = dto.PlaceId,
                 IsWeightFull = dto.IsWeightFull,
-                PurificationProcessId = id
+                PurificationProcessId = id,
+                SupervisorFees = dto.SupervisorFees
             };
             
             if (dto.Workers != null && dto.Workers.Any())
@@ -356,6 +369,7 @@ public class PurificationController : ControllerBase
             purifiedRecord.RemainingWeight = newWeight;
             purifiedRecord.PlaceId = dto.PlaceId;
             purifiedRecord.IsWeightFull = dto.IsWeightFull;
+            purifiedRecord.SupervisorFees = dto.SupervisorFees;
             
             // Delete all and Re-add workers
             _context.PurificationWorkers.RemoveRange(purifiedRecord.PurificationWorkers);
@@ -377,6 +391,7 @@ public class PurificationController : ControllerBase
 
         // We update the 'process' (PurificationProcess) with WorkerFees
         process.WorkerFees = dto.WorkerFees;
+        process.SupervisorFees = dto.SupervisorFees;
         
         await _context.SaveChangesAsync();
         return Ok();
@@ -458,6 +473,7 @@ public class PurificationController : ControllerBase
         record.RemainingWeight = newWeight;
         record.PlaceId = dto.PlaceId;
         record.IsWeightFull = dto.IsWeightFull;
+        record.SupervisorFees = dto.SupervisorFees;
 
         _context.PurificationWorkers.RemoveRange(record.PurificationWorkers);
 
@@ -485,6 +501,7 @@ public class PurificationController : ControllerBase
             process.RemainingWeightAfter = remWeight;
             process.PlaceId = dto.PlaceId;
             process.IsWeightFull = dto.IsWeightFull;
+            process.SupervisorFees = dto.SupervisorFees;
         }
 
         await _context.SaveChangesAsync();

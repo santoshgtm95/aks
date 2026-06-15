@@ -260,8 +260,10 @@ export interface PurificationProcess {
   warehouseName?: string;
   placeId?: number;
   placeName?: string;
+  supervisorName?: string;
   isWeightFull: boolean;
   workerFees?: number;
+  supervisorFees?: number;
   workers?: {
     id: number;
     purifierId: number;
@@ -282,8 +284,10 @@ export interface PurifiedRecord {
   warehouseName?: string;
   placeId?: number;
   placeName?: string;
+  supervisorName?: string;
   isWeightFull: boolean;
   workerFees?: number;
+  supervisorFees?: number;
   workers?: {
     id: number;
     purifierId: number;
@@ -302,6 +306,7 @@ export interface CreatePurificationProcessDto {
   purifierId?: number;
   isWeightFull: boolean;
   workerFees?: number;
+  supervisorFees?: number;
   workers?: { purifierId: number; count: number; workerFees: number }[];
 }
 
@@ -519,7 +524,6 @@ export interface CreateWashGradingProcessDto {
   washGradingWorkerId?: number;
   workerFees?: number;
 }
-
 
 export interface SingleDoubleDrawnRecord {
   id: number;

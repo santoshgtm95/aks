@@ -4,16 +4,19 @@ using AKZ.API.Data;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 #nullable disable
 
-namespace AKZ.API.Migrations
+namespace AKZ.API.Data.Migrations
 {
     [DbContext(typeof(AKZDbContext))]
-    partial class AKZDbContextModelSnapshot : ModelSnapshot
+    [Migration("20260615060112_AddSupervisorFeesToPurification")]
+    partial class AddSupervisorFeesToPurification
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -973,9 +976,6 @@ namespace AKZ.API.Migrations
                     b.Property<decimal>("RemainingWeightAfter")
                         .HasColumnType("decimal(18,4)");
 
-                    b.Property<decimal>("SupervisorFees")
-                        .HasColumnType("decimal(18,2)");
-
                     b.Property<string>("UpdateBy")
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
@@ -1106,9 +1106,6 @@ namespace AKZ.API.Migrations
 
                     b.Property<decimal>("RemainingWeight")
                         .HasColumnType("decimal(18,4)");
-
-                    b.Property<decimal>("SupervisorFees")
-                        .HasColumnType("decimal(18,2)");
 
                     b.Property<string>("UpdateBy")
                         .IsRequired()

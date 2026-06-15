@@ -63,6 +63,7 @@ const Purification: React.FC = () => {
     isWeightFull: boolean;
     date: string;
     workerFees: string;
+    supervisorFees: string;
     workers: { purifierId: number; count: number; workerFees: number }[];
   }>({
     count: "",
@@ -71,6 +72,7 @@ const Purification: React.FC = () => {
     isWeightFull: true,
     date: getMyanmarNow(),
     workerFees: "",
+    supervisorFees: "",
     workers: [],
   });
 
@@ -114,6 +116,7 @@ const Purification: React.FC = () => {
         placeId: placeId,
         isWeightFull: true,
         workerFees: 0,
+        supervisorFees: 0,
       });
       await loadData();
       setInputCounts((prev) => ({ ...prev, [key]: "" }));
@@ -202,6 +205,8 @@ const Purification: React.FC = () => {
       purifierId: 0,
       isWeightFull: p.isWeightFull,
       workerFees: p.workerFees !== undefined ? p.workerFees.toString() : "",
+      supervisorFees:
+        p.supervisorFees !== undefined ? p.supervisorFees.toString() : "",
       workers: p.workers
         ? p.workers.map((w) => ({
             purifierId: w.purifierId,
@@ -265,6 +270,7 @@ const Purification: React.FC = () => {
           placeId: editingProcess.placeId,
           isWeightFull: purifyForm.isWeightFull,
           workerFees: Number(purifyForm.workerFees) || 0,
+          supervisorFees: Number(purifyForm.supervisorFees) || 0,
           workers: purifyForm.workers,
         });
       } else if (editingRecord) {
@@ -276,6 +282,7 @@ const Purification: React.FC = () => {
           placeId: editingRecord.placeId,
           isWeightFull: purifyForm.isWeightFull,
           workerFees: Number(purifyForm.workerFees) || 0,
+          supervisorFees: Number(purifyForm.supervisorFees) || 0,
           workers: purifyForm.workers,
         });
       } else if (selectedCategory) {
@@ -287,6 +294,7 @@ const Purification: React.FC = () => {
           placeId: purifyForm.placeId,
           isWeightFull: purifyForm.isWeightFull,
           workerFees: Number(purifyForm.workerFees) || 0,
+          supervisorFees: Number(purifyForm.supervisorFees) || 0,
           workers: purifyForm.workers,
         });
       }
@@ -974,6 +982,53 @@ const Purification: React.FC = () => {
                   </div>
                 )}
 
+                {/* Supervisor Fees */}
+                {purifyForm.placeId !== 0 && (
+                  <div className="pm-form-group">
+                    <label className="pm-form-label">Supervisor Fees</label>
+                    <div
+                      style={{
+                        display: "flex",
+                        gap: "10px",
+                        alignItems: "center",
+                      }}
+                    >
+                      <span
+                        className="pm-readonly-box"
+                        style={{
+                          flex: 1,
+                          backgroundColor: "#f8fafc",
+                          padding: "8px",
+                          borderRadius: "6px",
+                          color: "#64748b",
+                        }}
+                      >
+                        Supervisor:{" "}
+                        {editingProcess?.supervisorName ||
+                          editingRecord?.supervisorName ||
+                          places.find((p) => p.id === purifyForm.placeId)
+                            ?.supervisorName ||
+                          "---"}
+                      </span>
+                      <input
+                        type="number"
+                        min="0"
+                        step="0.01"
+                        className="pm-form-control"
+                        placeholder="Fees"
+                        style={{ flex: 1 }}
+                        value={purifyForm.supervisorFees}
+                        onChange={(e) =>
+                          setPurifyForm((prev) => ({
+                            ...prev,
+                            supervisorFees: e.target.value,
+                          }))
+                        }
+                      />
+                    </div>
+                  </div>
+                )}
+
                 {/* Purifier Workers (Only when editing) */}
                 {(editingProcess || editingRecord) && (
                   <div
@@ -1030,9 +1085,7 @@ const Purification: React.FC = () => {
                             key={worker.purifierId}
                             className="pm-worker-row"
                           >
-                            <div className="pm-worker-name">
-                              {purifierName}
-                            </div>
+                            <div className="pm-worker-name">{purifierName}</div>
                             <input
                               type="number"
                               placeholder="Bundle count"

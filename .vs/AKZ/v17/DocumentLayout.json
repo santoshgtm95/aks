@@ -86,8 +86,8 @@
               "Title": "appsettings.json",
               "DocumentMoniker": "C:\\Users\\user\\Documents\\me\\AKZNew\\AKZ.API\\appsettings.json",
               "RelativeDocumentMoniker": "AKZ.API\\appsettings.json",
-              "ToolTip": "C:\\Users\\user\\Documents\\me\\AKZNew\\AKZ.API\\appsettings.json",
-              "RelativeToolTip": "AKZ.API\\appsettings.json",
+              "ToolTip": "C:\\Users\\user\\Documents\\me\\AKZNew\\AKZ.API\\appsettings.json*",
+              "RelativeToolTip": "AKZ.API\\appsettings.json*",
               "ViewState": "AgIAAAAAAAAAAAAAAAAAAAEAAAAYAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.001642|",
               "WhenOpened": "2026-06-10T12:12:35.258Z",
@@ -103,8 +103,7 @@
               "RelativeToolTip": "AKZ.API\\migration.sql",
               "ViewState": "AgIAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000826|",
-              "WhenOpened": "2026-06-10T12:12:33.196Z",
-              "EditorCaption": ""
+              "WhenOpened": "2026-06-10T12:12:33.196Z"
             }
           ]
         }

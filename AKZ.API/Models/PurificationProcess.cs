@@ -40,4 +40,7 @@ public class PurificationProcess : BaseEntity
 
     [Column(TypeName = "decimal(18,2)")]
     public decimal WorkerFees { get; set; }
+
+    [Column(TypeName = "decimal(18,2)")]
+    public decimal SupervisorFees { get; set; }
 }
