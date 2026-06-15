@@ -607,6 +607,8 @@ const Purification: React.FC = () => {
                     <th>Purified Count</th>
                     <th>Weight (Output)</th>
                     <th>Worker Fees</th>
+                    <th>Supervisor Fees</th>
+                    <th>Supervisor Name</th>
                     <th>place</th>
                     <th>Weight Status</th>
                     <th style={{ textAlign: "right" }}>Actions</th>
@@ -800,6 +802,15 @@ const Purification: React.FC = () => {
                           minimumFractionDigits: 2,
                           maximumFractionDigits: 2,
                         })}
+                      </td>
+                      <td>
+                        {(p.supervisorFees || 0).toLocaleString(undefined, {
+                          minimumFractionDigits: 2,
+                          maximumFractionDigits: 2,
+                        })}
+                      </td>
+                      <td style={{ fontWeight: 500 }}>
+                        {p.supervisorName || "---"}
                       </td>
                       <td>
                         <div
