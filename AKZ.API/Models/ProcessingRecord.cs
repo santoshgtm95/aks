@@ -17,6 +17,11 @@ public class ProcessingRecord : BaseEntity
     [ForeignKey("ProductId")]
     public Product Product { get; set; } = null!;
 
+    public int? WashGradingRecordId { get; set; }
+
+    [ForeignKey("WashGradingRecordId")]
+    public WashGradingRecord? WashGradingRecord { get; set; }
+
     [Required]
     public string WorkerNames { get; set; } = string.Empty;
 

@@ -1,12 +1,12 @@
 import React, { useEffect, useState, useMemo } from "react";
 import { useAuth } from "../../context/AuthContext";
 import {
-  productsAPI,
+  washGradingAPI,
   messLabourWorkersAPI,
   processingAPI,
 } from "../../services/api";
 import type {
-  Product,
+  WashGradingRecord,
   MessLabourWorker,
   ProcessingRecord,
   CreateProcessingRecordDto,
@@ -33,11 +33,11 @@ import "./index.css";
 const MessLabour: React.FC = () => {
   const { hasPermission } = useAuth();
   const { showAlert, showConfirm } = useNotification();
-  const [products, setProducts] = useState<Product[]>([]);
+  const [washRecords, setWashRecords] = useState<WashGradingRecord[]>([]);
   const [workers, setWorkers] = useState<MessLabourWorker[]>([]);
   const [records, setRecords] = useState<ProcessingRecord[]>([]);
   const [loading, setLoading] = useState(true);
-  const [selectedProductId, setSelectedProductId] = useState<number | null>(
+  const [selectedWashRecordId, setSelectedWashRecordId] = useState<number | null>(
     null,
   );
   const [selectedWorkers, setSelectedWorkers] = useState<
@@ -56,20 +56,20 @@ const MessLabour: React.FC = () => {
     loadData();
   };
 
-  const filteredProducts = useMemo(() => {
-    return products.filter((product) => {
-      // Don't show used products (remaining weight close to or <= 0)
-      if (product.remainingWeight <= 0.0001) {
+  const filteredWashRecords = useMemo(() => {
+    return washRecords.filter((record) => {
+      // Don't show records with no remaining weight
+      if (record.remainingWeight <= 0.0001) {
         return false;
       }
       return (
-        product.marker.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        (product.warehouseName || "")
+        record.productMarker.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        (record.warehouseName || "")
           .toLowerCase()
           .includes(searchTerm.toLowerCase())
       );
     });
-  }, [products, searchTerm]);
+  }, [washRecords, searchTerm]);
 
   // Edit/View modal state
   const [editingRecord, setEditingRecord] = useState<ProcessingRecord | null>(
@@ -108,24 +108,20 @@ const MessLabour: React.FC = () => {
     lossWeight: "",
   });
 
-  const selectedProduct = useMemo(
-    () => products.find((p) => p.id === selectedProductId),
-    [products, selectedProductId],
+  const selectedWashRecord = useMemo(
+    () => washRecords.find((r) => r.id === selectedWashRecordId),
+    [washRecords, selectedWashRecordId],
   );
 
   useEffect(() => {
     loadData();
   }, []);
 
-  // Auto-calculate total count from original weight, unit weight and loss
+  // Auto-calculate total count from remaining weight (always viss) and unit weight
   useEffect(() => {
-    if (selectedProduct && Number(formData.unitWeight) > 0) {
-      const isKg =
-        selectedProduct.unit?.toLowerCase() === "kg" ||
-        selectedProduct.unit?.toLowerCase() === "kilogram";
-      const rwViss = isKg
-        ? selectedProduct.remainingWeight / 1.633
-        : selectedProduct.remainingWeight;
+    if (selectedWashRecord && Number(formData.unitWeight) > 0) {
+      // WashGradingRecord.remainingWeight is always in viss
+      const rwViss = selectedWashRecord.remainingWeight;
       const calcCount = Number(
         (rwViss / Number(formData.unitWeight)).toFixed(4),
       );
@@ -133,7 +129,7 @@ const MessLabour: React.FC = () => {
     } else {
       setFormData((prev) => ({ ...prev, count: "0" }));
     }
-  }, [selectedProduct, formData.unitWeight]);
+  }, [selectedWashRecord, formData.unitWeight]);
 
   // Clamping categories if total count decreases (e.g. due to loss increase)
   useEffect(() => {
@@ -171,12 +167,12 @@ const MessLabour: React.FC = () => {
 
   const loadData = async () => {
     try {
-      const [productsData, workersData, recordsData] = await Promise.all([
-        productsAPI.getAll(),
+      const [washData, workersData, recordsData] = await Promise.all([
+        washGradingAPI.getAvailableForMessLabour(),
         messLabourWorkersAPI.getAll(),
         processingAPI.getAll(),
       ]);
-      setProducts(productsData);
+      setWashRecords(washData);
       setWorkers(workersData);
       setRecords(recordsData);
     } catch (error) {
@@ -220,7 +216,7 @@ const MessLabour: React.FC = () => {
   };
 
   const getFieldMax = (fieldName: keyof typeof formData) => {
-    if (!selectedProduct || !formData.unitWeight) return undefined;
+    if (!selectedWashRecord || !formData.unitWeight) return undefined;
     const uw = Number(formData.unitWeight) || 0;
 
     if (uw <= 0) return undefined;
@@ -254,15 +250,8 @@ const MessLabour: React.FC = () => {
   const totals = useMemo(() => {
     const uw = Number(formData.unitWeight) || 0;
 
-    // Calculate remaining weight in Viss for comparison
-    const isKg =
-      selectedProduct?.unit?.toLowerCase() === "kg" ||
-      selectedProduct?.unit?.toLowerCase() === "kilogram";
-    const rwViss = selectedProduct
-      ? isKg
-        ? selectedProduct.remainingWeight / 1.633
-        : selectedProduct.remainingWeight
-      : 0;
+    // WashGradingRecord.remainingWeight is always in viss
+    const rwViss = selectedWashRecord ? selectedWashRecord.remainingWeight : 0;
 
     const totalPackages = Number(formData.count) || 0;
     const totalWeightFromCount = totalPackages * uw;
@@ -292,7 +281,7 @@ const MessLabour: React.FC = () => {
     const remainingWeight = rwViss - categorizedWeight;
 
     const total = totalWeightFromCount;
-    const diff = selectedProduct ? rwViss - total : 0;
+    const diff = selectedWashRecord ? rwViss - total : 0;
 
     return {
       rwViss,
@@ -323,7 +312,7 @@ const MessLabour: React.FC = () => {
         Number(formData.short),
       remainingCount: uw > 0 ? Math.max(0, remainingWeight / uw) : 0,
     };
-  }, [formData, selectedProduct]);
+  }, [formData, selectedWashRecord]);
 
   // ─── Edit record helpers ───────────────────────────────────────────────────
 
@@ -528,17 +517,7 @@ const MessLabour: React.FC = () => {
       lossWeight,
       totalWeight,
       remainingWeight: normalWeight, // normalWeight is the remaining weight for sale
-      remainingWeightKg: (() => {
-        const productForEdit = products.find(
-          (p) => p.id === editingRecord.productId,
-        );
-        const isEditProductKg =
-          productForEdit?.unit?.toLowerCase() === "kg" ||
-          productForEdit?.unit?.toLowerCase() === "kilogram";
-        return isEditProductKg
-          ? Number((normalWeight * 1.633).toFixed(4))
-          : undefined;
-      })(),
+      remainingWeightKg: undefined,
       difference: editingRecord.difference,
     };
 
@@ -575,10 +554,10 @@ const MessLabour: React.FC = () => {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!selectedProductId || selectedWorkers.length === 0) {
+    if (!selectedWashRecordId || !selectedWashRecord || selectedWorkers.length === 0) {
       showAlert(
         "Validation",
-        "Please select a product and at least one worker",
+        "Please select a washed item and at least one worker",
         "error",
       );
       return;
@@ -589,7 +568,8 @@ const MessLabour: React.FC = () => {
         date: combineDateWithMyanmarTime(
           new Date().toISOString().split("T")[0],
         ),
-        productId: selectedProductId,
+        productId: selectedWashRecord.productId,
+        washGradingRecordId: selectedWashRecord.id,
         workerNames: "",
         workers: selectedWorkers,
         count: Number(formData.count),
@@ -616,11 +596,7 @@ const MessLabour: React.FC = () => {
         lossWeight: totals.lossWeight,
         totalWeight: totals.total,
         remainingWeight: totals.remainingWeight,
-        remainingWeightKg:
-          selectedProduct?.unit?.toLowerCase() === "kg" ||
-          selectedProduct?.unit?.toLowerCase() === "kilogram"
-            ? Number((totals.remainingWeight * 1.633).toFixed(4))
-            : undefined,
+        remainingWeightKg: undefined,
         difference: totals.diff,
       };
 
@@ -642,7 +618,7 @@ const MessLabour: React.FC = () => {
         lossWeight: "",
       });
       setSelectedWorkers([]);
-      setSelectedProductId(null);
+      setSelectedWashRecordId(null);
 
       loadData();
       showAlert("Success", "Record saved successfully!", "success");
@@ -676,21 +652,21 @@ const MessLabour: React.FC = () => {
         </div>
 
         <div className="rf-card-list">
-          {filteredProducts.length === 0 ? (
-            <div className="rf-empty-sidebar">No bags found</div>
+          {filteredWashRecords.length === 0 ? (
+            <div className="rf-empty-sidebar">No washed items found</div>
           ) : (
-            filteredProducts.map((product) => (
+            filteredWashRecords.map((record) => (
               <div
-                key={product.id}
-                className={`product-card ${selectedProductId === product.id ? "selected" : ""} ${product.remainingWeight <= 0.0001 ? "used" : ""}`}
+                key={record.id}
+                className={`product-card ${selectedWashRecordId === record.id ? "selected" : ""}`}
                 onClick={() => {
-                  setSelectedProductId(product.id);
+                  setSelectedWashRecordId(record.id);
                   setActiveTab("processing");
                 }}
               >
                 <div className="card-header">
                   <div style={{ display: "flex", flexDirection: "column" }}>
-                    <span className="card-marker">{product.marker}</span>
+                    <span className="card-marker">{record.productMarker}</span>
                     <span
                       style={{
                         fontSize: "11px",
@@ -698,27 +674,24 @@ const MessLabour: React.FC = () => {
                         fontWeight: 500,
                       }}
                     >
-                      {product.warehouseName}
+                      {record.warehouseName}
                     </span>
                   </div>
-                  <span
-                    className={`rf-badge ${product.remainingWeight <= 0.0001 ? "category-9r" : "category-natural"}`}
-                  >
-                    {product.remainingWeight <= 0.0001 ? "Used" : "New"}
+                  <span className="rf-badge category-natural">
+                    Washed
                   </span>
                 </div>
                 <div className="card-details">
-                  <span>{product.packages} bundles</span>
+                  <span style={{ fontSize: "11px", color: "#64748b" }}>
+                    {record.washGradingWorkerName || "No worker"}
+                  </span>
                   <span
                     style={{
                       fontWeight: "700",
-                      color:
-                        product.remainingWeight <= 0.0001
-                          ? "#94a3b8"
-                          : "#2563eb",
+                      color: "#2563eb",
                     }}
                   >
-                    {product.remainingWeight.toFixed(4)} {product.unit}
+                    {record.remainingWeight.toFixed(4)} viss
                   </span>
                 </div>
               </div>
@@ -773,7 +746,7 @@ const MessLabour: React.FC = () => {
 
           {/* Tab Content */}
           {activeTab === "processing" ? (
-            selectedProduct ? (
+            selectedWashRecord ? (
               <div
                 className="fade-in"
                 style={{
@@ -808,13 +781,10 @@ const MessLabour: React.FC = () => {
                         fontWeight: "500",
                       }}
                     >
-                      Bag Marker: <strong>{selectedProduct.marker}</strong>
-                      {selectedProduct.remainingWeight <= 0.0001 && (
-                        <span style={{ color: "#ea580c", fontWeight: "700" }}>
-                          {" "}
-                          (Used)
-                        </span>
-                      )}
+                      Bag Marker: <strong>{selectedWashRecord.productMarker}</strong>
+                      <span style={{ fontSize: "12px", color: "#64748b", marginLeft: "8px" }}>
+                        (from Wash/Grading)
+                      </span>
                     </p>
                   </div>
                   <div
@@ -846,7 +816,7 @@ const MessLabour: React.FC = () => {
                         color: "#0f172a",
                       }}
                     >
-                      {selectedProduct.remainingWeight.toFixed(4)}{" "}
+                      {selectedWashRecord.remainingWeight.toFixed(4)}{" "}
                       <span
                         style={{
                           fontSize: "12px",
@@ -854,7 +824,7 @@ const MessLabour: React.FC = () => {
                           color: "#64748b",
                         }}
                       >
-                        {selectedProduct.unit}
+                        viss
                       </span>
                     </div>
                   </div>
@@ -934,7 +904,7 @@ const MessLabour: React.FC = () => {
                             </span>
                             <span className="cu-unit">viss</span>
                           </div>
-                          {selectedProduct && (
+                          {selectedWashRecord && (
                             <p
                               className="cu-hint"
                               style={{
@@ -1137,11 +1107,7 @@ const MessLabour: React.FC = () => {
                     <div
                       className="summary-calc"
                       style={{
-                        marginBottom:
-                          selectedProduct?.unit?.toLowerCase() === "kg" ||
-                          selectedProduct?.unit?.toLowerCase() === "kilogram"
-                            ? "4px"
-                            : "20px",
+                        marginBottom: "20px",
                       }}
                     >
                       <div className="calc-left">
@@ -1157,21 +1123,7 @@ const MessLabour: React.FC = () => {
                         {totals.remainingWeight.toFixed(3)} viss
                       </div>
                     </div>
-                    {(selectedProduct?.unit?.toLowerCase() === "kg" ||
-                      selectedProduct?.unit?.toLowerCase() === "kilogram") && (
-                      <div
-                        style={{
-                          display: "flex",
-                          justifyContent: "flex-end",
-                          color: "var(--gray)",
-                          fontSize: "18px",
-                          fontWeight: 600,
-                          marginBottom: "20px",
-                        }}
-                      >
-                        ({(totals.remainingWeight * 1.633).toFixed(4)} kg)
-                      </div>
-                    )}
+
                     <div
                       className="summary-calc"
                       style={{
@@ -1318,7 +1270,7 @@ const MessLabour: React.FC = () => {
                     type="submit"
                     className="submit-btn"
                     disabled={
-                      !selectedProductId ||
+                      !selectedWashRecordId ||
                       selectedWorkers.length === 0 ||
                       totals.diff < -(Number(formData.unitWeight) || 0) + 0.0001
                     }
@@ -1353,7 +1305,7 @@ const MessLabour: React.FC = () => {
           ) : (
             /* History Tab */
             <div className="rf-table-wrap fade-in">
-              {selectedProduct && (
+              {selectedWashRecord && (
                 <div
                   style={{
                     display: "flex",
@@ -1370,10 +1322,10 @@ const MessLabour: React.FC = () => {
                     }}
                   >
                     Showing records for:{" "}
-                    <strong>{selectedProduct.marker}</strong>
+                    <strong>{selectedWashRecord.productMarker}</strong>
                   </span>
                   <button
-                    onClick={() => setSelectedProductId(null)}
+                    onClick={() => setSelectedWashRecordId(null)}
                     style={{
                       fontSize: "12px",
                       color: "#2563eb",
@@ -1402,8 +1354,8 @@ const MessLabour: React.FC = () => {
                   </tr>
                 </thead>
                 <tbody>
-                  {(selectedProductId
-                    ? records.filter((r) => r.productId === selectedProductId)
+                  {(selectedWashRecordId
+                    ? records.filter((r) => r.washGradingRecordId === selectedWashRecordId)
                     : records
                   ).map((record) => (
                     <tr
@@ -1854,12 +1806,8 @@ const MessLabour: React.FC = () => {
                   (editFormData.short || 0);
                 const remainingCount = originalTotal - catSum;
                 const remainingWeight = remainingCount * uw;
-                const productForEdit = products.find(
-                  (p) => p.id === editingRecord.productId,
-                );
-                const isKg =
-                  productForEdit?.unit?.toLowerCase() === "kg" ||
-                  productForEdit?.unit?.toLowerCase() === "kilogram";
+                // WashGrading records are always in viss
+                const isKg = false;
 
                 return (
                   <div className="em-summary-bar">

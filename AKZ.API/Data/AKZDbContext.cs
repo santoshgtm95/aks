@@ -250,6 +250,12 @@ public class AKZDbContext : DbContext
             .HasForeignKey(pr => pr.ProductId)
             .OnDelete(DeleteBehavior.Restrict);
 
+        modelBuilder.Entity<ProcessingRecord>()
+            .HasOne(pr => pr.WashGradingRecord)
+            .WithMany()
+            .HasForeignKey(pr => pr.WashGradingRecordId)
+            .OnDelete(DeleteBehavior.SetNull);
+
         // Configure unique constraints
         modelBuilder.Entity<User>()
             .HasIndex(u => u.Username)

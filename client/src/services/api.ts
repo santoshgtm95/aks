@@ -495,6 +495,12 @@ export const washGradingAPI = {
     );
     return response.data;
   },
+  getAvailableForMessLabour: async (): Promise<WashGradingRecord[]> => {
+    const response = await api.get<WashGradingRecord[]>(
+      "/washgrading/available-for-messlabour",
+    );
+    return response.data;
+  },
   getAll: async (): Promise<WashGradingProcess[]> => {
     const response = await api.get<WashGradingProcess[]>("/washgrading");
     return response.data;

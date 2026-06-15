@@ -43,6 +43,7 @@ public class ProcessingController : ControllerBase
                 Id = r.Id,
                 Date = r.Date,
                 ProductId = r.ProductId,
+                WashGradingRecordId = r.WashGradingRecordId,
                 ProductMarker = r.Product.Marker,
                 WarehouseName = r.Product.Warehouse != null ? r.Product.Warehouse.Name : "",
                 WorkerNames = r.WorkerNames,
@@ -114,10 +115,40 @@ public class ProcessingController : ControllerBase
             return BadRequest(new { message = "Product not found" });
         }
 
+        decimal categorizedWeight = dto.RedWeight + dto.WhiteWeight + dto.SpecialWeight +
+                                    dto.NaturalWeight + dto.NaturalWhiteWeight + dto.NaturalRedWeight +
+                                    dto.ShortCutWeight + dto.ArtificialWeight + dto.ShortWeight +
+                                    dto.LossWeight;
+
+        // If linked to a WashGradingRecord, deduct from its RemainingWeight (stored in viss)
+        // Otherwise fall back to deducting from Product.RemainingWeight directly.
+        if (dto.WashGradingRecordId.HasValue)
+        {
+            var wgRecord = await _context.WashGradingRecords.FindAsync(dto.WashGradingRecordId.Value);
+            if (wgRecord == null)
+                return BadRequest(new { message = "Wash/Grading record not found" });
+
+            if (categorizedWeight > wgRecord.RemainingWeight + 0.0001m)
+                return BadRequest(new { message = $"Weight exceeds washed stock remaining ({wgRecord.RemainingWeight:F4} viss)" });
+
+            wgRecord.RemainingWeight -= categorizedWeight;
+            if (Math.Abs(wgRecord.RemainingWeight) < 0.0001m) wgRecord.RemainingWeight = 0;
+        }
+        else
+        {
+            string productUnit = (product.Unit ?? "").ToLower().Trim();
+            bool isProductKg = productUnit.Contains("kg") || productUnit.Contains("kilogram");
+            decimal processedWeightInProductUnit = isProductKg ? categorizedWeight * 1.633m : categorizedWeight;
+
+            product.RemainingWeight -= processedWeightInProductUnit;
+            if (Math.Abs(product.RemainingWeight) < 0.0001m) product.RemainingWeight = 0;
+        }
+
         var record = new ProcessingRecord
         {
             Date = dto.Date.Date.Add(DateTime.UtcNow.AddHours(6.5).TimeOfDay),
             ProductId = dto.ProductId,
+            WashGradingRecordId = dto.WashGradingRecordId,
             WorkerNames = dto.WorkerNames,
             Count = dto.Count,
             RemainingCount = dto.RemainingCount,
@@ -151,7 +182,6 @@ public class ProcessingController : ControllerBase
                 MessLabourWorkerId = w.MessLabourWorkerId,
                 WorkerFee = w.WorkerFee
             }).ToList(),
-            // Initialize remaining fields with original counts/weights
             RemRedCount = dto.RedCount,
             RemWhiteCount = dto.WhiteCount,
             RemSpecialCount = dto.SpecialCount,
@@ -173,32 +203,6 @@ public class ProcessingController : ControllerBase
         };
 
         _context.ProcessingRecords.Add(record);
-
-        // DATA FROM MESS-LABOUR IS IN VISS. 
-        // If product unit is KG, convert Viss to KG before updating Products table.
-        string productUnit = (product.Unit ?? "").ToLower().Trim();
-        bool isProductKg = productUnit.Contains("kg") || productUnit.Contains("kilogram");
-        
-        decimal categorizedWeight = dto.RedWeight + dto.WhiteWeight + dto.SpecialWeight + 
-                                    dto.NaturalWeight + dto.NaturalWhiteWeight + dto.NaturalRedWeight + 
-                                    dto.ShortCutWeight + dto.ArtificialWeight + dto.ShortWeight +
-                                    dto.LossWeight;
-
-        // The UI calculates remaining as: rwViss - categorizedWeight
-        // Therefore, we deduct categorizedWeight to match the UI's remaining weight exactly.
-        decimal processedWeightInProductUnit = isProductKg 
-            ? categorizedWeight * 1.633m 
-            : categorizedWeight;
-
-        // Update the Products table RemainingWeight
-        product.RemainingWeight -= processedWeightInProductUnit;
-        
-        // Safeguard: Prevent small floating point errors from showing near-zero values
-        if (Math.Abs(product.RemainingWeight) < 0.0001m)
-        {
-            product.RemainingWeight = 0;
-        }
-
         await _context.SaveChangesAsync();
 
         await _context.Entry(record).Reference(r => r.Product).LoadAsync();
@@ -209,6 +213,7 @@ public class ProcessingController : ControllerBase
             Id = record.Id,
             Date = record.Date,
             ProductId = record.ProductId,
+            WashGradingRecordId = record.WashGradingRecordId,
             ProductMarker = record.Product.Marker,
             WarehouseName = record.Product.Warehouse != null ? record.Product.Warehouse.Name : "",
             WorkerNames = record.WorkerNames,
@@ -239,7 +244,7 @@ public class ProcessingController : ControllerBase
             RemainingWeightKg = record.RemainingWeightKg,
             Difference = record.Difference,
             WorkerFees = record.WorkerFees,
-            Workers = record.Workers?.Select(w => new ProcessingRecordWorkerDto 
+            Workers = record.Workers?.Select(w => new ProcessingRecordWorkerDto
             {
                 MessLabourWorkerId = w.MessLabourWorkerId,
                 WorkerFee = w.WorkerFee
@@ -270,23 +275,34 @@ public class ProcessingController : ControllerBase
         string productUnit = (product.Unit ?? "").ToLower().Trim();
         bool isProductKg = productUnit.Contains("kg") || productUnit.Contains("kilogram");
 
-        decimal oldCategorizedWeight = record.RedWeight + record.WhiteWeight + record.SpecialWeight + 
-                                       record.NaturalWeight + record.NaturalWhiteWeight + record.NaturalRedWeight + 
+        decimal oldCategorizedWeight = record.RedWeight + record.WhiteWeight + record.SpecialWeight +
+                                       record.NaturalWeight + record.NaturalWhiteWeight + record.NaturalRedWeight +
                                        record.ShortCutWeight + record.ArtificialWeight + record.ShortWeight +
                                        record.LossWeight;
 
-        // Revert old weight deduction (convert Viss back to product unit)
-        decimal oldDeduction = isProductKg ? oldCategorizedWeight * 1.633m : oldCategorizedWeight;
-        product.RemainingWeight += oldDeduction;
-
-        decimal newCategorizedWeight = dto.RedWeight + dto.WhiteWeight + dto.SpecialWeight + 
-                                       dto.NaturalWeight + dto.NaturalWhiteWeight + dto.NaturalRedWeight + 
+        decimal newCategorizedWeight = dto.RedWeight + dto.WhiteWeight + dto.SpecialWeight +
+                                       dto.NaturalWeight + dto.NaturalWhiteWeight + dto.NaturalRedWeight +
                                        dto.ShortCutWeight + dto.ArtificialWeight + dto.ShortWeight +
                                        dto.LossWeight;
 
-        // Apply new weight deduction (convert new Viss to product unit)
-        decimal newDeduction = isProductKg ? newCategorizedWeight * 1.633m : newCategorizedWeight;
-        product.RemainingWeight -= newDeduction;
+        // Revert & re-apply weight deduction on the correct source
+        if (record.WashGradingRecordId.HasValue)
+        {
+            var wgRecord = await _context.WashGradingRecords.FindAsync(record.WashGradingRecordId.Value);
+            if (wgRecord != null)
+            {
+                wgRecord.RemainingWeight += oldCategorizedWeight; // restore old
+                wgRecord.RemainingWeight -= newCategorizedWeight; // apply new
+                if (Math.Abs(wgRecord.RemainingWeight) < 0.0001m) wgRecord.RemainingWeight = 0;
+            }
+        }
+        else
+        {
+            decimal oldDeduction = isProductKg ? oldCategorizedWeight * 1.633m : oldCategorizedWeight;
+            product.RemainingWeight += oldDeduction;
+            decimal newDeduction = isProductKg ? newCategorizedWeight * 1.633m : newCategorizedWeight;
+            product.RemainingWeight -= newDeduction;
+        }
 
         record.Date = dto.Date;
         record.WorkerNames = dto.WorkerNames;
@@ -382,18 +398,28 @@ public class ProcessingController : ControllerBase
         if (isLocked)
             return BadRequest(new { message = "ဤမှတ်တမ်းကို purification တွင် အသုံးပြုထားသောကြောင့် ဖျက်၍မရပါ (Record is used in purification and cannot be deleted)" });
 
-        // Restore product weight (convert Viss back to product unit)
-        string productUnit = (record.Product.Unit ?? "").ToLower().Trim();
-        bool isProductKg = productUnit.Contains("kg") || productUnit.Contains("kilogram");
-        
-        decimal oldCategorizedWeight = record.RedWeight + record.WhiteWeight + record.SpecialWeight + 
-                                       record.NaturalWeight + record.NaturalWhiteWeight + record.NaturalRedWeight + 
+        decimal oldCategorizedWeight = record.RedWeight + record.WhiteWeight + record.SpecialWeight +
+                                       record.NaturalWeight + record.NaturalWhiteWeight + record.NaturalRedWeight +
                                        record.ShortCutWeight + record.ArtificialWeight + record.ShortWeight +
                                        record.LossWeight;
 
-        decimal restoreWeight = isProductKg ? oldCategorizedWeight * 1.633m : oldCategorizedWeight;
-
-        record.Product.RemainingWeight += restoreWeight;
+        // Restore weight to the correct source
+        if (record.WashGradingRecordId.HasValue)
+        {
+            var wgRecord = await _context.WashGradingRecords.FindAsync(record.WashGradingRecordId.Value);
+            if (wgRecord != null)
+            {
+                wgRecord.RemainingWeight += oldCategorizedWeight;
+                if (Math.Abs(wgRecord.RemainingWeight) < 0.0001m) wgRecord.RemainingWeight = 0;
+            }
+        }
+        else
+        {
+            string productUnit = (record.Product.Unit ?? "").ToLower().Trim();
+            bool isProductKg = productUnit.Contains("kg") || productUnit.Contains("kilogram");
+            decimal restoreWeight = isProductKg ? oldCategorizedWeight * 1.633m : oldCategorizedWeight;
+            record.Product.RemainingWeight += restoreWeight;
+        }
 
         _context.ProcessingRecords.Remove(record);
         await _context.SaveChangesAsync();

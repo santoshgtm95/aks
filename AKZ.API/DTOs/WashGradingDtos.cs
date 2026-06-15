@@ -26,6 +26,8 @@ public class WashGradingRecordDto
     public string WarehouseName { get; set; } = string.Empty;
     public int? WarehouseId { get; set; }
     public decimal Weight { get; set; }
+    public decimal RemainingWeight { get; set; }
+    public string Unit { get; set; } = string.Empty;
     public int? WashGradingWorkerId { get; set; }
     public string WashGradingWorkerName { get; set; } = string.Empty;
     public decimal LostWeight { get; set; }

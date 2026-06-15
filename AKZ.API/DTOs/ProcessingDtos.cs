@@ -5,6 +5,7 @@ public class ProcessingRecordDto
     public int Id { get; set; }
     public DateTime Date { get; set; }
     public int ProductId { get; set; }
+    public int? WashGradingRecordId { get; set; }
     public string ProductMarker { get; set; } = string.Empty;
     public string WarehouseName { get; set; } = string.Empty;
     public string WorkerNames { get; set; } = string.Empty;
@@ -72,6 +73,7 @@ public class CreateProcessingRecordDto
 {
     public DateTime Date { get; set; }
     public int ProductId { get; set; }
+    public int? WashGradingRecordId { get; set; }
     public string WorkerNames { get; set; } = string.Empty;
     public List<ProcessingRecordWorkerDto> Workers { get; set; } = new();
     public double Count { get; set; }

@@ -26,6 +26,42 @@ public class WashGradingController : ControllerBase
         return int.TryParse(claim, out var id) ? id : null;
     }
 
+    // GET /api/washgrading/available-for-messlabour
+    // Returns WashGradingRecords that still have RemainingWeight > 0 (not yet fully consumed by Mess Labour)
+    [HttpGet("available-for-messlabour")]
+    public async Task<ActionResult<List<WashGradingRecordDto>>> GetAvailableForMessLabour()
+    {
+        var warehouseId = GetCurrentUserWarehouseId();
+
+        var records = await _context.WashGradingRecords
+            .Include(r => r.Product)
+                .ThenInclude(p => p.Warehouse)
+            .Include(r => r.WashGradingWorker)
+            .Where(r => r.DeleteFlg == 0 && r.RemainingWeight > 0.0001m)
+            .Where(r => warehouseId == null || r.Product.WarehouseId == warehouseId)
+            .OrderByDescending(r => r.Date)
+            .ToListAsync();
+
+        var result = records.Where(r => r.Product != null).Select(r => new WashGradingRecordDto
+        {
+            Id = r.Id,
+            Date = r.Date,
+            ProductId = r.ProductId,
+            ProductMarker = r.Product.Marker,
+            Weight = r.Weight,
+            WarehouseName = r.Product.Warehouse?.Name ?? "",
+            WarehouseId = r.Product.WarehouseId,
+            WashGradingWorkerId = r.WashGradingWorkerId,
+            WashGradingWorkerName = r.WashGradingWorker?.Name ?? "",
+            LostWeight = r.LostWeight,
+            WorkerFees = r.WorkerFees,
+            RemainingWeight = r.RemainingWeight,
+            Unit = r.Product.Unit ?? "viss"
+        }).ToList();
+
+        return Ok(result);
+    }
+
     // GET /api/washgrading/available-products
     [HttpGet("available-products")]
     public async Task<ActionResult<List<AvailableProductDto>>> GetAvailableProducts()

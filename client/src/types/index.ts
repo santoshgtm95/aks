@@ -149,6 +149,7 @@ export interface ProcessingRecord {
   id: number;
   date: string;
   productId: number;
+  washGradingRecordId?: number;
   productMarker: string;
   workerNames: string;
   count: number;
@@ -208,6 +209,7 @@ export interface ProcessingRecord {
 export interface CreateProcessingRecordDto {
   date: string;
   productId: number;
+  washGradingRecordId?: number;
   workerNames: string;
   workers?: { messLabourWorkerId: number; workerFee: number }[];
   count: number;
@@ -499,6 +501,8 @@ export interface WashGradingRecord {
   productMarker: string;
   weight: number;
   lostWeight: number;
+  remainingWeight: number;
+  unit?: string;
   warehouseName?: string;
   warehouseId?: number;
   washGradingWorkerId?: number;
