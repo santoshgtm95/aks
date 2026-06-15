@@ -47,6 +47,13 @@ import type {
   CreateExchangeRateDto,
   Export,
   CreateExportDto,
+  WashGradingWorker,
+  CreateWashGradingWorkerDto,
+  UpdateWashGradingWorkerDto,
+  AvailableProductDto,
+  WashGradingProcess,
+  WashGradingRecord,
+  CreateWashGradingProcessDto,
 } from "../types";
 
 const API_BASE_URL = "/api";
@@ -296,6 +303,38 @@ export const purificationAPI = {
   },
 };
 
+// Wash/Grading Workers API
+export const washGradingWorkersAPI = {
+  getAll: async (): Promise<WashGradingWorker[]> => {
+    const response = await api.get<WashGradingWorker[]>("/washgradingworkers");
+    return response.data;
+  },
+  getByWarehouse: async (warehouseId: number): Promise<WashGradingWorker[]> => {
+    const response = await api.get<WashGradingWorker[]>(
+      `/washgradingworkers/warehouse/${warehouseId}`,
+    );
+    return response.data;
+  },
+  create: async (
+    data: CreateWashGradingWorkerDto,
+  ): Promise<WashGradingWorker> => {
+    const response = await api.post<WashGradingWorker>(
+      "/washgradingworkers",
+      data,
+    );
+    return response.data;
+  },
+  update: async (
+    id: number,
+    data: UpdateWashGradingWorkerDto,
+  ): Promise<void> => {
+    await api.put(`/washgradingworkers/${id}`, data);
+  },
+  delete: async (id: number): Promise<void> => {
+    await api.delete(`/washgradingworkers/${id}`);
+  },
+};
+
 // Refinement Workers API
 export const refinementWorkersAPI = {
   getAll: async (): Promise<RefinementWorker[]> => {
@@ -445,6 +484,56 @@ export const refinementAPI = {
   },
   deleteRefinementRecord: async (id: number): Promise<void> => {
     await api.delete(`/refinement/refinement-records/${id}`);
+  },
+};
+
+// Wash/Grading API
+export const washGradingAPI = {
+  getAvailableProducts: async (): Promise<AvailableProductDto[]> => {
+    const response = await api.get<AvailableProductDto[]>(
+      "/washgrading/available-products",
+    );
+    return response.data;
+  },
+  getAll: async (): Promise<WashGradingProcess[]> => {
+    const response = await api.get<WashGradingProcess[]>("/washgrading");
+    return response.data;
+  },
+  getRecords: async (): Promise<WashGradingRecord[]> => {
+    const response = await api.get<WashGradingRecord[]>(
+      "/washgrading/records",
+    );
+    return response.data;
+  },
+  create: async (
+    data: CreateWashGradingProcessDto,
+  ): Promise<WashGradingProcess> => {
+    const response = await api.post<WashGradingProcess>("/washgrading", data);
+    return response.data;
+  },
+  createRecord: async (
+    data: CreateWashGradingProcessDto,
+  ): Promise<WashGradingRecord> => {
+    const response = await api.post<WashGradingRecord>("/washgrading/records", data);
+    return response.data;
+  },
+  update: async (
+    id: number,
+    data: CreateWashGradingProcessDto,
+  ): Promise<void> => {
+    await api.put(`/washgrading/${id}`, data);
+  },
+  delete: async (id: number): Promise<void> => {
+    await api.delete(`/washgrading/${id}`);
+  },
+  updateRecord: async (
+    id: number,
+    data: CreateWashGradingProcessDto,
+  ): Promise<void> => {
+    await api.put(`/washgrading/records/${id}`, data);
+  },
+  deleteRecord: async (id: number): Promise<void> => {
+    await api.delete(`/washgrading/records/${id}`);
   },
 };
 

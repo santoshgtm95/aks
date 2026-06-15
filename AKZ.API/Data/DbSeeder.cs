@@ -175,6 +175,11 @@ public static class DbSeeder
             new Permission { Name = "Refinement.Edit", Description = "Edit Refinement records" },
             new Permission { Name = "Refinement.Delete", Description = "Delete Refinement records" },
 
+            new Permission { Name = "WashGrading.View", Description = "View Wash/Grading records" },
+            new Permission { Name = "WashGrading.Create", Description = "Create Wash/Grading records" },
+            new Permission { Name = "WashGrading.Edit", Description = "Edit Wash/Grading records" },
+            new Permission { Name = "WashGrading.Delete", Description = "Delete Wash/Grading records" },
+
             new Permission { Name = "SingleDoubleDrawn.View", Description = "View Single & Double Drawn records" },
             new Permission { Name = "SingleDoubleDrawn.Create", Description = "Create Single & Double Drawn records" },
             new Permission { Name = "SingleDoubleDrawn.Edit", Description = "Edit Single & Double Drawn records" },
@@ -222,7 +227,7 @@ public static class DbSeeder
         // Manager (Base Seed)
         if (roles.TryGetValue("Manager", out var managerRole))
         {
-            string[] managerPerms = { "Dashboard.View", "Inventory.View", "Inventory.Create", "Inventory.Edit", "Inventory.Delete", "Warehouse.View", "Sales.View", "MessLabour.View", "Sales2.View", "Refinement.View", "SingleDoubleDrawn.View", "SemiExport.View", "Sales6.View", "Staff.View" };
+            string[] managerPerms = { "Dashboard.View", "Inventory.View", "Inventory.Create", "Inventory.Edit", "Inventory.Delete", "Warehouse.View", "Sales.View", "MessLabour.View", "Sales2.View", "Refinement.View", "WashGrading.View", "SingleDoubleDrawn.View", "SemiExport.View", "Sales6.View", "Staff.View" };
             foreach (var pName in managerPerms)
             {
                 if (perms.TryGetValue(pName, out var p) && !existingRolePerms.Any(rp => rp.RoleId == managerRole.Id && rp.PermissionId == p.Id))

@@ -44,6 +44,10 @@ public class AKZDbContext : DbContext
     public DbSet<MessLabourWorker> MessLabourWorkers { get; set; }
     public DbSet<ProcessingRecordWorker> ProcessingRecordWorkers { get; set; }
     public DbSet<AuditLog> AuditLogs { get; set; }
+    public DbSet<WashGradingWorker> WashGradingWorkers { get; set; }
+    public DbSet<WashGradingProcess> WashGradingProcesses { get; set; }
+    public DbSet<WashGradingRecord> WashGradingRecords { get; set; }
+
 
     public override async Task<int> SaveChangesAsync(CancellationToken cancellationToken = default)
     {
@@ -339,6 +343,9 @@ public class AKZDbContext : DbContext
         modelBuilder.Entity<SemiExportRecord>().HasQueryFilter(e => e.DeleteFlg == 0);
         modelBuilder.Entity<ExchangeRate>().HasQueryFilter(e => e.DeleteFlg == 0);
         modelBuilder.Entity<Export>().HasQueryFilter(e => e.DeleteFlg == 0);
+        modelBuilder.Entity<WashGradingWorker>().HasQueryFilter(e => e.DeleteFlg == 0);
+        modelBuilder.Entity<WashGradingProcess>().HasQueryFilter(e => e.DeleteFlg == 0);
+        modelBuilder.Entity<WashGradingRecord>().HasQueryFilter(e => e.DeleteFlg == 0);
 
         modelBuilder.Entity<RefinementProcess>()
             .HasOne(r => r.PurifiedRecord)
@@ -380,6 +387,42 @@ public class AKZDbContext : DbContext
             .HasOne(r => r.RefinementProcess)
             .WithMany(p => p.RefinementRecords)
             .HasForeignKey(r => r.RefinementProcessId)
+            .OnDelete(DeleteBehavior.Restrict);
+
+        modelBuilder.Entity<WashGradingWorker>()
+            .HasOne(p => p.Warehouse)
+            .WithMany()
+            .HasForeignKey(p => p.WarehouseId)
+            .OnDelete(DeleteBehavior.Restrict);
+
+        modelBuilder.Entity<WashGradingProcess>()
+            .HasOne(r => r.Product)
+            .WithMany()
+            .HasForeignKey(r => r.ProductId)
+            .OnDelete(DeleteBehavior.Restrict);
+
+        modelBuilder.Entity<WashGradingProcess>()
+            .HasOne(r => r.WashGradingWorker)
+            .WithMany()
+            .HasForeignKey(r => r.WashGradingWorkerId)
+            .OnDelete(DeleteBehavior.Restrict);
+
+        modelBuilder.Entity<WashGradingRecord>()
+            .HasOne(r => r.Product)
+            .WithMany()
+            .HasForeignKey(r => r.ProductId)
+            .OnDelete(DeleteBehavior.Restrict);
+
+        modelBuilder.Entity<WashGradingRecord>()
+            .HasOne(r => r.WashGradingWorker)
+            .WithMany()
+            .HasForeignKey(r => r.WashGradingWorkerId)
+            .OnDelete(DeleteBehavior.Restrict);
+
+        modelBuilder.Entity<WashGradingRecord>()
+            .HasOne(r => r.WashGradingProcess)
+            .WithMany(p => p.WashGradingRecords)
+            .HasForeignKey(r => r.WashGradingProcessId)
             .OnDelete(DeleteBehavior.Restrict);
     }
 }

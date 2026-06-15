@@ -13,8 +13,9 @@ public class WorkerCashFlowDto
     public decimal MessLabourFees { get; set; }
     public decimal PurificationFees { get; set; }
     public decimal RefinementFees { get; set; }
+    public decimal WashGradingFees { get; set; }
     public decimal SingleDoubleDrawnFees { get; set; }
-    public decimal TotalFees => MessLabourFees + PurificationFees + RefinementFees + SingleDoubleDrawnFees;
+    public decimal TotalFees => MessLabourFees + PurificationFees + RefinementFees + WashGradingFees + SingleDoubleDrawnFees;
     
     public decimal PaidAmount { get; set; }
     public decimal UnpaidAmount => TotalFees - PaidAmount;
@@ -109,6 +110,17 @@ public class CashFlowController : ControllerBase
         {
             var cf = EnsureWorker(r.RefinementWorker!.Name);
             cf.RefinementFees += r.WorkerFees;
+        }
+
+        // 3.5 Wash & Grading
+        var washGradingRecords = await _context.WashGradingRecords
+            .Include(r => r.WashGradingWorker)
+            .Where(r => r.WashGradingWorker != null)
+            .ToListAsync();
+        foreach (var r in washGradingRecords)
+        {
+            var cf = EnsureWorker(r.WashGradingWorker!.Name);
+            cf.WashGradingFees += r.WorkerFees;
         }
 
         // 4. Single & Double Drawn

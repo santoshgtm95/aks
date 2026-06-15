@@ -14,6 +14,7 @@ import {
   Shield,
   DollarSign,
   TrendingUp,
+  Layers,
 } from "lucide-react";
 import "./Layout.css";
 
@@ -115,6 +116,18 @@ const Layout: React.FC = () => {
             >
               <ShoppingCart className="nav-icon" size={24} />
               Raw Material Sale List
+            </Link>
+          )}
+
+          {(hasPermission("WashGrading.View") ||
+            hasPermission("WashGrading.Create")) && (
+            <Link
+              to="/wash-grading"
+              className={`nav-item ${isActive("/wash-grading") ? "active" : ""}`}
+              onClick={closeMobileMenu}
+            >
+              <Layers className="nav-icon" size={24} />
+              Wash/Grading
             </Link>
           )}
 

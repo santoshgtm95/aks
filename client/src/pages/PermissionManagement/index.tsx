@@ -77,6 +77,7 @@ const PermissionManagement: React.FC = () => {
         { title: 'Dashboard', prefix: 'Dashboard.' },
         { title: 'Inventory', prefix: 'Inventory.' },
         { title: 'Raw Material Sale List', prefix: 'Sales.' },
+        { title: 'Wash/Grading', prefix: 'WashGrading.' },
         { title: 'Mess-Labour List', prefix: 'MessLabour.' },
         { title: 'Purification', prefix: 'Sales2.' },
         { title: 'Girdle-bush List', prefix: 'Refinement.' },

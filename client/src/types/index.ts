@@ -450,6 +450,72 @@ export interface CreateRefinementProcessDto {
   workerFees?: number;
 }
 
+export interface WashGradingWorker {
+  id: number;
+  name: string;
+  warehouseId: number;
+  warehouseName: string;
+  isActive: boolean;
+}
+
+export interface CreateWashGradingWorkerDto {
+  name: string;
+  warehouseId: number;
+}
+
+export interface UpdateWashGradingWorkerDto {
+  name: string;
+  warehouseId: number;
+  isActive: boolean;
+}
+
+export interface AvailableProductDto {
+  productId: number;
+  productMarker: string;
+  warehouseName: string;
+  warehouseId?: number;
+  remainingWeight: number;
+  unit: string;
+}
+
+export interface WashGradingProcess {
+  id: number;
+  date: string;
+  productId: number;
+  productMarker: string;
+  weight: number;
+  remainingWeightAfter: number;
+  warehouseName?: string;
+  warehouseId?: number;
+  washGradingWorkerId?: number;
+  washGradingWorkerName?: string;
+  workerFees?: number;
+}
+
+export interface WashGradingRecord {
+  id: number;
+  date: string;
+  productId: number;
+  productMarker: string;
+  weight: number;
+  lostWeight: number;
+  warehouseName?: string;
+  warehouseId?: number;
+  washGradingWorkerId?: number;
+  washGradingWorkerName?: string;
+  workerFees?: number;
+}
+
+export interface CreateWashGradingProcessDto {
+  date: string;
+  productId: number;
+  weight: number;
+  lostWeight: number;
+  washGradingWorkerId?: number;
+  workerFees?: number;
+}
+
+
 export interface SingleDoubleDrawnRecord {
   id: number;
   date: string;

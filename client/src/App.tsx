@@ -21,6 +21,8 @@ import Purification from "./pages/Purification/index";
 import PurifierManagement from "./pages/PurifierManagement/index";
 import Refinement from "./pages/Refinement/index";
 import RefinementWorkerManagement from "./pages/RefinementWorkerManagement/index";
+import WashGrading from "./pages/WashGrading/index";
+import WashGradingWorkerManagement from "./pages/WashGradingWorkerManagement/index";
 import MessLabourWorkerManagement from "./pages/MessLabourWorkerManagement/index";
 import SingleDoubleDrawnWorkerManagement from "./pages/SingleDoubleDrawnWorkerManagement/index";
 import SingleDoubleDrawn from "./pages/SingleDoubleDrawn/index";
@@ -150,6 +152,22 @@ const App: React.FC = () => {
                 element={
                   <ProtectedRoute permission="Warehouse.View">
                     <RefinementWorkerManagement />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="wash-grading"
+                element={
+                  <ProtectedRoute permission="WashGrading.View">
+                    <WashGrading />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="wash-grading-workers"
+                element={
+                  <ProtectedRoute permission="Warehouse.View">
+                    <WashGradingWorkerManagement />
                   </ProtectedRoute>
                 }
               />

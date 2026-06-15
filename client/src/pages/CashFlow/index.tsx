@@ -9,6 +9,7 @@ interface WorkerCashFlow {
   messLabourFees: number;
   purificationFees: number;
   refinementFees: number;
+  washGradingFees: number;
   singleDoubleDrawnFees: number;
   totalFees: number;
   paidAmount: number;
@@ -92,6 +93,10 @@ const CashFlow: React.FC = () => {
     (sum, item) => sum + item.refinementFees,
     0,
   );
+  const totalAllWashGrading = data.reduce(
+    (sum, item) => sum + item.washGradingFees,
+    0,
+  );
   const totalAllSdd = data.reduce(
     (sum, item) => sum + item.singleDoubleDrawnFees,
     0,
@@ -130,6 +135,7 @@ const CashFlow: React.FC = () => {
                 <th>Mess-Labour</th>
                 <th>Purification</th>
                 <th>Refinement</th>
+                <th>Wash/Grading</th>
                 <th>Single & Double Drawn</th>
                 <th className="total-col">Total Fees</th>
                 <th>Paid</th>
@@ -153,6 +159,7 @@ const CashFlow: React.FC = () => {
                     <td>{formatCurrency(item.messLabourFees)}</td>
                     <td>{formatCurrency(item.purificationFees)}</td>
                     <td>{formatCurrency(item.refinementFees)}</td>
+                    <td>{formatCurrency(item.washGradingFees)}</td>
                     <td>{formatCurrency(item.singleDoubleDrawnFees)}</td>
                     <td className="total-col">
                       {formatCurrency(item.totalFees)}
@@ -168,7 +175,7 @@ const CashFlow: React.FC = () => {
               ) : (
                 <tr>
                   <td
-                    colSpan={8}
+                    colSpan={9}
                     style={{ textAlign: "center", padding: "2rem" }}
                   >
                     No workers found matching your search.
@@ -182,6 +189,7 @@ const CashFlow: React.FC = () => {
                 <td className="footer-val">{formatCurrency(totalAllMess)}</td>
                 <td className="footer-val">{formatCurrency(totalAllPurif)}</td>
                 <td className="footer-val">{formatCurrency(totalAllRefine)}</td>
+                <td className="footer-val">{formatCurrency(totalAllWashGrading)}</td>
                 <td className="footer-val">{formatCurrency(totalAllSdd)}</td>
                 <td className="total-col footer-val grand-total">
                   {formatCurrency(grandTotal)}
