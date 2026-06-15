@@ -177,7 +177,11 @@ public class WashGradingController : ControllerBase
                 WashGradingWorkerId = r.WashGradingWorkerId,
                 WashGradingWorkerName = r.WashGradingWorker?.Name ?? "",
                 LostWeight = r.LostWeight,
-                WorkerFees = r.WorkerFees
+                WorkerFees = r.WorkerFees,
+                RemainingWeight = r.RemainingWeight,
+                Unit = r.Product.Unit ?? "viss",
+                IsUsedInMessLabour = await _context.ProcessingRecords
+                    .AnyAsync(pr => pr.WashGradingRecordId == r.Id && pr.DeleteFlg == 0)
             });
         }
 
@@ -392,6 +396,13 @@ public class WashGradingController : ControllerBase
             .FirstOrDefaultAsync(r => r.Id == id);
 
         if (record == null) return NotFound();
+
+        // Block deletion if this washed record has already been used in Mess Labour processing
+        bool usedInMessLabour = await _context.ProcessingRecords
+            .AnyAsync(pr => pr.WashGradingRecordId == id && pr.DeleteFlg == 0);
+        if (usedInMessLabour)
+            return BadRequest(new { message = "This washed record has already been used in Mess Labour processing and cannot be deleted." });
+
 
         // Revert inventory reconciliation:
         if (record.Product != null)

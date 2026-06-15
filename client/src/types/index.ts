@@ -508,6 +508,7 @@ export interface WashGradingRecord {
   washGradingWorkerId?: number;
   washGradingWorkerName?: string;
   workerFees?: number;
+  isUsedInMessLabour?: boolean;
 }
 
 export interface CreateWashGradingProcessDto {

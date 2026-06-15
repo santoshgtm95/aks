@@ -32,6 +32,7 @@ public class WashGradingRecordDto
     public string WashGradingWorkerName { get; set; } = string.Empty;
     public decimal LostWeight { get; set; }
     public decimal WorkerFees { get; set; }
+    public bool IsUsedInMessLabour { get; set; }
 }
 
 public class CreateWashGradingProcessDto

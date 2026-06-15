@@ -550,6 +550,9 @@ const WashGrading: React.FC = () => {
                             <button
                               className="wg-action-btn wg-delete-btn"
                               onClick={() => handleDeleteRecord(r.id)}
+                              disabled={!!r.isUsedInMessLabour}
+                              title={r.isUsedInMessLabour ? "Cannot delete — this record has been used in Mess Labour processing" : "Delete record"}
+                              style={r.isUsedInMessLabour ? { opacity: 0.35, cursor: "not-allowed" } : undefined}
                             >
                               <Trash2 size={14} />
                             </button>
