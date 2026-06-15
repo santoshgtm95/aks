@@ -12,10 +12,11 @@ public class WorkerCashFlowDto
     public string WorkerName { get; set; } = string.Empty;
     public decimal MessLabourFees { get; set; }
     public decimal PurificationFees { get; set; }
+    public decimal PurificationSupervisorFees { get; set; }
     public decimal RefinementFees { get; set; }
     public decimal WashGradingFees { get; set; }
     public decimal SingleDoubleDrawnFees { get; set; }
-    public decimal TotalFees => MessLabourFees + PurificationFees + RefinementFees + WashGradingFees + SingleDoubleDrawnFees;
+    public decimal TotalFees => MessLabourFees + PurificationFees + PurificationSupervisorFees + RefinementFees + WashGradingFees + SingleDoubleDrawnFees;
     
     public decimal PaidAmount { get; set; }
     public decimal UnpaidAmount => TotalFees - PaidAmount;
@@ -58,6 +59,7 @@ public class CashFlowController : ControllerBase
         var processingRecords = await _context.ProcessingRecords
             .Include(r => r.Workers)
                 .ThenInclude(w => w.MessLabourWorker)
+            .Where(r => r.DeleteFlg == 0)
             .ToListAsync();
         
         foreach (var record in processingRecords)
@@ -66,7 +68,7 @@ public class CashFlowController : ControllerBase
             {
                 foreach (var worker in record.Workers)
                 {
-                    if (worker.MessLabourWorker != null)
+                    if (worker.MessLabourWorker != null && worker.MessLabourWorker.DeleteFlg == 0)
                     {
                         var cf = EnsureWorker(worker.MessLabourWorker.Name);
                         cf.MessLabourFees += worker.WorkerFee;
@@ -90,10 +92,10 @@ public class CashFlowController : ControllerBase
             }
         }
 
-        // 2. Purification
+        // 2. Purification Worker Fees
         var purificationWorkers = await _context.PurificationWorkers
             .Include(pw => pw.Purifier)
-            .Where(pw => pw.Purifier != null)
+            .Where(pw => pw.Purifier != null && pw.DeleteFlg == 0 && pw.Purifier.DeleteFlg == 0)
             .ToListAsync();
         foreach (var pw in purificationWorkers)
         {
@@ -101,10 +103,24 @@ public class CashFlowController : ControllerBase
             cf.PurificationFees += pw.WorkerFees;
         }
 
+        // 2.5. Purification Supervisor Fees
+        var purifiedRecords = await _context.PurifiedRecords
+            .Include(pr => pr.Place)
+            .Where(pr => pr.Place != null && pr.DeleteFlg == 0)
+            .ToListAsync();
+        foreach (var pr in purifiedRecords)
+        {
+            if (!string.IsNullOrEmpty(pr.Place!.SupervisorName))
+            {
+                var cf = EnsureWorker(pr.Place.SupervisorName);
+                cf.PurificationSupervisorFees += pr.SupervisorFees;
+            }
+        }
+
         // 3. Refinement
         var refinementRecords = await _context.RefinementRecords
             .Include(r => r.RefinementWorker)
-            .Where(r => r.RefinementWorker != null)
+            .Where(r => r.RefinementWorker != null && r.DeleteFlg == 0 && r.RefinementWorker.DeleteFlg == 0)
             .ToListAsync();
         foreach (var r in refinementRecords)
         {
@@ -115,7 +131,7 @@ public class CashFlowController : ControllerBase
         // 3.5 Wash & Grading
         var washGradingRecords = await _context.WashGradingRecords
             .Include(r => r.WashGradingWorker)
-            .Where(r => r.WashGradingWorker != null)
+            .Where(r => r.WashGradingWorker != null && r.DeleteFlg == 0 && r.WashGradingWorker.DeleteFlg == 0)
             .ToListAsync();
         foreach (var r in washGradingRecords)
         {
@@ -126,7 +142,7 @@ public class CashFlowController : ControllerBase
         // 4. Single & Double Drawn
         var sddRecords = await _context.SingleDoubleDrawnRecords
             .Include(s => s.Worker)
-            .Where(s => s.Worker != null)
+            .Where(s => s.Worker != null && s.DeleteFlg == 0 && s.Worker.DeleteFlg == 0)
             .ToListAsync();
         foreach (var r in sddRecords)
         {

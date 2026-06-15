@@ -443,7 +443,6 @@ const WashGrading: React.FC = () => {
                     <th>Product Marker</th>
                     <th>Weight (viss)</th>
                     <th>Worker</th>
-                    <th>Worker Fees</th>
                     <th className="wg-th-right">Actions</th>
                   </tr>
                 ) : (
@@ -462,7 +461,7 @@ const WashGrading: React.FC = () => {
                 {activeTab === "history" ? (
                   processes.length === 0 ? (
                     <tr>
-                      <td colSpan={6} className="wg-empty-row">
+                      <td colSpan={5} className="wg-empty-row">
                         <History size={44} className="wg-empty-icon" />
                         <span>No wash/grading processes registered yet</span>
                       </td>
@@ -485,12 +484,6 @@ const WashGrading: React.FC = () => {
                             <User size={13} />
                             {p.washGradingWorkerName || "---"}
                           </div>
-                        </td>
-                        <td>
-                          {p.workerFees?.toLocaleString(undefined, {
-                            minimumFractionDigits: 2,
-                            maximumFractionDigits: 2,
-                          }) || "0.00"}
                         </td>
                         <td onClick={(e) => e.stopPropagation()}>
                           <div className="wg-actions">
