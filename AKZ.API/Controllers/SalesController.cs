@@ -63,6 +63,9 @@ public class SalesController : ControllerBase
                 SellerName = s.Seller.FullName,
                 TotalRemaining = s.TotalRemaining,
                 Category = s.Category,
+                CustomerName = s.CustomerName,
+                CustomerContact = s.CustomerContact,
+                Remark = s.Remark,
                 WarehouseName = s.Product.Warehouse != null ? s.Product.Warehouse.Name : ""
             })
             .ToListAsync();
@@ -94,6 +97,9 @@ public class SalesController : ControllerBase
                 SellerName = s.Seller.FullName,
                 TotalRemaining = s.TotalRemaining,
                 Category = s.Category,
+                CustomerName = s.CustomerName,
+                CustomerContact = s.CustomerContact,
+                Remark = s.Remark,
                 WarehouseName = s.Product.Warehouse != null ? s.Product.Warehouse.Name : ""
             })
             .FirstOrDefaultAsync();
@@ -136,7 +142,10 @@ public class SalesController : ControllerBase
             Currency = dto.Currency,
             SellerId = userId,
             TotalRemaining = newRemaining,
-            Category = dto.Category
+            Category = dto.Category,
+            CustomerName = dto.CustomerName,
+            CustomerContact = dto.CustomerContact,
+            Remark = dto.Remark
         };
 
         // Update product remaining weight
@@ -166,6 +175,9 @@ public class SalesController : ControllerBase
             SellerName = sale.Seller.FullName,
             TotalRemaining = sale.TotalRemaining,
             Category = sale.Category,
+            CustomerName = sale.CustomerName,
+            CustomerContact = sale.CustomerContact,
+            Remark = sale.Remark,
             WarehouseName = sale.Product.Warehouse != null ? sale.Product.Warehouse.Name : ""
         };
 

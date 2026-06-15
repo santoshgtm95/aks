@@ -41,6 +41,11 @@ public class SingleDoubleDrawnController : ControllerBase
                         .ThenInclude(pr => pr.Workers)
                             .ThenInclude(w => w.MessLabourWorker)
             .Include(r => r.RefinementRecord)
+                .ThenInclude(rr => rr.PurifiedRecord)
+                    .ThenInclude(p => p.ProcessingRecord)
+                        .ThenInclude(pr => pr.WashGradingRecord)
+                            .ThenInclude(wg => wg.WashGradingWorker)
+            .Include(r => r.RefinementRecord)
                 .ThenInclude(rr => rr.RefinementWorker)
             .Include(r => r.RefinementRecord)
                 .ThenInclude(rr => rr.PurifiedRecord)
@@ -160,9 +165,14 @@ public class SingleDoubleDrawnController : ControllerBase
                 PurificationWorkerFees = r.RefinementRecord?.PurifiedRecord?.PurificationWorkers != null && r.RefinementRecord.PurifiedRecord.PurificationWorkers.Any()
                     ? r.RefinementRecord.PurifiedRecord.PurificationWorkers.Sum(pw => pw.WorkerFees)
                     : (r.RefinementRecord?.PurifiedRecord?.PurificationProcess?.WorkerFees ?? 0M),
+                PurificationSupervisorName = r.RefinementRecord?.PurifiedRecord?.Place?.SupervisorName ?? "",
+                PurificationSupervisorFees = r.RefinementRecord?.PurifiedRecord?.SupervisorFees ?? 0M,
                 PurifiedRecordId = r.RefinementRecord?.PurifiedRecord?.Id,
                 RefinementWorkerName = r.RefinementRecord?.RefinementWorker?.Name ?? "",
-                RefinementWorkerFees = r.RefinementRecord?.WorkerFees ?? 0M
+                RefinementWorkerFees = r.RefinementRecord?.WorkerFees ?? 0M,
+                WashGradingWorkerName = r.RefinementRecord?.PurifiedRecord?.ProcessingRecord?.WashGradingRecord?.WashGradingWorker?.Name ?? "",
+                WashGradingWorkerFees = r.RefinementRecord?.PurifiedRecord?.ProcessingRecord?.WashGradingRecord?.WorkerFees ?? 0M,
+                WashGradingLostWeight = r.RefinementRecord?.PurifiedRecord?.ProcessingRecord?.WashGradingRecord?.LostWeight ?? 0M
             });
         }
 
@@ -182,6 +192,10 @@ public class SingleDoubleDrawnController : ControllerBase
                 .ThenInclude(p => p.ProcessingRecord)
                     .ThenInclude(pr => pr.Workers)
                         .ThenInclude(w => w.MessLabourWorker)
+            .Include(rr => rr.PurifiedRecord)
+                .ThenInclude(p => p.ProcessingRecord)
+                    .ThenInclude(pr => pr.WashGradingRecord)
+                        .ThenInclude(wg => wg.WashGradingWorker)
             .Include(rr => rr.RefinementWorker)
             .Include(rr => rr.PurifiedRecord)
                 .ThenInclude(p => p.Place)
@@ -367,9 +381,14 @@ public class SingleDoubleDrawnController : ControllerBase
             PurificationWorkerFees = refinementRecord.PurifiedRecord?.PurificationWorkers != null && refinementRecord.PurifiedRecord.PurificationWorkers.Any()
                 ? refinementRecord.PurifiedRecord.PurificationWorkers.Sum(pw => pw.WorkerFees)
                 : (refinementRecord.PurifiedRecord?.PurificationProcess?.WorkerFees ?? 0M),
+            PurificationSupervisorName = refinementRecord.PurifiedRecord?.Place?.SupervisorName ?? "",
+            PurificationSupervisorFees = refinementRecord.PurifiedRecord?.SupervisorFees ?? 0M,
             PurifiedRecordId = refinementRecord.PurifiedRecord?.Id,
             RefinementWorkerName = refinementRecord.RefinementWorker?.Name ?? "",
-            RefinementWorkerFees = refinementRecord.WorkerFees
+            RefinementWorkerFees = refinementRecord.WorkerFees,
+            WashGradingWorkerName = refinementRecord.PurifiedRecord?.ProcessingRecord?.WashGradingRecord?.WashGradingWorker?.Name ?? "",
+            WashGradingWorkerFees = refinementRecord.PurifiedRecord?.ProcessingRecord?.WashGradingRecord?.WorkerFees ?? 0M,
+            WashGradingLostWeight = refinementRecord.PurifiedRecord?.ProcessingRecord?.WashGradingRecord?.LostWeight ?? 0M
         };
 
         return Ok(resultDto);

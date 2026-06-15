@@ -18,6 +18,9 @@ public class SaleDto
     public string SellerName { get; set; } = string.Empty;
     public decimal TotalRemaining { get; set; }
     public string Category { get; set; } = string.Empty;
+    public string? CustomerName { get; set; }
+    public string? CustomerContact { get; set; }
+    public string? Remark { get; set; }
 }
 
 public class CreateSaleDto
@@ -32,6 +35,9 @@ public class CreateSaleDto
     public decimal Price { get; set; }
     public string Currency { get; set; } = "MMK";
     public string Category { get; set; } = "General";
+    public string? CustomerName { get; set; }
+    public string? CustomerContact { get; set; }
+    public string? Remark { get; set; }
 }
 
 public class MarkerSortingStatsDto

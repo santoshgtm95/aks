@@ -91,7 +91,10 @@ const SemiExport: React.FC = () => {
     date: new Date().toISOString().substring(0, 10),
   });
   const [importCategoriesData, setImportCategoriesData] = useState<any>({});
-  const [lastPrepopulated, setLastPrepopulated] = useState<{ marker: string; color: string } | null>(null);
+  const [lastPrepopulated, setLastPrepopulated] = useState<{
+    marker: string;
+    color: string;
+  } | null>(null);
   const importCategoryOptions = [
     "Art",
     "Red",
@@ -233,21 +236,29 @@ const SemiExport: React.FC = () => {
         // Auto-sum if new marker
         const pMap = new Map<number, number>();
         const puMap = new Map<number, number>();
+        const supMap = new Map<number, number>();
         const rMap = new Map<number, number>();
+        const wgMap = new Map<number, number>();
         let sdSum = 0;
         selectedRecords.forEach((r) => {
           if (r.processingRecordId && r.messLabourWorkerFees)
             pMap.set(r.processingRecordId, r.messLabourWorkerFees);
           if (r.purifiedRecordId && r.purificationWorkerFees)
             puMap.set(r.purifiedRecordId, r.purificationWorkerFees);
+          if (r.purifiedRecordId && r.purificationSupervisorFees)
+            supMap.set(r.purifiedRecordId, r.purificationSupervisorFees);
           if (r.refinementRecordId && r.refinementWorkerFees)
             rMap.set(r.refinementRecordId, r.refinementWorkerFees);
+          if (r.processingRecordId && r.washGradingWorkerFees)
+            wgMap.set(r.processingRecordId, r.washGradingWorkerFees);
           if (r.workerFees) sdSum += r.workerFees;
         });
         const pSum = [...pMap.values()].reduce((a, b) => a + b, 0);
         const puSum = [...puMap.values()].reduce((a, b) => a + b, 0);
+        const supSum = [...supMap.values()].reduce((a, b) => a + b, 0);
         const rSum = [...rMap.values()].reduce((a, b) => a + b, 0);
-        totalFees = pSum + puSum + rSum + sdSum;
+        const wgSum = [...wgMap.values()].reduce((a, b) => a + b, 0);
+        totalFees = pSum + puSum + supSum + rSum + wgSum + sdSum;
       }
 
       setMarkerWorkerFees(totalFees.toString());
@@ -267,13 +278,15 @@ const SemiExport: React.FC = () => {
     if (marker) {
       const markerImports = importedData
         .filter((d) => d.markerName?.toLowerCase() === marker.toLowerCase())
-        .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
+        .sort(
+          (a, b) => new Date(b.date).getTime() - new Date(a.date).getTime(),
+        );
 
       for (const imp of markerImports) {
         try {
           const parsed = JSON.parse(imp.dataJson || "{}");
           const parsedColorKey = Object.keys(parsed).find(
-            (k) => k.toLowerCase() === color.toLowerCase()
+            (k) => k.toLowerCase() === color.toLowerCase(),
           );
           if (parsedColorKey && parsed[parsedColorKey]) {
             return parsed[parsedColorKey];
@@ -285,12 +298,14 @@ const SemiExport: React.FC = () => {
     }
 
     // 2. Fallback: Search all imports (sorted by date descending) for the latest one containing the selected color
-    const allImportsSorted = [...importedData].sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
+    const allImportsSorted = [...importedData].sort(
+      (a, b) => new Date(b.date).getTime() - new Date(a.date).getTime(),
+    );
     for (const imp of allImportsSorted) {
       try {
         const parsed = JSON.parse(imp.dataJson || "{}");
         const parsedColorKey = Object.keys(parsed).find(
-          (k) => k.toLowerCase() === color.toLowerCase()
+          (k) => k.toLowerCase() === color.toLowerCase(),
         );
         if (parsedColorKey && parsed[parsedColorKey]) {
           return parsed[parsedColorKey];
@@ -324,10 +339,17 @@ const SemiExport: React.FC = () => {
     const currentColor = importFormData.color;
 
     if (currentColor) {
-      if (!lastPrepopulated || lastPrepopulated.marker !== currentMarker || lastPrepopulated.color !== currentColor) {
+      if (
+        !lastPrepopulated ||
+        lastPrepopulated.marker !== currentMarker ||
+        lastPrepopulated.color !== currentColor
+      ) {
         setLastPrepopulated({ marker: currentMarker, color: currentColor });
 
-        const latestPrices = getLatestImportedPrices(currentMarker, currentColor);
+        const latestPrices = getLatestImportedPrices(
+          currentMarker,
+          currentColor,
+        );
         if (latestPrices) {
           setImportCategoriesData((prev: any) => {
             const currentCategoryData = prev[currentColor] || {};
@@ -336,9 +358,16 @@ const SemiExport: React.FC = () => {
             sizeOptions.forEach((sz) => {
               if (sz !== "Lost") {
                 const latestSizeData = latestPrices[sz];
-                const latestPrice = latestSizeData && latestSizeData.price !== undefined ? latestSizeData.price.toString() : "";
-                
-                const currentSizeData = currentCategoryData[sz] || { weight: "", price: "", amount: "" };
+                const latestPrice =
+                  latestSizeData && latestSizeData.price !== undefined
+                    ? latestSizeData.price.toString()
+                    : "";
+
+                const currentSizeData = currentCategoryData[sz] || {
+                  weight: "",
+                  price: "",
+                  amount: "",
+                };
                 const w = currentSizeData.weight || "";
                 const amt = Number(w || 0) * Number(latestPrice || 0);
                 newCategoryData[sz] = {
@@ -357,7 +386,13 @@ const SemiExport: React.FC = () => {
         }
       }
     }
-  }, [showImportModal, importFormData.markerName, importFormData.color, importedData, lastPrepopulated]);
+  }, [
+    showImportModal,
+    importFormData.markerName,
+    importFormData.color,
+    importedData,
+    lastPrepopulated,
+  ]);
 
   // Calculate the total sorted weights for sidebar display (Export sizes: 10B to Bar)
   const getSortedTotal = (record: SingleDoubleDrawnRecord) => {
@@ -497,7 +532,12 @@ const SemiExport: React.FC = () => {
         (s, v) => s + v,
         0,
       );
-      const sumLostWeight = refinementLostWeight + processingLostWeight;
+      const washGradingLostWeight = group.records.reduce(
+        (sum, r) => sum + (r.washGradingLostWeight || 0),
+        0,
+      );
+      const sumLostWeight =
+        refinementLostWeight + processingLostWeight + washGradingLostWeight;
 
       const sumSpoilageWeight = group.records.reduce(
         (sum, r) => sum + (r.spoilageWeight || 0) + (r.spoilageSize || 0),
@@ -793,7 +833,12 @@ const SemiExport: React.FC = () => {
     const processingLostWeight = Array.from(
       selectedProcessingIdMap.values(),
     ).reduce((s, v) => s + v, 0);
-    const sumLostWeight = refinementLostWeight + processingLostWeight;
+    const washGradingLostWeight = selectedRecords.reduce(
+      (sum, r) => sum + (r.washGradingLostWeight || 0),
+      0,
+    );
+    const sumLostWeight =
+      refinementLostWeight + processingLostWeight + washGradingLostWeight;
 
     // 5. Sum of Spoilage Weight (B to 10 only)
     const sumSpoilageWeight = selectedRecords.reduce(
@@ -1120,7 +1165,9 @@ const SemiExport: React.FC = () => {
 
     const processingMap = new Map<number, { name: string; amount: number }>();
     const purifiedMap = new Map<number, { name: string; amount: number }>();
+    const supervisorMap = new Map<number, { name: string; amount: number }>();
     const refinementMap = new Map<number, { name: string; amount: number }>();
+    const washGradingMap = new Map<number, { name: string; amount: number }>();
 
     selectedRecords.forEach((r) => {
       // 1) Processing (Mess Labour)
@@ -1137,14 +1184,28 @@ const SemiExport: React.FC = () => {
           amount: r.purificationWorkerFees,
         });
       }
-      // 3) Refinement
+      // 3) Purification Supervisor
+      if (r.purifiedRecordId && r.purificationSupervisorFees) {
+        supervisorMap.set(r.purifiedRecordId, {
+          name: r.purificationSupervisorName || "N/A",
+          amount: r.purificationSupervisorFees,
+        });
+      }
+      // 4) Refinement
       if (r.refinementRecordId && r.refinementWorkerFees) {
         refinementMap.set(r.refinementRecordId, {
           name: r.refinementWorkerName || "N/A",
           amount: r.refinementWorkerFees,
         });
       }
-      // 4) SingleDoubleDrawn
+      // 5) Wash & Grading
+      if (r.processingRecordId && r.washGradingWorkerFees) {
+        washGradingMap.set(r.processingRecordId, {
+          name: r.washGradingWorkerName || "N/A",
+          amount: r.washGradingWorkerFees,
+        });
+      }
+      // 6) SingleDoubleDrawn
       if (r.workerFees) {
         details.push({
           label: `Single & Double Drawn Sorting`,
@@ -1171,9 +1232,25 @@ const SemiExport: React.FC = () => {
       });
       sum += info.amount;
     }
+    for (const info of supervisorMap.values()) {
+      details.unshift({
+        label: `Purification Supervisor`,
+        name: info.name,
+        amount: info.amount,
+      });
+      sum += info.amount;
+    }
     for (const info of refinementMap.values()) {
       details.unshift({
         label: `Refinement`,
+        name: info.name,
+        amount: info.amount,
+      });
+      sum += info.amount;
+    }
+    for (const info of washGradingMap.values()) {
+      details.unshift({
+        label: `Wash & Grading`,
         name: info.name,
         amount: info.amount,
       });
@@ -2133,15 +2210,50 @@ const SemiExport: React.FC = () => {
                           borderTop: "1px solid #cbd5e1",
                           display: "flex",
                           justifyContent: "space-between",
+                          alignItems: "center",
                           fontSize: "14px",
                           fontWeight: "700",
                           color: "#0f172a",
                         }}
                       >
                         <span>Total Calculated Worker Fees:</span>
-                        <span style={{ color: "#2563eb" }}>
-                          {markerWorkerFeesInfo.sum.toLocaleString()}
-                        </span>
+                        <div
+                          style={{
+                            display: "flex",
+                            alignItems: "center",
+                            gap: "8px",
+                          }}
+                        >
+                          <span style={{ color: "#2563eb" }}>
+                            {markerWorkerFeesInfo.sum.toLocaleString()}
+                          </span>
+                          {!isModal && (
+                            <button
+                              type="button"
+                              onClick={() =>
+                                setMarkerWorkerFees(
+                                  markerWorkerFeesInfo.sum.toString(),
+                                )
+                              }
+                              title="Use calculated total as manual override"
+                              style={{
+                                padding: "4px 8px",
+                                borderRadius: "6px",
+                                border: "1px solid #2563eb",
+                                background: "#dbeafe",
+                                color: "#2563eb",
+                                cursor: "pointer",
+                                fontSize: "12px",
+                                fontWeight: "600",
+                                display: "flex",
+                                alignItems: "center",
+                                gap: "4px",
+                              }}
+                            >
+                              <RotateCcw size={12} /> Use
+                            </button>
+                          )}
+                        </div>
                       </div>
                     </div>
                   )}
@@ -3231,7 +3343,7 @@ const SemiExport: React.FC = () => {
                   }}
                 >
                   <Download size={18} />
-                  Import Data
+                  Semi Export Purchase{" "}
                 </button>
               )}
               {hasPermission("SemiExport.Create") && (

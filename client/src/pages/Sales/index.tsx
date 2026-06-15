@@ -30,6 +30,9 @@ const Sales: React.FC = () => {
     currency: "MMK",
     category: PAGE_CATEGORY,
     plusMinusWeight: 0,
+    customerName: "",
+    customerContact: "",
+    remark: "",
   });
 
   useEffect(() => {
@@ -52,7 +55,9 @@ const Sales: React.FC = () => {
   };
 
   const handleInputChange = (
-    e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>,
+    e: React.ChangeEvent<
+      HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement
+    >,
   ) => {
     const { name, value } = e.target;
 
@@ -99,6 +104,9 @@ const Sales: React.FC = () => {
         currency: "MMK",
         category: PAGE_CATEGORY,
         plusMinusWeight: 0,
+        customerName: "",
+        customerContact: "",
+        remark: "",
       });
       setWeightAdjustment(0);
       loadData();
@@ -327,6 +335,46 @@ const Sales: React.FC = () => {
                   disabled
                 />
               </div>
+
+              <div className="form-group">
+                <label className="form-label">Customer Name</label>
+                <input
+                  type="text"
+                  name="customerName"
+                  className="form-control"
+                  value={formData.customerName || ""}
+                  onChange={handleInputChange}
+                  placeholder="Enter customer name (optional)"
+                  maxLength={255}
+                />
+              </div>
+
+              <div className="form-group">
+                <label className="form-label">Customer Contact</label>
+                <input
+                  type="text"
+                  name="customerContact"
+                  className="form-control"
+                  value={formData.customerContact || ""}
+                  onChange={handleInputChange}
+                  placeholder="Phone/Email (optional)"
+                  maxLength={50}
+                />
+              </div>
+
+              <div className="form-group" style={{ gridColumn: "1 / -1" }}>
+                <label className="form-label">Remark</label>
+                <textarea
+                  name="remark"
+                  className="form-control"
+                  value={formData.remark || ""}
+                  onChange={handleInputChange}
+                  placeholder="Add any additional remarks (optional)"
+                  maxLength={1000}
+                  rows={3}
+                  style={{ resize: "vertical" }}
+                />
+              </div>
             </div>
 
             <div className="form-actions">
@@ -351,6 +399,9 @@ const Sales: React.FC = () => {
                 <th>Price</th>
                 <th>Total</th>
                 <th>Seller</th>
+                <th>Customer Name</th>
+                <th>Customer Contact</th>
+                <th>Remark</th>
                 {hasPermission("Sales.Delete") && (
                   <th style={{ textAlign: "center" }}>Actions</th>
                 )}
@@ -389,6 +440,11 @@ const Sales: React.FC = () => {
                     {(sale.weight * sale.price).toFixed(2)} {sale.currency}
                   </td>
                   <td>{sale.sellerName}</td>
+                  <td>{sale.customerName || "-"}</td>
+                  <td>{sale.customerContact || "-"}</td>
+                  <td style={{ maxWidth: "200px", wordBreak: "break-word" }}>
+                    {sale.remark || "-"}
+                  </td>
                   {hasPermission("Sales.Delete") && (
                     <td style={{ textAlign: "center" }}>
                       <button

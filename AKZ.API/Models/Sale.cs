@@ -51,4 +51,13 @@ public class Sale : BaseEntity
 
     [MaxLength(50)]
     public string Category { get; set; } = "General";
+
+    [MaxLength(255)]
+    public string? CustomerName { get; set; }
+
+    [MaxLength(50)]
+    public string? CustomerContact { get; set; }
+
+    [MaxLength(1000)]
+    public string? Remark { get; set; }
 }

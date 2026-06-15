@@ -82,6 +82,9 @@ export interface Sale {
   totalRemaining: number;
   category: string;
   warehouseName?: string;
+  customerName?: string;
+  customerContact?: string;
+  remark?: string;
 }
 
 export interface CreateSaleDto {
@@ -94,6 +97,9 @@ export interface CreateSaleDto {
   price: number;
   currency: string;
   category: string;
+  customerName?: string;
+  customerContact?: string;
+  remark?: string;
 }
 
 export interface MarkerSortingStats {
@@ -560,9 +566,14 @@ export interface SingleDoubleDrawnRecord {
   messLabourWorkerFees?: number;
   purificationWorkerName?: string;
   purificationWorkerFees?: number;
+  purificationSupervisorName?: string;
+  purificationSupervisorFees?: number;
   purifiedRecordId?: number;
   refinementWorkerName?: string;
   refinementWorkerFees?: number;
+  washGradingWorkerName?: string;
+  washGradingWorkerFees?: number;
+  washGradingLostWeight?: number;
   processingLossWeight: number;
   processingRecordId?: number;
   price6: number;

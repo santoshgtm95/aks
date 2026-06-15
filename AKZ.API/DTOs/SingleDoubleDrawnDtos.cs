@@ -75,9 +75,14 @@ public class SingleDoubleDrawnRecordDto
     public decimal MessLabourWorkerFees { get; set; }
     public string PurificationWorkerName { get; set; } = string.Empty;
     public decimal PurificationWorkerFees { get; set; }
+    public string PurificationSupervisorName { get; set; } = string.Empty;
+    public decimal PurificationSupervisorFees { get; set; }
     public int? PurifiedRecordId { get; set; }
     public string RefinementWorkerName { get; set; } = string.Empty;
     public decimal RefinementWorkerFees { get; set; }
+    public string WashGradingWorkerName { get; set; } = string.Empty;
+    public decimal WashGradingWorkerFees { get; set; }
+    public decimal WashGradingLostWeight { get; set; }
 }
 
 public class CreateSingleDoubleDrawnRecordDto
