@@ -392,6 +392,7 @@ public class PurificationController : ControllerBase
         if (process == null) return NotFound();
 
         var purifiedRecord = await _context.PurifiedRecords
+            .Include(p => p.PurificationWorkers)
             .FirstOrDefaultAsync(p => p.Date == process.Date && 
                                      p.ProcessingRecordId == process.ProcessingRecordId && 
                                      p.Category == process.Category &&
@@ -404,7 +405,14 @@ public class PurificationController : ControllerBase
         RevertInventory(record, process.Category, process.PurifyCount, unitWeight);
 
         _context.PurificationProcesses.Remove(process);
-        if (purifiedRecord != null) _context.PurifiedRecords.Remove(purifiedRecord);
+        if (purifiedRecord != null) 
+        {
+            if (purifiedRecord.PurificationWorkers != null && purifiedRecord.PurificationWorkers.Any())
+            {
+                _context.PurificationWorkers.RemoveRange(purifiedRecord.PurificationWorkers);
+            }
+            _context.PurifiedRecords.Remove(purifiedRecord);
+        }
         
         await _context.SaveChangesAsync();
         return NoContent();
@@ -488,6 +496,7 @@ public class PurificationController : ControllerBase
     {
         var record = await _context.PurifiedRecords
             .Include(p => p.ProcessingRecord)
+            .Include(p => p.PurificationWorkers)
             .FirstOrDefaultAsync(p => p.Id == id);
 
         if (record == null) return NotFound();
@@ -499,6 +508,11 @@ public class PurificationController : ControllerBase
                                      p.PurifyCount == record.Count);
 
         RevertInventory(record.ProcessingRecord, record.Category, record.Count, record.ProcessingRecord.UnitWeight);
+
+        if (record.PurificationWorkers != null && record.PurificationWorkers.Any())
+        {
+            _context.PurificationWorkers.RemoveRange(record.PurificationWorkers);
+        }
 
         _context.PurifiedRecords.Remove(record);
         if (process != null) _context.PurificationProcesses.Remove(process);
