@@ -13,8 +13,9 @@ public class Place : BaseEntity
     [MaxLength(100)]
     public string Name { get; set; } = string.Empty;
 
+    [Required]
     [MaxLength(100)]
-    public string? SupervisorName { get; set; }
+    public string SupervisorName { get; set; } = string.Empty;
 
     public int WarehouseId { get; set; }
 

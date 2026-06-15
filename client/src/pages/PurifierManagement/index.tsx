@@ -30,6 +30,7 @@ const PurifierManagement: React.FC = () => {
   const [showModal, setShowModal] = useState(false);
   const [showPlaceModal, setShowPlaceModal] = useState(false);
   const [editingPurifier, setEditingPurifier] = useState<Purifier | null>(null);
+  const [editingPlace, setEditingPlace] = useState<Place | null>(null);
   const [formData, setFormData] = useState<CreatePurifierDto>({
     name: "",
     warehouseId: 0,
@@ -74,13 +75,32 @@ const PurifierManagement: React.FC = () => {
   const handlePlaceSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     try {
-      await placesAPI.create(placeFormData);
+      if (editingPlace) {
+        await placesAPI.update(editingPlace.id, placeFormData);
+      } else {
+        await placesAPI.create(placeFormData);
+      }
       setPlaceFormData({ name: "", warehouseId: 0, supervisorName: "" });
+      setEditingPlace(null);
       loadData();
     } catch (error) {
       console.error("Failed to save place:", error);
       alert("Failed to save place");
     }
+  };
+
+  const handleEditPlace = (place: Place) => {
+    setEditingPlace(place);
+    setPlaceFormData({
+      name: place.name,
+      warehouseId: place.warehouseId,
+      supervisorName: place.supervisorName || "",
+    });
+  };
+
+  const handleCancelEditPlace = () => {
+    setEditingPlace(null);
+    setPlaceFormData({ name: "", warehouseId: 0, supervisorName: "" });
   };
 
   const handleInputChange = (
@@ -271,11 +291,12 @@ const PurifierManagement: React.FC = () => {
         <div className="modal-overlay">
           <div className="modal-content card" style={{ maxWidth: "500px" }}>
             <div className="modal-header">
-              <h2>Register New Place</h2>
+              <h2>{editingPlace ? "Edit Place" : "Register New Place"}</h2>
               <button
                 className="btn-icon"
                 onClick={() => {
                   setShowPlaceModal(false);
+                  handleCancelEditPlace();
                 }}
               >
                 <X size={24} />
@@ -317,8 +338,9 @@ const PurifierManagement: React.FC = () => {
                   type="text"
                   name="supervisorName"
                   className="form-control"
-                  value={placeFormData.supervisorName || ""}
+                  value={placeFormData.supervisorName}
                   onChange={handlePlaceInputChange}
+                  required
                   placeholder="Enter supervisor name"
                 />
               </div>
@@ -327,14 +349,18 @@ const PurifierManagement: React.FC = () => {
                   type="button"
                   className="btn btn-secondary"
                   onClick={() => {
-                    setShowPlaceModal(false);
+                    if (editingPlace) {
+                      handleCancelEditPlace();
+                    } else {
+                      setShowPlaceModal(false);
+                    }
                   }}
                 >
-                  Close
+                  {editingPlace ? "Cancel Edit" : "Close"}
                 </button>
                 <button type="submit" className="btn btn-primary">
                   <Save size={20} />
-                  Register
+                  {editingPlace ? "Update" : "Register"}
                 </button>
               </div>
             </form>
@@ -378,14 +404,26 @@ const PurifierManagement: React.FC = () => {
                           </td>
                           <td>{place.supervisorName || "-"}</td>
                           <td style={{ textAlign: "right" }}>
-                            {hasPermission("Warehouse.Delete") && (
-                              <button
-                                className="btn-icon text-danger"
-                                onClick={() => handleDeletePlace(place.id)}
-                              >
-                                <Trash2 size={16} />
-                              </button>
-                            )}
+                            <div style={{ display: "flex", gap: "8px", justifyContent: "flex-end" }}>
+                              {hasPermission("Warehouse.Edit") && (
+                                <button
+                                  type="button"
+                                  className="btn-icon"
+                                  onClick={() => handleEditPlace(place)}
+                                >
+                                  <Pencil size={16} />
+                                </button>
+                              )}
+                              {hasPermission("Warehouse.Delete") && (
+                                <button
+                                  type="button"
+                                  className="btn-icon text-danger"
+                                  onClick={() => handleDeletePlace(place.id)}
+                                >
+                                  <Trash2 size={16} />
+                                </button>
+                              )}
+                            </div>
                           </td>
                         </tr>
                       ))}

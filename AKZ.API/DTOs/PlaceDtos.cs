@@ -16,7 +16,8 @@ public class CreatePlaceDto
     [Required]
     public string Name { get; set; } = string.Empty;
 
-    public string? SupervisorName { get; set; }
+    [Required]
+    public string SupervisorName { get; set; } = string.Empty;
 
     [Required]
     public int WarehouseId { get; set; }
@@ -27,7 +28,8 @@ public class UpdatePlaceDto
     [Required]
     public string Name { get; set; } = string.Empty;
 
-    public string? SupervisorName { get; set; }
+    [Required]
+    public string SupervisorName { get; set; } = string.Empty;
 
     [Required]
     public int WarehouseId { get; set; }

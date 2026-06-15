@@ -233,6 +233,7 @@ public class AKZDbContext : DbContext
         modelBuilder.Entity<UserPermission>().HasQueryFilter(e => e.DeleteFlg == 0);
         modelBuilder.Entity<PurificationProcess>().HasQueryFilter(e => e.DeleteFlg == 0);
         modelBuilder.Entity<Purifier>().HasQueryFilter(e => e.DeleteFlg == 0);
+        modelBuilder.Entity<Place>().HasQueryFilter(e => e.DeleteFlg == 0);
         modelBuilder.Entity<RefinementWorker>().HasQueryFilter(e => e.DeleteFlg == 0);
         modelBuilder.Entity<Ledger>().HasQueryFilter(e => e.DeleteFlg == 0);
         modelBuilder.Entity<LedgerMarker>().HasQueryFilter(e => e.DeleteFlg == 0);

@@ -354,13 +354,13 @@ export interface Place {
 
 export interface CreatePlaceDto {
   name: string;
-  supervisorName?: string;
+  supervisorName: string;
   warehouseId: number;
 }
 
 export interface UpdatePlaceDto {
   name: string;
-  supervisorName?: string;
+  supervisorName: string;
   warehouseId: number;
 }
 
