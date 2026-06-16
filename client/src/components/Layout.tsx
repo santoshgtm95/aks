@@ -201,6 +201,17 @@ const Layout: React.FC = () => {
             </Link>
           )}
 
+          {hasPermission("Dashboard.View") && (
+            <Link
+              to="/report"
+              className={`nav-item ${isActive("/report") ? "active" : ""}`}
+              onClick={closeMobileMenu}
+            >
+              <TrendingUp className="nav-icon" size={24} />
+              Report
+            </Link>
+          )}
+
           {(hasPermission("Staff.View") || hasPermission("Staff.Create")) && (
             <Link
               to="/cash-flow"

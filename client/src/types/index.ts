@@ -770,3 +770,253 @@ export interface UpdateMessLabourWorkerDto {
   warehouseId: number;
   isActive: boolean;
 }
+
+// Report Types
+export interface ExportedMarkerDto {
+  markerId: number;
+  markerName: string;
+  exportDate: string;
+  totalWeightExported: number;
+  ledgerId: number;
+  ledgerName: string;
+  exportStatus: string;
+}
+
+export interface WorkerFeeDetailDto {
+  workerId: number;
+  workerName: string;
+  feeAmount: number;
+  remarks?: string;
+}
+
+export interface StageDetailDto {
+  stageName: string;
+  stageDate: string;
+  inputWeight: number;
+  outputWeight: number;
+  weightLossKg: number;
+  weightLossPercent: number;
+  workers: WorkerFeeDetailDto[];
+  totalWorkerFees: number;
+  supervisorName: string;
+  supervisorFees: number;
+  status: string;
+  missingDataWarning?: string;
+}
+
+export interface InventoryReportDto {
+  markerName: string;
+  startDate: string;
+  endDate: string;
+  sourceWarehouse: string;
+  initialRawMaterialWeight: number;
+  rawMaterialUnit: string;
+  rawMaterialCategory: string;
+  stages: StageDetailDto[];
+  finalExportedWeight: number;
+  totalWeightLossKg: number;
+  totalWeightLossPercent: number;
+  totalWorkerFeesAllStages: number;
+  totalSupervisorFeesAllStages: number;
+  grandTotalCostAllStages: number;
+  completionStatus: string;
+}
+
+export interface SalesHistoryDto {
+  date: string;
+  weight: number;
+  price: number;
+  total: number;
+  customerName?: string;
+  customerContact?: string;
+  remark?: string;
+}
+
+export interface RawMaterialReportDto {
+  markerName: string;
+  inputDate: string;
+  rawMaterialQuantity: number;
+  unit: string;
+  category: string;
+  sourceWarehouse: string;
+  rawMaterialCostPerUnit?: number;
+  totalRawMaterialCost?: number;
+  qualityGrade: string;
+  processingStartDate: string;
+  status: string;
+  notes?: string;
+  missingDataWarning?: string;
+  salesHistory: SalesHistoryDto[];
+}
+
+export interface MessLabourReportDto {
+  markerName: string;
+  processingDate: string;
+  quantityProcessed: number;
+  unit: string;
+  workers: WorkerFeeDetailDto[];
+  totalWorkerFees: number;
+  feePerUnitKg: number;
+  paymentStatus: string;
+  missingDataWarning?: string;
+  redWeight: number;
+  whiteWeight: number;
+  specialWeight: number;
+  naturalWeight: number;
+  naturalWhiteWeight: number;
+  naturalRedWeight: number;
+  shortCutWeight: number;
+  artificialWeight: number;
+  shortWeight: number;
+  lossWeight: number;
+}
+
+export interface PurifiedRecordEntryDto {
+  id: number;
+  category: string;
+  date: string;
+  place: string;
+  inputWeight: number;
+  outputWeight: number;
+  weightLossKg: number;
+  weightLossPercent: number;
+  purifierName: string;
+  purifierFees: number;
+  supervisorName: string;
+  supervisorFees: number;
+  totalCost: number;
+}
+
+export interface PurifiedStockReportDto {
+  markerName: string;
+  records: PurifiedRecordEntryDto[];
+  totalInputWeight: number;
+  totalOutputWeight: number;
+  totalWeightLossKg: number;
+  totalSupervisorFees: number;
+  totalPurificationWorkerFees: number;
+  totalPurificationCost: number;
+  missingDataWarning?: string;
+}
+
+export interface RefinementReportDto {
+  markerName: string;
+  refinementDate: string;
+  inputWeight: number;
+  outputWeight: number;
+  weightLossKg: number;
+  weightLossPercent: number;
+  workers: WorkerFeeDetailDto[];
+  totalRefinementFees: number;
+  refinementDuration: string;
+  status: string;
+  qualityGrade: string;
+  missingDataWarning?: string;
+}
+
+export interface RefinedRecordEntryDto {
+  id: number;
+  category: string;
+  date: string;
+  inputWeight: number;
+  outputWeight: number;
+  lostWeight: number;
+  spoilageWeight: number;
+  returnWeight: number;
+  refinementWorkerName: string;
+  workerFees: number;
+  totalCost: number;
+}
+
+export interface RefinedStockReportDto {
+  markerName: string;
+  records: RefinedRecordEntryDto[];
+  totalInputWeight: number;
+  totalOutputWeight: number;
+  totalLostWeight: number;
+  totalSpoilageWeight: number;
+  totalReturnWeight: number;
+  totalWorkerFees: number;
+  totalRefinementCost: number;
+  availableWeightForExport: number;
+  weightInStock: number;
+  dateAvailable: string;
+  qualityStatus: string;
+  readyForExport: boolean;
+  pendingProcesses?: string;
+  missingDataWarning?: string;
+}
+
+export interface SizeDetailDto {
+  sizeName: string;
+  weight: number;
+  price: number;
+}
+
+export interface SingleDoubleDrawnRecordEntryDto {
+  id: number;
+  date: string;
+  category: string;
+  sizes: SizeDetailDto[];
+  lostWeight: number;
+  spoilageWeight: number;
+  returnWeight: number;
+  workerName: string;
+  workerFees: number;
+  totalAmount: number;
+}
+
+export interface SingleDoubleDrawnReportDto {
+  markerName: string;
+  records: SingleDoubleDrawnRecordEntryDto[];
+  totalWeight: number;
+  totalLostWeight: number;
+  totalSpoilageWeight: number;
+  totalReturnWeight: number;
+  totalWorkerFees: number;
+  totalAmountCny: number;
+  missingDataWarning?: string;
+}
+
+export interface GlobalSortingReportDto {
+  markerName: string;
+  sortingDate: string;
+  inputWeightRefinedStock: number;
+  outputWeightExported: number;
+  weightLossKg: number;
+  weightLossPercent: number;
+  sortingWorkers: WorkerFeeDetailDto[];
+  totalSortingFees: number;
+  washGradingWorkers: WorkerFeeDetailDto[];
+  totalWashGradingFees: number;
+  finalGradeCategory: string;
+  exportReadyStatus: boolean;
+  totalSortingCost: number;
+  missingDataWarning?: string;
+}
+
+export interface MarkerReportDataDto {
+  markerName: string;
+  markerId: number;
+  inventoryReport?: InventoryReportDto;
+  rawMaterialReport?: RawMaterialReportDto;
+  messLabourReport?: MessLabourReportDto;
+  purifiedStockReport?: PurifiedStockReportDto;
+  refinementReport?: RefinementReportDto;
+  refinedStockReport?: RefinedStockReportDto;
+  globalSortingReport?: GlobalSortingReportDto;
+  singleDoubleDrawnReport?: SingleDoubleDrawnReportDto;
+}
+
+export interface ReportDataRequestDto {
+  markerIds: number[];
+  reportTypes: string[];
+}
+
+export interface ReportDataResponseDto {
+  generatedDate: string;
+  markersData: MarkerReportDataDto[];
+  totalWeightAllMarkers?: number;
+  totalWorkerFeesAllMarkers?: number;
+  totalCostAllMarkers?: number;
+}

@@ -31,6 +31,7 @@ import Sales6 from "./pages/Sales6/index";
 import ExchangeRates from "./pages/ExchangeRates/index";
 import CashFlow from "./pages/CashFlow/index";
 import AuditLogs from "./pages/AuditLogs/index";
+import Report from "./pages/Report/index";
 
 const ProtectedRoute: React.FC<{
   children: React.ReactNode;
@@ -240,6 +241,14 @@ const App: React.FC = () => {
                 element={
                   <ProtectedRoute adminOnly={true}>
                     <AuditLogs />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="report"
+                element={
+                  <ProtectedRoute permission="Dashboard.View">
+                    <Report />
                   </ProtectedRoute>
                 }
               />
