@@ -1,5 +1,7 @@
 import React, { useState, useEffect } from "react";
 import "./index.css";
+import jsPDF from "jspdf";
+import html2canvas from "html2canvas";
 import type {
   ExportedMarkerDto,
   ReportDataResponseDto,
@@ -39,6 +41,7 @@ const Report: React.FC = () => {
     null,
   );
   const [loading, setLoading] = useState(false);
+  const [pdfLoading, setPdfLoading] = useState(false);
   const [error, setError] = useState("");
 
   // Fetch exported markers on component mount
@@ -127,6 +130,352 @@ const Report: React.FC = () => {
     }
   };
 
+  const generatePDF = async () => {
+    if (!reportData) return;
+
+    const formatDate = (d: string) =>
+      new Date(d).toLocaleDateString("en-GB", {
+        day: "2-digit",
+        month: "short",
+        year: "numeric",
+      });
+    const fmt = (n: number) => n.toFixed(2);
+
+    const markerSections = reportData.markersData
+      .map((markerData: MarkerReportDataDto) => {
+        const inv = markerData.inventoryReport
+          ? `
+        <div class="section">
+          <div class="section-header">📊 Inventory Report</div>
+          <table>
+            <tr><td>Start Date</td><td>${formatDate(markerData.inventoryReport.startDate)}</td></tr>
+            <tr><td>End Date</td><td>${formatDate(markerData.inventoryReport.endDate)}</td></tr>
+            <tr><td>Warehouse</td><td>${markerData.inventoryReport.sourceWarehouse}</td></tr>
+            <tr><td>Category</td><td>${markerData.inventoryReport.rawMaterialCategory}</td></tr>
+            <tr class="total-row"><td>Initial Weight</td><td>${markerData.inventoryReport.initialRawMaterialWeight} ${markerData.inventoryReport.rawMaterialUnit}</td></tr>
+          </table>
+        </div>`
+          : "";
+
+        const raw =
+          (markerData.rawMaterialReport?.salesHistory?.length ?? 0) > 0
+            ? `
+        <div class="section">
+          <div class="section-header">📋 Raw Material Report</div>
+          <table>
+            <thead><tr><th>Date</th><th>Weight</th><th>Price</th><th>Total</th><th>Customer</th><th>Contact</th><th>Remark</th></tr></thead>
+            <tbody>${(markerData.rawMaterialReport?.salesHistory ?? [])
+              .map(
+                (s) => `
+              <tr>
+                <td>${formatDate(s.date)}</td>
+                <td>${s.weight}</td>
+                <td>${s.price}</td>
+                <td>${fmt(s.total)}</td>
+                <td>${s.customerName || "-"}</td>
+                <td>${s.customerContact || "-"}</td>
+                <td>${s.remark || "-"}</td>
+              </tr>`,
+              )
+              .join("")}
+            </tbody>
+          </table>
+        </div>`
+            : "";
+
+        const mess = markerData.messLabourReport
+          ? `
+        <div class="section">
+          <div class="section-header">👷 Mess Labour Report</div>
+          <table>
+            <tr><td>Processing Date</td><td>${formatDate(markerData.messLabourReport.processingDate)}</td></tr>
+            <tr><td>Quantity Processed</td><td>${markerData.messLabourReport.quantityProcessed} ${markerData.messLabourReport.unit}</td></tr>
+            <tr class="total-row"><td>Total Worker Fees</td><td>MMK ${fmt(markerData.messLabourReport.totalWorkerFees)}</td></tr>
+          </table>
+          <div class="sub-header">Weight Distribution &amp; Loss</div>
+          <table>
+            ${markerData.messLabourReport.redWeight > 0 ? `<tr><td>Red Weight</td><td>${markerData.messLabourReport.redWeight} kg</td></tr>` : ""}
+            ${markerData.messLabourReport.whiteWeight > 0 ? `<tr><td>White Weight</td><td>${markerData.messLabourReport.whiteWeight} kg</td></tr>` : ""}
+            ${markerData.messLabourReport.specialWeight > 0 ? `<tr><td>Special Weight</td><td>${markerData.messLabourReport.specialWeight} kg</td></tr>` : ""}
+            ${markerData.messLabourReport.naturalWeight > 0 ? `<tr><td>Natural Weight</td><td>${markerData.messLabourReport.naturalWeight} kg</td></tr>` : ""}
+            ${markerData.messLabourReport.naturalWhiteWeight > 0 ? `<tr><td>Natural White Weight</td><td>${markerData.messLabourReport.naturalWhiteWeight} kg</td></tr>` : ""}
+            ${markerData.messLabourReport.naturalRedWeight > 0 ? `<tr><td>Natural Red Weight</td><td>${markerData.messLabourReport.naturalRedWeight} kg</td></tr>` : ""}
+            ${markerData.messLabourReport.shortCutWeight > 0 ? `<tr><td>Short Cut Weight</td><td>${markerData.messLabourReport.shortCutWeight} kg</td></tr>` : ""}
+            ${markerData.messLabourReport.artificialWeight > 0 ? `<tr><td>Artificial Weight</td><td>${markerData.messLabourReport.artificialWeight} kg</td></tr>` : ""}
+            ${markerData.messLabourReport.shortWeight > 0 ? `<tr><td>Short Weight</td><td>${markerData.messLabourReport.shortWeight} kg</td></tr>` : ""}
+            ${markerData.messLabourReport.lossWeight > 0 ? `<tr class="total-row"><td><strong>Lost Weight</strong></td><td><strong>${markerData.messLabourReport.lossWeight} kg</strong></td></tr>` : ""}
+          </table>
+          ${
+            (markerData.messLabourReport.workers?.length ?? 0) > 0
+              ? `
+          <div class="sub-header">Workers Details</div>
+          <table>
+            <thead><tr><th>Worker Name</th><th>Fee</th></tr></thead>
+            <tbody>${markerData.messLabourReport.workers.map((w: WorkerFeeDetailDto) => `<tr><td>${w.workerName}</td><td>MMK ${fmt(w.feeAmount)}</td></tr>`).join("")}</tbody>
+          </table>`
+              : ""
+          }
+        </div>`
+          : "";
+
+        const purified = markerData.purifiedStockReport
+          ? `
+        <div class="section">
+          <div class="section-header">💧 Purified Stock Report</div>
+          ${
+            (markerData.purifiedStockReport.records?.length ?? 0) > 0
+              ? `
+          ${markerData.purifiedStockReport.records
+            .map(
+              (record: PurifiedRecordEntryDto, idx: number) => `
+            <div class="sub-header">Category: ${record.category} (Record ${idx + 1})</div>
+            <table>
+              <tr><td>Date</td><td>${formatDate(record.date)}</td></tr>
+              <tr><td>Place</td><td>${record.place}</td></tr>
+              <tr><td>Input Weight</td><td>${record.inputWeight} kg</td></tr>
+              <tr><td>Output Weight</td><td>${record.outputWeight} kg</td></tr>
+              <tr><td>Weight Loss</td><td>${record.weightLossKg} kg (${fmt(record.weightLossPercent)}%)</td></tr>
+              <tr><td>Purifier Name</td><td>${record.purifierName}</td></tr>
+              <tr><td>Purifier Fees</td><td>MMK ${fmt(record.purifierFees)}</td></tr>
+              <tr><td>Supervisor</td><td>${record.supervisorName}</td></tr>
+              <tr><td>Supervisor Fees</td><td>MMK ${fmt(record.supervisorFees)}</td></tr>
+              <tr class="total-row"><td><strong>Total Cost</strong></td><td><strong>MMK ${fmt(record.totalCost)}</strong></td></tr>
+            </table>`,
+            )
+            .join("")}
+          <div class="sub-header">Summary Totals</div>
+          <table>
+            <tr><td>Total Input Weight</td><td>${fmt(markerData.purifiedStockReport.totalInputWeight)} kg</td></tr>
+            <tr><td>Total Output Weight</td><td>${fmt(markerData.purifiedStockReport.totalOutputWeight)} kg</td></tr>
+            <tr><td>Total Weight Loss</td><td>${fmt(markerData.purifiedStockReport.totalWeightLossKg)} kg</td></tr>
+            <tr class="total-row"><td><strong>Total Purification Cost</strong></td><td><strong>MMK ${fmt(markerData.purifiedStockReport.totalPurificationCost)}</strong></td></tr>
+          </table>`
+              : ""
+          }
+        </div>`
+          : "";
+
+        const refined = markerData.refinedStockReport
+          ? `
+        <div class="section">
+          <div class="section-header">📦 Refined Stock Report</div>
+          ${
+            (markerData.refinedStockReport.records?.length ?? 0) > 0
+              ? `
+          ${markerData.refinedStockReport.records
+            .map(
+              (record: RefinedRecordEntryDto, idx: number) => `
+            <div class="sub-header">Category: ${record.category} (Record ${idx + 1})</div>
+            <table>
+              <tr><td>Date</td><td>${formatDate(record.date)}</td></tr>
+              <tr><td>Input Weight</td><td>${record.inputWeight} kg</td></tr>
+              <tr><td>Output Weight</td><td>${record.outputWeight} kg</td></tr>
+              <tr><td>Lost Weight</td><td>${record.lostWeight} kg</td></tr>
+              <tr><td>Spoilage Weight</td><td>${record.spoilageWeight} kg</td></tr>
+              <tr><td>Return Weight</td><td>${record.returnWeight} kg</td></tr>
+              <tr><td>Refinement Worker</td><td>${record.refinementWorkerName}</td></tr>
+              <tr><td>Worker Fees</td><td>MMK ${fmt(record.workerFees)}</td></tr>
+              <tr class="total-row"><td><strong>Total Cost</strong></td><td><strong>MMK ${fmt(record.totalCost)}</strong></td></tr>
+            </table>`,
+            )
+            .join("")}
+          <div class="sub-header">Summary Totals</div>
+          <table>
+            <tr><td>Total Input Weight</td><td>${fmt(markerData.refinedStockReport.totalInputWeight)} kg</td></tr>
+            <tr><td>Total Output Weight</td><td>${fmt(markerData.refinedStockReport.totalOutputWeight)} kg</td></tr>
+            <tr><td>Total Lost Weight</td><td>${fmt(markerData.refinedStockReport.totalLostWeight)} kg</td></tr>
+            <tr><td>Total Spoilage Weight</td><td>${fmt(markerData.refinedStockReport.totalSpoilageWeight)} kg</td></tr>
+            <tr><td>Total Return Weight</td><td>${fmt(markerData.refinedStockReport.totalReturnWeight)} kg</td></tr>
+            <tr><td>Total Worker Fees</td><td>MMK ${fmt(markerData.refinedStockReport.totalWorkerFees)}</td></tr>
+            <tr class="total-row"><td><strong>Total Refinement Cost</strong></td><td><strong>MMK ${fmt(markerData.refinedStockReport.totalRefinementCost)}</strong></td></tr>
+          </table>`
+              : ""
+          }
+        </div>`
+          : "";
+
+        const sdd = markerData.singleDoubleDrawnReport
+          ? `
+        <div class="section">
+          <div class="section-header">🎯 Single &amp; Double Drawn Report</div>
+          ${
+            (markerData.singleDoubleDrawnReport.records?.length ?? 0) > 0
+              ? `
+          ${markerData.singleDoubleDrawnReport.records
+            .map(
+              (record: SingleDoubleDrawnRecordEntryDto, idx: number) => `
+            <div class="sub-header">Category: ${record.category} (Record ${idx + 1})</div>
+            <table>
+              <tr><td>Date</td><td>${formatDate(record.date)}</td></tr>
+              ${record.sizes.map((s) => `<tr><td>${s.sizeName}</td><td>${fmt(s.weight)} kg @ ¥${fmt(s.price)}</td></tr>`).join("")}
+              <tr><td>Lost Weight</td><td>${fmt(record.lostWeight)} kg</td></tr>
+              <tr><td>Spoilage Weight</td><td>${fmt(record.spoilageWeight)} kg</td></tr>
+              <tr><td>Return Weight</td><td>${fmt(record.returnWeight)} kg</td></tr>
+              <tr><td>Worker</td><td>${record.workerName}</td></tr>
+              <tr><td>Worker Fees</td><td>MMK ${fmt(record.workerFees)}</td></tr>
+              <tr class="total-row"><td><strong>Total Amount (CNY)</strong></td><td><strong>¥ ${fmt(record.totalAmount)}</strong></td></tr>
+            </table>`,
+            )
+            .join("")}
+          <div class="sub-header">Summary Totals</div>
+          <table>
+            <tr><td>Total Weight</td><td>${fmt(markerData.singleDoubleDrawnReport.totalWeight)} kg</td></tr>
+            <tr><td>Total Lost Weight</td><td>${fmt(markerData.singleDoubleDrawnReport.totalLostWeight)} kg</td></tr>
+            <tr><td>Total Spoilage Weight</td><td>${fmt(markerData.singleDoubleDrawnReport.totalSpoilageWeight)} kg</td></tr>
+            <tr><td>Total Return Weight</td><td>${fmt(markerData.singleDoubleDrawnReport.totalReturnWeight)} kg</td></tr>
+            <tr><td>Total Worker Fees</td><td>MMK ${fmt(markerData.singleDoubleDrawnReport.totalWorkerFees)}</td></tr>
+            <tr class="total-row"><td><strong>Total Amount (CNY)</strong></td><td><strong>¥ ${fmt(markerData.singleDoubleDrawnReport.totalAmountCny)}</strong></td></tr>
+          </table>`
+              : ""
+          }
+        </div>`
+          : "";
+
+        return `
+        <div class="marker-block">
+          <div class="marker-title">${markerData.markerName}</div>
+          ${inv}${raw}${mess}${purified}${refined}${sdd}
+        </div>`;
+      })
+      .join("");
+
+    const generatedOn = new Date().toLocaleString("en-GB", {
+      day: "2-digit",
+      month: "short",
+      year: "numeric",
+      hour: "2-digit",
+      minute: "2-digit",
+    });
+
+    const pdfStyles = `
+      * { box-sizing: border-box; margin: 0; padding: 0; }
+      body { font-family: Arial, Helvetica, sans-serif; font-size: 11px; color: #1e293b; background: #fff; }
+      .pdf-cover { background: linear-gradient(135deg, #1e3a5f 0%, #2563eb 100%); color: #fff; padding: 20px 20px 20px; margin-bottom: 32px; }
+      .pdf-cover .logo { font-size: 28px; font-weight: 700; letter-spacing: -0.5px; margin-bottom: 4px; }
+      .pdf-cover .tagline { font-size: 12px; opacity: 0.75; margin-bottom: 32px; }
+      .pdf-cover h1 { font-size: 22px; font-weight: 700;  }
+      .pdf-cover .meta { font-size: 11px; opacity: 0.8; }
+      .pdf-body { padding: 0 40px 40px; }
+      .marker-block { margin-bottom: 40px; }
+      .marker-block + .marker-block { border-top: 2px solid #e2e8f0; padding-top: 28px; }
+      .marker-title { font-size: 16px; font-weight: 700; color: #1e3a5f; background: #f0f6ff; border-left: 4px solid #2563eb; padding: 10px 16px; border-radius: 0 8px 8px 0; margin-bottom: 18px; }
+      .section { margin-bottom: 18px; margin-top: 48px; }
+      .section-header { font-size: 12px; font-weight: 700; color: #fff; background: linear-gradient(90deg,#1e3a5f,#2563eb); padding: 7px 14px; border-radius: 6px 6px 0 0; margin-bottom: 0; letter-spacing: 0.03em; }
+      .sub-header { font-size: 11px; font-weight: 700; color: #2563eb; background: #eff6ff; padding: 5px 12px; border-left: 3px solid #2563eb; margin: 12px 0 6px; border-radius: 0 4px 4px 0; }
+      table { width: 100%; border-collapse: collapse; font-size: 11px; }
+      thead tr { background: #1e3a5f; color: #fff; }
+      thead th { padding: 7px 12px; text-align: left; font-weight: 600; font-size: 10px; letter-spacing: 0.05em; text-transform: uppercase; }
+      tbody tr:nth-child(even) { background: #f8fafc; }
+      td { padding: 6px 12px; border-bottom: 1px solid #e2e8f0; vertical-align: top; }
+      td:first-child { color: #475569; font-weight: 500; width: 45%; }
+      td:last-child { font-weight: 600; color: #1e293b; }
+      .total-row td { background: #eff6ff !important; border-top: 2px solid #2563eb; }
+      .total-row td:last-child { color: #1e3a5f; font-size: 12px; }
+      .pdf-footer { margin-top: 40px; padding: 16px 40px; border-top: 1px solid #e2e8f0; display: flex; justify-content: space-between; font-size: 10px; color: #94a3b8; }
+    `;
+
+    const bodyHtml = `
+      <div class="pdf-cover">
+        <h1>Detailed Report</h1>
+        <div class="meta">Generated on: ${generatedOn}</div>
+      </div>
+      <div class="pdf-body">${markerSections}</div>
+      <div class="pdf-footer">
+        <span>AKZ Business Management System</span>
+        <span>Generated: ${generatedOn}</span>
+      </div>
+    `;
+
+    // Create hidden off-screen container
+    const container = document.createElement("div");
+    container.style.cssText =
+      "position:fixed;left:-9999px;top:0;width:794px;background:#fff;";
+    const styleEl = document.createElement("style");
+    styleEl.textContent = pdfStyles;
+    container.appendChild(styleEl);
+    container.insertAdjacentHTML("beforeend", bodyHtml);
+    document.body.appendChild(container);
+
+    setPdfLoading(true);
+    try {
+      const canvas = await html2canvas(container, {
+        scale: 2,
+        useCORS: true,
+        logging: false,
+        backgroundColor: "#ffffff",
+      });
+
+      // --- Smart page-break logic ---
+      // Gather natural break points from section boundaries in the rendered container
+      const SCALE = 2; // must match html2canvas scale above
+      const A4_W_MM = 210;
+      const A4_H_MM = 297;
+      const containerTop = container.getBoundingClientRect().top;
+      const breakEls = container.querySelectorAll(
+        ".pdf-cover, .marker-title, .section, .pdf-footer",
+      );
+      const breakSet = new Set<number>([0]);
+      breakEls.forEach((el) => {
+        const top = Math.round(
+          (el.getBoundingClientRect().top - containerTop) * SCALE,
+        );
+        if (top > 0) breakSet.add(top);
+      });
+      const breakPoints = Array.from(breakSet).sort((a, b) => a - b);
+
+      // A4 page height expressed in canvas pixels
+      const pageHeightPx = Math.floor((A4_H_MM * canvas.width) / A4_W_MM);
+
+      const pdf = new jsPDF({
+        orientation: "portrait",
+        unit: "mm",
+        format: "a4",
+      });
+      let pageStart = 0;
+      let firstPage = true;
+
+      while (pageStart < canvas.height) {
+        const rawEnd = pageStart + pageHeightPx;
+
+        // Find the latest natural break point that sits at or before rawEnd
+        let breakAt = rawEnd;
+        if (rawEnd < canvas.height) {
+          for (let i = breakPoints.length - 1; i >= 0; i--) {
+            if (breakPoints[i] <= rawEnd && breakPoints[i] > pageStart) {
+              breakAt = breakPoints[i];
+              break;
+            }
+          }
+        }
+        breakAt = Math.min(breakAt, canvas.height);
+
+        // Draw this slice onto a temporary canvas
+        const sliceH = breakAt - pageStart;
+        const sliceCanvas = document.createElement("canvas");
+        sliceCanvas.width = canvas.width;
+        sliceCanvas.height = sliceH;
+        const ctx = sliceCanvas.getContext("2d")!;
+        ctx.fillStyle = "#ffffff";
+        ctx.fillRect(0, 0, sliceCanvas.width, sliceCanvas.height);
+        ctx.drawImage(canvas, 0, -pageStart, canvas.width, canvas.height);
+
+        const sliceData = sliceCanvas.toDataURL("image/jpeg", 0.92);
+        const sliceH_MM = (sliceH * A4_W_MM) / canvas.width;
+
+        if (!firstPage) pdf.addPage();
+        pdf.addImage(sliceData, "JPEG", 0, 0, A4_W_MM, sliceH_MM);
+        firstPage = false;
+
+        pageStart = breakAt;
+      }
+
+      pdf.save(`AKZ-Report-${new Date().toISOString().slice(0, 10)}.pdf`);
+    } finally {
+      setPdfLoading(false);
+      document.body.removeChild(container);
+    }
+  };
+
   return (
     <div className="report-container">
       <h1>Report Generator</h1>
@@ -196,6 +545,15 @@ const Report: React.FC = () => {
         >
           {loading ? "Generating..." : "Generate Report"}
         </button>
+        {reportData && (
+          <button
+            className="btn btn-pdf"
+            onClick={generatePDF}
+            disabled={pdfLoading}
+          >
+            {pdfLoading ? "⏳ Generating PDF..." : "📄 Generate PDF"}
+          </button>
+        )}
       </div>
 
       {reportData && (

@@ -200,6 +200,17 @@
   transform: translateY(-2px);
 }
 
+.btn-pdf {
+  background: linear-gradient(135deg, #059669 0%, #047857 100%);
+  color: white;
+}
+
+.btn-pdf:hover {
+  background: linear-gradient(135deg, #047857 0%, #065f46 100%);
+  box-shadow: 0 6px 20px rgba(5, 150, 105, 0.35);
+  transform: translateY(-2px);
+}
+
 /* Report Preview */
 .report-preview {
   margin-top: 40px;
