@@ -545,10 +545,21 @@ const SemiExport: React.FC = () => {
         (s, v) => s + v,
         0,
       );
-      const washGradingLostWeight = group.records.reduce(
-        (sum, r) => sum + (r.washGradingLostWeight || 0),
-        0,
-      );
+      const washGradingIdMap = new Map<number, number>();
+      group.records.forEach((r) => {
+        if (
+          r.washGradingRecordId != null &&
+          !washGradingIdMap.has(r.washGradingRecordId)
+        ) {
+          washGradingIdMap.set(
+            r.washGradingRecordId,
+            r.washGradingLostWeight || 0,
+          );
+        }
+      });
+      const washGradingLostWeight = Array.from(
+        washGradingIdMap.values(),
+      ).reduce((sum, r) => sum + r, 0);
       const sumLostWeight =
         refinementLostWeight + processingLostWeight + washGradingLostWeight;
 
@@ -839,10 +850,21 @@ const SemiExport: React.FC = () => {
     const processingLostWeight = Array.from(
       selectedProcessingIdMap.values(),
     ).reduce((s, v) => s + v, 0);
-    const washGradingLostWeight = selectedRecords.reduce(
-      (sum, r) => sum + (r.washGradingLostWeight || 0),
-      0,
-    );
+    const selectedWashGradingIdMap = new Map<number, number>();
+    selectedRecords.forEach((r) => {
+      if (
+        r.washGradingRecordId != null &&
+        !selectedWashGradingIdMap.has(r.washGradingRecordId)
+      ) {
+        selectedWashGradingIdMap.set(
+          r.washGradingRecordId,
+          r.washGradingLostWeight || 0,
+        );
+      }
+    });
+    const washGradingLostWeight = Array.from(
+      selectedWashGradingIdMap.values(),
+    ).reduce((s, v) => s + v, 0);
     const sumLostWeight =
       refinementLostWeight + processingLostWeight + washGradingLostWeight;
 
@@ -3358,7 +3380,7 @@ const SemiExport: React.FC = () => {
                   }}
                 >
                   <Download size={18} />
-                  Semi Export Purchase{" "}
+                  Import Data{" "}
                 </button>
               )}
               {hasPermission("SemiExport.Create") && (

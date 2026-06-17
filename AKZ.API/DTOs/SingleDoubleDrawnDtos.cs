@@ -83,6 +83,7 @@ public class SingleDoubleDrawnRecordDto
     public string WashGradingWorkerName { get; set; } = string.Empty;
     public decimal WashGradingWorkerFees { get; set; }
     public decimal WashGradingLostWeight { get; set; }
+    public int? WashGradingRecordId { get; set; }
 }
 
 public class CreateSingleDoubleDrawnRecordDto

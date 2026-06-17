@@ -574,6 +574,7 @@ export interface SingleDoubleDrawnRecord {
   washGradingWorkerName?: string;
   washGradingWorkerFees?: number;
   washGradingLostWeight?: number;
+  washGradingRecordId?: number;
   processingLossWeight: number;
   processingRecordId?: number;
   price6: number;

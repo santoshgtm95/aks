@@ -172,7 +172,8 @@ public class SingleDoubleDrawnController : ControllerBase
                 RefinementWorkerFees = r.RefinementRecord?.WorkerFees ?? 0M,
                 WashGradingWorkerName = r.RefinementRecord?.PurifiedRecord?.ProcessingRecord?.WashGradingRecord?.WashGradingWorker?.Name ?? "",
                 WashGradingWorkerFees = r.RefinementRecord?.PurifiedRecord?.ProcessingRecord?.WashGradingRecord?.WorkerFees ?? 0M,
-                WashGradingLostWeight = r.RefinementRecord?.PurifiedRecord?.ProcessingRecord?.WashGradingRecord?.LostWeight ?? 0M
+                WashGradingLostWeight = r.RefinementRecord?.PurifiedRecord?.ProcessingRecord?.WashGradingRecord?.LostWeight ?? 0M,
+                WashGradingRecordId = r.RefinementRecord?.PurifiedRecord?.ProcessingRecord?.WashGradingRecordId
             });
         }
 
