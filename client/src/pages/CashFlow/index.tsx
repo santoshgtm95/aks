@@ -1,11 +1,12 @@
 import React, { useState, useEffect } from "react";
-import { cashFlowAPI } from "../../services/api";
-import { DollarSign, Search, CreditCard } from "lucide-react";
+import { cashFlowAPI, placesAPI } from "../../services/api";
+import { DollarSign, Search, CreditCard, MapPin } from "lucide-react";
 import Modal from "../../components/Modal";
 import "./index.css";
 
 interface WorkerCashFlow {
   workerName: string;
+  placeNames?: string;
   messLabourFees: number;
   purificationFees: number;
   purificationSupervisorFees: number;
@@ -21,6 +22,8 @@ const CashFlow: React.FC = () => {
   const [data, setData] = useState<WorkerCashFlow[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState("");
+  const [places, setPlaces] = useState<any[]>([]);
+  const [selectedPlaceId, setSelectedPlaceId] = useState<number | "">("");
 
   // Payment Modal State
   const [selectedWorker, setSelectedWorker] = useState<WorkerCashFlow | null>(
@@ -31,9 +34,10 @@ const CashFlow: React.FC = () => {
   const [paymentNote, setPaymentNote] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  const fetchData = async () => {
+  const fetchData = async (placeId?: number) => {
     try {
-      const result = await cashFlowAPI.getAll();
+      setLoading(true);
+      const result = await cashFlowAPI.getAll(placeId);
       setData(result);
     } catch (error) {
       console.error("Error fetching cash flow data:", error);
@@ -43,8 +47,24 @@ const CashFlow: React.FC = () => {
   };
 
   useEffect(() => {
-    fetchData();
+    const loadInitialData = async () => {
+      try {
+        const p = await placesAPI.getAll();
+        setPlaces(p);
+      } catch (err) {
+        console.error("Failed to load places", err);
+      }
+      fetchData();
+    };
+    loadInitialData();
   }, []);
+
+  const handlePlaceChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
+    const val = e.target.value;
+    const placeId = val === "" ? "" : Number(val);
+    setSelectedPlaceId(placeId);
+    fetchData(placeId === "" ? undefined : placeId);
+  };
 
   const handleRowClick = (worker: WorkerCashFlow) => {
     setSelectedWorker(worker);
@@ -74,9 +94,11 @@ const CashFlow: React.FC = () => {
     }
   };
 
-  const filteredData = data.filter((item) =>
-    item.workerName.toLowerCase().includes(searchTerm.toLowerCase()),
-  );
+  const filteredData = data
+    .filter((item) =>
+      item.workerName.toLowerCase().includes(searchTerm.toLowerCase()),
+    )
+    .sort((a, b) => b.unpaidAmount - a.unpaidAmount);
 
   const formatCurrency = (value: number) => {
     return value.toLocaleString(undefined, {
@@ -127,6 +149,18 @@ const CashFlow: React.FC = () => {
             onChange={(e) => setSearchTerm(e.target.value)}
           />
         </div>
+
+        <div className="place-filter">
+          <MapPin size={20} className="filter-icon" />
+          <select value={selectedPlaceId} onChange={handlePlaceChange}>
+            <option value="">All Places</option>
+            {places.map((p) => (
+              <option key={p.id} value={p.id}>
+                {p.name}
+              </option>
+            ))}
+          </select>
+        </div>
       </div>
 
       <div className="table-responsive">
@@ -137,6 +171,7 @@ const CashFlow: React.FC = () => {
             <thead>
               <tr>
                 <th>Worker Name</th>
+                <th>Places</th>
                 <th>Mess-Labour</th>
                 <th>Purification</th>
                 <th>Purification Supervisor</th>
@@ -162,6 +197,7 @@ const CashFlow: React.FC = () => {
                       </div>
                       {item.workerName}
                     </td>
+                    <td className="places-col">{item.placeNames || "-"}</td>
                     <td>{formatCurrency(item.messLabourFees)}</td>
                     <td>{formatCurrency(item.purificationFees)}</td>
                     <td>{formatCurrency(item.purificationSupervisorFees)}</td>
@@ -182,7 +218,7 @@ const CashFlow: React.FC = () => {
               ) : (
                 <tr>
                   <td
-                    colSpan={10}
+                    colSpan={11}
                     style={{ textAlign: "center", padding: "2rem" }}
                   >
                     No workers found matching your search.
@@ -192,12 +228,19 @@ const CashFlow: React.FC = () => {
             </tbody>
             <tfoot>
               <tr>
-                <td className="worker-name-col footer-label">Grand Total</td>
+                <td className="worker-name-col footer-label" colSpan={2}>
+                  Grand Total
+                </td>
+                <td></td>
                 <td className="footer-val">{formatCurrency(totalAllMess)}</td>
                 <td className="footer-val">{formatCurrency(totalAllPurif)}</td>
-                <td className="footer-val">{formatCurrency(totalAllPurifSupervisor)}</td>
+                <td className="footer-val">
+                  {formatCurrency(totalAllPurifSupervisor)}
+                </td>
                 <td className="footer-val">{formatCurrency(totalAllRefine)}</td>
-                <td className="footer-val">{formatCurrency(totalAllWashGrading)}</td>
+                <td className="footer-val">
+                  {formatCurrency(totalAllWashGrading)}
+                </td>
                 <td className="footer-val">{formatCurrency(totalAllSdd)}</td>
                 <td className="total-col footer-val grand-total">
                   {formatCurrency(grandTotal)}

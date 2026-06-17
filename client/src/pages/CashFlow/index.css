@@ -28,9 +28,44 @@
 
 .cf-toolbar {
   display: flex;
-  justify-content: space-between;
+  justify-content: flex-start;
   align-items: center;
+  gap: 1rem;
   margin-bottom: 1.5rem;
+}
+
+.place-filter {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  background: white;
+  border: 1px solid var(--border-color, #e2e8f0);
+  padding: 0 0.75rem;
+  border-radius: 6px;
+}
+
+.filter-icon {
+  color: #3b82f6;
+}
+
+.place-filter select {
+  border: none;
+  padding: 0.75rem 0.25rem;
+  font-size: 0.95rem;
+  color: var(--text-color, #2d3748);
+  background: transparent;
+  outline: none;
+  cursor: pointer;
+}
+
+.places-col {
+  text-align: left !important;
+  color: #718096;
+  font-size: 0.85rem;
+  max-width: 200px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .search-bar {

@@ -464,6 +464,7 @@
   padding: 16px;
   border-radius: 12px;
   border: 1px solid #e2e8f0;
+  flex: 1;
 }
 
 .metric-label {
@@ -483,6 +484,16 @@
 .metric-unit {
   font-size: 13px;
   color: #94a3b8;
+}
+
+.metric-box input {
+  width: 100%;
+  padding: 10px 12px;
+  border: 1px solid #cbd5e1;
+  border-radius: 8px;
+  font-size: 14px;
+  font-weight: 600;
+  outline: none;
 }
 
 .financial-section {
@@ -648,6 +659,7 @@
   box-shadow: 0 4px 6px rgba(0, 0, 0, 0.02);
   transition: all 0.2s ease;
   min-width: 0;
+  min-width: 350px;
 }
 
 .color-detail-card:hover {
@@ -833,21 +845,39 @@
   padding-left: 12px;
   gap: 4px;
   flex: 1;
+  width: 100%;
+  margin-top: 8px;
+  margin-left: 0;
+  padding-left: 0;
+  border-left: none;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.size-price-input > div {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  width: 100%;
+  flex: 1;
 }
 
 .size-price-input .currency-symbol {
   font-size: 12px;
   color: #64748b;
   font-weight: 600;
+  white-space: nowrap;
 }
 
 .size-price-input input {
   width: 100%;
-  padding: 6px 8px;
+  padding: 10px 12px;
   border: 1px solid #cbd5e1;
   border-radius: 4px;
   font-size: 12px;
   outline: none;
+  flex: 1;
+}
   transition: all 0.2s;
 }
 

@@ -506,9 +506,7 @@ export const washGradingAPI = {
     return response.data;
   },
   getRecords: async (): Promise<WashGradingRecord[]> => {
-    const response = await api.get<WashGradingRecord[]>(
-      "/washgrading/records",
-    );
+    const response = await api.get<WashGradingRecord[]>("/washgrading/records");
     return response.data;
   },
   create: async (
@@ -520,7 +518,10 @@ export const washGradingAPI = {
   createRecord: async (
     data: CreateWashGradingProcessDto,
   ): Promise<WashGradingRecord> => {
-    const response = await api.post<WashGradingRecord>("/washgrading/records", data);
+    const response = await api.post<WashGradingRecord>(
+      "/washgrading/records",
+      data,
+    );
     return response.data;
   },
   update: async (
@@ -653,8 +654,8 @@ export const importedSemiExportAPI = {
 
 export default api;
 export const cashFlowAPI = {
-  getAll: async (): Promise<any[]> => {
-    const response = await api.get<any[]>("/cashFlow");
+  getAll: async (placeId?: number): Promise<any[]> => {
+    const response = await api.get<any[]>("/cashFlow", { params: { placeId } });
     return response.data;
   },
   makePayment: async (data: {

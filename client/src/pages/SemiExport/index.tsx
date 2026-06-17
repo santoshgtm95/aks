@@ -49,12 +49,18 @@ interface GroupedMarker {
 
 const SemiExport: React.FC = () => {
   const { hasPermission } = useAuth();
+  const [activeRates, setActiveRates] = useState<ExchangeRate[]>([]);
+  const currentCnyRate = useMemo(() => {
+    const rateObj = activeRates.find(
+      (r) => r.fromCurrency === "CNY" && r.toCurrency === "MMK",
+    );
+    return rateObj ? rateObj.rate : null;
+  }, [activeRates]);
   const [sddRecords, setSddRecords] = useState<SingleDoubleDrawnRecord[]>([]);
   const [savedExports, setSavedExports] = useState<SemiExportRecord[]>([]);
   const [products, setProducts] = useState<Product[]>([]);
   const [sales, setSales] = useState<Sale[]>([]);
   const [ledgers, setLedgers] = useState<LedgerDto[]>([]);
-  const [activeRates, setActiveRates] = useState<ExchangeRate[]>([]);
   const [loading, setLoading] = useState(true);
   const [selectedMarker, setSelectedMarker] = useState<string | null>(null);
   const [searchTerm, setSearchTerm] = useState("");
@@ -91,10 +97,17 @@ const SemiExport: React.FC = () => {
     date: new Date().toISOString().substring(0, 10),
   });
   const [importCategoriesData, setImportCategoriesData] = useState<any>({});
+  const [importExchangeRate, setImportExchangeRate] = useState<string>("0");
   const [lastPrepopulated, setLastPrepopulated] = useState<{
     marker: string;
     color: string;
   } | null>(null);
+
+  useEffect(() => {
+    if (showImportModal && currentCnyRate) {
+      setImportExchangeRate(currentCnyRate.toString());
+    }
+  }, [showImportModal, currentCnyRate]);
   const importCategoryOptions = [
     "Art",
     "Red",
@@ -771,13 +784,6 @@ const SemiExport: React.FC = () => {
     }
   };
 
-  const cnyToMmkRate = useMemo(() => {
-    const rateObj = activeRates.find(
-      (r) => r.fromCurrency === "CNY" && r.toCurrency === "MMK",
-    );
-    return rateObj ? rateObj.rate : null;
-  }, [activeRates]);
-
   // Compute metrics for selected marker
   const selectedMarkerStats = useMemo(() => {
     if (!selectedMarker) return null;
@@ -1113,7 +1119,7 @@ const SemiExport: React.FC = () => {
       }
 
       // Use the rate stored at save time; fall back to current active rate
-      const rate = record.exchangeRateRate ?? cnyToMmkRate ?? 1;
+      const rate = record.exchangeRateRate ?? currentCnyRate ?? 1;
       const rowAmountMMK = rowAmountCNY * rate;
 
       if (!groups[marker]) {
@@ -1148,7 +1154,7 @@ const SemiExport: React.FC = () => {
       (a: any, b: any) =>
         new Date(b.latestDate).getTime() - new Date(a.latestDate).getTime(),
     );
-  }, [savedExports, sddRecords, cnyToMmkRate]);
+  }, [savedExports, sddRecords, currentCnyRate]);
 
   const filteredHistory = useMemo(() => {
     if (selectedMarker) {
@@ -1270,11 +1276,11 @@ const SemiExport: React.FC = () => {
 
   const markerTotalAmountMmk = useMemo(() => {
     const fees = parseFloat(markerWorkerFees) || 0;
-    if (cnyToMmkRate !== null) {
-      return markerTotalAmount * cnyToMmkRate + fees;
+    if (currentCnyRate !== null) {
+      return markerTotalAmount * currentCnyRate + fees;
     }
     return null;
-  }, [markerTotalAmount, cnyToMmkRate, markerWorkerFees]);
+  }, [markerTotalAmount, currentCnyRate, markerWorkerFees]);
 
   const financialComparison = useMemo(() => {
     if (!selectedMarkerStats) return null;
@@ -1413,12 +1419,12 @@ const SemiExport: React.FC = () => {
           
           <div style="margin-top: 20px; font-size: 14px;">
             ${(() => {
-              const rate = cnyToMmkRate || 0;
+              const rate = parseFloat(importExchangeRate) || 0;
               const totalMmk = totalAmt * rate;
               const lostW = Number(data["Lost"]?.weight || 0);
 
               return `
-                  <div style="margin-bottom: 8px;"><strong>Exchange Rate:</strong> 1 CNY = ${rate} MMK (${(1 / rate).toFixed(5)})</div>
+                  <div style="margin-bottom: 8px;"><strong>Exchange Rate:</strong> 1 CNY = ${rate.toLocaleString()} MMK</div>
                   <div style="margin-bottom: 8px;"><strong>Total Amount (CNY):</strong> ¥${totalAmt.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</div>
                   <div style="margin-bottom: 8px;"><strong>Total Amount (MMK):</strong> ${Math.round(totalMmk).toLocaleString()} MMK</div>
                   <div style="margin-top: 15px; padding-top: 15px; border-top: 1px dashed black;"><strong>Lost Weight:</strong> ${lostW > 0 ? lostW.toFixed(3) : "0.000"} viss</div>
@@ -1571,12 +1577,13 @@ const SemiExport: React.FC = () => {
           
           <div style="margin-top: 20px; font-size: 14px;">
             ${(() => {
-              const rate = cnyToMmkRate || 0;
+              const rate =
+                data[colorName]?.exchange_rate || currentCnyRate || 0;
               const totalMmk = totalAmt * rate;
               const lostW = Number(data[colorName]?.["Lost"]?.weight || 0);
 
               return `
-                  <div style="margin-bottom: 8px;"><strong>Exchange Rate:</strong> 1 CNY = ${rate} MMK (${(1 / rate).toFixed(5)})</div>
+                  <div style="margin-bottom: 8px;"><strong>Exchange Rate:</strong> 1 CNY = ${rate.toLocaleString()} MMK</div>
                   <div style="margin-bottom: 8px;"><strong>Total Amount (CNY):</strong> ¥${totalAmt.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</div>
                   <div style="margin-bottom: 8px;"><strong>Total Amount (MMK):</strong> ${Math.round(totalMmk).toLocaleString()} MMK</div>
                   <div style="margin-top: 15px; padding-top: 15px; border-top: 1px dashed black;"><strong>Lost Weight:</strong> ${lostW > 0 ? lostW.toFixed(3) : "0.000"} viss</div>
@@ -1599,8 +1606,13 @@ const SemiExport: React.FC = () => {
   };
 
   const handleSaveAndPrintColor = async (colorName: string) => {
-    if (!importFormData.markerName || !importFormData.totalSortedWeight) {
-      alert("Marker Name and Weight are required.");
+    if (
+      !importFormData.markerName ||
+      !importFormData.totalSortedWeight ||
+      !importExchangeRate ||
+      parseFloat(importExchangeRate) <= 0
+    ) {
+      alert("Marker Name, Weight and a valid Exchange Rate are required.");
       return;
     }
     try {
@@ -1616,11 +1628,14 @@ const SemiExport: React.FC = () => {
           );
         const totalSort = Number(importFormData.totalSortedWeight || 0);
         const lost = Math.max(0, totalSort - otherWeight).toFixed(3);
-        payloadData[colorName]["Lost"] = {
+        const newData = { ...payloadData[colorName] };
+        newData["Lost"] = {
           weight: lost,
           price: "",
           amount: "",
         };
+        newData["exchange_rate"] = parseFloat(importExchangeRate);
+        payloadData[colorName] = newData;
       }
 
       await importedSemiExportAPI.create({
@@ -2520,7 +2535,7 @@ const SemiExport: React.FC = () => {
             </div>
 
             {/* 2. Total Marker Value in MMK */}
-            {cnyToMmkRate !== null && (
+            {currentCnyRate !== null && (
               <div
                 style={{
                   display: "flex",
@@ -2548,7 +2563,7 @@ const SemiExport: React.FC = () => {
                       color: "#475569",
                     }}
                   >
-                    {(markerTotalAmount * cnyToMmkRate).toLocaleString(
+                    {(markerTotalAmount * currentCnyRate).toLocaleString(
                       undefined,
                       {
                         minimumFractionDigits: 2,
@@ -2632,7 +2647,7 @@ const SemiExport: React.FC = () => {
                 </span>
               </div>
 
-              {cnyToMmkRate !== null && (
+              {currentCnyRate !== null && (
                 <div
                   style={{
                     fontSize: "10px",
@@ -2640,7 +2655,7 @@ const SemiExport: React.FC = () => {
                     marginTop: "2px",
                   }}
                 >
-                  (Rate: 1 CNY = {cnyToMmkRate.toLocaleString()} MMK +{" "}
+                  (Rate: 1 CNY = {currentCnyRate.toLocaleString()} MMK +{" "}
                   {(parseFloat(markerWorkerFees) || 0).toLocaleString()} MMK
                   Worker Fees)
                 </div>
@@ -4148,6 +4163,57 @@ const SemiExport: React.FC = () => {
                 </div>
               </div>
 
+              <div
+                style={{
+                  display: "flex",
+                  justifyContent: "space-between",
+                  alignItems: "center",
+                  background: "#f1f5f9",
+                  padding: "12px 16px",
+                  borderRadius: "10px",
+                  marginBottom: "20px",
+                  border: "1px solid #e2e8f0",
+                }}
+              >
+                <div
+                  style={{ display: "flex", alignItems: "center", gap: "10px" }}
+                >
+                  <span
+                    style={{
+                      fontSize: "13.5px",
+                      fontWeight: "700",
+                      color: "#475569",
+                    }}
+                  >
+                    CNY to MMK Rate:
+                  </span>
+                  <input
+                    type="number"
+                    value={importExchangeRate}
+                    onChange={(e) => setImportExchangeRate(e.target.value)}
+                    style={{
+                      width: "120px",
+                      padding: "6px 10px",
+                      borderRadius: "6px",
+                      border: "1.5px solid #cbd5e1",
+                      fontSize: "14px",
+                      fontWeight: "700",
+                      textAlign: "right",
+                      outline: "none",
+                    }}
+                  />
+                  <span
+                    style={{
+                      fontSize: "13px",
+                      color: "#64748b",
+                      fontWeight: "500",
+                    }}
+                  >
+                    MMK
+                  </span>
+                </div>
+              </div>
+
               <div style={{ marginBottom: "16px" }}>
                 <h3
                   style={{
@@ -4272,6 +4338,17 @@ const SemiExport: React.FC = () => {
                               }}
                             >
                               AMOUNT (CNY)
+                            </th>
+                            <th
+                              style={{
+                                padding: "10px 16px",
+                                fontWeight: "700",
+                                color: "#475569",
+                                textAlign: "right",
+                                background: "#f0fdf4",
+                              }}
+                            >
+                              AMOUNT (MMK)
                             </th>
                           </tr>
                         </thead>
@@ -4464,6 +4541,26 @@ const SemiExport: React.FC = () => {
                                           },
                                         )
                                       : "0.00")}
+                                </td>
+                                <td
+                                  style={{
+                                    padding: "10px 16px",
+                                    textAlign: "right",
+                                    fontWeight: "700",
+                                    color: "#166534",
+                                    background: "#f0fdf4",
+                                  }}
+                                >
+                                  {size !== "Lost" &&
+                                    (Number(sizeData.amount || 0) > 0
+                                      ? (
+                                          Number(sizeData.amount) *
+                                          parseFloat(importExchangeRate || "0")
+                                        ).toLocaleString(undefined, {
+                                          minimumFractionDigits: 0,
+                                          maximumFractionDigits: 0,
+                                        })
+                                      : "0")}
                                 </td>
                               </tr>
                             );
@@ -4888,9 +4985,29 @@ const SemiExport: React.FC = () => {
                                     fontSize: "15px",
                                     fontWeight: 700,
                                     color: "#334155",
+                                    display: "flex",
+                                    justifyContent: "space-between",
+                                    alignItems: "center",
                                   }}
                                 >
-                                  {color} Sizes
+                                  <span>{color} Sizes</span>
+                                  {parsedData[color]?.exchange_rate && (
+                                    <span
+                                      style={{
+                                        fontSize: "12px",
+                                        background: "#f0fdf4",
+                                        padding: "4px 10px",
+                                        borderRadius: "6px",
+                                        color: "#166534",
+                                      }}
+                                    >
+                                      Rate: 1 ¥ ={" "}
+                                      {parsedData[
+                                        color
+                                      ].exchange_rate.toLocaleString()}{" "}
+                                      MMK
+                                    </span>
+                                  )}
                                 </h4>
                               </div>
                               <div style={{ padding: "0" }}>
@@ -4948,11 +5065,24 @@ const SemiExport: React.FC = () => {
                                       >
                                         AMOUNT (CNY)
                                       </th>
+                                      <th
+                                        style={{
+                                          padding: "10px 16px",
+                                          fontWeight: "700",
+                                          color: "#166534",
+                                          textAlign: "right",
+                                          background: "#f0fdf4",
+                                        }}
+                                      >
+                                        (MMK)
+                                      </th>
                                     </tr>
                                   </thead>
                                   <tbody>
                                     {sizeOptions.map((size) => {
                                       const sData = parsedData[color]?.[size];
+                                      const exchangeRate =
+                                        parsedData[color]?.exchange_rate || 0;
                                       let displaySize = size;
                                       if (size === "Return")
                                         displaySize = "Return";
@@ -5040,6 +5170,26 @@ const SemiExport: React.FC = () => {
                                                 ).toLocaleString(undefined, {
                                                   minimumFractionDigits: 2,
                                                   maximumFractionDigits: 2,
+                                                })
+                                              : "-"}
+                                          </td>
+                                          <td
+                                            style={{
+                                              padding: "8px 16px",
+                                              textAlign: "right",
+                                              fontWeight: "700",
+                                              color: "#166534",
+                                              background: "#f0fdf4",
+                                            }}
+                                          >
+                                            {size !== "Lost" &&
+                                            Number(sData.amount || 0) > 0 &&
+                                            exchangeRate > 0
+                                              ? (
+                                                  Number(sData.amount) *
+                                                  exchangeRate
+                                                ).toLocaleString(undefined, {
+                                                  maximumFractionDigits: 0,
                                                 })
                                               : "-"}
                                           </td>
