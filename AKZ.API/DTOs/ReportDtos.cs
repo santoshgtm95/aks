@@ -294,6 +294,7 @@ public class SingleDoubleDrawnRecordEntryDto
     public int Id { get; set; }
     public DateTime Date { get; set; }
     public string Category { get; set; } = string.Empty;
+    public string CategoryColor { get; set; } = string.Empty;
     
     // Size and price details - Key-Value pairs for each size
     public List<SizeDetailDto> Sizes { get; set; } = new();

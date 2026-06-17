@@ -957,6 +957,7 @@ export interface SingleDoubleDrawnRecordEntryDto {
   id: number;
   date: string;
   category: string;
+  categoryColor: string;
   sizes: SizeDetailDto[];
   lostWeight: number;
   spoilageWeight: number;

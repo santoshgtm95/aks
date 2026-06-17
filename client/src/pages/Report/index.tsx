@@ -1159,17 +1159,14 @@ const Report: React.FC = () => {
                           0 && (
                           <>
                             {markerData.singleDoubleDrawnReport.records.map(
-                              (
-                                record: SingleDoubleDrawnRecordEntryDto,
-                                idx: number,
-                              ) => (
+                              (record: SingleDoubleDrawnRecordEntryDto) => (
                                 <div
                                   key={record.id}
                                   className="category-section"
                                 >
                                   <h5>
-                                    📦 Category: {record.category} (Record{" "}
-                                    {idx + 1})
+                                    📦 Category: {record.category} (
+                                    {record.categoryColor})
                                   </h5>
                                   <table className="detail-table">
                                     <tbody>

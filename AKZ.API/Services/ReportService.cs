@@ -580,6 +580,7 @@ public class ReportService
                         Id = record.Id,
                         Date = record.Date,
                         Category = "Single & Double Drawn",
+                        CategoryColor = record.RefinementRecord?.Category ?? "Unknown",
                         Sizes = sizes,
                         LostWeight = record.LostWeight,
                         SpoilageWeight = record.SpoilageWeight,
