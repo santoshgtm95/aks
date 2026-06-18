@@ -8,6 +8,7 @@ import {
   ledgerAPI,
   exchangeRatesAPI,
   semiExportPurchaseRecordsAPI,
+  semiExportPurchaseAPI,
 } from "../../services/api";
 import type {
   SingleDoubleDrawnRecord,
@@ -47,6 +48,7 @@ interface GroupedMarker {
   source?: "sdd" | "purchase";
   colors?: string[];
   customerNames?: string[];
+  purchaseRecords?: SemiExportPurchaseRecord[];
   lostWeight?: number;
   purchaseRecordCount?: number;
 }
@@ -59,10 +61,24 @@ interface SemiExportPurchaseRecordSize {
 
 interface SemiExportPurchaseRecord {
   id: number;
+  semiExportPurchaseId: number;
   customerName: string;
   color: string;
+  assignWeight: number;
+  lostWeight: number;
+  workerName: string;
+  workerFees: number;
+  WorkerName?: string;
+  WorkerFees?: number;
+  exchangeRateRate: number;
   sizes: SemiExportPurchaseRecordSize[];
   createdAt: string;
+}
+
+interface SemiExportPurchase {
+  id: number;
+  customerName: string;
+  totalReceiveWeight: number;
 }
 
 const SemiExport: React.FC = () => {
@@ -79,16 +95,23 @@ const SemiExport: React.FC = () => {
   const [purchaseRecords, setPurchaseRecords] = useState<
     SemiExportPurchaseRecord[]
   >([]);
+  const [semiExportPurchases, setSemiExportPurchases] = useState<
+    SemiExportPurchase[]
+  >([]);
   const [products, setProducts] = useState<Product[]>([]);
   const [sales, setSales] = useState<Sale[]>([]);
   const [ledgers, setLedgers] = useState<LedgerDto[]>([]);
   const [loading, setLoading] = useState(true);
   const [selectedMarker, setSelectedMarker] = useState<string | null>(null);
+  const [selectedPurchaseGroup, setSelectedPurchaseGroup] =
+    useState<GroupedMarker | null>(null);
   const [searchTerm, setSearchTerm] = useState("");
   const [formError, setFormError] = useState("");
   const [saving, setSaving] = useState(false);
   const [markerWorkerFees, setMarkerWorkerFees] = useState<string>("0");
   const [markerRemark, setMarkerRemark] = useState<string>("");
+  const [purchaseWorkerFees, setPurchaseWorkerFees] = useState<string>("0");
+  const [purchaseRemark, setPurchaseRemark] = useState<string>("");
   const [showLedgerModal, setShowLedgerModal] = useState(false);
   const [selectedLedgerMarkers, setSelectedLedgerMarkers] = useState<string[]>(
     [],
@@ -110,6 +133,30 @@ const SemiExport: React.FC = () => {
   const [expandedRecords, setExpandedRecords] = useState<
     Record<number, boolean>
   >({});
+
+  const getPurchaseRecordWorkerName = (record: SemiExportPurchaseRecord) =>
+    record.workerName || record.WorkerName || "Worker";
+
+  const getPurchaseRecordWorkerFees = (record: SemiExportPurchaseRecord) =>
+    Number(record.workerFees ?? record.WorkerFees ?? 0) || 0;
+
+  const getPurchaseWorkerFeeBreakdownAmount = (
+    record: SemiExportPurchaseRecord,
+  ) => {
+    const savedFee = getPurchaseRecordWorkerFees(record);
+    if (savedFee > 0) return savedFee;
+
+    const records = selectedPurchaseGroup?.purchaseRecords || [];
+    const savedTotal = records.reduce(
+      (sum, item) => sum + getPurchaseRecordWorkerFees(item),
+      0,
+    );
+    const manualTotal = parseFloat(purchaseWorkerFees) || 0;
+
+    if (savedTotal > 0 || manualTotal <= 0 || records.length === 0) return 0;
+
+    return manualTotal / records.length;
+  };
 
   const selectedRecords = useMemo(() => {
     if (!selectedMarker) return [];
@@ -184,6 +231,20 @@ const SemiExport: React.FC = () => {
       setExpandedRecords({});
     }
   }, [selectedMarker, selectedRecords, savedExports]);
+
+  useEffect(() => {
+    if (selectedPurchaseGroup?.purchaseRecords?.length) {
+      const totalFees = selectedPurchaseGroup.purchaseRecords.reduce(
+        (sum, record) => sum + getPurchaseRecordWorkerFees(record),
+        0,
+      );
+      setPurchaseWorkerFees(totalFees.toString());
+      setPurchaseRemark("");
+    } else {
+      setPurchaseWorkerFees("0");
+      setPurchaseRemark("");
+    }
+  }, [selectedPurchaseGroup]);
 
   const getSortedTotal = (record: SingleDoubleDrawnRecord) => {
     return (
@@ -272,11 +333,13 @@ const SemiExport: React.FC = () => {
           source: "purchase",
           colors: [],
           customerNames: [],
+          purchaseRecords: [],
           lostWeight: 0,
           purchaseRecordCount: 0,
         };
       }
 
+      groups[groupKey].purchaseRecords?.push(record);
       groups[groupKey].combinedWeight += totalWeight;
       groups[groupKey].lostWeight =
         (groups[groupKey].lostWeight || 0) + lostWeight;
@@ -577,6 +640,7 @@ const SemiExport: React.FC = () => {
         ledgerData,
         ratesData,
         purchaseRecordsData,
+        purchaseData,
       ] = await Promise.all([
         singleDoubleDrawnAPI.getAll(),
         semiExportAPI.getAll(),
@@ -585,6 +649,7 @@ const SemiExport: React.FC = () => {
         ledgerAPI.getAll(),
         exchangeRatesAPI.getActive(),
         semiExportPurchaseRecordsAPI.getAll(),
+        semiExportPurchaseAPI.getAll(),
       ]);
       setSddRecords(sddData);
       setSavedExports(exportData);
@@ -593,6 +658,7 @@ const SemiExport: React.FC = () => {
       setLedgers(ledgerData);
       setActiveRates(ratesData);
       setPurchaseRecords(purchaseRecordsData);
+      setSemiExportPurchases(purchaseData);
     } catch (error) {
       console.error("Failed to load data:", error);
     } finally {
@@ -801,6 +867,159 @@ const SemiExport: React.FC = () => {
       originalTotalAmountKg,
     };
   }, [selectedMarker, products, sales, selectedRecords]);
+
+  const selectedPurchaseStats = useMemo(() => {
+    if (!selectedPurchaseGroup?.purchaseRecords?.length) return null;
+
+    const records = selectedPurchaseGroup.purchaseRecords;
+    const purchaseIds = new Set(records.map((record) => record.semiExportPurchaseId));
+    const originalWeightViss = semiExportPurchases
+      .filter((purchase) => purchaseIds.has(purchase.id))
+      .reduce(
+        (sum, purchase) => sum + (Number(purchase.totalReceiveWeight) || 0),
+        0,
+      );
+    const originalWeightKg = originalWeightViss * 1.633;
+
+    const getSizeWeight = (record: SemiExportPurchaseRecord, sizes: string[]) =>
+      record.sizes
+        .filter((size) => sizes.includes(size.size))
+        .reduce((sum, size) => sum + (Number(size.weight) || 0), 0);
+
+    const processingLostWeight = records.reduce(
+      (sum, record) => sum + (Number(record.lostWeight) || 0),
+      0,
+    );
+    const sortingLostWeight = records.reduce(
+      (sum, record) => sum + getSizeWeight(record, ["Lost"]),
+      0,
+    );
+    const sumLostWeight = processingLostWeight + sortingLostWeight;
+    const sumSpoilageWeight = records.reduce(
+      (sum, record) => sum + getSizeWeight(record, ["Spoilage"]),
+      0,
+    );
+    const sumReturnWeight = records.reduce(
+      (sum, record) => sum + getSizeWeight(record, ["Return"]),
+      0,
+    );
+    const sumBto10Weight = records.reduce(
+      (sum, record) =>
+        sum +
+        getSizeWeight(record, [
+          "Bar",
+          "28",
+          "26",
+          "24",
+          "22",
+          "20",
+          "18",
+          "16",
+          "14",
+          "12",
+          "10B",
+        ]),
+      0,
+    );
+    const sumTwoInchesWeight = records.reduce(
+      (sum, record) =>
+        sum + getSizeWeight(record, ["6", "7", "8", "9", "10"]),
+      0,
+    );
+    const totalSortedWeight = sumBto10Weight + sumTwoInchesWeight;
+    const totalAmountCNY = records.reduce(
+      (sum, record) =>
+        sum +
+        record.sizes.reduce(
+          (sizeSum, size) =>
+            sizeSum +
+            (Number(size.weight) || 0) * (Number(size.price) || 0),
+          0,
+        ),
+      0,
+    );
+    const totalAmountMMK = records.reduce(
+      (sum, record) =>
+        sum +
+        record.sizes.reduce(
+          (sizeSum, size) =>
+            sizeSum +
+            (Number(size.weight) || 0) *
+              (Number(size.price) || 0) *
+              (Number(record.exchangeRateRate) || currentCnyRate || 0),
+          0,
+        ),
+      0,
+    );
+    const colorBreakdown = Object.values(
+      records.reduce(
+        (
+          acc: Record<
+            string,
+            { color: string; weight: number; amountCNY: number; amountMMK: number }
+          >,
+          record,
+        ) => {
+          const color = record.color || "---";
+          if (!acc[color]) {
+            acc[color] = {
+              color,
+              weight: 0,
+              amountCNY: 0,
+              amountMMK: 0,
+            };
+          }
+
+          record.sizes
+            .filter((size) => size.size !== "Lost")
+            .forEach((size) => {
+              const weight = Number(size.weight) || 0;
+              const amountCNY = weight * (Number(size.price) || 0);
+              acc[color].weight += weight;
+              acc[color].amountCNY += amountCNY;
+              acc[color].amountMMK +=
+                amountCNY * (Number(record.exchangeRateRate) || currentCnyRate || 0);
+            });
+
+          return acc;
+        },
+        {},
+      ),
+    );
+    const remainingUnsorted =
+      originalWeightViss -
+      (totalSortedWeight +
+        sumLostWeight +
+        sumSpoilageWeight +
+        sumReturnWeight);
+    const denom = originalWeightViss || 1;
+
+    return {
+      date: selectedPurchaseGroup.date,
+      colors: selectedPurchaseGroup.colors || [],
+      customerNames: selectedPurchaseGroup.customerNames || [],
+      originalWeightViss,
+      originalWeightKg,
+      totalSortedWeight,
+      processingLostWeight,
+      sortingLostWeight,
+      sumLostWeight,
+      sumLostWeightPercent: (sumLostWeight / denom) * 100,
+      sumSpoilageWeight,
+      sumSpoilageWeightPercent: (sumSpoilageWeight / denom) * 100,
+      sumReturnWeight,
+      sumReturnWeightPercent: (sumReturnWeight / denom) * 100,
+      sumBto10Weight,
+      averageBto10: (sumBto10Weight / denom) * 100,
+      sumTwoInchesWeight,
+      sumTwoInchesPercent: (sumTwoInchesWeight / denom) * 100,
+      remainingUnsorted,
+      remainingUnsortedPercent: (remainingUnsorted / denom) * 100,
+      totalAmountCNY,
+      totalAmountMMK,
+      colorBreakdown,
+    };
+  }, [selectedPurchaseGroup, semiExportPurchases, currentCnyRate]);
 
   // Calculate row Amounts for each record
   const recordAmounts = useMemo(() => {
@@ -1185,6 +1404,756 @@ const SemiExport: React.FC = () => {
       </div>
     );
   }
+
+  const renderPurchaseGroupDetails = () => {
+    if (!selectedPurchaseGroup || !selectedPurchaseStats) return null;
+
+    const stat = (
+      title: string,
+      value: string,
+      footer: string,
+      icon: React.ReactNode,
+      color: string,
+      backgroundColor: string,
+    ) => (
+      <div className="stat-card">
+        <div className="stat-header">
+          <span className="stat-title">{title}</span>
+          <div
+            className="stat-icon-wrapper"
+            style={{ backgroundColor, color }}
+          >
+            {icon}
+          </div>
+        </div>
+        <div>
+          <h3 className="stat-value">{value}</h3>
+          <span className="stat-footer">{footer}</span>
+        </div>
+      </div>
+    );
+
+    return (
+      <div
+        style={{
+          display: "flex",
+          flexDirection: "column",
+          height: "100%",
+          gap: "24px",
+        }}
+      >
+        <div
+          className="main-header"
+          style={{
+            display: "flex",
+            justifyContent: "space-between",
+            alignItems: "flex-start",
+            marginBottom: "24px",
+            paddingBottom: "16px",
+            borderBottom: "2px solid #f1f5f9",
+          }}
+        >
+          <div
+            className="header-title"
+            style={{ display: "flex", alignItems: "center", gap: "16px" }}
+          >
+            <DollarSign size={32} style={{ color: "#2563eb" }} />
+            <div>
+              <h1
+                style={{
+                  fontSize: "26px",
+                  fontWeight: "800",
+                  margin: 0,
+                  color: "#0f172a",
+                }}
+              >
+                Semi Export Purchase
+              </h1>
+              <p
+                className="header-subtitle"
+                style={{
+                  fontSize: "13.5px",
+                  color: "#64748b",
+                  margin: "6px 0 0 0",
+                  fontWeight: "500",
+                }}
+              >
+                Marker: <strong>{selectedPurchaseGroup.markerName}</strong>
+              </p>
+            </div>
+          </div>
+        </div>
+
+        <div className="stats-grid">
+          {stat(
+            "Original Weight",
+            `${selectedPurchaseStats.originalWeightViss.toFixed(3)} viss`,
+            `= ${selectedPurchaseStats.originalWeightKg.toFixed(3)} kg`,
+            <Scale size={16} />,
+            "#2563eb",
+            "#eff6ff",
+          )}
+          {stat(
+            "Total Sorted",
+            `${selectedPurchaseStats.totalSortedWeight.toFixed(3)} viss`,
+            "from SemiExportPurchaseRecords sizes",
+            <Scale size={16} />,
+            "#059669",
+            "#ecfdf5",
+          )}
+          {selectedPurchaseStats.remainingUnsorted >= 0.001 &&
+            stat(
+              "Remaining Unsorted",
+              `${selectedPurchaseStats.remainingUnsorted.toFixed(3)} viss`,
+              `${selectedPurchaseStats.remainingUnsortedPercent.toFixed(2)}% remaining`,
+              <Scale size={16} />,
+              "#0284c7",
+              "#f0f9ff",
+            )}
+          {stat(
+            "Sum of Lost Weight",
+            `${selectedPurchaseStats.sumLostWeight.toFixed(3)} viss`,
+            `Processing ${selectedPurchaseStats.processingLostWeight.toFixed(3)} + Sorting ${selectedPurchaseStats.sortingLostWeight.toFixed(3)}`,
+            <AlertTriangle size={16} />,
+            "#d97706",
+            "#fffbeb",
+          )}
+          {stat(
+            "Sum of Spoilage Weight",
+            `${selectedPurchaseStats.sumSpoilageWeight.toFixed(3)} viss`,
+            `${selectedPurchaseStats.sumSpoilageWeightPercent.toFixed(2)}%`,
+            <AlertTriangle size={16} />,
+            "#8b5cf6",
+            "#faf5ff",
+          )}
+          {stat(
+            "Sum of Return Weight",
+            `${selectedPurchaseStats.sumReturnWeight.toFixed(3)} viss`,
+            `${selectedPurchaseStats.sumReturnWeightPercent.toFixed(2)}%`,
+            <RotateCcw size={16} />,
+            "#c026d3",
+            "#fdf4ff",
+          )}
+          {stat(
+            "Bar to 10B Sizes",
+            `${selectedPurchaseStats.sumBto10Weight.toFixed(3)} viss`,
+            `${selectedPurchaseStats.averageBto10.toFixed(2)}% total export ratio`,
+            <Layers size={16} />,
+            "#db2777",
+            "#fdf2f8",
+          )}
+          {stat(
+            "Two Inches Area",
+            `${selectedPurchaseStats.sumTwoInchesWeight.toFixed(3)} viss`,
+            `${selectedPurchaseStats.sumTwoInchesPercent.toFixed(2)}% (Size 6 to 10)`,
+            <Package size={16} />,
+            "#15803d",
+            "#f0fdf4",
+          )}
+        </div>
+
+        <div
+          style={{
+            background: "#f8fafc",
+            padding: "20px",
+            borderRadius: "16px",
+            border: "1.5px solid #e2e8f0",
+          }}
+        >
+          <h3
+            style={{
+              fontSize: "16px",
+              fontWeight: "700",
+              color: "#0f172a",
+              margin: "0 0 14px",
+            }}
+          >
+            Group Info
+          </h3>
+          <div style={{ display: "flex", flexWrap: "wrap", gap: "10px" }}>
+            <span className="rf-badge">
+              Date: {new Date(selectedPurchaseGroup.date).toLocaleDateString()}
+            </span>
+            <span className="rf-badge">
+              Customers: {selectedPurchaseStats.customerNames.join(", ") || "---"}
+            </span>
+            <span className="rf-badge">
+              Colors: {selectedPurchaseStats.colors.join(", ") || "---"}
+            </span>
+          </div>
+        </div>
+
+        <div
+          style={{
+            background: "#f8fafc",
+            padding: "24px",
+            borderRadius: "16px",
+            border: "1.5px solid #e2e8f0",
+            boxShadow: "0 4px 6px rgba(0,0,0,0.02)",
+          }}
+        >
+          <h3
+            style={{
+              fontSize: "16px",
+              fontWeight: "700",
+              color: "#0f172a",
+              marginBottom: "16px",
+              display: "flex",
+              alignItems: "center",
+              gap: "8px",
+            }}
+          >
+            <Sparkles size={18} color="#2563eb" /> Record Sales Details for
+            Marker
+          </h3>
+
+          <div style={{ display: "flex", flexDirection: "column", gap: "20px" }}>
+            <div style={{ display: "flex", alignItems: "center", gap: "16px" }}>
+              <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+                <DollarSign size={18} style={{ color: "#2563eb" }} />
+                <span
+                  style={{
+                    fontSize: "13.5px",
+                    fontWeight: "700",
+                    color: "#334155",
+                  }}
+                >
+                  WORKER FEES (SUM) - MANUAL OVERRIDE:
+                </span>
+              </div>
+              <input
+                type="number"
+                value={purchaseWorkerFees}
+                onChange={(e) => setPurchaseWorkerFees(e.target.value)}
+                placeholder="0.00"
+                style={{
+                  padding: "8px 12px",
+                  borderRadius: "8px",
+                  border: "1.5px solid #cbd5e1",
+                  fontSize: "14px",
+                  width: "200px",
+                  fontWeight: "600",
+                  backgroundColor: "white",
+                }}
+              />
+            </div>
+
+            {selectedPurchaseGroup.purchaseRecords?.length ? (
+              <div
+                style={{
+                  marginTop: "-8px",
+                  padding: "16px",
+                  backgroundColor: "#fff",
+                  borderRadius: "8px",
+                  border: "1px dashed #cbd5e1",
+                }}
+              >
+                <button
+                  type="button"
+                  onClick={() =>
+                    setShowWorkerFeesBreakdown(!showWorkerFeesBreakdown)
+                  }
+                  style={{
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "space-between",
+                    width: "100%",
+                    background: "none",
+                    border: "none",
+                    padding: "0",
+                    cursor: "pointer",
+                  }}
+                >
+                  <h4
+                    style={{
+                      fontSize: "14px",
+                      fontWeight: "600",
+                      margin: 0,
+                      color: "#334155",
+                    }}
+                  >
+                    Worker Fees Breakdown
+                  </h4>
+                  {showWorkerFeesBreakdown ? (
+                    <ChevronUp size={16} color="#64748b" />
+                  ) : (
+                    <ChevronDown size={16} color="#64748b" />
+                  )}
+                </button>
+
+                {showWorkerFeesBreakdown && (
+                  <div
+                    style={{
+                      display: "flex",
+                      flexDirection: "column",
+                      gap: "8px",
+                      marginTop: "12px",
+                    }}
+                  >
+                    {selectedPurchaseGroup.purchaseRecords.map((record) => (
+                      <div
+                        key={record.id}
+                        style={{
+                          display: "flex",
+                          justifyContent: "space-between",
+                          fontSize: "13px",
+                          color: "#475569",
+                        }}
+                      >
+                        <span>
+                          <span style={{ fontWeight: "600", color: "#0f172a" }}>
+                            {getPurchaseRecordWorkerName(record)}
+                          </span>{" "}
+                          ({record.customerName}, {record.color}):
+                        </span>
+                        <span style={{ fontWeight: "600" }}>
+                          {getPurchaseWorkerFeeBreakdownAmount(
+                            record,
+                          ).toLocaleString(undefined, {
+                            maximumFractionDigits: 2,
+                          })}
+                        </span>
+                      </div>
+                    ))}
+                    <div
+                      style={{
+                        marginTop: "8px",
+                        paddingTop: "8px",
+                        borderTop: "1px solid #cbd5e1",
+                        display: "flex",
+                        justifyContent: "space-between",
+                        alignItems: "center",
+                        fontSize: "14px",
+                        fontWeight: "700",
+                        color: "#0f172a",
+                      }}
+                    >
+                      <span>Total Calculated Worker Fees:</span>
+                      <span style={{ color: "#2563eb" }}>
+                        {selectedPurchaseGroup.purchaseRecords
+                          .reduce(
+                            (sum, record) =>
+                              sum +
+                              getPurchaseWorkerFeeBreakdownAmount(record),
+                            0,
+                          )
+                          .toLocaleString(undefined, {
+                            maximumFractionDigits: 2,
+                          })}
+                      </span>
+                    </div>
+                  </div>
+                )}
+              </div>
+            ) : null}
+
+            <div style={{ display: "flex", flexDirection: "column" }}>
+              <label
+                style={{
+                  display: "flex",
+                  alignItems: "center",
+                  gap: "8px",
+                  fontSize: "13.5px",
+                  fontWeight: "700",
+                  color: "#334155",
+                  marginBottom: "6px",
+                }}
+              >
+                <FileText size={15} /> REMARK:
+              </label>
+              <textarea
+                value={purchaseRemark}
+                onChange={(e) => setPurchaseRemark(e.target.value)}
+                placeholder="Enter remark for this purchase group..."
+                rows={3}
+                style={{
+                  width: "100%",
+                  padding: "10px 14px",
+                  borderRadius: "10px",
+                  border: "1.5px solid #cbd5e1",
+                  fontSize: "14px",
+                  outline: "none",
+                  resize: "vertical",
+                  backgroundColor: "white",
+                }}
+              />
+            </div>
+          </div>
+        </div>
+
+        <div
+          style={{
+            background: "#f8fafc",
+            borderRadius: "16px",
+            padding: "24px 32px",
+            display: "flex",
+            justifyContent: "space-between",
+            alignItems: "center",
+            boxShadow: "0 4px 6px rgba(0,0,0,0.02)",
+            border: "1.5px solid #e2e8f0",
+          }}
+        >
+          <div style={{ flex: 1 }}>
+            <h4
+              style={{
+                margin: 0,
+                color: "#64748b",
+                fontSize: "14px",
+                textTransform: "uppercase",
+                letterSpacing: "0.1em",
+                fontWeight: 800,
+              }}
+            >
+              Inventory Reference
+            </h4>
+            <div
+              style={{
+                marginTop: "12px",
+                display: "grid",
+                gridTemplateColumns: "1fr 1fr",
+                gap: "24px",
+              }}
+            >
+              <div>
+                <p
+                  style={{
+                    margin: 0,
+                    fontSize: "12px",
+                    color: "#94a3b8",
+                    fontWeight: 700,
+                  }}
+                >
+                  ORIGINAL WEIGHT
+                </p>
+                <p
+                  style={{
+                    margin: "2px 0 0 0",
+                    fontSize: "17px",
+                    color: "#1e293b",
+                    fontWeight: 600,
+                  }}
+                >
+                  {selectedPurchaseStats.originalWeightViss.toFixed(3)} viss
+                </p>
+              </div>
+              <div>
+                <p
+                  style={{
+                    margin: 0,
+                    fontSize: "12px",
+                    color: "#94a3b8",
+                    fontWeight: 700,
+                  }}
+                >
+                  ORIGINAL TOTAL AMOUNT
+                </p>
+                <p
+                  style={{
+                    margin: "2px 0 0 0",
+                    fontSize: "17px",
+                    color: "#1e293b",
+                    fontWeight: 600,
+                  }}
+                >
+                  {selectedPurchaseStats.totalAmountMMK.toLocaleString(
+                    undefined,
+                    {
+                      minimumFractionDigits: 1,
+                      maximumFractionDigits: 1,
+                    },
+                  )}{" "}
+                  <span style={{ fontSize: "13px" }}>MMK</span>
+                </p>
+              </div>
+            </div>
+          </div>
+
+          <div
+            style={{
+              textAlign: "right",
+              paddingLeft: "40px",
+              borderLeft: "1.5px solid #e2e8f0",
+              display: "flex",
+              flexDirection: "column",
+              gap: "10px",
+              minWidth: "320px",
+            }}
+          >
+            <div
+              style={{
+                display: "flex",
+                justifyContent: "space-between",
+                alignItems: "baseline",
+                gap: "16px",
+              }}
+            >
+              <span
+                style={{
+                  fontSize: "12px",
+                  fontWeight: 700,
+                  color: "#64748b",
+                  textTransform: "uppercase",
+                  letterSpacing: "0.05em",
+                }}
+              >
+                Total Marker Value (CNY)
+              </span>
+              <div>
+                <span
+                  style={{
+                    fontSize: "16px",
+                    fontWeight: "800",
+                    color: "#1e293b",
+                  }}
+                >
+                  {selectedPurchaseStats.totalAmountCNY.toLocaleString(
+                    undefined,
+                    {
+                      minimumFractionDigits: 2,
+                      maximumFractionDigits: 2,
+                    },
+                  )}
+                </span>
+                <span
+                  style={{
+                    fontSize: "11px",
+                    fontWeight: "700",
+                    color: "#64748b",
+                    marginLeft: "4px",
+                  }}
+                >
+                  CNY
+                </span>
+              </div>
+            </div>
+
+            <div
+              style={{
+                display: "flex",
+                justifyContent: "space-between",
+                alignItems: "baseline",
+                gap: "16px",
+              }}
+            >
+              <span
+                style={{
+                  fontSize: "12px",
+                  fontWeight: 700,
+                  color: "#64748b",
+                  textTransform: "uppercase",
+                  letterSpacing: "0.05em",
+                }}
+              >
+                Total Marker Value (MMK)
+              </span>
+              <div>
+                <span
+                  style={{
+                    fontSize: "16px",
+                    fontWeight: "800",
+                    color: "#475569",
+                  }}
+                >
+                  {selectedPurchaseStats.totalAmountMMK.toLocaleString(
+                    undefined,
+                    {
+                      minimumFractionDigits: 2,
+                      maximumFractionDigits: 2,
+                    },
+                  )}
+                </span>
+                <span
+                  style={{
+                    fontSize: "11px",
+                    fontWeight: "700",
+                    color: "#64748b",
+                    marginLeft: "4px",
+                  }}
+                >
+                  MMK
+                </span>
+              </div>
+            </div>
+
+            <div
+              style={{
+                height: "1px",
+                backgroundColor: "#e2e8f0",
+                margin: "2px 0",
+              }}
+            />
+
+            <div>
+              <h4
+                style={{
+                  margin: 0,
+                  color: "#64748b",
+                  fontSize: "11px",
+                  textTransform: "uppercase",
+                  letterSpacing: "0.1em",
+                  fontWeight: 800,
+                  textAlign: "right",
+                  marginBottom: "4px",
+                }}
+              >
+                Grand Total Value
+              </h4>
+              <div
+                style={{
+                  display: "flex",
+                  alignItems: "baseline",
+                  gap: "8px",
+                  justifyContent: "flex-end",
+                }}
+              >
+                <span
+                  style={{
+                    fontSize: "28px",
+                    fontWeight: "950",
+                    color: "#2563eb",
+                    letterSpacing: "-0.03em",
+                  }}
+                >
+                  {(
+                    selectedPurchaseStats.totalAmountMMK +
+                    (parseFloat(purchaseWorkerFees) || 0)
+                  ).toLocaleString(undefined, {
+                    minimumFractionDigits: 2,
+                    maximumFractionDigits: 2,
+                  })}
+                </span>
+                <span
+                  style={{
+                    fontSize: "14px",
+                    fontWeight: "800",
+                    color: "#64748b",
+                  }}
+                >
+                  MMK
+                </span>
+              </div>
+              <div
+                style={{
+                  fontSize: "10px",
+                  color: "#94a3b8",
+                  marginTop: "2px",
+                }}
+              >
+                (Total MMK +{" "}
+                {(parseFloat(purchaseWorkerFees) || 0).toLocaleString()} MMK
+                Worker Fees)
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div
+          style={{
+            background: "white",
+            border: "1.5px solid #e2e8f0",
+            borderRadius: "16px",
+            overflow: "hidden",
+            boxShadow: "0 4px 6px rgba(0, 0, 0, 0.02)",
+          }}
+        >
+          <div
+            style={{
+              padding: "16px 24px",
+              background: "#f8fafc",
+              borderBottom: "1.5px solid #e2e8f0",
+            }}
+          >
+            <h3
+              style={{
+                margin: 0,
+                fontSize: "16px",
+                fontWeight: "800",
+                color: "#0f172a",
+              }}
+            >
+              Colors Breakdown
+            </h3>
+          </div>
+          <div style={{ padding: "20px" }}>
+            <table
+              className="table"
+              style={{
+                width: "100%",
+                borderCollapse: "collapse",
+                textAlign: "left",
+                fontSize: "14px",
+              }}
+            >
+              <thead>
+                <tr style={{ background: "#f8fafc" }}>
+                  <th style={{ padding: "10px 16px" }}>COLOR</th>
+                  <th style={{ padding: "10px 16px", textAlign: "right" }}>
+                    WEIGHT
+                  </th>
+                  <th style={{ padding: "10px 16px", textAlign: "right" }}>
+                    AMOUNT (CNY)
+                  </th>
+                  <th style={{ padding: "10px 16px", textAlign: "right" }}>
+                    AMOUNT (MMK)
+                  </th>
+                </tr>
+              </thead>
+              <tbody>
+                {selectedPurchaseStats.colorBreakdown.map((row) => (
+                  <tr key={row.color}>
+                    <td
+                      style={{
+                        padding: "10px 16px",
+                        fontWeight: "700",
+                        borderBottom: "1px solid #f1f5f9",
+                      }}
+                    >
+                      {row.color}
+                    </td>
+                    <td
+                      style={{
+                        padding: "10px 16px",
+                        textAlign: "right",
+                        borderBottom: "1px solid #f1f5f9",
+                      }}
+                    >
+                      {row.weight.toFixed(3)} viss
+                    </td>
+                    <td
+                      style={{
+                        padding: "10px 16px",
+                        textAlign: "right",
+                        borderBottom: "1px solid #f1f5f9",
+                      }}
+                    >
+                      {row.amountCNY.toLocaleString(undefined, {
+                        minimumFractionDigits: 2,
+                        maximumFractionDigits: 2,
+                      })}
+                    </td>
+                    <td
+                      style={{
+                        padding: "10px 16px",
+                        textAlign: "right",
+                        borderBottom: "1px solid #f1f5f9",
+                        fontWeight: "700",
+                        color: "#2563eb",
+                      }}
+                    >
+                      {row.amountMMK.toLocaleString(undefined, {
+                        minimumFractionDigits: 2,
+                        maximumFractionDigits: 2,
+                      })}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    );
+  };
 
   const renderMarkerDetails = (isModal = false) => {
     if (
@@ -2577,7 +3546,10 @@ const SemiExport: React.FC = () => {
           >
             <button
               type="button"
-              onClick={() => setSelectedMarker(null)}
+              onClick={() => {
+                setSelectedMarker(null);
+                setSelectedPurchaseGroup(null);
+              }}
               className="btn btn-secondary"
               style={{
                 padding: "10px 24px",
@@ -2637,7 +3609,12 @@ const SemiExport: React.FC = () => {
                 return (
                   <div
                     key={`purchase-${group.markerName}-${group.date}`}
-                    className="product-card"
+                    className={`product-card ${selectedPurchaseGroup === group ? "selected" : ""}`}
+                    onClick={() => {
+                      setSelectedPurchaseGroup(group);
+                      setSelectedMarker(null);
+                      setActiveTab("processing");
+                    }}
                   >
                     <div className="card-header">
                       <div style={{ display: "flex", flexDirection: "column" }}>
@@ -2740,6 +3717,7 @@ const SemiExport: React.FC = () => {
                   key={group.markerName}
                   className={`product-card ${selectedMarker === group.markerName ? "selected" : ""}`}
                   onClick={() => {
+                    setSelectedPurchaseGroup(null);
                     setSelectedMarker(group.markerName);
                     setActiveTab("processing");
                   }}
@@ -2902,7 +3880,9 @@ const SemiExport: React.FC = () => {
           </div>
 
           {activeTab === "processing" ? (
-            selectedMarker && selectedRecords.length > 0 ? (
+            selectedPurchaseGroup ? (
+              renderPurchaseGroupDetails()
+            ) : selectedMarker && selectedRecords.length > 0 ? (
               renderMarkerDetails(false)
             ) : (
               // Placeholder when no selection
