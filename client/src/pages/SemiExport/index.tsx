@@ -7,7 +7,7 @@ import {
   salesAPI,
   ledgerAPI,
   exchangeRatesAPI,
-  importedSemiExportAPI,
+  semiExportPurchaseRecordsAPI,
 } from "../../services/api";
 import type {
   SingleDoubleDrawnRecord,
@@ -34,7 +34,6 @@ import {
   X,
   Layers,
   Clock,
-  Download,
 } from "lucide-react";
 import { formatDateTime } from "../../utils/format";
 import "./index.css";
@@ -45,6 +44,25 @@ interface GroupedMarker {
   combinedWeight: number;
   date: string;
   warehouseNames: string[];
+  source?: "sdd" | "purchase";
+  colors?: string[];
+  customerNames?: string[];
+  lostWeight?: number;
+  purchaseRecordCount?: number;
+}
+
+interface SemiExportPurchaseRecordSize {
+  size: string;
+  weight: number;
+  price: number;
+}
+
+interface SemiExportPurchaseRecord {
+  id: number;
+  customerName: string;
+  color: string;
+  sizes: SemiExportPurchaseRecordSize[];
+  createdAt: string;
 }
 
 const SemiExport: React.FC = () => {
@@ -58,6 +76,9 @@ const SemiExport: React.FC = () => {
   }, [activeRates]);
   const [sddRecords, setSddRecords] = useState<SingleDoubleDrawnRecord[]>([]);
   const [savedExports, setSavedExports] = useState<SemiExportRecord[]>([]);
+  const [purchaseRecords, setPurchaseRecords] = useState<
+    SemiExportPurchaseRecord[]
+  >([]);
   const [products, setProducts] = useState<Product[]>([]);
   const [sales, setSales] = useState<Sale[]>([]);
   const [ledgers, setLedgers] = useState<LedgerDto[]>([]);
@@ -86,61 +107,6 @@ const SemiExport: React.FC = () => {
     null,
   );
 
-  const [importedData, setImportedData] = useState<any[]>([]);
-  const [showImportModal, setShowImportModal] = useState(false);
-  const [showImportHistoryModal, setShowImportHistoryModal] = useState(false);
-  const [selectedImportHistory, setSelectedImportHistory] = useState<any>(null);
-  const [importFormData, setImportFormData] = useState({
-    markerName: "",
-    totalSortedWeight: "",
-    color: "",
-    date: new Date().toISOString().substring(0, 10),
-  });
-  const [importCategoriesData, setImportCategoriesData] = useState<any>({});
-  const [importExchangeRate, setImportExchangeRate] = useState<string>("0");
-  const [lastPrepopulated, setLastPrepopulated] = useState<{
-    marker: string;
-    color: string;
-  } | null>(null);
-
-  useEffect(() => {
-    if (showImportModal && currentCnyRate) {
-      setImportExchangeRate(currentCnyRate.toString());
-    }
-  }, [showImportModal, currentCnyRate]);
-  const importCategoryOptions = [
-    "Art",
-    "Red",
-    "White",
-    "Short",
-    "Simple",
-    "N.White",
-    "S.Cut",
-    "Natural",
-    "N.Red",
-  ];
-  const sizeOptions = [
-    "6",
-    "7",
-    "8",
-    "9",
-    "10",
-    "10B",
-    "12",
-    "14",
-    "16",
-    "18",
-    "20",
-    "22",
-    "24",
-    "26",
-    "28",
-    "Bar",
-    "Return",
-    "Spoilage",
-    "Lost",
-  ];
-
   const [expandedRecords, setExpandedRecords] = useState<
     Record<number, boolean>
   >({});
@@ -148,75 +114,10 @@ const SemiExport: React.FC = () => {
   const selectedRecords = useMemo(() => {
     if (!selectedMarker) return [];
 
-    // Check if this is an imported marker
-    const imported = importedData.find((d) => d.markerName === selectedMarker);
-    if (imported) {
-      try {
-        const parsed = JSON.parse(imported.dataJson);
-        const records: SingleDoubleDrawnRecord[] = [];
-        let idCounter = -1000; // Negative IDs to distinguish imported
-
-        Object.entries(parsed).forEach(([colorName, sizes]: [string, any]) => {
-          const rec: any = {
-            id: idCounter--,
-            refinementRecordMarker: selectedMarker,
-            refinementRecordCategory: colorName,
-            date: imported.date,
-          };
-          // Map sizes
-          const szNames = [
-            "6",
-            "7",
-            "8",
-            "9",
-            "10",
-            "10B",
-            "12",
-            "14",
-            "16",
-            "18",
-            "20",
-            "22",
-            "24",
-            "26",
-            "28",
-            "Bar",
-          ];
-          szNames.forEach((sz) => {
-            rec[`size${sz}`] = sizes[sz] ? Number(sizes[sz].weight || 0) : 0;
-            rec[`price${sz}`] = sizes[sz] ? Number(sizes[sz].price || 0) : 0;
-          });
-
-          rec.returnSize = sizes["Return"]
-            ? Number(sizes["Return"].weight || 0)
-            : 0;
-          rec.priceReturnSize = sizes["Return"]
-            ? Number(sizes["Return"].price || 0)
-            : 0;
-
-          rec.spoilageSize = sizes["Spoilage"]
-            ? Number(sizes["Spoilage"].weight || 0)
-            : 0;
-          rec.priceSpoilageSize = sizes["Spoilage"]
-            ? Number(sizes["Spoilage"].price || 0)
-            : 0;
-
-          rec.lostWeight = sizes["Lost"]
-            ? Number(sizes["Lost"].weight || 0)
-            : 0;
-          // No price standard for lost on SingleDoubleDrawnRecord but just mapped
-          // if we needed.
-
-          records.push(rec as SingleDoubleDrawnRecord);
-        });
-        return records;
-      } catch (e) {}
-    }
-
     return sddRecords.filter(
       (r) => r.refinementRecordMarker === selectedMarker,
     );
-  }, [sddRecords, selectedMarker, importedData]);
+  }, [sddRecords, selectedMarker]);
 
   useEffect(() => {
     loadData();
@@ -245,7 +146,7 @@ const SemiExport: React.FC = () => {
         newExpanded[record.id] = false;
       });
 
-      if (!hasSaved && selectedMarker !== "Imported") {
+      if (!hasSaved) {
         // Auto-sum if new marker
         const pMap = new Map<number, number>();
         const puMap = new Map<number, number>();
@@ -284,130 +185,6 @@ const SemiExport: React.FC = () => {
     }
   }, [selectedMarker, selectedRecords, savedExports]);
 
-  const getLatestImportedPrices = (marker: string, color: string) => {
-    if (!color) return null;
-
-    // 1. If marker is specified, look for imports of this marker that have the selected color
-    if (marker) {
-      const markerImports = importedData
-        .filter((d) => d.markerName?.toLowerCase() === marker.toLowerCase())
-        .sort(
-          (a, b) => new Date(b.date).getTime() - new Date(a.date).getTime(),
-        );
-
-      for (const imp of markerImports) {
-        try {
-          const parsed = JSON.parse(imp.dataJson || "{}");
-          const parsedColorKey = Object.keys(parsed).find(
-            (k) => k.toLowerCase() === color.toLowerCase(),
-          );
-          if (parsedColorKey && parsed[parsedColorKey]) {
-            return parsed[parsedColorKey];
-          }
-        } catch (e) {
-          console.error("Failed to parse import dataJson:", e);
-        }
-      }
-    }
-
-    // 2. Fallback: Search all imports (sorted by date descending) for the latest one containing the selected color
-    const allImportsSorted = [...importedData].sort(
-      (a, b) => new Date(b.date).getTime() - new Date(a.date).getTime(),
-    );
-    for (const imp of allImportsSorted) {
-      try {
-        const parsed = JSON.parse(imp.dataJson || "{}");
-        const parsedColorKey = Object.keys(parsed).find(
-          (k) => k.toLowerCase() === color.toLowerCase(),
-        );
-        if (parsedColorKey && parsed[parsedColorKey]) {
-          return parsed[parsedColorKey];
-        }
-      } catch (e) {
-        console.error("Failed to parse import dataJson:", e);
-      }
-    }
-
-    // 3. Last fallback: Just get the absolute latest import's first available color prices if nothing else matches
-    if (allImportsSorted.length > 0) {
-      try {
-        const parsed = JSON.parse(allImportsSorted[0].dataJson || "{}");
-        const firstColorKey = Object.keys(parsed)[0];
-        if (firstColorKey && parsed[firstColorKey]) {
-          return parsed[firstColorKey];
-        }
-      } catch (e) {}
-    }
-
-    return null;
-  };
-
-  useEffect(() => {
-    if (!showImportModal) {
-      setLastPrepopulated(null);
-      return;
-    }
-
-    const currentMarker = importFormData.markerName;
-    const currentColor = importFormData.color;
-
-    if (currentColor) {
-      if (
-        !lastPrepopulated ||
-        lastPrepopulated.marker !== currentMarker ||
-        lastPrepopulated.color !== currentColor
-      ) {
-        setLastPrepopulated({ marker: currentMarker, color: currentColor });
-
-        const latestPrices = getLatestImportedPrices(
-          currentMarker,
-          currentColor,
-        );
-        if (latestPrices) {
-          setImportCategoriesData((prev: any) => {
-            const currentCategoryData = prev[currentColor] || {};
-            const newCategoryData = { ...currentCategoryData };
-
-            sizeOptions.forEach((sz) => {
-              if (sz !== "Lost") {
-                const latestSizeData = latestPrices[sz];
-                const latestPrice =
-                  latestSizeData && latestSizeData.price !== undefined
-                    ? latestSizeData.price.toString()
-                    : "";
-
-                const currentSizeData = currentCategoryData[sz] || {
-                  weight: "",
-                  price: "",
-                  amount: "",
-                };
-                const w = currentSizeData.weight || "";
-                const amt = Number(w || 0) * Number(latestPrice || 0);
-                newCategoryData[sz] = {
-                  ...currentSizeData,
-                  price: latestPrice,
-                  amount: amt > 0 ? amt : "",
-                };
-              }
-            });
-
-            return {
-              ...prev,
-              [currentColor]: newCategoryData,
-            };
-          });
-        }
-      }
-    }
-  }, [
-    showImportModal,
-    importFormData.markerName,
-    importFormData.color,
-    importedData,
-    lastPrepopulated,
-  ]);
-
-  // Calculate the total sorted weights for sidebar display (Export sizes: 10B to Bar)
   const getSortedTotal = (record: SingleDoubleDrawnRecord) => {
     return (
       record.size6 +
@@ -472,26 +249,66 @@ const SemiExport: React.FC = () => {
       }
     });
 
-    importedData.forEach((record) => {
-      const marker = record.markerName || "---";
+    purchaseRecords.forEach((record) => {
+      const createdDate = record.createdAt
+        ? new Date(record.createdAt).toDateString()
+        : "---";
+      const groupKey = `purchase-${createdDate}`;
+      const totalWeight = record.sizes
+        .filter((size) => size.size !== "Lost")
+        .reduce((sum, size) => sum + (Number(size.weight) || 0), 0);
+      const lostWeight =
+        record.sizes.find((size) => size.size === "Lost")?.weight || 0;
 
-      if (markersInLedgers.has(marker)) return;
-
-      if (!groups[marker]) {
-        groups[marker] = {
-          markerName: marker,
-          records: [], // We won't try to parse to SingleDoubleDrawnRecord yet
-          combinedWeight: record.totalSortedWeight,
-          date: record.date,
-          warehouseNames: ["Imported"],
+      if (!groups[groupKey]) {
+        groups[groupKey] = {
+          markerName: record.createdAt
+            ? new Date(record.createdAt).toLocaleDateString()
+            : "---",
+          records: [],
+          combinedWeight: 0,
+          date: record.createdAt,
+          warehouseNames: [],
+          source: "purchase",
+          colors: [],
+          customerNames: [],
+          lostWeight: 0,
+          purchaseRecordCount: 0,
         };
       }
+
+      groups[groupKey].combinedWeight += totalWeight;
+      groups[groupKey].lostWeight =
+        (groups[groupKey].lostWeight || 0) + lostWeight;
+      groups[groupKey].purchaseRecordCount =
+        (groups[groupKey].purchaseRecordCount || 0) + 1;
+
+      if (record.color && !groups[groupKey].colors?.includes(record.color)) {
+        groups[groupKey].colors?.push(record.color);
+      }
+
+      if (
+        record.customerName &&
+        !groups[groupKey].customerNames?.includes(record.customerName)
+      ) {
+        groups[groupKey].customerNames?.push(record.customerName);
+      }
+
+      if (
+        record.createdAt &&
+        new Date(record.createdAt) > new Date(groups[groupKey].date)
+      ) {
+        groups[groupKey].date = record.createdAt;
+      }
     });
+
     return Object.values(groups);
-  }, [sddRecords, ledgers, importedData]);
+  }, [sddRecords, ledgers, purchaseRecords]);
 
   const completedMarkers = useMemo(() => {
     return groupedRecords.filter((group) => {
+      if (group.source === "purchase") return false;
+
       const marker = group.markerName;
 
       // Check if all records of this group are saved in SemiExportRecords
@@ -612,6 +429,10 @@ const SemiExport: React.FC = () => {
       const search = searchTerm.toLowerCase();
       const marker = g.markerName.toLowerCase();
       const warehouses = g.warehouseNames.map((w) => w.toLowerCase()).join(" ");
+      const colors = (g.colors || []).map((c) => c.toLowerCase()).join(" ");
+      const customers = (g.customerNames || [])
+        .map((c) => c.toLowerCase())
+        .join(" ");
       const dateStr = g.date
         ? new Date(g.date).toLocaleDateString().toLowerCase()
         : "";
@@ -622,6 +443,8 @@ const SemiExport: React.FC = () => {
       return (
         marker.includes(search) ||
         warehouses.includes(search) ||
+        colors.includes(search) ||
+        customers.includes(search) ||
         dateStr.includes(search) ||
         categories.includes(search)
       );
@@ -712,24 +535,6 @@ const SemiExport: React.FC = () => {
 
     setFormError("");
 
-    const selectedGroups = completedMarkers.filter((g) =>
-      selectedLedgerMarkers.includes(g.markerName),
-    );
-
-    const hasImported = selectedGroups.some((g) =>
-      g.warehouseNames.includes("Imported"),
-    );
-    const hasWarehouse = selectedGroups.some((g) =>
-      g.warehouseNames.some((name) => name !== "Imported"),
-    );
-
-    if (hasImported && hasWarehouse) {
-      setFormError(
-        "Cannot generate a ledger mixing both Warehouse data and Imported data. Please select only one type at a time.",
-      );
-      return;
-    }
-
     setSaving(true);
     try {
       const markersPayload = selectedLedgerMarkers.map((markerName) => {
@@ -771,7 +576,7 @@ const SemiExport: React.FC = () => {
         salesData,
         ledgerData,
         ratesData,
-        importedDataRes,
+        purchaseRecordsData,
       ] = await Promise.all([
         singleDoubleDrawnAPI.getAll(),
         semiExportAPI.getAll(),
@@ -779,7 +584,7 @@ const SemiExport: React.FC = () => {
         salesAPI.getAll("Sales"),
         ledgerAPI.getAll(),
         exchangeRatesAPI.getActive(),
-        importedSemiExportAPI.getAll(),
+        semiExportPurchaseRecordsAPI.getAll(),
       ]);
       setSddRecords(sddData);
       setSavedExports(exportData);
@@ -787,7 +592,7 @@ const SemiExport: React.FC = () => {
       setSales(salesData);
       setLedgers(ledgerData);
       setActiveRates(ratesData);
-      setImportedData(importedDataRes);
+      setPurchaseRecords(purchaseRecordsData);
     } catch (error) {
       console.error("Failed to load data:", error);
     } finally {
@@ -1188,8 +993,7 @@ const SemiExport: React.FC = () => {
   const markerWorkerFeesInfo = useMemo(() => {
     let sum = 0;
     const details: { label: string; name: string; amount: number }[] = [];
-    if (!selectedMarker || selectedMarker === "Imported")
-      return { sum, details };
+    if (!selectedMarker) return { sum, details };
 
     const processingMap = new Map<number, { name: string; amount: number }>();
     const purifiedMap = new Map<number, { name: string; amount: number }>();
@@ -1314,385 +1118,8 @@ const SemiExport: React.FC = () => {
     };
   }, [selectedMarkerStats, markerTotalAmountMmk]);
 
-  const printColorPdf = (colorName: string) => {
-    const data = importCategoriesData[colorName] || {};
-
-    // Create an iframe
-    const iframe = document.createElement("iframe");
-    iframe.style.position = "fixed";
-    iframe.style.right = "0";
-    iframe.style.bottom = "0";
-    iframe.style.width = "0";
-    iframe.style.height = "0";
-    iframe.style.border = "none";
-    document.body.appendChild(iframe);
-
-    const doc = iframe.contentWindow?.document;
-    if (!doc) return;
-
-    let rowsHtml = "";
-    let idx = 1;
-
-    const sortedSizes = [
-      "Bar",
-      "28",
-      "26",
-      "24",
-      "22",
-      "20",
-      "18",
-      "16",
-      "14",
-      "12",
-      "10",
-      "10B",
-      "9",
-      "8",
-      "7",
-      "6",
-      "Return",
-      "Spoilage",
-    ];
-
-    let totalWt = 0;
-    let totalAmt = 0;
-
-    sortedSizes.forEach((s) => {
-      const w = Number(data[s]?.weight || 0);
-      const p = Number(data[s]?.price || 0);
-      let amt = 0;
-      if (w > 0 && p > 0) {
-        amt = w * p;
-        totalWt += w;
-        totalAmt += amt;
-      }
-
-      let displaySize = s;
-      if (s === "Bar") displaySize = "B";
-      else if (s === "Return") displaySize = "Return";
-      else if (s === "Spoilage") displaySize = "Spoilage";
-      else if (s === "Lost") displaySize = "Lost";
-
-      rowsHtml += `
-        <tr>
-          <td style="text-align: center; border: 1px solid black; padding: 4px;">${idx++}</td>
-          <td style="text-align: center; border: 1px solid black; padding: 4px;">${displaySize}</td>
-          <td style="text-align: right; border: 1px solid black; padding: 4px;">${w > 0 ? w.toFixed(3) + " viss" : "0"}</td>
-          <td style="text-align: right; border: 1px solid black; padding: 4px;">${p > 0 ? p.toFixed(2) : "0"}</td>
-          <td style="text-align: right; border: 1px solid black; padding: 4px;">${amt > 0 ? amt.toFixed(4) : "0"}</td>
-        </tr>
-      `;
-    });
-
-    const outputHtml = `
-      <html>
-        <head>
-          <style>
-            @media print {
-              @page { margin: 0; }
-              body { font-family: sans-serif; padding: 10mm; }
-            }
-            .header { text-align: center; margin-bottom: 20px; }
-            .header h3 { margin: 2px; }
-            .header h2 { margin: 5px; }
-            .header p { margin: 2px; font-size: 14px; }
-            .content { width: 100%; font-size: 14px; }
-            table { width: 100%; border-collapse: collapse; margin-top: 10px; font-size: 13px; }
-            th, td { border: 1px solid black; padding: 6px; }
-          </style>
-        </head>
-        <body>
-          <div class="header">
-            <h3>AKZ</h3>
-            <h2 style="font-size: 24px;">အောင်ကြွယ်စင်</h2>
-            <h3 style="font-size: 18px;">ဆံပင်ရောင်းဝယ်ရေး</h3>
-            <p>ဖုန်း - 09 400900608 / 09 400900609</p>
-          </div>
-          
-          <table style="border: none; border-collapse: collapse; margin-bottom: 15px;">
-            <tr>
-              <td style="border: none; padding: 4px; vertical-align: top; width: 100px;">အမည်<br/>ခုံတင်ချိန်</td>
-              <td style="border: none; padding: 4px; vertical-align: top;">- ${importFormData.markerName} (${colorName})<br/>- ${importFormData.totalSortedWeight} viss</td>
-              <td style="border: none; padding: 4px; vertical-align: top; width: 100px;">ကုန်အပ်ရက်<br/>နေ့စွဲ</td>
-              <td style="border: none; padding: 4px; vertical-align: top;">${importFormData.date}<br/>${new Date().toLocaleDateString("en-GB", { day: "numeric", month: "short", year: "numeric" })}</td>
-            </tr>
-          </table>
-
-          <table>
-            <thead>
-              <tr>
-                <th>စဉ်</th>
-                <th>ဆိုဒ်</th>
-                <th>အလေးချိန်</th>
-                <th>နှုန်း</th>
-                <th>သင့်ငွေ</th>
-              </tr>
-            </thead>
-            <tbody>
-              ${rowsHtml}
-              <tr>
-                <td colspan="2" style="text-align: right; border: 1px solid black; padding: 6px;">စုစုပေါင်း</td>
-                <td style="text-align: right; border: 1px solid black; padding: 6px;">${totalWt.toFixed(3)} viss</td>
-                <td style="border: 1px solid black;"></td>
-                <td style="text-align: right; border: 1px solid black; padding: 6px; font-weight: bold;">¥${totalAmt.toFixed(2)}</td>
-              </tr>
-            </tbody>
-          </table>
-          
-          <div style="margin-top: 20px; font-size: 14px;">
-            ${(() => {
-              const rate = parseFloat(importExchangeRate) || 0;
-              const totalMmk = totalAmt * rate;
-              const lostW = Number(data["Lost"]?.weight || 0);
-
-              return `
-                  <div style="margin-bottom: 8px;"><strong>Exchange Rate:</strong> 1 CNY = ${rate.toLocaleString()} MMK</div>
-                  <div style="margin-bottom: 8px;"><strong>Total Amount (CNY):</strong> ¥${totalAmt.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</div>
-                  <div style="margin-bottom: 8px;"><strong>Total Amount (MMK):</strong> ${Math.round(totalMmk).toLocaleString()} MMK</div>
-                  <div style="margin-top: 15px; padding-top: 15px; border-top: 1px dashed black;"><strong>Lost Weight:</strong> ${lostW > 0 ? lostW.toFixed(3) : "0.000"} viss</div>
-                `;
-            })()}
-          </div>
-        </body>
-      </html>
-    `;
-
-    doc.open();
-    doc.write(outputHtml);
-    doc.close();
-
-    setTimeout(() => {
-      iframe.contentWindow?.focus();
-      iframe.contentWindow?.print();
-      setTimeout(() => document.body.removeChild(iframe), 1000);
-    }, 500);
-  };
-
-  const processPrintFromHistory = (
-    markerName: string,
-    totalSortedWeight: number,
-    data: any,
-    colorName: string,
-    itemDate: string,
-  ) => {
-    // Create an iframe
-    const iframe = document.createElement("iframe");
-    iframe.style.position = "fixed";
-    iframe.style.right = "0";
-    iframe.style.bottom = "0";
-    iframe.style.width = "0";
-    iframe.style.height = "0";
-    iframe.style.border = "none";
-    document.body.appendChild(iframe);
-
-    const doc = iframe.contentWindow?.document;
-    if (!doc) return;
-
-    let rowsHtml = "";
-    let idx = 1;
-
-    const sortedSizes = [
-      "Bar",
-      "28",
-      "26",
-      "24",
-      "22",
-      "20",
-      "18",
-      "16",
-      "14",
-      "12",
-      "10",
-      "10B",
-      "9",
-      "8",
-      "7",
-      "6",
-      "Return",
-      "Spoilage",
-    ];
-
-    let totalWt = 0;
-    let totalAmt = 0;
-
-    sortedSizes.forEach((s) => {
-      const w = Number(data[colorName]?.[s]?.weight || 0);
-      const p = Number(data[colorName]?.[s]?.price || 0);
-      let amt = 0;
-      if (w > 0 && p > 0) {
-        amt = w * p;
-        totalWt += w;
-        totalAmt += amt;
-      }
-
-      let displaySize = s;
-      if (s === "Bar") displaySize = "B";
-      else if (s === "Return") displaySize = "Return";
-      else if (s === "Spoilage") displaySize = "Spoilage";
-      else if (s === "Lost") displaySize = "Lost";
-
-      rowsHtml += `
-        <tr>
-          <td style="text-align: center; border: 1px solid black; padding: 4px;">${idx++}</td>
-          <td style="text-align: center; border: 1px solid black; padding: 4px;">${displaySize}</td>
-          <td style="text-align: right; border: 1px solid black; padding: 4px;">${w > 0 ? w.toFixed(3) + " viss" : "0"}</td>
-          <td style="text-align: right; border: 1px solid black; padding: 4px;">${p > 0 ? p.toFixed(2) : "0"}</td>
-          <td style="text-align: right; border: 1px solid black; padding: 4px;">${amt > 0 ? amt.toFixed(4) : "0"}</td>
-        </tr>
-      `;
-    });
-
-    const outputHtml = `
-      <html>
-        <head>
-          <style>
-            @media print {
-              @page { margin: 0; }
-              body { font-family: sans-serif; padding: 10mm; }
-            }
-            .header { text-align: center; margin-bottom: 20px; }
-            .header h3 { margin: 2px; }
-            .header h2 { margin: 5px; }
-            .header p { margin: 2px; font-size: 14px; }
-            .content { width: 100%; font-size: 14px; }
-            table { width: 100%; border-collapse: collapse; margin-top: 10px; font-size: 13px; }
-            th, td { border: 1px solid black; padding: 6px; }
-          </style>
-        </head>
-        <body>
-          <div class="header">
-            <h3>AKZ</h3>
-            <h2 style="font-size: 24px;">အောင်ကြွယ်စင်</h2>
-            <h3 style="font-size: 18px;">ဆံပင်ရောင်းဝယ်ရေး</h3>
-            <p>ဖုန်း - 09 400900608 / 09 400900609</p>
-          </div>
-          
-          <table style="border: none; border-collapse: collapse; margin-bottom: 15px;">
-            <tr>
-              <td style="border: none; padding: 4px; vertical-align: top; width: 100px;">အမည်<br/>ခုံတင်ချိန်</td>
-              <td style="border: none; padding: 4px; vertical-align: top;">- ${markerName} (${colorName})<br/>- ${totalSortedWeight}</td>
-              <td style="border: none; padding: 4px; vertical-align: top; width: 100px;">ကုန်အပ်ရက်<br/>နေ့စွဲ</td>
-              <td style="border: none; padding: 4px; vertical-align: top;">${itemDate}<br/>${new Date().toLocaleDateString("en-GB", { day: "numeric", month: "short", year: "numeric" })}</td>
-            </tr>
-          </table>
-
-          <table>
-            <thead>
-              <tr>
-                <th>စဉ်</th>
-                <th>ဆိုဒ်</th>
-                <th>အလေးချိန်</th>
-                <th>နှုန်း</th>
-                <th>သင့်ငွေ</th>
-              </tr>
-            </thead>
-            <tbody>
-              ${rowsHtml}
-              <tr>
-                <td colspan="2" style="text-align: right; border: 1px solid black; padding: 6px;">စုစုပေါင်း</td>
-                <td style="text-align: right; border: 1px solid black; padding: 6px;">${totalWt.toFixed(3)} viss</td>
-                <td style="border: 1px solid black;"></td>
-                <td style="text-align: right; border: 1px solid black; padding: 6px; font-weight: bold;">¥${totalAmt.toFixed(2)}</td>
-              </tr>
-            </tbody>
-          </table>
-          
-          <div style="margin-top: 20px; font-size: 14px;">
-            ${(() => {
-              const rate =
-                data[colorName]?.exchange_rate || currentCnyRate || 0;
-              const totalMmk = totalAmt * rate;
-              const lostW = Number(data[colorName]?.["Lost"]?.weight || 0);
-
-              return `
-                  <div style="margin-bottom: 8px;"><strong>Exchange Rate:</strong> 1 CNY = ${rate.toLocaleString()} MMK</div>
-                  <div style="margin-bottom: 8px;"><strong>Total Amount (CNY):</strong> ¥${totalAmt.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</div>
-                  <div style="margin-bottom: 8px;"><strong>Total Amount (MMK):</strong> ${Math.round(totalMmk).toLocaleString()} MMK</div>
-                  <div style="margin-top: 15px; padding-top: 15px; border-top: 1px dashed black;"><strong>Lost Weight:</strong> ${lostW > 0 ? lostW.toFixed(3) : "0.000"} viss</div>
-                `;
-            })()}
-          </div>
-        </body>
-      </html>
-    `;
-
-    doc.open();
-    doc.write(outputHtml);
-    doc.close();
-
-    setTimeout(() => {
-      iframe.contentWindow?.focus();
-      iframe.contentWindow?.print();
-      setTimeout(() => document.body.removeChild(iframe), 1000);
-    }, 500);
-  };
-
-  const handleSaveAndPrintColor = async (colorName: string) => {
-    if (
-      !importFormData.markerName ||
-      !importFormData.totalSortedWeight ||
-      !importExchangeRate ||
-      parseFloat(importExchangeRate) <= 0
-    ) {
-      alert("Marker Name, Weight and a valid Exchange Rate are required.");
-      return;
-    }
-    try {
-      setSaving(true);
-
-      const payloadData = { ...importCategoriesData };
-      if (payloadData[colorName]) {
-        const otherWeight = sizeOptions
-          .filter((s) => s !== "Lost")
-          .reduce(
-            (sum, s) => sum + Number(payloadData[colorName][s]?.weight || 0),
-            0,
-          );
-        const totalSort = Number(importFormData.totalSortedWeight || 0);
-        const lost = Math.max(0, totalSort - otherWeight).toFixed(3);
-        const newData = { ...payloadData[colorName] };
-        newData["Lost"] = {
-          weight: lost,
-          price: "",
-          amount: "",
-        };
-        newData["exchange_rate"] = parseFloat(importExchangeRate);
-        payloadData[colorName] = newData;
-      }
-
-      await importedSemiExportAPI.create({
-        markerName: importFormData.markerName,
-        totalSortedWeight: Number(importFormData.totalSortedWeight),
-        date: importFormData.date,
-        dataJson: JSON.stringify(payloadData),
-      });
-      await loadData();
-      printColorPdf(colorName);
-      setShowImportModal(false);
-      setImportFormData({
-        markerName: "",
-        totalSortedWeight: "",
-        color: "",
-        date: new Date().toISOString().substring(0, 10),
-      });
-      setImportCategoriesData({});
-    } catch (e) {
-      alert("Failed to save imported data");
-    } finally {
-      setSaving(false);
-    }
-  };
-
   const handleSaveMarkerData = async () => {
     if (!selectedMarker || selectedRecords.length === 0) return;
-
-    // Quick check if imported
-    if (selectedRecords[0].id < 0) {
-      alert(
-        "Imported records are already saved. They do not require an additional Semi Export saving step.",
-      );
-      return;
-    }
 
     setSaving(true);
     setFormError("");
@@ -2164,138 +1591,135 @@ const SemiExport: React.FC = () => {
                 }}
               />
             </div>
-            {selectedMarker !== "Imported" &&
-              markerWorkerFeesInfo.details.length > 0 && (
-                <div
+            {markerWorkerFeesInfo.details.length > 0 && (
+              <div
+                style={{
+                  marginTop: "-8px",
+                  padding: "16px",
+                  backgroundColor: "#fff",
+                  borderRadius: "8px",
+                  border: "1px dashed #cbd5e1",
+                }}
+              >
+                <button
+                  type="button"
+                  onClick={() =>
+                    setShowWorkerFeesBreakdown(!showWorkerFeesBreakdown)
+                  }
                   style={{
-                    marginTop: "-8px",
-                    padding: "16px",
-                    backgroundColor: "#fff",
-                    borderRadius: "8px",
-                    border: "1px dashed #cbd5e1",
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "space-between",
+                    width: "100%",
+                    background: "none",
+                    border: "none",
+                    padding: "0",
+                    cursor: "pointer",
                   }}
                 >
-                  <button
-                    type="button"
-                    onClick={() =>
-                      setShowWorkerFeesBreakdown(!showWorkerFeesBreakdown)
-                    }
+                  <h4
                     style={{
-                      display: "flex",
-                      alignItems: "center",
-                      justifyContent: "space-between",
-                      width: "100%",
-                      background: "none",
-                      border: "none",
-                      padding: "0",
-                      cursor: "pointer",
+                      fontSize: "14px",
+                      fontWeight: "600",
+                      margin: 0,
+                      color: "#334155",
                     }}
                   >
-                    <h4
-                      style={{
-                        fontSize: "14px",
-                        fontWeight: "600",
-                        margin: 0,
-                        color: "#334155",
-                      }}
-                    >
-                      Worker Fees Breakdown
-                    </h4>
-                    {showWorkerFeesBreakdown ? (
-                      <ChevronUp size={16} color="#64748b" />
-                    ) : (
-                      <ChevronDown size={16} color="#64748b" />
-                    )}
-                  </button>
+                    Worker Fees Breakdown
+                  </h4>
+                  {showWorkerFeesBreakdown ? (
+                    <ChevronUp size={16} color="#64748b" />
+                  ) : (
+                    <ChevronDown size={16} color="#64748b" />
+                  )}
+                </button>
 
-                  {showWorkerFeesBreakdown && (
-                    <div
-                      style={{
-                        display: "flex",
-                        flexDirection: "column",
-                        gap: "8px",
-                        marginTop: "12px",
-                      }}
-                    >
-                      {markerWorkerFeesInfo.details.map((fi, i) => (
-                        <div
-                          key={i}
-                          style={{
-                            display: "flex",
-                            justifyContent: "space-between",
-                            fontSize: "13px",
-                            color: "#475569",
-                          }}
-                        >
-                          <span>
-                            <span
-                              style={{ fontWeight: "600", color: "#0f172a" }}
-                            >
-                              {fi.label}
-                            </span>{" "}
-                            ({fi.name}):
-                          </span>
-                          <span style={{ fontWeight: "600" }}>
-                            {fi.amount.toLocaleString()}
-                          </span>
-                        </div>
-                      ))}
+                {showWorkerFeesBreakdown && (
+                  <div
+                    style={{
+                      display: "flex",
+                      flexDirection: "column",
+                      gap: "8px",
+                      marginTop: "12px",
+                    }}
+                  >
+                    {markerWorkerFeesInfo.details.map((fi, i) => (
                       <div
+                        key={i}
                         style={{
-                          marginTop: "8px",
-                          paddingTop: "8px",
-                          borderTop: "1px solid #cbd5e1",
                           display: "flex",
                           justifyContent: "space-between",
-                          alignItems: "center",
-                          fontSize: "14px",
-                          fontWeight: "700",
-                          color: "#0f172a",
+                          fontSize: "13px",
+                          color: "#475569",
                         }}
                       >
-                        <span>Total Calculated Worker Fees:</span>
-                        <div
-                          style={{
-                            display: "flex",
-                            alignItems: "center",
-                            gap: "8px",
-                          }}
-                        >
-                          <span style={{ color: "#2563eb" }}>
-                            {markerWorkerFeesInfo.sum.toLocaleString()}
-                          </span>
-                          {!isModal && (
-                            <button
-                              type="button"
-                              onClick={() =>
-                                setMarkerWorkerFees(
-                                  markerWorkerFeesInfo.sum.toString(),
-                                )
-                              }
-                              title="Use calculated total as manual override"
-                              style={{
-                                padding: "4px 8px",
-                                borderRadius: "6px",
-                                border: "1px solid #2563eb",
-                                background: "#dbeafe",
-                                color: "#2563eb",
-                                cursor: "pointer",
-                                fontSize: "12px",
-                                fontWeight: "600",
-                                display: "flex",
-                                alignItems: "center",
-                                gap: "4px",
-                              }}
-                            >
-                              <RotateCcw size={12} /> Use
-                            </button>
-                          )}
-                        </div>
+                        <span>
+                          <span style={{ fontWeight: "600", color: "#0f172a" }}>
+                            {fi.label}
+                          </span>{" "}
+                          ({fi.name}):
+                        </span>
+                        <span style={{ fontWeight: "600" }}>
+                          {fi.amount.toLocaleString()}
+                        </span>
+                      </div>
+                    ))}
+                    <div
+                      style={{
+                        marginTop: "8px",
+                        paddingTop: "8px",
+                        borderTop: "1px solid #cbd5e1",
+                        display: "flex",
+                        justifyContent: "space-between",
+                        alignItems: "center",
+                        fontSize: "14px",
+                        fontWeight: "700",
+                        color: "#0f172a",
+                      }}
+                    >
+                      <span>Total Calculated Worker Fees:</span>
+                      <div
+                        style={{
+                          display: "flex",
+                          alignItems: "center",
+                          gap: "8px",
+                        }}
+                      >
+                        <span style={{ color: "#2563eb" }}>
+                          {markerWorkerFeesInfo.sum.toLocaleString()}
+                        </span>
+                        {!isModal && (
+                          <button
+                            type="button"
+                            onClick={() =>
+                              setMarkerWorkerFees(
+                                markerWorkerFeesInfo.sum.toString(),
+                              )
+                            }
+                            title="Use calculated total as manual override"
+                            style={{
+                              padding: "4px 8px",
+                              borderRadius: "6px",
+                              border: "1px solid #2563eb",
+                              background: "#dbeafe",
+                              color: "#2563eb",
+                              cursor: "pointer",
+                              fontSize: "12px",
+                              fontWeight: "600",
+                              display: "flex",
+                              alignItems: "center",
+                              gap: "4px",
+                            }}
+                          >
+                            <RotateCcw size={12} /> Use
+                          </button>
+                        )}
                       </div>
                     </div>
-                  )}
-                </div>
-              )}
+                  </div>
+                )}
+              </div>
+            )}
 
             <div style={{ display: "flex", flexDirection: "column" }}>
               <label
@@ -3209,6 +2633,101 @@ const SemiExport: React.FC = () => {
             <div className="rf-empty-sidebar">No sorted batches found</div>
           ) : (
             filteredGroupedRecords.map((group) => {
+              if (group.source === "purchase") {
+                return (
+                  <div
+                    key={`purchase-${group.markerName}-${group.date}`}
+                    className="product-card"
+                  >
+                    <div className="card-header">
+                      <div style={{ display: "flex", flexDirection: "column" }}>
+                        <span className="card-marker">{group.markerName}</span>
+                        <span
+                          style={{
+                            fontSize: "11px",
+                            color: "#64748b",
+                            fontWeight: 500,
+                            marginTop: "2px",
+                          }}
+                        >
+                          {(group.customerNames || []).join(", ") || "---"}
+                        </span>
+                      </div>
+                      <span
+                        style={{
+                          background: "#eff6ff",
+                          color: "#1d4ed8",
+                          fontSize: "10px",
+                          padding: "2px 6px",
+                          borderRadius: "4px",
+                          fontWeight: "bold",
+                        }}
+                      >
+                        Purchase
+                      </span>
+                    </div>
+
+                    <div
+                      className="card-details"
+                      style={{ flexDirection: "column", gap: "4px" }}
+                    >
+                      <div
+                        style={{
+                          display: "flex",
+                          justifyContent: "space-between",
+                        }}
+                      >
+                        <span>
+                          Total Sorted:{" "}
+                          <strong style={{ color: "#059669" }}>
+                            {group.combinedWeight.toFixed(3)}
+                          </strong>{" "}
+                          viss
+                        </span>
+                        <span>
+                          Date:{" "}
+                          <span style={{ color: "#475569", fontWeight: 500 }}>
+                            {new Date(group.date).toLocaleDateString()}
+                          </span>
+                        </span>
+                      </div>
+                      <div
+                        style={{
+                          display: "flex",
+                          justifyContent: "space-between",
+                        }}
+                      >
+                        <span>
+                          Lost:{" "}
+                          <strong style={{ color: "#ef4444" }}>
+                            {(group.lostWeight || 0).toFixed(3)}
+                          </strong>{" "}
+                          viss
+                        </span>
+                      </div>
+                      <div
+                        style={{
+                          display: "flex",
+                          gap: "4px",
+                          flexWrap: "wrap",
+                          marginTop: "4px",
+                        }}
+                      >
+                        {(group.colors || []).map((color) => (
+                          <span
+                            key={color}
+                            className="rf-badge"
+                            style={{ fontSize: "9px", padding: "1px 4px" }}
+                          >
+                            {color}
+                          </span>
+                        ))}
+                      </div>
+                    </div>
+                  </div>
+                );
+              }
+
               const savedCount = group.records.filter((r) =>
                 savedExports.some((x) => x.singleDoubleDrawnRecordId === r.id),
               ).length;
@@ -3360,29 +2879,6 @@ const SemiExport: React.FC = () => {
               className="rf-header-right"
               style={{ display: "flex", gap: "12px" }}
             >
-              {hasPermission("SemiExport.Create") && (
-                <button
-                  onClick={() => setShowImportModal(true)}
-                  className="btn btn-secondary"
-                  style={{
-                    display: "flex",
-                    alignItems: "center",
-                    gap: "8px",
-                    padding: "11px 22px",
-                    borderRadius: "10px",
-                    fontSize: "14px",
-                    fontWeight: "700",
-                    cursor: "pointer",
-                    background: "#f1f5f9",
-                    color: "#334155",
-                    border: "1px solid #cbd5e1",
-                    boxShadow: "0 2px 4px rgba(0,0,0,0.02)",
-                  }}
-                >
-                  <Download size={18} />
-                  Import Data{" "}
-                </button>
-              )}
               {hasPermission("SemiExport.Create") && (
                 <button
                   onClick={() => setShowLedgerModal(true)}
@@ -4030,1238 +3526,6 @@ const SemiExport: React.FC = () => {
                     : `Generate Ledger (${selectedLedgerMarkers.length})`}
                 </button>
               </div>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* Import Modal */}
-      {showImportModal && (
-        <div className="modal-overlay">
-          <div className="modal-content" style={{ maxWidth: "900px" }}>
-            <div className="modal-header">
-              <h2 className="modal-title">Import Semi Export Data</h2>
-              <button
-                className="modal-close"
-                onClick={() => setShowImportModal(false)}
-              >
-                <X size={20} />
-              </button>
-            </div>
-
-            <div className="modal-body" style={{ padding: "24px" }}>
-              <div
-                style={{
-                  display: "grid",
-                  gridTemplateColumns: "1fr 1fr 1fr 1fr",
-                  gap: "20px",
-                  marginBottom: "24px",
-                }}
-              >
-                <div>
-                  <label
-                    style={{
-                      display: "block",
-                      fontSize: "13px",
-                      fontWeight: "700",
-                      marginBottom: "8px",
-                      color: "#334155",
-                    }}
-                  >
-                    Marker Name
-                  </label>
-                  <input
-                    type="text"
-                    value={importFormData.markerName}
-                    onChange={(e) =>
-                      setImportFormData({
-                        ...importFormData,
-                        markerName: e.target.value,
-                      })
-                    }
-                    style={{
-                      width: "100%",
-                      padding: "10px",
-                      borderRadius: "8px",
-                      border: "1px solid #cbd5e1",
-                    }}
-                    placeholder="Enter Marker Name"
-                  />
-                </div>
-                <div>
-                  <label
-                    style={{
-                      display: "block",
-                      fontSize: "13px",
-                      fontWeight: "700",
-                      marginBottom: "8px",
-                      color: "#334155",
-                    }}
-                  >
-                    Total Sorted Weight (viss)
-                  </label>
-                  <input
-                    type="number"
-                    value={importFormData.totalSortedWeight}
-                    onChange={(e) =>
-                      setImportFormData({
-                        ...importFormData,
-                        totalSortedWeight: e.target.value,
-                      })
-                    }
-                    style={{
-                      width: "100%",
-                      padding: "10px",
-                      borderRadius: "8px",
-                      border: "1px solid #cbd5e1",
-                    }}
-                    placeholder="0.00"
-                  />
-                </div>
-                <div>
-                  <label
-                    style={{
-                      display: "block",
-                      fontSize: "13px",
-                      fontWeight: "700",
-                      marginBottom: "8px",
-                      color: "#334155",
-                    }}
-                  >
-                    Color
-                  </label>
-                  <select
-                    value={importFormData.color}
-                    onChange={(e) =>
-                      setImportFormData({
-                        ...importFormData,
-                        color: e.target.value,
-                      })
-                    }
-                    style={{
-                      width: "100%",
-                      padding: "10px",
-                      borderRadius: "8px",
-                      border: "1px solid #cbd5e1",
-                      backgroundColor: "white",
-                    }}
-                  >
-                    <option value="">Select Color</option>
-                    {importCategoryOptions.map((c) => (
-                      <option key={c} value={c}>
-                        {c}
-                      </option>
-                    ))}
-                  </select>
-                </div>
-                <div>
-                  <label
-                    style={{
-                      display: "block",
-                      fontSize: "13px",
-                      fontWeight: "700",
-                      marginBottom: "8px",
-                      color: "#334155",
-                    }}
-                  >
-                    Date
-                  </label>
-                  <input
-                    type="date"
-                    value={importFormData.date}
-                    onChange={(e) =>
-                      setImportFormData({
-                        ...importFormData,
-                        date: e.target.value,
-                      })
-                    }
-                    style={{
-                      width: "100%",
-                      padding: "10px",
-                      borderRadius: "8px",
-                      border: "1px solid #cbd5e1",
-                    }}
-                  />
-                </div>
-              </div>
-
-              <div
-                style={{
-                  display: "flex",
-                  justifyContent: "space-between",
-                  alignItems: "center",
-                  background: "#f1f5f9",
-                  padding: "12px 16px",
-                  borderRadius: "10px",
-                  marginBottom: "20px",
-                  border: "1px solid #e2e8f0",
-                }}
-              >
-                <div
-                  style={{ display: "flex", alignItems: "center", gap: "10px" }}
-                >
-                  <span
-                    style={{
-                      fontSize: "13.5px",
-                      fontWeight: "700",
-                      color: "#475569",
-                    }}
-                  >
-                    CNY to MMK Rate:
-                  </span>
-                  <input
-                    type="number"
-                    value={importExchangeRate}
-                    onChange={(e) => setImportExchangeRate(e.target.value)}
-                    style={{
-                      width: "120px",
-                      padding: "6px 10px",
-                      borderRadius: "6px",
-                      border: "1.5px solid #cbd5e1",
-                      fontSize: "14px",
-                      fontWeight: "700",
-                      textAlign: "right",
-                      outline: "none",
-                    }}
-                  />
-                  <span
-                    style={{
-                      fontSize: "13px",
-                      color: "#64748b",
-                      fontWeight: "500",
-                    }}
-                  >
-                    MMK
-                  </span>
-                </div>
-              </div>
-
-              <div style={{ marginBottom: "16px" }}>
-                <h3
-                  style={{
-                    fontSize: "15px",
-                    fontWeight: "700",
-                    color: "#0f172a",
-                    marginBottom: "12px",
-                    borderBottom: "1px solid #e2e8f0",
-                    paddingBottom: "8px",
-                  }}
-                >
-                  Color Categories & Sizes
-                </h3>
-
-                {importFormData.color && (
-                  <div
-                    style={{
-                      marginBottom: "16px",
-                      background: "#f8fafc",
-                      borderRadius: "8px",
-                      border: "1px solid #e2e8f0",
-                      padding: "16px",
-                    }}
-                  >
-                    <div
-                      style={{
-                        display: "flex",
-                        justifyContent: "space-between",
-                        alignItems: "center",
-                      }}
-                    >
-                      <span
-                        style={{
-                          fontWeight: 700,
-                          fontSize: "15px",
-                        }}
-                      >
-                        {importFormData.color} Sizes
-                      </span>
-
-                      <button
-                        onClick={() =>
-                          handleSaveAndPrintColor(importFormData.color)
-                        }
-                        disabled={saving}
-                        style={{
-                          padding: "6px 12px",
-                          borderRadius: "6px",
-                          border: "none",
-                          background: "#3b82f6",
-                          color: "white",
-                          fontWeight: 600,
-                          cursor: saving ? "not-allowed" : "pointer",
-                          fontSize: "13px",
-                        }}
-                      >
-                        Save and Print
-                      </button>
-                    </div>
-
-                    <div
-                      className="table-container"
-                      style={{
-                        border: "1.5px solid #e2e8f0",
-                        borderRadius: "12px",
-                        overflow: "hidden",
-                        background: "white",
-                        marginTop: "16px",
-                      }}
-                    >
-                      <table
-                        className="table"
-                        style={{
-                          width: "100%",
-                          borderCollapse: "collapse",
-                          textAlign: "left",
-                          fontSize: "13.5px",
-                        }}
-                      >
-                        <thead>
-                          <tr
-                            style={{
-                              background: "#f8fafc",
-                              borderBottom: "1.5px solid #e2e8f0",
-                            }}
-                          >
-                            <th
-                              style={{
-                                padding: "10px 16px",
-                                fontWeight: "700",
-                                color: "#475569",
-                              }}
-                            >
-                              SIZE
-                            </th>
-                            <th
-                              style={{
-                                padding: "10px 16px",
-                                fontWeight: "700",
-                                color: "#475569",
-                                width: "160px",
-                              }}
-                            >
-                              WEIGHT (viss)
-                            </th>
-                            <th
-                              style={{
-                                padding: "10px 16px",
-                                fontWeight: "700",
-                                color: "#475569",
-                                width: "160px",
-                              }}
-                            >
-                              PRICE (CNY)
-                            </th>
-                            <th
-                              style={{
-                                padding: "10px 16px",
-                                fontWeight: "700",
-                                color: "#475569",
-                                textAlign: "right",
-                              }}
-                            >
-                              AMOUNT (CNY)
-                            </th>
-                            <th
-                              style={{
-                                padding: "10px 16px",
-                                fontWeight: "700",
-                                color: "#475569",
-                                textAlign: "right",
-                                background: "#f0fdf4",
-                              }}
-                            >
-                              AMOUNT (MMK)
-                            </th>
-                          </tr>
-                        </thead>
-                        <tbody>
-                          {sizeOptions.map((size) => {
-                            const color = importFormData.color;
-                            const sizeData = importCategoriesData[color]?.[
-                              size
-                            ] || { weight: "", price: "", amount: "" };
-
-                            let displaySize = size;
-                            if (size === "Return") displaySize = "Return";
-                            else if (size === "Spoilage")
-                              displaySize = "Spoilage";
-                            else if (size === "Lost") displaySize = "Lost";
-
-                            return (
-                              <tr
-                                key={size}
-                                style={{
-                                  borderBottom: "1px solid #f1f5f9",
-                                }}
-                              >
-                                <td
-                                  style={{
-                                    padding: "10px 16px",
-                                    fontWeight: "700",
-                                    color: [
-                                      "Return",
-                                      "Spoilage",
-                                      "Lost",
-                                    ].includes(size)
-                                      ? "#ea580c"
-                                      : "#1e293b",
-                                  }}
-                                >
-                                  {["Return", "Spoilage", "Lost"].includes(size)
-                                    ? displaySize
-                                    : `Size ${size}`}
-                                </td>
-                                <td style={{ padding: "6px 16px" }}>
-                                  {size === "Lost" ? (
-                                    <input
-                                      type="number"
-                                      value={(() => {
-                                        const otherWeight = sizeOptions
-                                          .filter((s) => s !== "Lost")
-                                          .reduce((sum, s) => {
-                                            return (
-                                              sum +
-                                              Number(
-                                                importCategoriesData[color]?.[s]
-                                                  ?.weight || 0,
-                                              )
-                                            );
-                                          }, 0);
-                                        const totalSorted = Number(
-                                          importFormData.totalSortedWeight || 0,
-                                        );
-                                        return Math.max(
-                                          0,
-                                          totalSorted - otherWeight,
-                                        ).toFixed(3);
-                                      })()}
-                                      disabled
-                                      style={{
-                                        width: "100%",
-                                        padding: "8px 12px",
-                                        borderRadius: "8px",
-                                        border: "1px solid #cbd5e1",
-                                        fontSize: "13.5px",
-                                        fontWeight: "700",
-                                        outline: "none",
-                                        boxSizing: "border-box",
-                                        background: "#f1f5f9",
-                                        color: "#475569",
-                                        cursor: "not-allowed",
-                                      }}
-                                    />
-                                  ) : (
-                                    <input
-                                      type="number"
-                                      placeholder="0.000"
-                                      value={sizeData.weight}
-                                      onChange={(e) => {
-                                        const w = e.target.value;
-                                        const p = sizeData.price;
-                                        const amt =
-                                          Number(w || 0) * Number(p || 0);
-
-                                        const newData = {
-                                          ...importCategoriesData[color],
-                                          [size]: {
-                                            ...sizeData,
-                                            weight: w,
-                                            amount: amt > 0 ? amt : "",
-                                          },
-                                        };
-                                        const otherWeight = sizeOptions
-                                          .filter((s) => s !== "Lost")
-                                          .reduce((sum, s) => {
-                                            return (
-                                              sum +
-                                              Number(newData[s]?.weight || 0)
-                                            );
-                                          }, 0);
-                                        const totalSorted = Number(
-                                          importFormData.totalSortedWeight || 0,
-                                        );
-                                        const lostWeight = Math.max(
-                                          0,
-                                          totalSorted - otherWeight,
-                                        ).toFixed(3);
-
-                                        newData["Lost"] = {
-                                          weight: lostWeight,
-                                          price: "",
-                                          amount: "",
-                                        };
-
-                                        setImportCategoriesData({
-                                          ...importCategoriesData,
-                                          [color]: newData,
-                                        });
-                                      }}
-                                      style={{
-                                        width: "100%",
-                                        padding: "8px 12px",
-                                        borderRadius: "8px",
-                                        border: "1.5px solid #cbd5e1",
-                                        fontSize: "13.5px",
-                                        fontWeight: "600",
-                                        outline: "none",
-                                        boxSizing: "border-box",
-                                      }}
-                                    />
-                                  )}
-                                </td>
-                                <td style={{ padding: "6px 16px" }}>
-                                  {size !== "Lost" && (
-                                    <input
-                                      type="number"
-                                      placeholder="0"
-                                      value={sizeData.price}
-                                      onChange={(e) => {
-                                        const p = e.target.value;
-                                        const w = sizeData.weight;
-                                        const amt =
-                                          Number(w || 0) * Number(p || 0);
-                                        setImportCategoriesData({
-                                          ...importCategoriesData,
-                                          [color]: {
-                                            ...importCategoriesData[color],
-                                            [size]: {
-                                              ...sizeData,
-                                              price: p,
-                                              amount: amt > 0 ? amt : "",
-                                            },
-                                          },
-                                        });
-                                      }}
-                                      style={{
-                                        width: "100%",
-                                        padding: "8px 12px",
-                                        borderRadius: "8px",
-                                        border: "1.5px solid #cbd5e1",
-                                        fontSize: "13.5px",
-                                        fontWeight: "600",
-                                        outline: "none",
-                                        boxSizing: "border-box",
-                                      }}
-                                    />
-                                  )}
-                                </td>
-                                <td
-                                  style={{
-                                    padding: "10px 16px",
-                                    textAlign: "right",
-                                    fontWeight: "700",
-                                    color: "#0f172a",
-                                  }}
-                                >
-                                  {size !== "Lost" &&
-                                    (Number(sizeData.amount || 0) > 0
-                                      ? Number(sizeData.amount).toLocaleString(
-                                          undefined,
-                                          {
-                                            minimumFractionDigits: 2,
-                                            maximumFractionDigits: 2,
-                                          },
-                                        )
-                                      : "0.00")}
-                                </td>
-                                <td
-                                  style={{
-                                    padding: "10px 16px",
-                                    textAlign: "right",
-                                    fontWeight: "700",
-                                    color: "#166534",
-                                    background: "#f0fdf4",
-                                  }}
-                                >
-                                  {size !== "Lost" &&
-                                    (Number(sizeData.amount || 0) > 0
-                                      ? (
-                                          Number(sizeData.amount) *
-                                          parseFloat(importExchangeRate || "0")
-                                        ).toLocaleString(undefined, {
-                                          minimumFractionDigits: 0,
-                                          maximumFractionDigits: 0,
-                                        })
-                                      : "0")}
-                                </td>
-                              </tr>
-                            );
-                          })}
-                        </tbody>
-                      </table>
-                    </div>
-                  </div>
-                )}
-              </div>
-            </div>
-
-            <div
-              className="modal-footer"
-              style={{
-                padding: "16px 24px",
-                borderTop: "1px solid #e2e8f0",
-                display: "flex",
-                justifyContent: "space-between",
-                gap: "12px",
-                background: "#f8fafc",
-                borderRadius: "0 0 20px 20px",
-              }}
-            >
-              <button
-                onClick={() => setShowImportHistoryModal(true)}
-                style={{
-                  padding: "10px 20px",
-                  borderRadius: "8px",
-                  border: "1px solid #3b82f6",
-                  background: "#eff6ff",
-                  color: "#1d4ed8",
-                  fontWeight: 600,
-                  cursor: "pointer",
-                }}
-              >
-                Import History
-              </button>
-
-              <div style={{ display: "flex", gap: "12px" }}>
-                <button
-                  onClick={() => setShowImportModal(false)}
-                  style={{
-                    padding: "10px 20px",
-                    borderRadius: "8px",
-                    border: "1px solid #cbd5e1",
-                    background: "white",
-                    fontWeight: 600,
-                    cursor: "pointer",
-                  }}
-                >
-                  Cancel
-                </button>
-                <button
-                  onClick={() => {
-                    if (importFormData.color) {
-                      handleSaveAndPrintColor(importFormData.color);
-                    } else {
-                      alert("Please select a color first.");
-                    }
-                  }}
-                  disabled={saving}
-                  style={{
-                    padding: "10px 24px",
-                    borderRadius: "8px",
-                    border: "none",
-                    background: "#0f172a",
-                    color: "white",
-                    fontWeight: 600,
-                    cursor: saving ? "not-allowed" : "pointer",
-                  }}
-                >
-                  {saving ? "Saving..." : "Save and Print"}
-                </button>
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {showImportHistoryModal && (
-        <div
-          style={{
-            position: "fixed",
-            top: 0,
-            left: 0,
-            right: 0,
-            bottom: 0,
-            background: "rgba(0, 0, 0, 0.4)",
-            backdropFilter: "blur(4px)",
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "center",
-            zIndex: 1000,
-          }}
-        >
-          <div
-            className="modal-content"
-            style={{
-              background: "white",
-              padding: "0",
-              borderRadius: "20px",
-              width: "100%",
-              maxWidth: "1000px",
-              height: "90vh",
-              display: "flex",
-              flexDirection: "column",
-              boxShadow: "0 25px 50px -12px rgba(0, 0, 0, 0.25)",
-            }}
-          >
-            <div
-              className="modal-header"
-              style={{
-                padding: "24px 32px",
-                borderBottom: "1px solid #e2e8f0",
-                display: "flex",
-                justifyContent: "space-between",
-                alignItems: "center",
-                background: "#f8fafc",
-                borderRadius: "20px 20px 0 0",
-              }}
-            >
-              <h2
-                style={{
-                  margin: 0,
-                  fontSize: "1.5rem",
-                  color: "#0f172a",
-                  fontWeight: "700",
-                }}
-              >
-                Import Semi Export History
-              </h2>
-              <button
-                onClick={() => setShowImportHistoryModal(false)}
-                style={{
-                  background: "transparent",
-                  border: "none",
-                  fontSize: "1.5rem",
-                  cursor: "pointer",
-                  color: "#64748b",
-                  transition: "color 0.2s",
-                }}
-              >
-                ✕
-              </button>
-            </div>
-
-            <div
-              className="modal-body"
-              style={{
-                padding: "32px",
-                flex: 1,
-                overflowY: "auto",
-              }}
-            >
-              <table
-                style={{
-                  width: "100%",
-                  borderCollapse: "separate",
-                  borderSpacing: 0,
-                  marginTop: "16px",
-                  background: "white",
-                  borderRadius: "12px",
-                  overflow: "hidden",
-                  boxShadow: "0 1px 3px rgba(0,0,0,0.1)",
-                }}
-              >
-                <thead>
-                  <tr style={{ background: "#f8fafc" }}>
-                    <th
-                      style={{
-                        padding: "12px 16px",
-                        textAlign: "left",
-                        fontSize: "14px",
-                        fontWeight: "600",
-                        color: "#64748b",
-                        borderBottom: "1px solid #e2e8f0",
-                      }}
-                    >
-                      Date
-                    </th>
-                    <th
-                      style={{
-                        padding: "12px 16px",
-                        textAlign: "left",
-                        fontSize: "14px",
-                        fontWeight: "600",
-                        color: "#64748b",
-                        borderBottom: "1px solid #e2e8f0",
-                      }}
-                    >
-                      Marker Name
-                    </th>
-                    <th
-                      style={{
-                        padding: "12px 16px",
-                        textAlign: "left",
-                        fontSize: "14px",
-                        fontWeight: "600",
-                        color: "#64748b",
-                        borderBottom: "1px solid #e2e8f0",
-                      }}
-                    >
-                      Total Sorted Wt.
-                    </th>
-                    <th
-                      style={{
-                        padding: "12px 16px",
-                        textAlign: "left",
-                        fontSize: "14px",
-                        fontWeight: "600",
-                        color: "#64748b",
-                        borderBottom: "1px solid #e2e8f0",
-                      }}
-                    >
-                      Details
-                    </th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {importedData.map((record) => (
-                    <tr
-                      key={record.id}
-                      style={{ borderBottom: "1px solid #f1f5f9" }}
-                    >
-                      <td
-                        style={{
-                          padding: "12px 16px",
-                          color: "#1e293b",
-                          fontSize: "14px",
-                          borderBottom: "1px solid #f1f5f9",
-                        }}
-                      >
-                        {new Date(record.date).toLocaleDateString()}
-                      </td>
-                      <td
-                        style={{
-                          padding: "12px 16px",
-                          fontWeight: "600",
-                          color: "#0f172a",
-                          fontSize: "14px",
-                          borderBottom: "1px solid #f1f5f9",
-                        }}
-                      >
-                        {record.markerName}
-                      </td>
-                      <td
-                        style={{
-                          padding: "12px 16px",
-                          color: "#1e293b",
-                          fontSize: "14px",
-                          borderBottom: "1px solid #f1f5f9",
-                        }}
-                      >
-                        {record.totalSortedWeight}
-                      </td>
-                      <td
-                        style={{
-                          padding: "12px 16px",
-                          borderBottom: "1px solid #f1f5f9",
-                        }}
-                      >
-                        <button
-                          onClick={() => {
-                            setSelectedImportHistory(record);
-                          }}
-                          style={{
-                            padding: "6px 12px",
-                            borderRadius: "6px",
-                            border: "1px solid #cbd5e1",
-                            background: "white",
-                            color: "#334155",
-                            fontWeight: "600",
-                            cursor: "pointer",
-                            fontSize: "13px",
-                            marginRight: "8px",
-                          }}
-                        >
-                          View Details
-                        </button>
-                        <button
-                          onClick={() => {
-                            try {
-                              const parsedData = JSON.parse(
-                                record.dataJson || "{}",
-                              );
-                              const colors = Object.keys(parsedData);
-
-                              if (colors.length === 0) {
-                                alert(
-                                  "No colors found in this record to print.",
-                                );
-                                return;
-                              }
-
-                              processPrintFromHistory(
-                                record.markerName,
-                                record.totalSortedWeight,
-                                parsedData,
-                                colors[0],
-                                record.date,
-                              );
-                            } catch (e) {
-                              alert("Error parsing record data for printing.");
-                            }
-                          }}
-                          style={{
-                            padding: "6px 12px",
-                            borderRadius: "6px",
-                            border: "none",
-                            background: "#3b82f6",
-                            color: "white",
-                            fontWeight: "600",
-                            cursor: "pointer",
-                            fontSize: "13px",
-                          }}
-                        >
-                          Print
-                        </button>
-                      </td>
-                    </tr>
-                  ))}
-                  {importedData.length === 0 && (
-                    <tr>
-                      <td
-                        colSpan={4}
-                        style={{
-                          padding: "32px",
-                          textAlign: "center",
-                          color: "#64748b",
-                        }}
-                      >
-                        No import history found
-                      </td>
-                    </tr>
-                  )}
-                </tbody>
-              </table>
-
-              {selectedImportHistory && (
-                <div
-                  style={{
-                    marginTop: "32px",
-                    padding: "20px",
-                    background: "#f8fafc",
-                    borderRadius: "12px",
-                    border: "1px solid #e2e8f0",
-                  }}
-                >
-                  <div
-                    style={{
-                      display: "flex",
-                      justifyContent: "space-between",
-                      alignItems: "center",
-                      marginBottom: "20px",
-                    }}
-                  >
-                    <h3
-                      style={{ margin: 0, fontSize: "16px", color: "#0f172a" }}
-                    >
-                      Receipt Data: {selectedImportHistory.markerName} (Total:{" "}
-                      {selectedImportHistory.totalSortedWeight})
-                    </h3>
-                  </div>
-                  <div
-                    style={{
-                      display: "flex",
-                      flexWrap: "wrap",
-                      gap: "24px",
-                    }}
-                  >
-                    {(() => {
-                      try {
-                        const parsedData = JSON.parse(
-                          selectedImportHistory.dataJson || "{}",
-                        );
-                        return Object.keys(parsedData).map((color) => {
-                          const sizeOptions = [
-                            "Bar",
-                            "28",
-                            "26",
-                            "24",
-                            "22",
-                            "20",
-                            "18",
-                            "16",
-                            "14",
-                            "12",
-                            "10",
-                            "10B",
-                            "9",
-                            "8",
-                            "7",
-                            "6",
-                            "Return",
-                            "Spoilage",
-                            "Lost",
-                          ];
-                          return (
-                            <div
-                              key={color}
-                              style={{
-                                flex: "1 1 calc(50% - 12px)",
-                                minWidth: "350px",
-                                background: "white",
-                                borderRadius: "16px",
-                                border: "1px solid #e2e8f0",
-                                boxShadow: "0 4px 6px -1px rgba(0, 0, 0, 0.05)",
-                                overflow: "hidden",
-                              }}
-                            >
-                              <div
-                                style={{
-                                  padding: "16px 20px",
-                                  borderBottom: "1.5px solid #e2e8f0",
-                                  background: "#f8fafc",
-                                }}
-                              >
-                                <h4
-                                  style={{
-                                    margin: 0,
-                                    fontSize: "15px",
-                                    fontWeight: 700,
-                                    color: "#334155",
-                                    display: "flex",
-                                    justifyContent: "space-between",
-                                    alignItems: "center",
-                                  }}
-                                >
-                                  <span>{color} Sizes</span>
-                                  {parsedData[color]?.exchange_rate && (
-                                    <span
-                                      style={{
-                                        fontSize: "12px",
-                                        background: "#f0fdf4",
-                                        padding: "4px 10px",
-                                        borderRadius: "6px",
-                                        color: "#166534",
-                                      }}
-                                    >
-                                      Rate: 1 ¥ ={" "}
-                                      {parsedData[
-                                        color
-                                      ].exchange_rate.toLocaleString()}{" "}
-                                      MMK
-                                    </span>
-                                  )}
-                                </h4>
-                              </div>
-                              <div style={{ padding: "0" }}>
-                                <table
-                                  style={{
-                                    width: "100%",
-                                    borderCollapse: "collapse",
-                                    textAlign: "left",
-                                    fontSize: "13.5px",
-                                  }}
-                                >
-                                  <thead>
-                                    <tr
-                                      style={{
-                                        background: "#f8fafc",
-                                        borderBottom: "1.5px solid #e2e8f0",
-                                      }}
-                                    >
-                                      <th
-                                        style={{
-                                          padding: "10px 16px",
-                                          fontWeight: "700",
-                                          color: "#475569",
-                                        }}
-                                      >
-                                        SIZE
-                                      </th>
-                                      <th
-                                        style={{
-                                          padding: "10px 16px",
-                                          fontWeight: "700",
-                                          color: "#475569",
-                                          textAlign: "right",
-                                        }}
-                                      >
-                                        WEIGHT (viss)
-                                      </th>
-                                      <th
-                                        style={{
-                                          padding: "10px 16px",
-                                          fontWeight: "700",
-                                          color: "#475569",
-                                          textAlign: "right",
-                                        }}
-                                      >
-                                        PRICE (CNY)
-                                      </th>
-                                      <th
-                                        style={{
-                                          padding: "10px 16px",
-                                          fontWeight: "700",
-                                          color: "#475569",
-                                          textAlign: "right",
-                                        }}
-                                      >
-                                        AMOUNT (CNY)
-                                      </th>
-                                      <th
-                                        style={{
-                                          padding: "10px 16px",
-                                          fontWeight: "700",
-                                          color: "#166534",
-                                          textAlign: "right",
-                                          background: "#f0fdf4",
-                                        }}
-                                      >
-                                        (MMK)
-                                      </th>
-                                    </tr>
-                                  </thead>
-                                  <tbody>
-                                    {sizeOptions.map((size) => {
-                                      const sData = parsedData[color]?.[size];
-                                      const exchangeRate =
-                                        parsedData[color]?.exchange_rate || 0;
-                                      let displaySize = size;
-                                      if (size === "Return")
-                                        displaySize = "Return";
-                                      else if (size === "Spoilage")
-                                        displaySize = "Spoilage";
-                                      else if (size === "Lost")
-                                        displaySize = "Lost";
-
-                                      if (
-                                        !sData ||
-                                        (!Number(sData.weight) &&
-                                          size !== "Lost" &&
-                                          !sData.weight)
-                                      )
-                                        return null;
-
-                                      return (
-                                        <tr
-                                          key={size}
-                                          style={{
-                                            borderBottom: "1px solid #f1f5f9",
-                                          }}
-                                        >
-                                          <td
-                                            style={{
-                                              padding: "8px 16px",
-                                              color: [
-                                                "Return",
-                                                "Spoilage",
-                                                "Lost",
-                                              ].includes(size)
-                                                ? "#ea580c"
-                                                : "#1e293b",
-                                              fontWeight: "600",
-                                            }}
-                                          >
-                                            {[
-                                              "Return",
-                                              "Spoilage",
-                                              "Lost",
-                                            ].includes(size)
-                                              ? displaySize
-                                              : `Size ${size}`}
-                                          </td>
-                                          <td
-                                            style={{
-                                              padding: "8px 16px",
-                                              textAlign: "right",
-                                              fontWeight: "600",
-                                              color: "#0f172a",
-                                            }}
-                                          >
-                                            {Number(sData.weight || 0).toFixed(
-                                              3,
-                                            )}
-                                          </td>
-                                          <td
-                                            style={{
-                                              padding: "8px 16px",
-                                              textAlign: "right",
-                                              color: "#475569",
-                                            }}
-                                          >
-                                            {size !== "Lost" &&
-                                            Number(sData.price || 0) > 0
-                                              ? Number(
-                                                  sData.price,
-                                                ).toLocaleString(undefined, {
-                                                  minimumFractionDigits: 0,
-                                                })
-                                              : "-"}
-                                          </td>
-                                          <td
-                                            style={{
-                                              padding: "8px 16px",
-                                              textAlign: "right",
-                                              fontWeight: "700",
-                                              color: "#0f172a",
-                                            }}
-                                          >
-                                            {size !== "Lost" &&
-                                            Number(sData.amount || 0) > 0
-                                              ? Number(
-                                                  sData.amount,
-                                                ).toLocaleString(undefined, {
-                                                  minimumFractionDigits: 2,
-                                                  maximumFractionDigits: 2,
-                                                })
-                                              : "-"}
-                                          </td>
-                                          <td
-                                            style={{
-                                              padding: "8px 16px",
-                                              textAlign: "right",
-                                              fontWeight: "700",
-                                              color: "#166534",
-                                              background: "#f0fdf4",
-                                            }}
-                                          >
-                                            {size !== "Lost" &&
-                                            Number(sData.amount || 0) > 0 &&
-                                            exchangeRate > 0
-                                              ? (
-                                                  Number(sData.amount) *
-                                                  exchangeRate
-                                                ).toLocaleString(undefined, {
-                                                  maximumFractionDigits: 0,
-                                                })
-                                              : "-"}
-                                          </td>
-                                        </tr>
-                                      );
-                                    })}
-                                  </tbody>
-                                </table>
-                              </div>
-                            </div>
-                          );
-                        });
-                      } catch (e) {
-                        return <p>Invalid Data Format</p>;
-                      }
-                    })()}
-                  </div>
-                </div>
-              )}
-            </div>
-
-            <div
-              className="modal-footer"
-              style={{
-                padding: "16px 24px",
-                borderTop: "1px solid #e2e8f0",
-                display: "flex",
-                justifyContent: "flex-end",
-                gap: "12px",
-                background: "#f8fafc",
-                borderRadius: "0 0 20px 20px",
-              }}
-            >
-              <button
-                onClick={() => {
-                  setSelectedImportHistory(null);
-                  setShowImportHistoryModal(false);
-                }}
-                style={{
-                  padding: "10px 20px",
-                  borderRadius: "8px",
-                  border: "none",
-                  background: "#0f172a",
-                  color: "white",
-                  fontWeight: 600,
-                  cursor: "pointer",
-                }}
-              >
-                Close
-              </button>
             </div>
           </div>
         </div>

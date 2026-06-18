@@ -532,11 +532,12 @@ const SemiExportPurchase: React.FC = () => {
           row.size === "Lost"
             ? getCalculatedSortingLostWeight()
             : parseFloat(row.weight) || 0;
+        const price = weight > 0 ? row.price : "0";
 
         return {
           size: row.size,
           weight: weight.toString(),
-          price: row.price,
+          price,
         };
       });
       const printRate = sortingExchangeRate;
@@ -548,7 +549,10 @@ const SemiExportPurchase: React.FC = () => {
         sizes: printRows.map((row) => ({
           size: row.size,
           weight: parseFloat(row.weight) || 0,
-          price: parseFloat(row.price) || 0,
+          price:
+            (parseFloat(row.weight) || 0) > 0
+              ? parseFloat(row.price) || 0
+              : 0,
         })),
       });
 
