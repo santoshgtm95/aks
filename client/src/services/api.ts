@@ -652,6 +652,31 @@ export const importedSemiExportAPI = {
   },
 };
 
+export const semiExportPurchaseAPI = {
+  getAll: async (): Promise<any[]> => {
+    const response = await api.get<any[]>("/SemiExportPurchase");
+    return response.data;
+  },
+  create: async (data: any): Promise<any> => {
+    const response = await api.post<any>("/SemiExportPurchase", data);
+    return response.data;
+  },
+  delete: async (id: number): Promise<void> => {
+    await api.delete(`/SemiExportPurchase/${id}`);
+  },
+};
+
+export const semiExportPurchaseProcessingAPI = {
+  getAll: async (): Promise<any[]> => {
+    const response = await api.get<any[]>("/SemiExportPurchaseProcessing");
+    return response.data;
+  },
+  create: async (data: any): Promise<any> => {
+    const response = await api.post<any>("/SemiExportPurchaseProcessing", data);
+    return response.data;
+  },
+};
+
 export default api;
 export const cashFlowAPI = {
   getAll: async (placeId?: number): Promise<any[]> => {

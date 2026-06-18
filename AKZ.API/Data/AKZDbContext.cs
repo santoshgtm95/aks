@@ -34,6 +34,8 @@ public class AKZDbContext : DbContext
     public DbSet<SingleDoubleDrawnRecord> SingleDoubleDrawnRecords { get; set; }
     public DbSet<SingleDoubleDrawnWorker> SingleDoubleDrawnWorkers { get; set; }
     public DbSet<SemiExportRecord> SemiExportRecords { get; set; }
+    public DbSet<SemiExportPurchase> SemiExportPurchases { get; set; }
+    public DbSet<SemiExportPurchaseProcessing> SemiExportPurchaseProcessings { get; set; }
     public DbSet<Ledger> Ledgers { get; set; }
     public DbSet<LedgerMarker> LedgerMarkers { get; set; }
     public DbSet<ExchangeRate> ExchangeRates { get; set; }

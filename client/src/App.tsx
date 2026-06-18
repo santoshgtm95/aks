@@ -27,6 +27,7 @@ import MessLabourWorkerManagement from "./pages/MessLabourWorkerManagement/index
 import SingleDoubleDrawnWorkerManagement from "./pages/SingleDoubleDrawnWorkerManagement/index";
 import SingleDoubleDrawn from "./pages/SingleDoubleDrawn/index";
 import SemiExport from "./pages/SemiExport/index";
+import SemiExportPurchase from "./pages/SemiExportPurchase/index";
 import Sales6 from "./pages/Sales6/index";
 import ExchangeRates from "./pages/ExchangeRates/index";
 import CashFlow from "./pages/CashFlow/index";
@@ -185,6 +186,14 @@ const App: React.FC = () => {
                 element={
                   <ProtectedRoute permission="SingleDoubleDrawn.View">
                     <SingleDoubleDrawn />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="semi-export-purchase"
+                element={
+                  <ProtectedRoute permission="SemiExport.View">
+                    <SemiExportPurchase />
                   </ProtectedRoute>
                 }
               />

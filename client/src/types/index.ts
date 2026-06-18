@@ -753,6 +753,24 @@ export interface CreateImportedSemiExportDto {
   dataJson: string;
 }
 
+export interface SemiExportPurchase {
+  id: number;
+  customerName: string;
+  contact: string;
+  totalReceiveWeight: number;
+  receiveDateTime: string;
+  color: string;
+  createdAt: string;
+}
+
+export interface CreateSemiExportPurchaseDto {
+  customerName: string;
+  contact: string;
+  totalReceiveWeight: number;
+  receiveDateTime: string;
+  color: string;
+}
+
 export interface MessLabourWorker {
   id: number;
   name: string;

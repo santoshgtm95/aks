@@ -181,6 +181,18 @@ const Layout: React.FC = () => {
           {(hasPermission("SemiExport.View") ||
             hasPermission("SemiExport.Create")) && (
             <Link
+              to="/semi-export-purchase"
+              className={`nav-item ${isActive("/semi-export-purchase") ? "active" : ""}`}
+              onClick={closeMobileMenu}
+            >
+              <TrendingUp className="nav-icon" size={24} />
+              Semi Export Purchase
+            </Link>
+          )}
+
+          {(hasPermission("SemiExport.View") ||
+            hasPermission("SemiExport.Create")) && (
+            <Link
               to="/semi-export"
               className={`nav-item ${isActive("/semi-export") ? "active" : ""}`}
               onClick={closeMobileMenu}

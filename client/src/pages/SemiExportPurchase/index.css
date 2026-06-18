@@ -1,0 +1,372 @@
+.rf-container {
+  display: flex;
+  gap: 24px;
+  padding: 24px;
+  background: #f1f5f9;
+  min-height: calc(100vh - 64px);
+  font-family: "Inter", sans-serif;
+  box-sizing: border-box;
+}
+
+.fade-in {
+  animation: rf-fadeIn 0.3s ease;
+}
+
+@keyframes rf-fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* ── SIDEBAR ── */
+.rf-sidebar {
+  width: 340px;
+  flex-shrink: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  box-sizing: border-box;
+  height: calc(100vh - 112px);
+}
+
+.rf-sidebar-header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 14px 18px;
+  background: white;
+  border-radius: 14px;
+  border: 1px solid #e2e8f0;
+  font-size: 14px;
+  font-weight: 700;
+  color: #0f172a;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.05);
+  flex-shrink: 0;
+}
+
+.rf-sidebar-header svg {
+  color: #2563eb;
+}
+
+/* ── CARD LIST ── */
+.rf-card-list {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  max-height: calc(100vh - 280px);
+  overflow-y: auto;
+  padding-right: 4px;
+  flex: 1;
+}
+
+.rf-card-list::-webkit-scrollbar {
+  width: 4px;
+}
+
+.rf-card-list::-webkit-scrollbar-thumb {
+  background: #cbd5e1;
+  border-radius: 4px;
+}
+
+.rf-card-list::-webkit-scrollbar-thumb:hover {
+  background: #94a3b8;
+}
+
+.rf-empty-sidebar {
+  padding: 24px 16px;
+  text-align: center;
+  color: #94a3b8;
+  font-size: 13px;
+  font-weight: 500;
+  background: white;
+  border-radius: 14px;
+  border: 1.5px dashed #e2e8f0;
+}
+
+/* Bag Card - Purchase Order Card */
+.rf-bag-card {
+  background: white;
+  border-radius: 14px;
+  padding: 16px;
+  border: 1.5px solid #e2e8f0;
+  border-left: 3px solid #3b82f6;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+  transition: all 0.2s ease;
+}
+
+.rf-bag-card:hover {
+  border-color: #93c5fd;
+  box-shadow: 0 4px 16px rgba(59, 130, 246, 0.12);
+  transform: translateY(-1px);
+}
+
+/* Card Top */
+.rf-card-top {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: 12px;
+}
+
+.rf-card-info {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  flex: 1;
+}
+
+.rf-card-marker {
+  font-size: 15px;
+  font-weight: 800;
+  color: #0f172a;
+}
+
+.rf-card-warehouse {
+  font-size: 11px;
+  font-weight: 600;
+  color: #64748b;
+}
+
+/* Stats Row */
+.rf-stats-row {
+  display: flex;
+  gap: 0;
+  background: #f8fafc;
+  border-radius: 10px;
+  padding: 10px 12px;
+  margin-bottom: 12px;
+  justify-content: space-between;
+}
+
+.rf-stat {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+
+.rf-stat-right {
+  text-align: right;
+}
+
+.rf-stat-label {
+  font-size: 10px;
+  font-weight: 600;
+  color: #94a3b8;
+  text-transform: uppercase;
+  letter-spacing: 0.4px;
+}
+
+.rf-stat-value {
+  font-size: 14px;
+  font-weight: 700;
+  color: #0f172a;
+}
+
+.rf-stat-unit {
+  font-size: 10px;
+  font-weight: 500;
+  color: #94a3b8;
+}
+
+.rf-stat-blue {
+  color: #3b82f6;
+}
+
+/* ── INPUT DESIGN ── */
+.rf-input-group {
+  margin-top: 4px;
+}
+
+.rf-input-label {
+  display: block;
+  font-size: 11px;
+  font-weight: 700;
+  color: #64748b;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  margin-bottom: 6px;
+}
+
+.rf-input-field {
+  flex: 1;
+  min-width: 0;
+  padding: 8px 12px;
+  border: 1.5px solid #e2e8f0;
+  border-radius: 10px;
+  font-size: 13.5px;
+  color: #0f172a;
+  background: white;
+  transition: all 0.2s ease;
+  outline: none;
+  box-sizing: border-box;
+}
+
+.rf-input-field:focus {
+  border-color: #3b82f6;
+  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+}
+
+.rf-input-field:read-only {
+  background: #f8fafc;
+  color: #64748b;
+  cursor: not-allowed;
+  border-style: dashed;
+}
+
+.rf-input-field.has-loss {
+  color: #ef4444;
+  border-color: #fca5a5;
+  background: #fff1f2;
+}
+
+.rf-input-wrapper {
+  display: flex;
+  gap: 6px;
+}
+
+.rf-max-btn {
+  padding: 0 10px;
+  border-radius: 8px;
+  border: 1.5px solid #3b82f6;
+  background: white;
+  color: #3b82f6;
+  font-size: 10px;
+  font-weight: 800;
+  text-transform: uppercase;
+  cursor: pointer;
+  transition: all 0.2s;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  white-space: nowrap;
+}
+
+.rf-max-btn:hover {
+  background: #3b82f6;
+  color: white;
+}
+
+/* ── ASSIGN BUTTON ── */
+.rf-assign-btn {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 10px;
+  border-radius: 10px;
+  border: none;
+  background: linear-gradient(135deg, #2563eb, #1e40af);
+  color: white;
+  font-size: 13px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  box-shadow: 0 3px 10px rgba(37, 99, 235, 0.2);
+  margin-top: 12px;
+}
+
+.rf-assign-btn:hover:not(:disabled) {
+  transform: translateY(-1px);
+  box-shadow: 0 5px 16px rgba(37, 99, 235, 0.3);
+}
+
+.rf-assign-btn:disabled {
+  opacity: 0.65;
+  cursor: not-allowed;
+  transform: none;
+}
+
+.rf-spin {
+  animation: rf-spin 1s linear infinite;
+}
+
+@keyframes rf-spin {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+/* ── MAIN CONTENT ── */
+.rf-main {
+  flex: 1;
+  min-width: 0;
+  box-sizing: border-box;
+}
+
+.rf-main-card {
+  background: white;
+  border-radius: 18px;
+  padding: 28px 32px;
+  box-shadow: 0 4px 24px rgba(0, 0, 0, 0.06);
+  border: 1px solid #e2e8f0;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  box-sizing: border-box;
+  overflow-y: auto;
+}
+
+/* ── BUTTON STYLES ── */
+.btn {
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  font-weight: 600;
+}
+
+.btn-primary {
+  background: linear-gradient(135deg, #2563eb 0%, #1e40af 100%);
+  color: white;
+  box-shadow: 0 4px 12px rgba(37, 99, 235, 0.3);
+}
+
+.btn-primary:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 16px rgba(37, 99, 235, 0.4);
+}
+
+.btn-primary:active {
+  transform: translateY(0);
+}
+
+@media (max-width: 1024px) {
+  .rf-container {
+    flex-direction: column;
+    gap: 16px;
+  }
+
+  .rf-sidebar {
+    width: 100%;
+    max-height: 300px;
+  }
+
+  .rf-main {
+    width: 100%;
+  }
+}
+
+@media (max-width: 768px) {
+  .rf-container {
+    padding: 16px;
+    min-height: calc(100vh - 56px);
+  }
+
+  .rf-main-card {
+    padding: 16px;
+  }
+
+  .rf-sidebar {
+    width: 100%;
+    height: auto;
+  }
+}

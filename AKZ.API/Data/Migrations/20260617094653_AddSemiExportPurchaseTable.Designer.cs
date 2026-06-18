@@ -4,16 +4,19 @@ using AKZ.API.Data;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 #nullable disable
 
-namespace AKZ.API.Migrations
+namespace AKZ.API.Data.Migrations
 {
     [DbContext(typeof(AKZDbContext))]
-    partial class AKZDbContextModelSnapshot : ModelSnapshot
+    [Migration("20260617094653_AddSemiExportPurchaseTable")]
+    partial class AddSemiExportPurchaseTable
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -1636,66 +1639,6 @@ namespace AKZ.API.Migrations
                     b.ToTable("SemiExportPurchases");
                 });
 
-            modelBuilder.Entity("AKZ.API.Models.SemiExportPurchaseProcessing", b =>
-                {
-                    b.Property<int>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("int");
-
-                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
-
-                    b.Property<decimal>("AssignWeight")
-                        .HasColumnType("decimal(18,4)");
-
-                    b.Property<string>("CreateBy")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<DateTime>("CreateDate")
-                        .HasColumnType("datetime2");
-
-                    b.Property<DateTime>("CreatedAt")
-                        .HasColumnType("datetime2");
-
-                    b.Property<string>("DeleteBy")
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<DateTime?>("DeleteDate")
-                        .HasColumnType("datetime2");
-
-                    b.Property<int>("DeleteFlg")
-                        .HasColumnType("int");
-
-                    b.Property<decimal>("LostWeight")
-                        .HasColumnType("decimal(18,4)");
-
-                    b.Property<int>("SemiExportPurchaseId")
-                        .HasColumnType("int");
-
-                    b.Property<string>("Status")
-                        .IsRequired()
-                        .HasMaxLength(100)
-                        .HasColumnType("nvarchar(100)");
-
-                    b.Property<string>("UpdateBy")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<DateTime>("UpdateDate")
-                        .HasColumnType("datetime2");
-
-                    b.Property<int>("WorkerId")
-                        .HasColumnType("int");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("SemiExportPurchaseId");
-
-                    b.HasIndex("WorkerId");
-
-                    b.ToTable("SemiExportPurchaseProcessings");
-                });
-
             modelBuilder.Entity("AKZ.API.Models.SemiExportRecord", b =>
                 {
                     b.Property<int>("Id")
@@ -2729,25 +2672,6 @@ namespace AKZ.API.Migrations
                     b.Navigation("Product");
 
                     b.Navigation("Seller");
-                });
-
-            modelBuilder.Entity("AKZ.API.Models.SemiExportPurchaseProcessing", b =>
-                {
-                    b.HasOne("AKZ.API.Models.SemiExportPurchase", "SemiExportPurchase")
-                        .WithMany()
-                        .HasForeignKey("SemiExportPurchaseId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.HasOne("AKZ.API.Models.SingleDoubleDrawnWorker", "Worker")
-                        .WithMany()
-                        .HasForeignKey("WorkerId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.Navigation("SemiExportPurchase");
-
-                    b.Navigation("Worker");
                 });
 
             modelBuilder.Entity("AKZ.API.Models.SemiExportRecord", b =>
