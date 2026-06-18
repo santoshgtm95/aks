@@ -316,6 +316,161 @@
 }
 
 /* ── BUTTON STYLES ── */
+.rf-main-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  margin-bottom: 22px;
+  padding-bottom: 18px;
+  border-bottom: 1.5px solid #f1f5f9;
+  flex-shrink: 0;
+}
+
+.rf-header-left {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+
+.rf-header-right {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 12px;
+}
+
+.rf-tab-group {
+  display: flex;
+  gap: 4px;
+  padding: 4px;
+  border-radius: 12px;
+  background: #f1f5f9;
+}
+
+.rf-tab {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  padding: 10px 18px;
+  border: none;
+  border-radius: 9px;
+  background: transparent;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  font-family: "Inter", sans-serif;
+}
+
+.rf-tab-title {
+  color: #94a3b8;
+  font-size: 14px;
+  font-weight: 700;
+  transition: color 0.2s;
+}
+
+.rf-tab-sub {
+  margin-top: 1px;
+  color: #94a3b8;
+  font-size: 11px;
+  text-align: left;
+  transition: color 0.2s;
+}
+
+.rf-tab-active {
+  background: white;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+}
+
+.rf-tab-active .rf-tab-title {
+  color: #0f172a;
+}
+
+.rf-tab-active .rf-tab-sub {
+  color: #64748b;
+}
+
+.rf-tab-active.rf-tab-green .rf-tab-title {
+  color: #2563eb;
+}
+
+.rf-count-badge {
+  padding: 6px 14px;
+  border: 1px solid #bfdbfe;
+  border-radius: 20px;
+  background: #eff6ff;
+  color: #1d4ed8;
+  font-size: 12px;
+  font-weight: 700;
+  white-space: nowrap;
+}
+
+.rf-main-content {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  padding-right: 4px;
+}
+
+.sep-table-wrap {
+  overflow-x: auto;
+  border-radius: 8px;
+}
+
+.sep-data-table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.sep-data-table thead {
+  background: #f8fafc;
+}
+
+.sep-data-table th {
+  padding: 12px;
+  border-bottom: 1px solid #e2e8f0;
+  color: #64748b;
+  font-size: 12px;
+  font-weight: 600;
+  text-align: left;
+  white-space: nowrap;
+}
+
+.sep-data-table td {
+  padding: 12px;
+  border-bottom: 1px solid #f1f5f9;
+  color: #64748b;
+  font-size: 13px;
+}
+
+.sep-data-table .sep-primary-cell {
+  color: #0f172a;
+  font-weight: 600;
+}
+
+.sep-data-table .sep-blue-cell {
+  color: #2563eb;
+  font-weight: 700;
+}
+
+.sep-data-table .sep-loss-cell {
+  color: #ef4444;
+  font-weight: 700;
+}
+
+.sep-empty-state {
+  padding: 34px 24px;
+  color: #94a3b8;
+  text-align: center;
+  font-size: 13px;
+  font-weight: 500;
+}
+
+.sep-empty-state svg {
+  display: inline-block;
+  margin-bottom: 16px;
+  color: #cbd5e1;
+}
+
 .btn {
   border: none;
   border-radius: 8px;
@@ -545,6 +700,11 @@
 
 .sep-size-card-header button:hover {
   background: #2563eb;
+}
+
+.sep-size-card-header button:disabled {
+  opacity: 0.65;
+  cursor: not-allowed;
 }
 
 .sep-size-table-wrap {

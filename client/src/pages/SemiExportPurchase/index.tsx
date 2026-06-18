@@ -4,6 +4,7 @@ import {
   exchangeRatesAPI,
   semiExportPurchaseAPI,
   semiExportPurchaseProcessingAPI,
+  semiExportPurchaseRecordsAPI,
   singleDoubleDrawnWorkersAPI,
 } from "../../services/api";
 import { Package, FilePlus, Trash2, X, Send, Loader2 } from "lucide-react";
@@ -36,6 +37,30 @@ interface SemiExportPurchaseProcessing {
   createdAt: string;
 }
 
+interface SemiExportPurchaseRecordSize {
+  size: string;
+  weight: number;
+  price: number;
+}
+
+interface SemiExportPurchaseRecord {
+  id: number;
+  semiExportPurchaseProcessingId: number;
+  semiExportPurchaseId: number;
+  customerName: string;
+  contact: string;
+  color: string;
+  receiveDateTime: string;
+  assignWeight: number;
+  lostWeight: number;
+  workerName: string;
+  workerFees: number;
+  exchangeRateId?: number | null;
+  exchangeRateRate: number;
+  sizes: SemiExportPurchaseRecordSize[];
+  createdAt: string;
+}
+
 interface SortingSizeRow {
   size: string;
   weight: string;
@@ -43,25 +68,25 @@ interface SortingSizeRow {
 }
 
 const sortingSizeRows: SortingSizeRow[] = [
-  { size: "6", weight: "", price: "1000" },
-  { size: "7", weight: "", price: "2000" },
-  { size: "8", weight: "", price: "3000" },
-  { size: "9", weight: "", price: "4000" },
-  { size: "10", weight: "", price: "5000" },
-  { size: "10B", weight: "", price: "6000" },
-  { size: "12", weight: "", price: "7000" },
-  { size: "14", weight: "", price: "8000" },
-  { size: "16", weight: "", price: "9000" },
-  { size: "18", weight: "", price: "10000" },
-  { size: "20", weight: "", price: "11000" },
-  { size: "22", weight: "", price: "12000" },
-  { size: "24", weight: "", price: "13000" },
-  { size: "26", weight: "", price: "14000" },
-  { size: "28", weight: "", price: "15000" },
-  { size: "Bar", weight: "", price: "16000" },
-  { size: "Return", weight: "", price: "17000" },
-  { size: "Spoilage", weight: "", price: "18000" },
-  { size: "Lost", weight: "", price: "" },
+  { size: "6", weight: "", price: "0" },
+  { size: "7", weight: "", price: "0" },
+  { size: "8", weight: "", price: "0" },
+  { size: "9", weight: "", price: "0" },
+  { size: "10", weight: "", price: "0" },
+  { size: "10B", weight: "", price: "0" },
+  { size: "12", weight: "", price: "0" },
+  { size: "14", weight: "", price: "0" },
+  { size: "16", weight: "", price: "0" },
+  { size: "18", weight: "", price: "0" },
+  { size: "20", weight: "", price: "0" },
+  { size: "22", weight: "", price: "0" },
+  { size: "24", weight: "", price: "0" },
+  { size: "26", weight: "", price: "0" },
+  { size: "28", weight: "", price: "0" },
+  { size: "Bar", weight: "", price: "0" },
+  { size: "Return", weight: "", price: "0" },
+  { size: "Spoilage", weight: "", price: "0" },
+  { size: "Lost", weight: "", price: "0" },
 ];
 
 const SemiExportPurchase: React.FC = () => {
@@ -70,16 +95,27 @@ const SemiExportPurchase: React.FC = () => {
   const [processingList, setProcessingList] = useState<
     SemiExportPurchaseProcessing[]
   >([]);
+  const [sortingHistory, setSortingHistory] = useState<
+    SemiExportPurchaseRecord[]
+  >([]);
   const [workers, setWorkers] = useState<SingleDoubleDrawnWorker[]>([]);
   const [loading, setLoading] = useState(true);
   const [processingLoading, setProcessingLoading] = useState(true);
+  const [historyLoading, setHistoryLoading] = useState(true);
+  const [activeTab, setActiveTab] = useState<"processing" | "history">(
+    "processing",
+  );
   const [showModal, setShowModal] = useState(false);
   const [showSortingRecordsModal, setShowSortingRecordsModal] = useState(false);
   const [selectedSortingRecord, setSelectedSortingRecord] =
     useState<SemiExportPurchaseProcessing | null>(null);
+  const [showHistoryModal, setShowHistoryModal] = useState(false);
+  const [selectedHistoryRecord, setSelectedHistoryRecord] =
+    useState<SemiExportPurchaseRecord | null>(null);
   const [saving, setSaving] = useState(false);
   const [activeRates, setActiveRates] = useState<ExchangeRate[]>([]);
   const [sortingExchangeRate, setSortingExchangeRate] = useState("0");
+  const [sortingWorkerFees, setSortingWorkerFees] = useState("");
   const [sortingSizes, setSortingSizes] =
     useState<SortingSizeRow[]>(sortingSizeRows);
   const [assignWeights, setAssignWeights] = useState<Record<number, string>>(
@@ -93,6 +129,18 @@ const SemiExportPurchase: React.FC = () => {
     processingList.map((p) => p.semiExportPurchaseId),
   );
   const availablePurchases = purchases.filter((p) => !assignedIds.has(p.id));
+  const savedProcessingIds = new Set(
+    sortingHistory.map((record) => record.semiExportPurchaseProcessingId),
+  );
+  const visibleProcessingList = processingList.filter(
+    (item) => !savedProcessingIds.has(item.id),
+  );
+  const activeCnyToMmkRate = activeRates.find(
+    (rate) =>
+      rate.fromCurrency?.toUpperCase() === "CNY" &&
+      rate.toCurrency?.toUpperCase() === "MMK" &&
+      rate.activeStatus,
+  );
 
   const getAssignWeight = (id: number) =>
     parseFloat(assignWeights[id] || "0") || 0;
@@ -132,19 +180,15 @@ const SemiExportPurchase: React.FC = () => {
     loadPurchases();
     loadWorkers();
     loadProcessingList();
+    loadSortingHistory();
     loadActiveRates();
   }, []);
 
   useEffect(() => {
-    const cnyToMmkRate = activeRates.find(
-      (rate) =>
-        rate.fromCurrency?.toUpperCase() === "CNY" &&
-        rate.toCurrency?.toUpperCase() === "MMK" &&
-        rate.activeStatus,
+    setSortingExchangeRate(
+      activeCnyToMmkRate ? activeCnyToMmkRate.rate.toString() : "0",
     );
-
-    setSortingExchangeRate(cnyToMmkRate ? cnyToMmkRate.rate.toString() : "0");
-  }, [activeRates]);
+  }, [activeCnyToMmkRate]);
 
   const loadWorkers = async () => {
     try {
@@ -164,6 +208,18 @@ const SemiExportPurchase: React.FC = () => {
       console.error("Failed to load processing list:", error);
     } finally {
       setProcessingLoading(false);
+    }
+  };
+
+  const loadSortingHistory = async () => {
+    try {
+      setHistoryLoading(true);
+      const data = await semiExportPurchaseRecordsAPI.getAll();
+      setSortingHistory(data);
+    } catch (error) {
+      console.error("Failed to load sorting history:", error);
+    } finally {
+      setHistoryLoading(false);
     }
   };
 
@@ -269,23 +325,461 @@ const SemiExportPurchase: React.FC = () => {
   const getSortingAmount = (row: SortingSizeRow) =>
     (parseFloat(row.weight) || 0) * (parseFloat(row.price) || 0);
 
+  const getCalculatedSortingLostWeight = () => {
+    if (!selectedSortingRecord) return 0;
+
+    const usedWeight = sortingSizes
+      .filter((row) => row.size !== "Lost")
+      .reduce((sum, row) => sum + (parseFloat(row.weight) || 0), 0);
+
+    return Math.max(0, selectedSortingRecord.assignWeight - usedWeight);
+  };
+
+  const escapePrintText = (value: string | number) =>
+    String(value)
+      .replace(/&/g, "&amp;")
+      .replace(/</g, "&lt;")
+      .replace(/>/g, "&gt;")
+      .replace(/"/g, "&quot;")
+      .replace(/'/g, "&#039;");
+
   const formatSortingSize = (size: string) => {
     if (["Return", "Spoilage", "Lost"].includes(size)) return size;
     return `Size ${size}`;
   };
 
-  const handleSortingSaveAndPrint = () => {
-    window.print();
+  const printSortingPurchasePdf = (
+    record:
+      | SemiExportPurchaseProcessing
+      | SemiExportPurchaseRecord
+      | null = selectedSortingRecord,
+    rows: SortingSizeRow[] = sortingSizes,
+    rateValue: string = sortingExchangeRate,
+  ) => {
+    if (!record) return;
+
+    const iframe = document.createElement("iframe");
+    iframe.style.position = "fixed";
+    iframe.style.right = "0";
+    iframe.style.bottom = "0";
+    iframe.style.width = "0";
+    iframe.style.height = "0";
+    iframe.style.border = "none";
+    document.body.appendChild(iframe);
+
+    const doc = iframe.contentWindow?.document;
+    if (!doc) return;
+
+    const sortedSizes = [
+      "Bar",
+      "28",
+      "26",
+      "24",
+      "22",
+      "20",
+      "18",
+      "16",
+      "14",
+      "12",
+      "10",
+      "10B",
+      "9",
+      "8",
+      "7",
+      "6",
+      "Return",
+      "Spoilage",
+    ];
+    const sizeMap = new Map(rows.map((row) => [row.size, row]));
+    const rate = parseFloat(rateValue) || 0;
+    const totalWt = rows
+      .filter((row) => row.size !== "Lost")
+      .reduce((sum, row) => sum + (parseFloat(row.weight) || 0), 0);
+    let totalAmt = 0;
+    let idx = 1;
+
+    const rowsHtml = sortedSizes
+      .map((size) => {
+        const row = sizeMap.get(size);
+        const weight = parseFloat(row?.weight || "0") || 0;
+        const price = parseFloat(row?.price || "0") || 0;
+        const amount = weight * price;
+        if (weight > 0 && price > 0) totalAmt += amount;
+
+        const displaySize = size === "Bar" ? "B" : size;
+
+        return `
+          <tr>
+            <td style="text-align: center; border: 1px solid black; padding: 4px;">${idx++}</td>
+            <td style="text-align: center; border: 1px solid black; padding: 4px;">${escapePrintText(displaySize)}</td>
+            <td style="text-align: right; border: 1px solid black; padding: 4px;">${weight > 0 ? `${weight.toFixed(3)} viss` : "0"}</td>
+            <td style="text-align: right; border: 1px solid black; padding: 4px;">${price > 0 ? price.toFixed(2) : "0"}</td>
+            <td style="text-align: right; border: 1px solid black; padding: 4px;">${amount > 0 ? amount.toFixed(4) : "0"}</td>
+          </tr>
+        `;
+      })
+      .join("");
+
+    const totalMmk = totalAmt * rate;
+    const lostRow = sizeMap.get("Lost");
+    const lostWeight =
+      parseFloat(lostRow?.weight || "0") ||
+      Math.max(0, record.assignWeight - totalWt);
+    const receiveDate = formatDateTime(record.receiveDateTime);
+    const printDate = new Date().toLocaleDateString("en-GB", {
+      day: "numeric",
+      month: "short",
+      year: "numeric",
+    });
+
+    const outputHtml = `
+      <html>
+        <head>
+          <style>
+            @media print {
+              @page { margin: 0; }
+              body { font-family: sans-serif; padding: 10mm; }
+            }
+            .header { text-align: center; margin-bottom: 20px; }
+            .header h3 { margin: 2px; }
+            .header h2 { margin: 5px; }
+            .header p { margin: 2px; font-size: 14px; }
+            table { width: 100%; border-collapse: collapse; margin-top: 10px; font-size: 13px; }
+            th, td { border: 1px solid black; padding: 6px; }
+          </style>
+        </head>
+        <body>
+          <div class="header">
+            <h3>AKZ</h3>
+            <h2 style="font-size: 24px;">အောင်ကြွယ်စင်</h2>
+            <h3 style="font-size: 18px;">ဆံပင်ရောင်းဝယ်ရေး</h3>
+            <p>ဖုန်း - 09 400900608 / 09 400900609</p>
+          </div>
+
+          <table class="info-table" style="  margin: 0 0 15px; table-layout: fixed;">
+            <colgroup>
+              <col style="width: 18%;" />
+              <col style="width: 40%;" />
+              <col style="width: 17%;" />
+              <col style="width: 25%;" />
+            </colgroup>
+            <tr>
+              <td style="border: none; padding: 8px 8px; vertical-align: top; line-height: 1.55;">အမည်<br/>ခုံတင်ချိန်</td>
+              <td style="border: none; padding: 8px 8px; vertical-align: top; line-height: 1.55;">- ${escapePrintText(record.customerName)} (${escapePrintText(record.color)})<br/>- ${totalWt.toFixed(3)} viss</td>
+              <td style="border: none; padding: 8px 8px; vertical-align: top; line-height: 1.55;">ကုန်အပ်ရက်<br/>နေ့စွဲ</td>
+              <td style="border: none; padding: 8px 8px; vertical-align: top; line-height: 1.55;">${escapePrintText(receiveDate)}<br/>${escapePrintText(printDate)}</td>
+            </tr>
+          </table>
+
+          <table>
+            <thead>
+              <tr>
+                <th>စဉ်</th>
+                <th>ဆိုဒ်</th>
+                <th>အလေးချိန်</th>
+                <th>နှုန်း</th>
+                <th>သင့်ငွေ</th>
+              </tr>
+            </thead>
+            <tbody>
+              ${rowsHtml}
+              <tr>
+                <td colspan="2" style="text-align: right; border: 1px solid black; padding: 6px;">စုစုပေါင်း</td>
+                <td style="text-align: right; border: 1px solid black; padding: 6px;">${totalWt.toFixed(3)} viss</td>
+                <td style="border: 1px solid black;"></td>
+                <td style="text-align: right; border: 1px solid black; padding: 6px; font-weight: bold;">¥${totalAmt.toFixed(2)}</td>
+              </tr>
+            </tbody>
+          </table>
+
+          <div style="margin-top: 20px; font-size: 14px;">
+            <div style="margin-bottom: 8px;"><strong>Exchange Rate:</strong> 1 CNY = ${rate.toLocaleString()} MMK</div>
+            <div style="margin-bottom: 8px;"><strong>Total Amount (CNY):</strong> ¥${totalAmt.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</div>
+            <div style="margin-bottom: 8px;"><strong>Total Amount (MMK):</strong> ${Math.round(totalMmk).toLocaleString()} MMK</div>
+            <div style="margin-top: 15px; padding-top: 15px; border-top: 1px dashed black;"><strong>Lost Weight:</strong> ${lostWeight.toFixed(3)} viss</div>
+          </div>
+        </body>
+      </html>
+    `;
+
+    doc.open();
+    doc.write(outputHtml);
+    doc.close();
+
+    setTimeout(() => {
+      iframe.contentWindow?.focus();
+      iframe.contentWindow?.print();
+      setTimeout(() => document.body.removeChild(iframe), 1000);
+    }, 500);
+  };
+
+  const handleSortingSaveAndPrint = async () => {
+    if (!selectedSortingRecord) {
+      alert("Please select a sorting record first.");
+      return;
+    }
+
+    if (!activeCnyToMmkRate || parseFloat(sortingExchangeRate || "0") <= 0) {
+      alert("Active CNY to MMK exchange rate is required.");
+      return;
+    }
+
+    try {
+      setSaving(true);
+      const printRecord = selectedSortingRecord;
+      const printRows = sortingSizes.map((row) => {
+        const weight =
+          row.size === "Lost"
+            ? getCalculatedSortingLostWeight()
+            : parseFloat(row.weight) || 0;
+
+        return {
+          size: row.size,
+          weight: weight.toString(),
+          price: row.price,
+        };
+      });
+      const printRate = sortingExchangeRate;
+      const savedRecord = await semiExportPurchaseRecordsAPI.create({
+        semiExportPurchaseProcessingId: selectedSortingRecord.id,
+        exchangeRateId: activeCnyToMmkRate.id,
+        exchangeRateRate: parseFloat(sortingExchangeRate) || 0,
+        workerFees: parseFloat(sortingWorkerFees) || 0,
+        sizes: printRows.map((row) => ({
+          size: row.size,
+          weight: parseFloat(row.weight) || 0,
+          price: parseFloat(row.price) || 0,
+        })),
+      });
+
+      setSortingHistory((prev) => [savedRecord, ...prev]);
+      closeSortingRecordsModal();
+      setTimeout(() => {
+        printSortingPurchasePdf(printRecord, printRows, printRate);
+      }, 250);
+    } catch (error) {
+      console.error("Failed to save semi export purchase record:", error);
+      alert("Failed to save semi export purchase record");
+    } finally {
+      setSaving(false);
+    }
   };
 
   const openSortingRecordsModal = (record: SemiExportPurchaseProcessing) => {
     setSelectedSortingRecord(record);
+    setSortingSizes(getSortingRowsWithLatestPrices());
+    setSortingWorkerFees("");
     setShowSortingRecordsModal(true);
   };
 
   const closeSortingRecordsModal = () => {
     setShowSortingRecordsModal(false);
     setSelectedSortingRecord(null);
+    setSortingWorkerFees("");
+  };
+
+  const openHistoryModal = (record: SemiExportPurchaseRecord) => {
+    setSelectedHistoryRecord(record);
+    setShowHistoryModal(true);
+  };
+
+  const closeHistoryModal = () => {
+    setShowHistoryModal(false);
+    setSelectedHistoryRecord(null);
+  };
+
+  const getHistorySortingRows = (record: SemiExportPurchaseRecord) =>
+    sortingSizeRows.map((row) => {
+      const savedRow = record.sizes.find((size) => size.size === row.size);
+      return {
+        size: row.size,
+        weight: savedRow ? savedRow.weight.toString() : "",
+        price: savedRow ? savedRow.price.toString() : row.price,
+      };
+    });
+
+  const getSortingRowsWithLatestPrices = () => {
+    const latestRecord = sortingHistory[0];
+
+    if (!latestRecord) {
+      return sortingSizeRows.map((row) => ({ ...row, weight: "", price: "" }));
+    }
+
+    return sortingSizeRows.map((row) => {
+      if (row.size === "Lost") return { ...row, weight: "" };
+
+      const latestSize = latestRecord.sizes.find(
+        (size) => size.size === row.size,
+      );
+
+      return {
+        ...row,
+        weight: "",
+        price: latestSize ? latestSize.price.toString() : row.price,
+      };
+    });
+  };
+
+  const getHistoryTotalWeight = (record: SemiExportPurchaseRecord) =>
+    record.sizes
+      .filter((row) => row.size !== "Lost")
+      .reduce((sum, row) => sum + (row.weight || 0), 0);
+
+  const getHistorySortingLostWeight = (record: SemiExportPurchaseRecord) =>
+    record.sizes.find((row) => row.size === "Lost")?.weight || 0;
+
+  const renderProcessingTable = () => {
+    if (processingLoading) {
+      return (
+        <div className="sep-empty-state">Loading processing records...</div>
+      );
+    }
+
+    if (visibleProcessingList.length === 0) {
+      return (
+        <div className="sep-empty-state">
+          <Package size={40} />
+          <p>No processing records found</p>
+        </div>
+      );
+    }
+
+    return (
+      <div className="table-responsive sep-table-wrap">
+        <table className="sep-data-table">
+          <thead>
+            <tr>
+              <th>Customer</th>
+              <th>Contact</th>
+              <th>Color</th>
+              <th>Receive DateTime</th>
+              <th>Worker</th>
+              <th className="sep-num">Assign weight</th>
+              <th className="sep-num">Lost weight</th>
+              <th>Assign Date</th>
+            </tr>
+          </thead>
+          <tbody>
+            {visibleProcessingList.map((item) => (
+              <tr
+                key={item.id}
+                className="sep-sorting-record-row"
+                onClick={() => openSortingRecordsModal(item)}
+                role="button"
+                tabIndex={0}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter" || e.key === " ") {
+                    e.preventDefault();
+                    openSortingRecordsModal(item);
+                  }
+                }}
+                title="Open sorting record details"
+              >
+                <td className="sep-primary-cell">{item.customerName}</td>
+                <td>{item.contact}</td>
+                <td>{item.color}</td>
+                <td>{formatDateTime(item.receiveDateTime)}</td>
+                <td className="sep-primary-cell">{item.workerName}</td>
+                <td className="sep-num sep-blue-cell">
+                  {item.assignWeight.toFixed(3)}
+                </td>
+                <td
+                  className={`sep-num ${item.lostWeight > 0 ? "sep-loss-cell" : ""}`}
+                >
+                  {item.lostWeight.toFixed(3)}
+                </td>
+                <td>{formatDateTime(item.createdAt)}</td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+    );
+  };
+
+  const renderHistoryTable = () => {
+    if (historyLoading) {
+      return <div className="sep-empty-state">Loading sorting history...</div>;
+    }
+
+    if (sortingHistory.length === 0) {
+      return (
+        <div className="sep-empty-state">
+          <Package size={40} />
+          <p>No sorting history found</p>
+        </div>
+      );
+    }
+
+    return (
+      <div className="table-responsive sep-table-wrap">
+        <table className="sep-data-table">
+          <thead>
+            <tr>
+              <th>Customer</th>
+              <th>Contact</th>
+              <th>Color</th>
+              <th>Worker</th>
+              <th>Receive DateTime</th>
+              <th className="sep-num">Total weight</th>
+              <th className="sep-num">Assign weight</th>
+              <th className="sep-num">Lost weight</th>
+              <th className="sep-num">Sorting Lost weight</th>
+              <th className="sep-num">Worker fees</th>
+              <th className="sep-num">Rate</th>
+              <th>Saved Date</th>
+            </tr>
+          </thead>
+          <tbody>
+            {sortingHistory.map((record) => (
+              <tr
+                key={record.id}
+                className="sep-sorting-record-row"
+                onClick={() => openHistoryModal(record)}
+                role="button"
+                tabIndex={0}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter" || e.key === " ") {
+                    e.preventDefault();
+                    openHistoryModal(record);
+                  }
+                }}
+                title="Open sorting history details"
+              >
+                <td className="sep-primary-cell">{record.customerName}</td>
+                <td>{record.contact}</td>
+                <td>{record.color}</td>
+                <td className="sep-primary-cell">
+                  {record.workerName || "---"}
+                </td>
+                <td>{formatDateTime(record.receiveDateTime)}</td>
+                <td className="sep-num sep-blue-cell">
+                  {getHistoryTotalWeight(record).toFixed(3)}
+                </td>
+                <td className="sep-num">{record.assignWeight.toFixed(3)}</td>
+                <td
+                  className={`sep-num ${record.lostWeight > 0 ? "sep-loss-cell" : ""}`}
+                >
+                  {record.lostWeight.toFixed(3)}
+                </td>
+                <td
+                  className={`sep-num ${getHistorySortingLostWeight(record) > 0 ? "sep-loss-cell" : ""}`}
+                >
+                  {getHistorySortingLostWeight(record).toFixed(3)}
+                </td>
+                <td className="sep-num">
+                  {(record.workerFees || 0).toLocaleString()}
+                </td>
+                <td className="sep-num">
+                  {record.exchangeRateRate.toLocaleString()}
+                </td>
+                <td>{formatDateTime(record.createdAt)}</td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+    );
   };
 
   return (
@@ -597,254 +1091,44 @@ const SemiExportPurchase: React.FC = () => {
       {/* Right Main Content */}
       <main className="rf-main">
         <div className="rf-main-card">
-          <div className="rf-section-header" style={{ marginBottom: "20px" }}>
-            <h2
-              style={{
-                fontSize: "18px",
-                fontWeight: "700",
-                color: "#0f172a",
-                margin: 0,
-              }}
-            >
-              Sorting Records
-            </h2>
+          <div className="rf-main-header">
+            <div className="rf-header-left">
+              <div className="rf-tab-group">
+                <button
+                  type="button"
+                  onClick={() => setActiveTab("processing")}
+                  className={`rf-tab rf-tab-green ${activeTab === "processing" ? "rf-tab-active" : ""}`}
+                >
+                  <span className="rf-tab-title">Processing</span>
+                  <span className="rf-tab-sub">
+                    Semi export purchase processings
+                  </span>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setActiveTab("history")}
+                  className={`rf-tab ${activeTab === "history" ? "rf-tab-active" : ""}`}
+                >
+                  <span className="rf-tab-title">Sorting History</span>
+                  <span className="rf-tab-sub">Saved purchase records</span>
+                </button>
+              </div>
+            </div>
+
+            <div className="rf-header-right">
+              <span className="rf-count-badge">
+                {activeTab === "processing"
+                  ? `${visibleProcessingList.length} Processing`
+                  : `${sortingHistory.length} Saved`}
+              </span>
+            </div>
           </div>
 
-          {processingLoading ? (
-            <div
-              style={{ padding: "24px", color: "#94a3b8", textAlign: "center" }}
-            >
-              Loading sorting records...
-            </div>
-          ) : processingList.length === 0 ? (
-            <div
-              style={{ padding: "24px", color: "#94a3b8", textAlign: "center" }}
-            >
-              <Package
-                size={40}
-                style={{
-                  color: "#cbd5e1",
-                  marginBottom: "16px",
-                  display: "inline-block",
-                }}
-              />
-              <p>No sorting records found</p>
-            </div>
-          ) : (
-            <div
-              className="table-responsive"
-              style={{ overflowX: "auto", borderRadius: "8px" }}
-            >
-              <table
-                className="table"
-                style={{ width: "100%", borderCollapse: "collapse" }}
-              >
-                <thead style={{ background: "#f8fafc" }}>
-                  <tr>
-                    <th
-                      style={{
-                        padding: "12px",
-                        textAlign: "left",
-                        fontSize: "12px",
-                        fontWeight: "600",
-                        color: "#64748b",
-                        borderBottom: "1px solid #e2e8f0",
-                      }}
-                    >
-                      Customer
-                    </th>
-                    <th
-                      style={{
-                        padding: "12px",
-                        textAlign: "left",
-                        fontSize: "12px",
-                        fontWeight: "600",
-                        color: "#64748b",
-                        borderBottom: "1px solid #e2e8f0",
-                      }}
-                    >
-                      Contact
-                    </th>
-                    <th
-                      style={{
-                        padding: "12px",
-                        textAlign: "left",
-                        fontSize: "12px",
-                        fontWeight: "600",
-                        color: "#64748b",
-                        borderBottom: "1px solid #e2e8f0",
-                      }}
-                    >
-                      Color
-                    </th>
-                    <th
-                      style={{
-                        padding: "12px",
-                        textAlign: "left",
-                        fontSize: "12px",
-                        fontWeight: "600",
-                        color: "#64748b",
-                        borderBottom: "1px solid #e2e8f0",
-                      }}
-                    >
-                      Receive DateTime
-                    </th>
-                    <th
-                      style={{
-                        padding: "12px",
-                        textAlign: "left",
-                        fontSize: "12px",
-                        fontWeight: "600",
-                        color: "#64748b",
-                        borderBottom: "1px solid #e2e8f0",
-                      }}
-                    >
-                      Worker
-                    </th>
-                    <th
-                      style={{
-                        padding: "12px",
-                        textAlign: "right",
-                        fontSize: "12px",
-                        fontWeight: "600",
-                        color: "#64748b",
-                        borderBottom: "1px solid #e2e8f0",
-                      }}
-                    >
-                      Assign weight
-                    </th>
-                    <th
-                      style={{
-                        padding: "12px",
-                        textAlign: "right",
-                        fontSize: "12px",
-                        fontWeight: "600",
-                        color: "#64748b",
-                        borderBottom: "1px solid #e2e8f0",
-                      }}
-                    >
-                      Lost weight
-                    </th>
-                    <th
-                      style={{
-                        padding: "12px",
-                        textAlign: "left",
-                        fontSize: "12px",
-                        fontWeight: "600",
-                        color: "#64748b",
-                        borderBottom: "1px solid #e2e8f0",
-                      }}
-                    >
-                      Assign Date
-                    </th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {processingList.map((item) => (
-                    <tr
-                      key={item.id}
-                      className="sep-sorting-record-row"
-                      onClick={() => openSortingRecordsModal(item)}
-                      role="button"
-                      tabIndex={0}
-                      onKeyDown={(e) => {
-                        if (e.key === "Enter" || e.key === " ") {
-                          e.preventDefault();
-                          openSortingRecordsModal(item);
-                        }
-                      }}
-                      title="Open sorting record details"
-                    >
-                      <td
-                        style={{
-                          padding: "12px",
-                          fontSize: "13px",
-                          color: "#0f172a",
-                          borderBottom: "1px solid #f1f5f9",
-                        }}
-                      >
-                        {item.customerName}
-                      </td>
-                      <td
-                        style={{
-                          padding: "12px",
-                          fontSize: "13px",
-                          color: "#64748b",
-                          borderBottom: "1px solid #f1f5f9",
-                        }}
-                      >
-                        {item.contact}
-                      </td>
-                      <td
-                        style={{
-                          padding: "12px",
-                          fontSize: "13px",
-                          color: "#64748b",
-                          borderBottom: "1px solid #f1f5f9",
-                        }}
-                      >
-                        {item.color}
-                      </td>
-                      <td
-                        style={{
-                          padding: "12px",
-                          fontSize: "12px",
-                          color: "#64748b",
-                          borderBottom: "1px solid #f1f5f9",
-                        }}
-                      >
-                        {formatDateTime(item.receiveDateTime)}
-                      </td>
-                      <td
-                        style={{
-                          padding: "12px",
-                          fontSize: "13px",
-                          color: "#0f172a",
-                          borderBottom: "1px solid #f1f5f9",
-                        }}
-                      >
-                        {item.workerName}
-                      </td>
-                      <td
-                        style={{
-                          padding: "12px",
-                          fontSize: "13px",
-                          color: "#2563eb",
-                          fontWeight: "600",
-                          textAlign: "right",
-                          borderBottom: "1px solid #f1f5f9",
-                        }}
-                      >
-                        {item.assignWeight.toFixed(3)}
-                      </td>
-                      <td
-                        style={{
-                          padding: "12px",
-                          fontSize: "13px",
-                          color: item.lostWeight > 0 ? "#ef4444" : "#64748b",
-                          fontWeight: "600",
-                          textAlign: "right",
-                          borderBottom: "1px solid #f1f5f9",
-                        }}
-                      >
-                        {item.lostWeight.toFixed(3)}
-                      </td>
-                      <td
-                        style={{
-                          padding: "12px",
-                          fontSize: "12px",
-                          color: "#94a3b8",
-                          borderBottom: "1px solid #f1f5f9",
-                        }}
-                      >
-                        {formatDateTime(item.createdAt)}
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          )}
+          <div className="rf-main-content">
+            {activeTab === "processing"
+              ? renderProcessingTable()
+              : renderHistoryTable()}
+          </div>
         </div>
       </main>
 
@@ -1171,6 +1455,21 @@ const SemiExportPurchase: React.FC = () => {
             </div>
 
             <div className="sep-rate-panel">
+              <label htmlFor="sep-worker-name">Worker:</label>
+              <input
+                id="sep-worker-name"
+                type="text"
+                value={selectedSortingRecord.workerName || ""}
+                readOnly
+              />
+              <label htmlFor="sep-worker-fees">Worker Fees:</label>
+              <input
+                id="sep-worker-fees"
+                type="number"
+                value={sortingWorkerFees}
+                placeholder="0"
+                onChange={(e) => setSortingWorkerFees(e.target.value)}
+              />
               <label htmlFor="sep-sorting-rate">CNY to MMK Rate:</label>
               <input
                 id="sep-sorting-rate"
@@ -1187,8 +1486,12 @@ const SemiExportPurchase: React.FC = () => {
 
               <div className="sep-size-card">
                 <div className="sep-size-card-header">
-                  <button type="button" onClick={handleSortingSaveAndPrint}>
-                    Save and Print
+                  <button
+                    type="button"
+                    onClick={handleSortingSaveAndPrint}
+                    disabled={saving}
+                  >
+                    {saving ? "Saving..." : "Save and Print"}
                   </button>
                 </div>
 
@@ -1224,7 +1527,13 @@ const SemiExportPurchase: React.FC = () => {
                                 type="number"
                                 step="0.001"
                                 placeholder="0.000"
-                                value={row.weight}
+                                value={
+                                  row.size === "Lost"
+                                    ? getCalculatedSortingLostWeight().toFixed(
+                                        3,
+                                      )
+                                    : row.weight
+                                }
                                 disabled={row.size === "Lost"}
                                 onChange={(e) =>
                                   updateSortingSize(
@@ -1240,6 +1549,7 @@ const SemiExportPurchase: React.FC = () => {
                                 <input
                                   type="number"
                                   value={row.price}
+                                  placeholder="0.000"
                                   onChange={(e) =>
                                     updateSortingSize(
                                       row.size,
@@ -1268,6 +1578,193 @@ const SemiExportPurchase: React.FC = () => {
                           </tr>
                         );
                       })}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            </section>
+          </div>
+        </div>
+      )}
+
+      {showHistoryModal && selectedHistoryRecord && (
+        <div className="sep-sorting-modal-overlay" onClick={closeHistoryModal}>
+          <div
+            className="sep-sorting-modal"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <button
+              type="button"
+              className="sep-sorting-modal-close"
+              onClick={closeHistoryModal}
+              title="Close"
+            >
+              <X size={18} />
+            </button>
+
+            <div className="sep-record-summary">
+              <div className="sep-record-summary-main">
+                <span className="sep-record-eyebrow">Sorting History</span>
+                <h3>{selectedHistoryRecord.customerName}</h3>
+              </div>
+              <div className="sep-record-summary-grid">
+                <div>
+                  <span>Contact</span>
+                  <strong>{selectedHistoryRecord.contact || "---"}</strong>
+                </div>
+                <div>
+                  <span>Color</span>
+                  <strong>{selectedHistoryRecord.color || "---"}</strong>
+                </div>
+                <div>
+                  <span>Receive DateTime</span>
+                  <strong>
+                    {formatDateTime(selectedHistoryRecord.receiveDateTime)}
+                  </strong>
+                </div>
+                <div>
+                  <span>Assign Weight</span>
+                  <strong>
+                    {selectedHistoryRecord.assignWeight.toFixed(3)} viss
+                  </strong>
+                </div>
+                <div>
+                  <span>Lost Weight</span>
+                  <strong
+                    className={
+                      selectedHistoryRecord.lostWeight > 0
+                        ? "sep-record-loss"
+                        : ""
+                    }
+                  >
+                    {selectedHistoryRecord.lostWeight.toFixed(3)} viss
+                  </strong>
+                </div>
+                <div>
+                  <span>Sorting Lost Weight</span>
+                  <strong
+                    className={
+                      getHistorySortingLostWeight(selectedHistoryRecord) > 0
+                        ? "sep-record-loss"
+                        : ""
+                    }
+                  >
+                    {getHistorySortingLostWeight(selectedHistoryRecord).toFixed(
+                      3,
+                    )}{" "}
+                    viss
+                  </strong>
+                </div>
+              </div>
+            </div>
+
+            <div className="sep-rate-panel">
+              <label>Worker:</label>
+              <input
+                type="text"
+                value={selectedHistoryRecord.workerName || "---"}
+                readOnly
+              />
+              <label>Worker Fees:</label>
+              <input
+                type="number"
+                value={selectedHistoryRecord.workerFees || 0}
+                readOnly
+              />
+              <label>CNY to MMK Rate:</label>
+              <input
+                type="number"
+                value={selectedHistoryRecord.exchangeRateRate}
+                readOnly
+              />
+              <span>MMK</span>
+            </div>
+
+            <section className="sep-size-section">
+              <h3>Color Categories &amp; Sizes</h3>
+
+              <div className="sep-size-card">
+                <div className="sep-size-card-header">
+                  <button
+                    type="button"
+                    onClick={() =>
+                      printSortingPurchasePdf(
+                        selectedHistoryRecord,
+                        getHistorySortingRows(selectedHistoryRecord),
+                        selectedHistoryRecord.exchangeRateRate.toString(),
+                      )
+                    }
+                  >
+                    Print
+                  </button>
+                </div>
+
+                <div className="sep-size-table-wrap">
+                  <table className="sep-size-table">
+                    <thead>
+                      <tr>
+                        <th>SIZE</th>
+                        <th>WEIGHT (VISS)</th>
+                        <th>PRICE (CNY)</th>
+                        <th className="sep-num">AMOUNT (CNY)</th>
+                        <th className="sep-num sep-mmk-col">AMOUNT (MMK)</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {getHistorySortingRows(selectedHistoryRecord).map(
+                        (row) => {
+                          const amountCny = getSortingAmount(row);
+                          const amountMmk =
+                            amountCny *
+                            (selectedHistoryRecord.exchangeRateRate || 0);
+                          const isSpecial = [
+                            "Return",
+                            "Spoilage",
+                            "Lost",
+                          ].includes(row.size);
+
+                          return (
+                            <tr key={row.size}>
+                              <td
+                                className={isSpecial ? "sep-special-size" : ""}
+                              >
+                                {formatSortingSize(row.size)}
+                              </td>
+                              <td>
+                                <input
+                                  type="number"
+                                  value={row.weight}
+                                  readOnly
+                                />
+                              </td>
+                              <td>
+                                {row.size !== "Lost" && (
+                                  <input
+                                    type="number"
+                                    value={row.price}
+                                    readOnly
+                                  />
+                                )}
+                              </td>
+                              <td className="sep-num">
+                                {row.size === "Lost"
+                                  ? ""
+                                  : amountCny.toLocaleString(undefined, {
+                                      minimumFractionDigits: 2,
+                                      maximumFractionDigits: 2,
+                                    })}
+                              </td>
+                              <td className="sep-num sep-mmk-col">
+                                {row.size === "Lost"
+                                  ? ""
+                                  : amountMmk.toLocaleString(undefined, {
+                                      maximumFractionDigits: 0,
+                                    })}
+                              </td>
+                            </tr>
+                          );
+                        },
+                      )}
                     </tbody>
                   </table>
                 </div>

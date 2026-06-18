@@ -36,6 +36,7 @@ public class AKZDbContext : DbContext
     public DbSet<SemiExportRecord> SemiExportRecords { get; set; }
     public DbSet<SemiExportPurchase> SemiExportPurchases { get; set; }
     public DbSet<SemiExportPurchaseProcessing> SemiExportPurchaseProcessings { get; set; }
+    public DbSet<SemiExportPurchaseRecord> SemiExportPurchaseRecords { get; set; }
     public DbSet<Ledger> Ledgers { get; set; }
     public DbSet<LedgerMarker> LedgerMarkers { get; set; }
     public DbSet<ExchangeRate> ExchangeRates { get; set; }
@@ -349,6 +350,7 @@ public class AKZDbContext : DbContext
         modelBuilder.Entity<SingleDoubleDrawnRecord>().HasQueryFilter(e => e.DeleteFlg == 0);
         modelBuilder.Entity<SingleDoubleDrawnWorker>().HasQueryFilter(e => e.DeleteFlg == 0);
         modelBuilder.Entity<SemiExportRecord>().HasQueryFilter(e => e.DeleteFlg == 0);
+        modelBuilder.Entity<SemiExportPurchaseRecord>().HasQueryFilter(e => e.DeleteFlg == 0);
         modelBuilder.Entity<ExchangeRate>().HasQueryFilter(e => e.DeleteFlg == 0);
         modelBuilder.Entity<Export>().HasQueryFilter(e => e.DeleteFlg == 0);
         modelBuilder.Entity<WashGradingWorker>().HasQueryFilter(e => e.DeleteFlg == 0);
@@ -372,6 +374,24 @@ public class AKZDbContext : DbContext
             .WithMany()
             .HasForeignKey(s => s.SingleDoubleDrawnRecordId)
             .OnDelete(DeleteBehavior.Restrict);
+
+        modelBuilder.Entity<SemiExportPurchaseRecord>()
+            .HasOne(r => r.SemiExportPurchaseProcessing)
+            .WithMany()
+            .HasForeignKey(r => r.SemiExportPurchaseProcessingId)
+            .OnDelete(DeleteBehavior.Restrict);
+
+        modelBuilder.Entity<SemiExportPurchaseRecord>()
+            .HasOne(r => r.SemiExportPurchase)
+            .WithMany()
+            .HasForeignKey(r => r.SemiExportPurchaseId)
+            .OnDelete(DeleteBehavior.Restrict);
+
+        modelBuilder.Entity<SemiExportPurchaseRecord>()
+            .HasOne(r => r.ExchangeRate)
+            .WithMany()
+            .HasForeignKey(r => r.ExchangeRateId)
+            .OnDelete(DeleteBehavior.SetNull);
 
         modelBuilder.Entity<RefinementProcess>()
             .HasOne(r => r.RefinementWorker)

@@ -677,6 +677,17 @@ export const semiExportPurchaseProcessingAPI = {
   },
 };
 
+export const semiExportPurchaseRecordsAPI = {
+  getAll: async (): Promise<any[]> => {
+    const response = await api.get<any[]>("/SemiExportPurchaseRecords");
+    return response.data;
+  },
+  create: async (data: any): Promise<any> => {
+    const response = await api.post<any>("/SemiExportPurchaseRecords", data);
+    return response.data;
+  },
+};
+
 export default api;
 export const cashFlowAPI = {
   getAll: async (placeId?: number): Promise<any[]> => {
