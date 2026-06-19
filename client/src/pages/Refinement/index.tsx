@@ -48,6 +48,7 @@ const Refinement: React.FC = () => {
   const [selectedWorkers, setSelectedWorkers] = useState<
     Record<string, number>
   >({});
+  const [inputCounts, setInputCounts] = useState<Record<string, string>>({});
   const [searchTerm, setSearchTerm] = useState("");
   const [showModal, setShowModal] = useState(false);
   const [showRefinementWorkerManagement, setShowRefinementWorkerManagement] =
@@ -97,9 +98,34 @@ const Refinement: React.FC = () => {
     loadData();
   };
 
+  const handleInputChance = (
+    recordId: number,
+    category: string,
+    value: string,
+  ) => {
+    const key = `${recordId}-${category}`;
+    setInputCounts((prev) => ({
+      ...prev,
+      [key]: value,
+    }));
+  };
+
   const handleInlineSubmit = async (avail: AvailablePurifiedCategory) => {
     const key = `${avail.purifiedRecordId}-${avail.category}`;
-    const count = avail.remainingCount;
+    const inputVal = inputCounts[key];
+    const count = parseFloat(inputVal || "0");
+
+    if (!count || count <= 0) {
+      return showAlert("Validation", "Please enter a valid count", "error");
+    }
+    if (count > avail.remainingCount) {
+      return showAlert(
+        "Validation",
+        `Cannot exceed remaining count (${avail.remainingCount})`,
+        "error",
+      );
+    }
+
     const refinementWorkerId = selectedWorkers[key];
     if (!refinementWorkerId)
       return showAlert(
@@ -109,14 +135,25 @@ const Refinement: React.FC = () => {
       );
     setSubmitting(key);
     try {
+      // Calculate weight based on unit weight if count is less than remaining
+      const weight =
+        count === avail.remainingCount
+          ? avail.remainingWeight
+          : count * avail.unitWeight;
+
       await refinementAPI.create({
         date: new Date().toISOString(),
         purifiedRecordId: avail.purifiedRecordId,
         category: avail.category,
         count,
-        weight: avail.remainingWeight,
+        weight,
         lostWeight: 0,
         refinementWorkerId,
+      });
+      setInputCounts((prev) => {
+        const next = { ...prev };
+        delete next[key];
+        return next;
       });
       await loadData();
     } catch (e: any) {
@@ -372,6 +409,59 @@ const Refinement: React.FC = () => {
                     </select>
                   </div>
 
+                  {/* Bundle Count Input */}
+                  <div
+                    className="rf-input-group"
+                    style={{
+                      display: "flex",
+                      gap: "8px",
+                      marginBottom: "12px",
+                      alignItems: "center",
+                    }}
+                  >
+                    <input
+                      type="number"
+                      placeholder="Bundle count"
+                      className="rf-select"
+                      style={{ flex: 1, minWidth: 0, cursor: "text" }}
+                      value={inputCounts[key] || ""}
+                      onChange={(e) =>
+                        handleInputChance(
+                          avail.purifiedRecordId,
+                          avail.category,
+                          e.target.value,
+                        )
+                      }
+                      min="0"
+                      step="any"
+                      max={avail.remainingCount}
+                    />
+                    <button
+                      type="button"
+                      onClick={() =>
+                        handleInputChance(
+                          avail.purifiedRecordId,
+                          avail.category,
+                          avail.remainingCount.toString(),
+                        )
+                      }
+                      className="rf-max-btn"
+                      style={{
+                        padding: "6px 8px",
+                        fontSize: "12px",
+                        backgroundColor: "#f1f5f9",
+                        border: "1px solid #cbd5e1",
+                        borderRadius: "4px",
+                        cursor: "pointer",
+                        color: "#475569",
+                        fontWeight: 600,
+                        flexShrink: 0,
+                      }}
+                    >
+                      Max
+                    </button>
+                  </div>
+
                   {/* Assign Button */}
                   <button
                     className="rf-assign-btn"
@@ -447,6 +537,7 @@ const Refinement: React.FC = () => {
                     <th>Date</th>
                     <th>Bag Marker</th>
                     <th>Category</th>
+                    <th>Bundle Count</th>
                     <th>Weight (viss)</th>
                     <th>Refinement Worker</th>
                     <th>Worker Fees</th>
@@ -457,6 +548,7 @@ const Refinement: React.FC = () => {
                     <th>Date</th>
                     <th>Bag Marker</th>
                     <th>Category</th>
+                    <th>Bundle Count</th>
                     <th>Output Weight</th>
                     <th>Lost Weight</th>
                     <th>Spoilage Weight</th>
@@ -471,7 +563,7 @@ const Refinement: React.FC = () => {
                 {activeTab === "history" ? (
                   processes.length === 0 ? (
                     <tr>
-                      <td colSpan={6} className="rf-empty-row">
+                      <td colSpan={8} className="rf-empty-row">
                         <History size={44} className="rf-empty-icon" />
                         <span>No refinement processes registered yet</span>
                       </td>
@@ -497,6 +589,7 @@ const Refinement: React.FC = () => {
                             {p.category}
                           </span>
                         </td>
+                        <td>{p.count}</td>
                         <td className="rf-td-weight">{p.weight.toFixed(3)}</td>
                         <td>
                           <div className="rf-worker-cell">
@@ -535,7 +628,7 @@ const Refinement: React.FC = () => {
                   )
                 ) : refinementRecords.length === 0 ? (
                   <tr>
-                    <td colSpan={9} className="rf-empty-row">
+                    <td colSpan={11} className="rf-empty-row">
                       <Package size={44} className="rf-empty-icon" />
                       <span>No refined stock records yet</span>
                     </td>
@@ -557,6 +650,7 @@ const Refinement: React.FC = () => {
                           {p.category}
                         </span>
                       </td>
+                      <td>{p.count}</td>
                       <td className="rf-td-weight rf-green">
                         {p.weight.toFixed(3)}
                       </td>

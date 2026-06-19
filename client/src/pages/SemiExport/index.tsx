@@ -140,23 +140,60 @@ const SemiExport: React.FC = () => {
   const getPurchaseRecordWorkerFees = (record: SemiExportPurchaseRecord) =>
     Number(record.workerFees ?? record.WorkerFees ?? 0) || 0;
 
-  const getPurchaseWorkerFeeBreakdownAmount = (
-    record: SemiExportPurchaseRecord,
-  ) => {
-    const savedFee = getPurchaseRecordWorkerFees(record);
-    if (savedFee > 0) return savedFee;
-
+  const purchaseWorkerFeesInfo = useMemo(() => {
     const records = selectedPurchaseGroup?.purchaseRecords || [];
     const savedTotal = records.reduce(
-      (sum, item) => sum + getPurchaseRecordWorkerFees(item),
+      (sum, record) => sum + getPurchaseRecordWorkerFees(record),
       0,
     );
     const manualTotal = parseFloat(purchaseWorkerFees) || 0;
 
-    if (savedTotal > 0 || manualTotal <= 0 || records.length === 0) return 0;
+    if (savedTotal <= 0) {
+      return {
+        sum: manualTotal,
+        hasSavedFees: false,
+        details:
+          manualTotal > 0
+            ? [
+                {
+                  label: "Manual Override",
+                  name: "Purchase group",
+                  amount: manualTotal,
+                },
+              ]
+            : [],
+      };
+    }
 
-    return manualTotal / records.length;
-  };
+    const detailsMap = new Map<
+      string,
+      { label: string; name: string; amount: number }
+    >();
+
+    records.forEach((record) => {
+      const amount = getPurchaseRecordWorkerFees(record);
+      if (amount <= 0) return;
+
+      const workerName = getPurchaseRecordWorkerName(record);
+      const existing = detailsMap.get(workerName);
+
+      if (existing) {
+        existing.amount += amount;
+      } else {
+        detailsMap.set(workerName, {
+          label: "Sorting",
+          name: workerName,
+          amount,
+        });
+      }
+    });
+
+    return {
+      sum: savedTotal,
+      hasSavedFees: true,
+      details: Array.from(detailsMap.values()),
+    };
+  }, [selectedPurchaseGroup, purchaseWorkerFees]);
 
   const selectedRecords = useMemo(() => {
     if (!selectedMarker) return [];
@@ -1690,9 +1727,10 @@ const SemiExport: React.FC = () => {
                       marginTop: "12px",
                     }}
                   >
-                    {selectedPurchaseGroup.purchaseRecords.map((record) => (
+                    {purchaseWorkerFeesInfo.details.length > 0 ? (
+                      purchaseWorkerFeesInfo.details.map((fi, i) => (
                       <div
-                        key={record.id}
+                        key={`${fi.label}-${fi.name}-${i}`}
                         style={{
                           display: "flex",
                           justifyContent: "space-between",
@@ -1702,19 +1740,31 @@ const SemiExport: React.FC = () => {
                       >
                         <span>
                           <span style={{ fontWeight: "600", color: "#0f172a" }}>
-                            {getPurchaseRecordWorkerName(record)}
+                            {fi.label}
                           </span>{" "}
-                          ({record.customerName}, {record.color}):
+                          ({fi.name}):
                         </span>
                         <span style={{ fontWeight: "600" }}>
-                          {getPurchaseWorkerFeeBreakdownAmount(
-                            record,
-                          ).toLocaleString(undefined, {
+                          {fi.amount.toLocaleString(undefined, {
                             maximumFractionDigits: 2,
                           })}
                         </span>
                       </div>
-                    ))}
+                      ))
+                    ) : (
+                      <div
+                        style={{
+                          fontSize: "13px",
+                          color: "#b45309",
+                          backgroundColor: "#fffbeb",
+                          border: "1px solid #fde68a",
+                          borderRadius: "8px",
+                          padding: "10px 12px",
+                        }}
+                      >
+                        No worker fees were saved for these purchase records.
+                      </div>
+                    )}
                     <div
                       style={{
                         marginTop: "8px",
@@ -1730,16 +1780,9 @@ const SemiExport: React.FC = () => {
                     >
                       <span>Total Calculated Worker Fees:</span>
                       <span style={{ color: "#2563eb" }}>
-                        {selectedPurchaseGroup.purchaseRecords
-                          .reduce(
-                            (sum, record) =>
-                              sum +
-                              getPurchaseWorkerFeeBreakdownAmount(record),
-                            0,
-                          )
-                          .toLocaleString(undefined, {
-                            maximumFractionDigits: 2,
-                          })}
+                        {purchaseWorkerFeesInfo.sum.toLocaleString(undefined, {
+                          maximumFractionDigits: 2,
+                        })}
                       </span>
                     </div>
                   </div>
