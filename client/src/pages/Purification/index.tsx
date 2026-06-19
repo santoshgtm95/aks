@@ -80,6 +80,28 @@ const Purification: React.FC = () => {
     loadData();
   }, []);
 
+  const loadData = async () => {
+    try {
+      const [availData, processData, purifiedData, placeData, purifierData] =
+        await Promise.all([
+          purificationAPI.getAvailableCategories(),
+          purificationAPI.getAll(),
+          purificationAPI.getPurifiedRecords(),
+          placesAPI.getAll(),
+          purifiersAPI.getAll(),
+        ]);
+      setAvailableCategories(availData);
+      setProcesses(processData);
+      setPurifiedRecords(purifiedData);
+      setPlaces(placeData);
+      setPurifiers(purifierData);
+    } catch (error) {
+      console.error("Failed to load data:", error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
   const filteredAvailable = availableCategories.filter(
     (a) =>
       a.productMarker?.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -125,28 +147,6 @@ const Purification: React.FC = () => {
       showAlert("Error", "Purification failed", "error");
     } finally {
       setSubmitting(null);
-    }
-  };
-
-  const loadData = async () => {
-    try {
-      const [availData, processData, purifiedData, placeData, purifierData] =
-        await Promise.all([
-          purificationAPI.getAvailableCategories(),
-          purificationAPI.getAll(),
-          purificationAPI.getPurifiedRecords(),
-          placesAPI.getAll(),
-          purifiersAPI.getAll(),
-        ]);
-      setAvailableCategories(availData);
-      setProcesses(processData);
-      setPurifiedRecords(purifiedData);
-      setPlaces(placeData);
-      setPurifiers(purifierData);
-    } catch (error) {
-      console.error("Failed to load data:", error);
-    } finally {
-      setLoading(false);
     }
   };
 
@@ -244,7 +244,7 @@ const Purification: React.FC = () => {
         editingProcess?.processingRecordId || editingRecord?.processingRecordId;
       const cat = editingProcess?.category || editingRecord?.category;
       const currentRecordCount =
-        editingProcess?.purifyCount || editingRecord?.count || 0;
+        editingProcess?.purifyCount || (editingRecord as any)?.count || 0;
       const avail = availableCategories.find(
         (a) => a.processingRecordId === procId && a.category === cat,
       );
@@ -312,63 +312,35 @@ const Purification: React.FC = () => {
 
   if (loading) {
     return (
-      <div
-        style={{
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "center",
-          height: "60vh",
-          gap: "12px",
-          color: "#64748b",
-        }}
-      >
-        <Loader2 className="animate-spin" size={28} />
-        <span style={{ fontSize: "16px", fontWeight: 500 }}>
-          Loading purification data...
-        </span>
+      <div className="rf-loading fade-in">
+        <Loader2 className="rf-spin" size={28} />
+        <span>Loading purification data...</span>
       </div>
     );
   }
 
   return (
-    <div className="processing-container fade-in">
-      {/* Left Sidebar: Available Categories for Purification */}
-      <aside className="product-sidebar">
-        <h2 className="sidebar-title">
-          <Package size={20} />
-          Select Category to Purify
-        </h2>
+    <div className="rf-container fade-in">
+      <aside className="rf-sidebar">
+        <div className="rf-sidebar-header">
+          <Package size={18} />
+          <span>Select Category to Purify</span>
+        </div>
 
-        <div className="search-box">
-          <Search
-            size={18}
-            style={{
-              position: "absolute",
-              left: "14px",
-              top: "50%",
-              transform: "translateY(-50%)",
-              color: "#94a3b8",
-            }}
-          />
+        <div className="rf-search-box">
+          <Search size={16} className="rf-search-icon" />
           <input
             type="text"
             placeholder="Search bag marker..."
-            className="form-input"
+            className="rf-search-input"
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
           />
         </div>
 
-        <div
-          className="product-list"
-          style={{
-            maxHeight: "calc(100vh - 200px)",
-            overflowY: "auto",
-            paddingRight: "4px",
-          }}
-        >
+        <div className="rf-card-list">
           {filteredAvailable.length === 0 ? (
-            <div className="sidebar-empty-state">
+            <div className="rf-empty-sidebar">
               {searchTerm
                 ? "No matching bags found"
                 : "No available bags for purification"}
@@ -377,60 +349,50 @@ const Purification: React.FC = () => {
             filteredAvailable.map((avail) => {
               const key = `${avail.processingRecordId}-${avail.category}`;
               return (
-                <div key={key} className="product-card premium-sidebar-card">
-                  <div className="card-header">
-                    <div style={{ display: "flex", flexDirection: "column" }}>
-                      <span className="card-marker">{avail.productMarker}</span>
-                      <span className="card-subtext">
+                <div key={key} className="rf-bag-card">
+                  <div className="rf-card-top">
+                    <div className="rf-card-info">
+                      <span className="rf-card-marker">
+                        {avail.productMarker}
+                      </span>
+                      <span className="rf-card-warehouse">
                         {avail.warehouseName || "---"}
                       </span>
                     </div>
                     <span
-                      className={`card-badge category-${avail.category.toLowerCase().replace(".", "")}`}
+                      className={`rf-badge category-${avail.category.toLowerCase().replace(".", "")}`}
                     >
                       {avail.category}
                     </span>
                   </div>
-                  <div
-                    className="card-details"
-                    style={{
-                      marginBottom: "14px",
-                      display: "flex",
-                      justifyContent: "space-between",
-                    }}
-                  >
-                    <div>
-                      <div className="sidebar-details-label">Remaining</div>
-                      <div className="sidebar-details-value">
+
+                  <div className="rf-stats-row">
+                    <div className="rf-stat">
+                      <span className="rf-stat-label">Remaining</span>
+                      <span className="rf-stat-value">
                         {avail.remainingCount}{" "}
-                        <span className="sidebar-details-unit">bundles</span> /{" "}
-                        {avail.remainingWeight.toFixed(3)}{" "}
-                        <span className="sidebar-details-unit">viss</span>
-                      </div>
+                        <span className="rf-stat-unit">bundles</span>
+                      </span>
                     </div>
-                    <div style={{ textAlign: "right" }}>
-                      <div className="sidebar-details-label">Unit Wt</div>
-                      <div
-                        className="sidebar-details-value"
-                        style={{ color: "#3b82f6" }}
-                      >
+                    <div className="rf-stat rf-stat-right">
+                      <span className="rf-stat-label">Weight</span>
+                      <span className="rf-stat-value rf-stat-blue">
+                        {avail.remainingWeight.toFixed(3)}{" "}
+                        <span className="rf-stat-unit">viss</span>
+                      </span>
+                    </div>
+                    <div className="rf-stat rf-stat-right">
+                      <span className="rf-stat-label">Unit Wt</span>
+                      <span className="rf-stat-value rf-stat-purple">
                         {avail.unitWeight.toFixed(4)}
-                      </div>
+                      </span>
                     </div>
                   </div>
 
-                  <div
-                    className="place-selection"
-                    style={{ marginBottom: "12px" }}
-                  >
-                    <div
-                      className="sidebar-details-label"
-                      style={{ marginBottom: "4px" }}
-                    >
-                      place
-                    </div>
+                  <div className="rf-worker-select-wrap">
+                    <label className="rf-field-label">Place</label>
                     <select
-                      className="sidebar-select"
+                      className="rf-select"
                       value={selectedPlaces[key] || ""}
                       onChange={(e) =>
                         setSelectedPlaces((prev) => ({
@@ -451,88 +413,77 @@ const Purification: React.FC = () => {
                   </div>
 
                   <div
-                    className="purify-input-group"
+                    className="rf-input-group"
                     style={{
                       display: "flex",
-                      flexDirection: "column",
                       gap: "8px",
-                      borderTop: "1px solid #f1f5f9",
-                      paddingTop: "12px",
+                      marginBottom: "12px",
+                      alignItems: "center",
                     }}
                   >
-                    <div
+                    <input
+                      type="number"
+                      placeholder="Bundles"
+                      className="rf-select"
+                      style={{ flex: 1, minWidth: 0, cursor: "text" }}
+                      value={inputCounts[key] || ""}
+                      onChange={(e) =>
+                        handleInputChance(
+                          avail.processingRecordId,
+                          avail.category,
+                          e.target.value,
+                        )
+                      }
+                      min="0"
+                      step="any"
+                      max={avail.remainingCount}
+                    />
+                    <button
+                      type="button"
+                      onClick={() =>
+                        handleInputChance(
+                          avail.processingRecordId,
+                          avail.category,
+                          avail.remainingCount.toString(),
+                        )
+                      }
+                      className="rf-max-btn"
                       style={{
-                        display: "flex",
-                        gap: "8px",
-                        alignItems: "center",
+                        padding: "6px 8px",
+                        fontSize: "12px",
+                        backgroundColor: "#f1f5f9",
+                        border: "1px solid #cbd5e1",
+                        borderRadius: "4px",
+                        cursor: "pointer",
+                        color: "#475569",
+                        fontWeight: 600,
+                        flexShrink: 0,
                       }}
                     >
-                      <input
-                        type="number"
-                        placeholder="Bundle count"
-                        className="sidebar-input"
-                        style={{ minWidth: 0, flex: 1 }}
-                        value={inputCounts[key] || ""}
-                        onChange={(e) =>
-                          handleInputChance(
-                            avail.processingRecordId,
-                            avail.category,
-                            e.target.value,
-                          )
-                        }
-                        min="0"
-                        step="any"
-                        max={avail.remainingCount}
-                      />
-                      <button
-                        type="button"
-                        onClick={() =>
-                          handleInputChance(
-                            avail.processingRecordId,
-                            avail.category,
-                            avail.remainingCount.toString(),
-                          )
-                        }
-                        style={{
-                          padding: "6px 8px",
-                          fontSize: "12px",
-                          backgroundColor: "#f1f5f9",
-                          border: "1px solid #cbd5e1",
-                          borderRadius: "4px",
-                          cursor: "pointer",
-                          color: "#475569",
-                          fontWeight: 600,
-                          flexShrink: 0,
-                        }}
-                      >
-                        Max
-                      </button>
-                    </div>
-                    <button
-                      className="sidebar-btn-send"
-                      style={{ width: "100%", padding: "10px 0" }}
-                      onClick={() => handlePurify(avail)}
-                      disabled={submitting === key}
-                    >
-                      {submitting === key ? (
-                        <Loader2 className="animate-spin" size={16} />
-                      ) : (
-                        <div
-                          style={{
-                            display: "flex",
-                            alignItems: "center",
-                            gap: "6px",
-                            justifyContent: "center",
-                          }}
-                        >
-                          <Send size={16} />
-                          <span style={{ fontSize: "14px", fontWeight: 500 }}>
-                            Purify
-                          </span>
-                        </div>
-                      )}
+                      Max
                     </button>
                   </div>
+
+                  <button
+                    className="rf-assign-btn"
+                    style={{
+                      background: "linear-gradient(135deg, #2563eb, #3b82f6)",
+                      boxShadow: "0 3px 10px rgba(59, 130, 246, 0.3)",
+                      borderLeft: "none",
+                    }}
+                    onClick={() => handlePurify(avail)}
+                    disabled={submitting === key}
+                  >
+                    {submitting === key ? (
+                      <>
+                        <Loader2 className="rf-spin" size={16} /> Processing...
+                      </>
+                    ) : (
+                      <>
+                        <Send size={16} /> Purify
+                      </>
+                    )}
+                  </button>
                 </div>
               );
             })
@@ -540,53 +491,55 @@ const Purification: React.FC = () => {
         </div>
       </aside>
 
-      {/* Main Content: Purification History / Purified Stock */}
-      <main className="processing-main">
-        <div className="record-details-view fade-in">
-          <div className="main-header">
-            <div className="header-title">
+      <main className="rf-main">
+        <div className="rf-main-card">
+          <div className="rf-main-header">
+            <div className="rf-header-left">
               <div
-                className="icon-box"
+                className="rf-header-icon"
                 style={{
-                  background: "#eff6ff",
-                  padding: "12px",
-                  borderRadius: "12px",
+                  background: "linear-gradient(135deg, #eff6ff, #dbeafe)",
+                  color: "#2563eb",
                 }}
               >
-                <History size={32} className="text-primary" />
+                <History size={28} />
               </div>
-              <div className="premium-tabs">
-                <div
-                  className={`premium-tab ${activeTab === "history" ? "active" : ""}`}
+
+              <div className="rf-tab-group">
+                <button
+                  className={`rf-tab ${activeTab === "history" ? "rf-tab-active" : ""}`}
                   onClick={() => setActiveTab("history")}
                 >
-                  <h1>Purification</h1>
-                  <p className="header-subtitle">
+                  <span className="rf-tab-title">Purification History</span>
+                  <span className="rf-tab-sub">
                     Process log of raw hair bundles
-                  </p>
-                </div>
-                <div
-                  className={`premium-tab ${activeTab === "stock" ? "active" : ""}`}
+                  </span>
+                </button>
+                <button
+                  className={`rf-tab ${activeTab === "stock" ? "rf-tab-active rf-tab-blue" : ""}`}
                   onClick={() => setActiveTab("stock")}
                 >
-                  <h1>Purified Stock</h1>
-                  <p className="header-subtitle">
+                  <span className="rf-tab-title">Purified Stock</span>
+                  <span className="rf-tab-sub">
                     Inventory of purified bundles
-                  </p>
-                </div>
+                  </span>
+                </button>
               </div>
             </div>
-            <button
-              className="btn-manage-purifiers"
-              onClick={() => setshowPlaceManagement(true)}
-            >
-              <Settings size={16} />
-              Manage Purifiers
-            </button>
+
+            <div className="rf-header-right">
+              <button
+                className="btn-manage-purifiers"
+                onClick={() => setshowPlaceManagement(true)}
+              >
+                <Settings size={16} />
+                Manage Purifiers
+              </button>
+            </div>
           </div>
 
-          <div className="table-responsive premium-table-card">
-            <table className="data-table">
+          <div className="rf-table-wrap">
+            <table className="rf-table">
               <thead>
                 {activeTab === "history" ? (
                   <tr>
@@ -596,8 +549,8 @@ const Purification: React.FC = () => {
                     <th>Bundle Count</th>
                     <th>Weight (viss)</th>
                     <th>Worker Fees</th>
-                    <th>place</th>
-                    <th style={{ textAlign: "right" }}>Actions</th>
+                    <th>Place</th>
+                    <th className="rf-th-right">Actions</th>
                   </tr>
                 ) : (
                   <tr>
@@ -609,9 +562,9 @@ const Purification: React.FC = () => {
                     <th>Worker Fees</th>
                     <th>Supervisor Fees</th>
                     <th>Supervisor Name</th>
-                    <th>place</th>
+                    <th>Place</th>
                     <th>Weight Status</th>
-                    <th style={{ textAlign: "right" }}>Actions</th>
+                    <th className="rf-th-right">Actions</th>
                   </tr>
                 )}
               </thead>
@@ -619,20 +572,14 @@ const Purification: React.FC = () => {
                 {activeTab === "history" ? (
                   processes.length === 0 ? (
                     <tr>
-                      <td
-                        colSpan={7}
-                        style={{
-                          textAlign: "center",
-                          padding: "60px",
-                          color: "#94a3b8",
-                        }}
-                      >
+                      <td colSpan={8} className="rf-empty-row">
                         <div
                           style={{
                             display: "flex",
                             flexDirection: "column",
                             alignItems: "center",
                             gap: "12px",
+                            padding: "40px",
                           }}
                         >
                           <History size={48} style={{ opacity: 0.2 }} />
@@ -644,39 +591,28 @@ const Purification: React.FC = () => {
                     processes.map((p) => (
                       <tr
                         key={p.id}
+                        className="rf-clickable-row"
                         onClick={() => handleEditClick(p)}
-                        style={{ cursor: "pointer" }}
                       >
-                        <td>{formatDateTime(p.date)}</td>
-                        <td style={{ fontWeight: 600, color: "#0f172a" }}>
-                          <div>{p.productMarker}</div>
+                        <td className="rf-td-date">{formatDateTime(p.date)}</td>
+                        <td>
+                          <div className="rf-marker">{p.productMarker}</div>
                           <div
-                            style={{
-                              fontSize: "11px",
-                              color: "#3b82f6",
-                              fontWeight: 500,
-                            }}
+                            className="rf-warehouse"
+                            style={{ color: "#3b82f6" }}
                           >
                             {p.warehouseName || "---"}
                           </div>
                         </td>
                         <td>
                           <span
-                            className={`card-badge category-${p.category.toLowerCase().replace(".", "")}`}
+                            className={`rf-badge category-${p.category.toLowerCase().replace(".", "")}`}
                           >
                             {p.category}
                           </span>
                         </td>
-                        <td
-                          style={{
-                            fontWeight: 800,
-                            color: "#0f172a",
-                            fontSize: "15px",
-                          }}
-                        >
-                          {p.purifyCount}
-                        </td>
-                        <td style={{ fontWeight: 600, color: "#334155" }}>
+                        <td style={{ fontWeight: 800 }}>{p.purifyCount}</td>
+                        <td className="rf-td-weight">
                           {p.purifyWeight.toFixed(3)}
                         </td>
                         <td>
@@ -691,31 +627,16 @@ const Purification: React.FC = () => {
                           })}
                         </td>
                         <td>
-                          <div
-                            style={{
-                              display: "flex",
-                              alignItems: "center",
-                              gap: "6px",
-                              fontSize: "13px",
-                              fontWeight: 500,
-                            }}
-                          >
-                            <User size={14} style={{ color: "#64748b" }} />
+                          <div className="rf-worker-cell">
+                            <User size={13} />
                             {p.placeName || "---"}
                           </div>
                         </td>
-                        <td style={{ textAlign: "right" }}>
-                          <div
-                            style={{
-                              display: "flex",
-                              gap: "8px",
-                              justifyContent: "flex-end",
-                            }}
-                            onClick={(e) => e.stopPropagation()}
-                          >
+                        <td onClick={(e) => e.stopPropagation()}>
+                          <div className="rf-actions">
                             {hasPermission("Sales2.Edit") && (
                               <button
-                                className="rec-action-btn edit-btn"
+                                className="rf-action-btn rf-edit-btn"
                                 onClick={() => handleEditClick(p)}
                               >
                                 <Pencil size={14} />
@@ -723,7 +644,7 @@ const Purification: React.FC = () => {
                             )}
                             {hasPermission("Sales2.Delete") && (
                               <button
-                                className="rec-action-btn delete-btn"
+                                className="rf-action-btn rf-delete-btn"
                                 onClick={() => handleDelete(p.id)}
                               >
                                 <Trash2 size={14} />
@@ -736,118 +657,81 @@ const Purification: React.FC = () => {
                   )
                 ) : purifiedRecords.length === 0 ? (
                   <tr>
-                    <td
-                      colSpan={8}
-                      style={{
-                        textAlign: "center",
-                        padding: "60px",
-                        color: "#94a3b8",
-                      }}
-                    >
+                    <td colSpan={11} className="rf-empty-row">
                       <div
                         style={{
                           display: "flex",
                           flexDirection: "column",
                           alignItems: "center",
                           gap: "12px",
+                          padding: "40px",
                         }}
                       >
                         <Package size={48} style={{ opacity: 0.2 }} />
-                        <span>No purified stock inventory registered yet</span>
+                        <span>No purified stock records yet</span>
                       </div>
                     </td>
                   </tr>
                 ) : (
                   purifiedRecords.map((p) => (
                     <tr key={p.id}>
-                      <td>{formatDateTime(p.date)}</td>
-                      <td style={{ fontWeight: 600, color: "#0f172a" }}>
-                        <div>{p.productMarker}</div>
+                      <td className="rf-td-date">{formatDateTime(p.date)}</td>
+                      <td>
+                        <div className="rf-marker">{p.productMarker}</div>
                         <div
-                          style={{
-                            fontSize: "11px",
-                            color: "#3b82f6",
-                            fontWeight: 500,
-                          }}
+                          className="rf-warehouse"
+                          style={{ color: "#3b82f6" }}
                         >
                           {p.warehouseName || "---"}
                         </div>
                       </td>
                       <td>
                         <span
-                          className={`card-badge category-${p.category.toLowerCase().replace(".", "")}`}
+                          className={`rf-badge category-${p.category.toLowerCase().replace(".", "")}`}
                         >
                           {p.category}
                         </span>
                       </td>
-                      <td
-                        style={{
-                          fontWeight: 800,
-                          color: "#10b981",
-                          fontSize: "15px",
-                        }}
-                      >
-                        {p.count}
-                      </td>
-                      <td style={{ fontWeight: 600, color: "#334155" }}>
+                      <td style={{ fontWeight: 800 }}>{p.count}</td>
+                      <td className="rf-td-weight rf-green">
                         {p.weight.toFixed(3)}
                       </td>
                       <td>
-                        {(
-                          p.workers?.reduce(
-                            (sum, w) => sum + (w.workerFees || 0),
-                            0,
-                          ) || 0
-                        ).toLocaleString(undefined, {
+                        {p.workerFees?.toLocaleString(undefined, {
                           minimumFractionDigits: 2,
                           maximumFractionDigits: 2,
-                        })}
+                        }) || "0.00"}
                       </td>
                       <td>
-                        {(p.supervisorFees || 0).toLocaleString(undefined, {
+                        {p.supervisorFees?.toLocaleString(undefined, {
                           minimumFractionDigits: 2,
                           maximumFractionDigits: 2,
-                        })}
+                        }) || "0.00"}
                       </td>
-                      <td style={{ fontWeight: 500 }}>
-                        {p.supervisorName || "---"}
-                      </td>
+                      <td>{p.supervisorName || "---"}</td>
                       <td>
-                        <div
-                          style={{
-                            display: "flex",
-                            alignItems: "center",
-                            gap: "6px",
-                            fontSize: "13px",
-                            fontWeight: 500,
-                          }}
-                        >
-                          <User size={14} style={{ color: "#64748b" }} />
+                        <div className="rf-worker-cell">
+                          <User size={13} />
                           {p.placeName || "---"}
                         </div>
                       </td>
                       <td>
-                        {p.isWeightFull ? (
-                          <span className="weight-status-badge status-full">
-                            Full
-                          </span>
-                        ) : (
-                          <span className="weight-status-badge status-short">
-                            Short
-                          </span>
-                        )}
-                      </td>
-                      <td style={{ textAlign: "right" }}>
-                        <div
+                        <span
+                          className={`rf-badge ${p.isWeightFull ? "category-full" : "category-partial"}`}
                           style={{
-                            display: "flex",
-                            gap: "8px",
-                            justifyContent: "flex-end",
+                            background: p.isWeightFull ? "#f0fdf4" : "#fff7ed",
+                            color: p.isWeightFull ? "#15803d" : "#c2410c",
+                            border: `1px solid ${p.isWeightFull ? "#bbf7d0" : "#ffedd5"}`,
                           }}
                         >
+                          {p.isWeightFull ? "Weight Full" : "Weight Partial"}
+                        </span>
+                      </td>
+                      <td>
+                        <div className="rf-actions">
                           {hasPermission("Sales2.Delete") && (
                             <button
-                              className="rec-action-btn delete-btn"
+                              className="rf-action-btn rf-delete-btn"
                               onClick={() => handleDeleteRecord(p.id)}
                             >
                               <Trash2 size={14} />
@@ -864,7 +748,6 @@ const Purification: React.FC = () => {
         </div>
       </main>
 
-      {/* place Management Modal */}
       {showPlaceManagement && (
         <div
           className="modal-overlay"
@@ -892,7 +775,6 @@ const Purification: React.FC = () => {
         </div>
       )}
 
-      {/* Purify / Edit Modal */}
       {showPurifyModal &&
         (selectedCategory || editingProcess || editingRecord) && (
           <div
@@ -901,7 +783,6 @@ const Purification: React.FC = () => {
             onClick={() => setShowPurifyModal(false)}
           >
             <div className="pm-modal" onClick={(e) => e.stopPropagation()}>
-              {/* Header */}
               <div className="pm-header">
                 <div className="pm-header-left">
                   <div className="pm-header-icon">
@@ -924,7 +805,6 @@ const Purification: React.FC = () => {
                 </button>
               </div>
 
-              {/* Info Bar */}
               <div className="pm-info-bar">
                 <div className="pm-info-chip">
                   <span className="pm-info-label">Warehouse</span>
@@ -957,7 +837,6 @@ const Purification: React.FC = () => {
               </div>
 
               <form onSubmit={handleSubmitPurify} className="pm-body">
-                {/* place */}
                 {editingProcess || editingRecord ? (
                   <div className="pm-form-group">
                     <label className="pm-form-label">Hair Place</label>
@@ -993,7 +872,6 @@ const Purification: React.FC = () => {
                   </div>
                 )}
 
-                {/* Supervisor Fees */}
                 {purifyForm.placeId !== 0 && (
                   <div className="pm-form-group">
                     <label className="pm-form-label">Supervisor Fees</label>
@@ -1040,7 +918,6 @@ const Purification: React.FC = () => {
                   </div>
                 )}
 
-                {/* Purifier Workers (Only when editing) */}
                 {(editingProcess || editingRecord) && (
                   <div
                     className="pm-form-group"
@@ -1057,12 +934,10 @@ const Purification: React.FC = () => {
                       onChange={(e) => {
                         const newId = parseInt(e.target.value);
                         if (!newId || isNaN(newId)) return;
-
                         if (
                           purifyForm.workers.some((w) => w.purifierId === newId)
                         )
                           return;
-
                         setPurifyForm((prev) => ({
                           ...prev,
                           workers: [
@@ -1163,7 +1038,6 @@ const Purification: React.FC = () => {
                   </div>
                 )}
 
-                {/* Category Display */}
                 <div className="pm-form-group">
                   <label className="pm-form-label">Category</label>
                   <div className="pm-readonly-box">
@@ -1178,7 +1052,6 @@ const Purification: React.FC = () => {
                   </div>
                 </div>
 
-                {/* Purified Count Input */}
                 <div className="pm-form-group">
                   <label className="pm-form-label">Purified Bundle Count</label>
                   <input
@@ -1198,7 +1071,6 @@ const Purification: React.FC = () => {
                   />
                 </div>
 
-                {/* Weight Status */}
                 <div className="pm-form-group">
                   <label className="pm-form-label">
                     Weight Status Verification
@@ -1231,13 +1103,12 @@ const Purification: React.FC = () => {
                   </div>
                 </div>
 
-                {/* Date */}
                 <div className="pm-form-group">
                   <label className="pm-form-label">Date</label>
                   <input
-                    type="date"
+                    type="datetime-local"
                     className="pm-form-control"
-                    value={purifyForm.date.split("T")[0]}
+                    value={purifyForm.date}
                     onChange={(e) =>
                       setPurifyForm((prev) => ({
                         ...prev,
@@ -1248,7 +1119,6 @@ const Purification: React.FC = () => {
                   />
                 </div>
 
-                {/* Footer Actions */}
                 <div className="pm-footer">
                   <button
                     type="button"
