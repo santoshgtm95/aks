@@ -41,6 +41,7 @@ import type {
   CreateSingleDoubleDrawnRecordDto,
   SemiExportRecord,
   UpsertSemiExportRecordDto,
+  UpsertSemiExportPurchaseRecordsDto,
   LedgerDto,
   CreateLedgerDto,
   ExchangeRate,
@@ -589,6 +590,15 @@ export const semiExportAPI = {
     const response = await api.post<SemiExportRecord>("/semiexport", data);
     return response.data;
   },
+  upsertPurchaseRecords: async (
+    data: UpsertSemiExportPurchaseRecordsDto,
+  ): Promise<SemiExportRecord[]> => {
+    const response = await api.post<SemiExportRecord[]>(
+      "/semiexport/purchase-records",
+      data,
+    );
+    return response.data;
+  },
   delete: async (id: number): Promise<void> => {
     await api.delete(`/semiexport/${id}`);
   },
@@ -677,16 +687,16 @@ export const semiExportPurchaseProcessingAPI = {
   },
 };
 
-export const semiExportPurchaseRecordsAPI = {
-  getAll: async (): Promise<any[]> => {
-    const response = await api.get<any[]>("/SemiExportPurchaseRecords");
-    return response.data;
-  },
-  create: async (data: any): Promise<any> => {
-    const response = await api.post<any>("/SemiExportPurchaseRecords", data);
-    return response.data;
-  },
-};
+  export const semiExportPurchaseRecordsAPI = {
+    getAll: async (): Promise<any[]> => {
+      const response = await api.get<any[]>("/SemiExportPurchaseRecords");
+      return response.data;
+    },
+    create: async (data: any): Promise<any> => {
+      const response = await api.post<any>("/SemiExportPurchaseRecords", data);
+      return response.data;
+    },
+  };
 
 export default api;
 export const cashFlowAPI = {

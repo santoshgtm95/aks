@@ -13,10 +13,15 @@ public class SemiExportRecord : BaseEntity
     [Required]
     public DateTime Date { get; set; }
 
-    public int SingleDoubleDrawnRecordId { get; set; }
+    public int? SingleDoubleDrawnRecordId { get; set; }
 
     [ForeignKey("SingleDoubleDrawnRecordId")]
-    public SingleDoubleDrawnRecord SingleDoubleDrawnRecord { get; set; } = null!;
+    public SingleDoubleDrawnRecord? SingleDoubleDrawnRecord { get; set; }
+
+    public int? SemiExportPurchaseRecordId { get; set; }
+
+    [ForeignKey("SemiExportPurchaseRecordId")]
+    public SemiExportPurchaseRecord? SemiExportPurchaseRecord { get; set; }
 
     [Column(TypeName = "decimal(18,2)")]
     public decimal WorkerFees { get; set; }

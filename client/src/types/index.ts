@@ -669,7 +669,8 @@ export interface CreateSingleDoubleDrawnRecordDto {
 export interface SemiExportRecord {
   id: number;
   date: string;
-  singleDoubleDrawnRecordId: number;
+  singleDoubleDrawnRecordId?: number | null;
+  semiExportPurchaseRecordId?: number | null;
   refinementRecordMarker: string;
   refinementRecordCategory: string;
   refinementRecordWarehouseName: string;
@@ -681,6 +682,13 @@ export interface SemiExportRecord {
 
 export interface UpsertSemiExportRecordDto {
   singleDoubleDrawnRecordId: number;
+  workerFees: number;
+  remark: string;
+  exchangeRateId?: number | null;
+}
+
+export interface UpsertSemiExportPurchaseRecordsDto {
+  semiExportPurchaseRecordIds: number[];
   workerFees: number;
   remark: string;
   exchangeRateId?: number | null;

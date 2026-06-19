@@ -75,6 +75,12 @@ interface SemiExportPurchaseRecord {
   createdAt: string;
 }
 
+type SemiExportRecordWithAliases = SemiExportRecord & {
+  SemiExportPurchaseRecordId?: number | null;
+  WorkerFees?: number;
+  Remark?: string;
+};
+
 interface SemiExportPurchase {
   id: number;
   customerName: string;
@@ -103,8 +109,9 @@ const SemiExport: React.FC = () => {
   const [ledgers, setLedgers] = useState<LedgerDto[]>([]);
   const [loading, setLoading] = useState(true);
   const [selectedMarker, setSelectedMarker] = useState<string | null>(null);
-  const [selectedPurchaseGroup, setSelectedPurchaseGroup] =
-    useState<GroupedMarker | null>(null);
+  const [selectedPurchaseGroupKey, setSelectedPurchaseGroupKey] = useState<
+    string | null
+  >(null);
   const [searchTerm, setSearchTerm] = useState("");
   const [formError, setFormError] = useState("");
   const [saving, setSaving] = useState(false);
@@ -140,60 +147,18 @@ const SemiExport: React.FC = () => {
   const getPurchaseRecordWorkerFees = (record: SemiExportPurchaseRecord) =>
     Number(record.workerFees ?? record.WorkerFees ?? 0) || 0;
 
-  const purchaseWorkerFeesInfo = useMemo(() => {
-    const records = selectedPurchaseGroup?.purchaseRecords || [];
-    const savedTotal = records.reduce(
-      (sum, record) => sum + getPurchaseRecordWorkerFees(record),
-      0,
+  const getSavedPurchaseExport = (record: SemiExportPurchaseRecord) =>
+    (savedExports as SemiExportRecordWithAliases[]).find(
+      (x) =>
+        Number(
+          x.semiExportPurchaseRecordId ?? x.SemiExportPurchaseRecordId ?? 0,
+        ) === record.id,
     );
-    const manualTotal = parseFloat(purchaseWorkerFees) || 0;
 
-    if (savedTotal <= 0) {
-      return {
-        sum: manualTotal,
-        hasSavedFees: false,
-        details:
-          manualTotal > 0
-            ? [
-                {
-                  label: "Manual Override",
-                  name: "Purchase group",
-                  amount: manualTotal,
-                },
-              ]
-            : [],
-      };
-    }
-
-    const detailsMap = new Map<
-      string,
-      { label: string; name: string; amount: number }
-    >();
-
-    records.forEach((record) => {
-      const amount = getPurchaseRecordWorkerFees(record);
-      if (amount <= 0) return;
-
-      const workerName = getPurchaseRecordWorkerName(record);
-      const existing = detailsMap.get(workerName);
-
-      if (existing) {
-        existing.amount += amount;
-      } else {
-        detailsMap.set(workerName, {
-          label: "Sorting",
-          name: workerName,
-          amount,
-        });
-      }
-    });
-
-    return {
-      sum: savedTotal,
-      hasSavedFees: true,
-      details: Array.from(detailsMap.values()),
-    };
-  }, [selectedPurchaseGroup, purchaseWorkerFees]);
+  const getSavedPurchaseRemark = (record: SemiExportPurchaseRecord) => {
+    const saved = getSavedPurchaseExport(record);
+    return saved?.remark ?? saved?.Remark ?? "";
+  };
 
   const selectedRecords = useMemo(() => {
     if (!selectedMarker) return [];
@@ -268,20 +233,6 @@ const SemiExport: React.FC = () => {
       setExpandedRecords({});
     }
   }, [selectedMarker, selectedRecords, savedExports]);
-
-  useEffect(() => {
-    if (selectedPurchaseGroup?.purchaseRecords?.length) {
-      const totalFees = selectedPurchaseGroup.purchaseRecords.reduce(
-        (sum, record) => sum + getPurchaseRecordWorkerFees(record),
-        0,
-      );
-      setPurchaseWorkerFees(totalFees.toString());
-      setPurchaseRemark("");
-    } else {
-      setPurchaseWorkerFees("0");
-      setPurchaseRemark("");
-    }
-  }, [selectedPurchaseGroup]);
 
   const getSortedTotal = (record: SingleDoubleDrawnRecord) => {
     return (
@@ -404,6 +355,95 @@ const SemiExport: React.FC = () => {
 
     return Object.values(groups);
   }, [sddRecords, ledgers, purchaseRecords]);
+
+  const getPurchaseGroupKey = (group: GroupedMarker) =>
+    group.source === "purchase" ? `purchase-${group.date}` : group.markerName;
+
+  const selectedPurchaseGroup = useMemo(
+    () =>
+      selectedPurchaseGroupKey
+        ? groupedRecords.find(
+            (group) =>
+              group.source === "purchase" &&
+              getPurchaseGroupKey(group) === selectedPurchaseGroupKey,
+          ) || null
+        : null,
+    [groupedRecords, selectedPurchaseGroupKey],
+  );
+
+  const purchaseWorkerFeesInfo = useMemo(() => {
+    const records = selectedPurchaseGroup?.purchaseRecords || [];
+    const savedTotal = records.reduce(
+      (sum, record) => sum + getPurchaseRecordWorkerFees(record),
+      0,
+    );
+    const manualTotal = parseFloat(purchaseWorkerFees) || 0;
+
+    if (savedTotal <= 0) {
+      return {
+        sum: manualTotal,
+        hasSavedFees: false,
+        details:
+          manualTotal > 0
+            ? [
+                {
+                  label: "Manual Override",
+                  name: "Purchase group",
+                  amount: manualTotal,
+                },
+              ]
+            : [],
+      };
+    }
+
+    const detailsMap = new Map<
+      string,
+      { label: string; name: string; amount: number }
+    >();
+
+    records.forEach((record) => {
+      const amount = getPurchaseRecordWorkerFees(record);
+      if (amount <= 0) return;
+
+      const workerName = getPurchaseRecordWorkerName(record);
+      const existing = detailsMap.get(workerName);
+
+      if (existing) {
+        existing.amount += amount;
+      } else {
+        detailsMap.set(workerName, {
+          label: "Sorting",
+          name: workerName,
+          amount,
+        });
+      }
+    });
+
+    return {
+      sum: savedTotal,
+      hasSavedFees: true,
+      details: Array.from(detailsMap.values()),
+    };
+  }, [selectedPurchaseGroup, purchaseWorkerFees, savedExports]);
+
+  useEffect(() => {
+    if (selectedPurchaseGroup?.purchaseRecords?.length) {
+      const totalFees = selectedPurchaseGroup.purchaseRecords.reduce(
+        (sum, record) => sum + getPurchaseRecordWorkerFees(record),
+        0,
+      );
+      const savedRemark =
+        selectedPurchaseGroup.purchaseRecords
+          .map((record) => getSavedPurchaseRemark(record))
+          .find(Boolean) || "";
+
+      setPurchaseWorkerFees(totalFees.toString());
+      setPurchaseRemark(savedRemark);
+    } else {
+      setPurchaseWorkerFees("0");
+      setPurchaseRemark("");
+    }
+  }, [selectedPurchaseGroup, savedExports]);
 
   const completedMarkers = useMemo(() => {
     return groupedRecords.filter((group) => {
@@ -909,7 +949,9 @@ const SemiExport: React.FC = () => {
     if (!selectedPurchaseGroup?.purchaseRecords?.length) return null;
 
     const records = selectedPurchaseGroup.purchaseRecords;
-    const purchaseIds = new Set(records.map((record) => record.semiExportPurchaseId));
+    const purchaseIds = new Set(
+      records.map((record) => record.semiExportPurchaseId),
+    );
     const originalWeightViss = semiExportPurchases
       .filter((purchase) => purchaseIds.has(purchase.id))
       .reduce(
@@ -959,8 +1001,7 @@ const SemiExport: React.FC = () => {
       0,
     );
     const sumTwoInchesWeight = records.reduce(
-      (sum, record) =>
-        sum + getSizeWeight(record, ["6", "7", "8", "9", "10"]),
+      (sum, record) => sum + getSizeWeight(record, ["6", "7", "8", "9", "10"]),
       0,
     );
     const totalSortedWeight = sumBto10Weight + sumTwoInchesWeight;
@@ -969,8 +1010,7 @@ const SemiExport: React.FC = () => {
         sum +
         record.sizes.reduce(
           (sizeSum, size) =>
-            sizeSum +
-            (Number(size.weight) || 0) * (Number(size.price) || 0),
+            sizeSum + (Number(size.weight) || 0) * (Number(size.price) || 0),
           0,
         ),
       0,
@@ -993,7 +1033,12 @@ const SemiExport: React.FC = () => {
         (
           acc: Record<
             string,
-            { color: string; weight: number; amountCNY: number; amountMMK: number }
+            {
+              color: string;
+              weight: number;
+              amountCNY: number;
+              amountMMK: number;
+            }
           >,
           record,
         ) => {
@@ -1015,7 +1060,8 @@ const SemiExport: React.FC = () => {
               acc[color].weight += weight;
               acc[color].amountCNY += amountCNY;
               acc[color].amountMMK +=
-                amountCNY * (Number(record.exchangeRateRate) || currentCnyRate || 0);
+                amountCNY *
+                (Number(record.exchangeRateRate) || currentCnyRate || 0);
             });
 
           return acc;
@@ -1025,10 +1071,7 @@ const SemiExport: React.FC = () => {
     );
     const remainingUnsorted =
       originalWeightViss -
-      (totalSortedWeight +
-        sumLostWeight +
-        sumSpoilageWeight +
-        sumReturnWeight);
+      (totalSortedWeight + sumLostWeight + sumSpoilageWeight + sumReturnWeight);
     const denom = originalWeightViss || 1;
 
     return {
@@ -1409,6 +1452,35 @@ const SemiExport: React.FC = () => {
     }
   };
 
+  const handleSavePurchaseMarkerData = async () => {
+    const records = selectedPurchaseGroup?.purchaseRecords || [];
+    if (records.length === 0) return;
+
+    setSaving(true);
+    setFormError("");
+
+    try {
+      await semiExportAPI.upsertPurchaseRecords({
+        semiExportPurchaseRecordIds: records.map((record) => record.id),
+        workerFees: parseFloat(purchaseWorkerFees) || 0,
+        remark: purchaseRemark,
+        exchangeRateId:
+          activeRates.find(
+            (r) => r.fromCurrency === "CNY" && r.toCurrency === "MMK",
+          )?.id || null,
+      });
+
+      await loadData();
+    } catch (err) {
+      console.error("Failed to save purchase marker data:", err);
+      setFormError(
+        "Failed to save Semi Export purchase transaction. Please try again.",
+      );
+    } finally {
+      setSaving(false);
+    }
+  };
+
   const handleDeleteExport = async (ids: number[]) => {
     if (
       !window.confirm(
@@ -1456,10 +1528,7 @@ const SemiExport: React.FC = () => {
       <div className="stat-card">
         <div className="stat-header">
           <span className="stat-title">{title}</span>
-          <div
-            className="stat-icon-wrapper"
-            style={{ backgroundColor, color }}
-          >
+          <div className="stat-icon-wrapper" style={{ backgroundColor, color }}>
             {icon}
           </div>
         </div>
@@ -1612,7 +1681,8 @@ const SemiExport: React.FC = () => {
               Date: {new Date(selectedPurchaseGroup.date).toLocaleDateString()}
             </span>
             <span className="rf-badge">
-              Customers: {selectedPurchaseStats.customerNames.join(", ") || "---"}
+              Customers:{" "}
+              {selectedPurchaseStats.customerNames.join(", ") || "---"}
             </span>
             <span className="rf-badge">
               Colors: {selectedPurchaseStats.colors.join(", ") || "---"}
@@ -1644,9 +1714,13 @@ const SemiExport: React.FC = () => {
             Marker
           </h3>
 
-          <div style={{ display: "flex", flexDirection: "column", gap: "20px" }}>
+          <div
+            style={{ display: "flex", flexDirection: "column", gap: "20px" }}
+          >
             <div style={{ display: "flex", alignItems: "center", gap: "16px" }}>
-              <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+              <div
+                style={{ display: "flex", alignItems: "center", gap: "8px" }}
+              >
                 <DollarSign size={18} style={{ color: "#2563eb" }} />
                 <span
                   style={{
@@ -1729,27 +1803,29 @@ const SemiExport: React.FC = () => {
                   >
                     {purchaseWorkerFeesInfo.details.length > 0 ? (
                       purchaseWorkerFeesInfo.details.map((fi, i) => (
-                      <div
-                        key={`${fi.label}-${fi.name}-${i}`}
-                        style={{
-                          display: "flex",
-                          justifyContent: "space-between",
-                          fontSize: "13px",
-                          color: "#475569",
-                        }}
-                      >
-                        <span>
-                          <span style={{ fontWeight: "600", color: "#0f172a" }}>
-                            {fi.label}
-                          </span>{" "}
-                          ({fi.name}):
-                        </span>
-                        <span style={{ fontWeight: "600" }}>
-                          {fi.amount.toLocaleString(undefined, {
-                            maximumFractionDigits: 2,
-                          })}
-                        </span>
-                      </div>
+                        <div
+                          key={`${fi.label}-${fi.name}-${i}`}
+                          style={{
+                            display: "flex",
+                            justifyContent: "space-between",
+                            fontSize: "13px",
+                            color: "#475569",
+                          }}
+                        >
+                          <span>
+                            <span
+                              style={{ fontWeight: "600", color: "#0f172a" }}
+                            >
+                              {fi.label}
+                            </span>{" "}
+                            ({fi.name}):
+                          </span>
+                          <span style={{ fontWeight: "600" }}>
+                            {fi.amount.toLocaleString(undefined, {
+                              maximumFractionDigits: 2,
+                            })}
+                          </span>
+                        </div>
                       ))
                     ) : (
                       <div
@@ -1821,6 +1897,33 @@ const SemiExport: React.FC = () => {
                 }}
               />
             </div>
+
+            {hasPermission("SemiExport.Create") && (
+              <div style={{ display: "flex", justifyContent: "flex-end" }}>
+                <button
+                  type="button"
+                  onClick={handleSavePurchaseMarkerData}
+                  className="btn btn-primary"
+                  disabled={saving}
+                  style={{
+                    display: "flex",
+                    alignItems: "center",
+                    gap: "10px",
+                    padding: "12px 32px",
+                    borderRadius: "12px",
+                    fontWeight: "800",
+                    fontSize: "15px",
+                    background: "#0f172a",
+                    color: "white",
+                    boxShadow: "0 4px 12px rgba(15, 23, 42, 0.2)",
+                    transition: "all 0.2s",
+                  }}
+                >
+                  <CheckCircle size={20} />
+                  {saving ? "Saving..." : "Save Marker Records"}
+                </button>
+              </div>
+            )}
           </div>
         </div>
 
@@ -3591,7 +3694,7 @@ const SemiExport: React.FC = () => {
               type="button"
               onClick={() => {
                 setSelectedMarker(null);
-                setSelectedPurchaseGroup(null);
+                setSelectedPurchaseGroupKey(null);
               }}
               className="btn btn-secondary"
               style={{
@@ -3652,9 +3755,13 @@ const SemiExport: React.FC = () => {
                 return (
                   <div
                     key={`purchase-${group.markerName}-${group.date}`}
-                    className={`product-card ${selectedPurchaseGroup === group ? "selected" : ""}`}
+                    className={`product-card ${
+                      selectedPurchaseGroupKey === getPurchaseGroupKey(group)
+                        ? "selected"
+                        : ""
+                    }`}
                     onClick={() => {
-                      setSelectedPurchaseGroup(group);
+                      setSelectedPurchaseGroupKey(getPurchaseGroupKey(group));
                       setSelectedMarker(null);
                       setActiveTab("processing");
                     }}
@@ -3662,16 +3769,6 @@ const SemiExport: React.FC = () => {
                     <div className="card-header">
                       <div style={{ display: "flex", flexDirection: "column" }}>
                         <span className="card-marker">{group.markerName}</span>
-                        <span
-                          style={{
-                            fontSize: "11px",
-                            color: "#64748b",
-                            fontWeight: 500,
-                            marginTop: "2px",
-                          }}
-                        >
-                          {(group.customerNames || []).join(", ") || "---"}
-                        </span>
                       </div>
                       <span
                         style={{
@@ -3760,7 +3857,7 @@ const SemiExport: React.FC = () => {
                   key={group.markerName}
                   className={`product-card ${selectedMarker === group.markerName ? "selected" : ""}`}
                   onClick={() => {
-                    setSelectedPurchaseGroup(null);
+                    setSelectedPurchaseGroupKey(null);
                     setSelectedMarker(group.markerName);
                     setActiveTab("processing");
                   }}

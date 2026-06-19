@@ -375,6 +375,12 @@ public class AKZDbContext : DbContext
             .HasForeignKey(s => s.SingleDoubleDrawnRecordId)
             .OnDelete(DeleteBehavior.Restrict);
 
+        modelBuilder.Entity<SemiExportRecord>()
+            .HasOne(s => s.SemiExportPurchaseRecord)
+            .WithMany()
+            .HasForeignKey(s => s.SemiExportPurchaseRecordId)
+            .OnDelete(DeleteBehavior.Restrict);
+
         modelBuilder.Entity<SemiExportPurchaseRecord>()
             .HasOne(r => r.SemiExportPurchaseProcessing)
             .WithMany()

@@ -29,47 +29,12 @@ public class SemiExportController : ControllerBase
                         .ThenInclude(p => p.ProcessingRecord)
                             .ThenInclude(pr => pr.Product)
                                 .ThenInclude(prod => prod.Warehouse)
+            .Include(s => s.SemiExportPurchaseRecord)
             .Include(s => s.ExchangeRate)
             .OrderByDescending(r => r.Date)
             .ToListAsync();
 
-        var result = new List<SemiExportRecordDto>();
-
-        foreach (var r in records)
-        {
-            string marker = "";
-            string category = "";
-            string warehouseName = "";
-
-            var sdd = r.SingleDoubleDrawnRecord;
-            if (sdd?.RefinementRecord != null)
-            {
-                category = sdd.RefinementRecord.Category;
-
-                if (sdd.RefinementRecord.PurifiedRecord?.ProcessingRecord?.Product != null)
-                {
-                    var product = sdd.RefinementRecord.PurifiedRecord.ProcessingRecord.Product;
-                    marker = product.Marker;
-                    warehouseName = product.Warehouse?.Name ?? "";
-                }
-            }
-
-            result.Add(new SemiExportRecordDto
-            {
-                Id = r.Id,
-                Date = r.Date,
-                SingleDoubleDrawnRecordId = r.SingleDoubleDrawnRecordId,
-                RefinementRecordMarker = marker,
-                RefinementRecordCategory = category,
-                RefinementRecordWarehouseName = warehouseName,
-                WorkerFees = r.WorkerFees,
-                Remark = r.Remark,
-                ExchangeRateId = r.ExchangeRateId,
-                ExchangeRateRate = r.ExchangeRate?.Rate
-            });
-        }
-
-        return Ok(result);
+        return Ok(records.Select(ToDto).ToList());
     }
 
     [HttpGet("by-singledoubledrawn/{id}")]
@@ -189,6 +154,53 @@ public class SemiExportController : ControllerBase
         return Ok(resultDto);
     }
 
+    [HttpPost("purchase-records")]
+    public async Task<ActionResult<List<SemiExportRecordDto>>> UpsertPurchaseRecords([FromBody] UpsertSemiExportPurchaseRecordsDto dto)
+    {
+        if (dto.SemiExportPurchaseRecordIds == null || dto.SemiExportPurchaseRecordIds.Count == 0)
+        {
+            return BadRequest(new { message = "At least one purchase record is required" });
+        }
+
+        var purchaseRecords = await _context.SemiExportPurchaseRecords
+            .Where(r => dto.SemiExportPurchaseRecordIds.Contains(r.Id))
+            .OrderBy(r => r.Id)
+            .ToListAsync();
+
+        if (purchaseRecords.Count == 0)
+        {
+            return NotFound(new { message = "Purchase records not found" });
+        }
+
+        var savedRecords = new List<SemiExportRecord>();
+        for (var index = 0; index < purchaseRecords.Count; index++)
+        {
+            var purchaseRecord = purchaseRecords[index];
+            var record = await _context.SemiExportRecords
+                .FirstOrDefaultAsync(x => x.SemiExportPurchaseRecordId == purchaseRecord.Id);
+
+            if (record == null)
+            {
+                record = new SemiExportRecord
+                {
+                    Date = DateTime.UtcNow.AddHours(6.5),
+                    SemiExportPurchaseRecordId = purchaseRecord.Id
+                };
+                _context.SemiExportRecords.Add(record);
+            }
+
+            record.SingleDoubleDrawnRecordId = null;
+            record.WorkerFees = index == 0 ? dto.WorkerFees : 0;
+            record.Remark = dto.Remark ?? string.Empty;
+            record.ExchangeRateId = dto.ExchangeRateId;
+            savedRecords.Add(record);
+        }
+
+        await _context.SaveChangesAsync();
+
+        return Ok(savedRecords.Select(ToDto).ToList());
+    }
+
     [HttpDelete("{id}")]
     public async Task<IActionResult> DeleteRecord(int id)
     {
@@ -202,5 +214,40 @@ public class SemiExportController : ControllerBase
         await _context.SaveChangesAsync();
 
         return NoContent();
+    }
+
+    private static SemiExportRecordDto ToDto(SemiExportRecord r)
+    {
+        string marker = "";
+        string category = "";
+        string warehouseName = "";
+
+        var sdd = r.SingleDoubleDrawnRecord;
+        if (sdd?.RefinementRecord != null)
+        {
+            category = sdd.RefinementRecord.Category;
+
+            if (sdd.RefinementRecord.PurifiedRecord?.ProcessingRecord?.Product != null)
+            {
+                var product = sdd.RefinementRecord.PurifiedRecord.ProcessingRecord.Product;
+                marker = product.Marker;
+                warehouseName = product.Warehouse?.Name ?? "";
+            }
+        }
+
+        return new SemiExportRecordDto
+        {
+            Id = r.Id,
+            Date = r.Date,
+            SingleDoubleDrawnRecordId = r.SingleDoubleDrawnRecordId,
+            SemiExportPurchaseRecordId = r.SemiExportPurchaseRecordId,
+            RefinementRecordMarker = marker,
+            RefinementRecordCategory = category,
+            RefinementRecordWarehouseName = warehouseName,
+            WorkerFees = r.WorkerFees,
+            Remark = r.Remark,
+            ExchangeRateId = r.ExchangeRateId,
+            ExchangeRateRate = r.ExchangeRate?.Rate
+        };
     }
 }

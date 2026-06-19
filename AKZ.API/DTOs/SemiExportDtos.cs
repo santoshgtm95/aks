@@ -6,7 +6,8 @@ public class SemiExportRecordDto
 {
     public int Id { get; set; }
     public DateTime Date { get; set; }
-    public int SingleDoubleDrawnRecordId { get; set; }
+    public int? SingleDoubleDrawnRecordId { get; set; }
+    public int? SemiExportPurchaseRecordId { get; set; }
 
     // Parent details
     public string RefinementRecordMarker { get; set; } = string.Empty;
@@ -23,6 +24,14 @@ public class SemiExportRecordDto
 public class UpsertSemiExportRecordDto
 {
     public int SingleDoubleDrawnRecordId { get; set; }
+    public decimal WorkerFees { get; set; }
+    public string Remark { get; set; } = string.Empty;
+    public int? ExchangeRateId { get; set; }
+}
+
+public class UpsertSemiExportPurchaseRecordsDto
+{
+    public List<int> SemiExportPurchaseRecordIds { get; set; } = new();
     public decimal WorkerFees { get; set; }
     public string Remark { get; set; } = string.Empty;
     public int? ExchangeRateId { get; set; }
