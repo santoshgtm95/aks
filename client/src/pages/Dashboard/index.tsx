@@ -2,12 +2,12 @@ import React, { useEffect, useState, useMemo } from "react";
 import { dashboardAPI } from "../../services/api";
 import type { DashboardStats, MarkerSortingStats } from "../../types";
 import {
-  Package,
-  TrendingUp,
-  Scale,
-  ShoppingCart,
-  Layers,
-  AlertTriangle,
+  // Package,
+  // TrendingUp,
+  // Scale,
+  // ShoppingCart,
+  // Layers,
+  // AlertTriangle,
   ArrowUpRight,
   ArrowDownRight,
   Search,
@@ -29,32 +29,32 @@ type SortField =
 type SortDir = "asc" | "desc";
 
 const fmt = (n: number) => n.toFixed(3).replace(/\B(?=(\d{3})+(?!\d))/g, ",");
-const fmtInt = (n: number) => n.toLocaleString();
+// const fmtInt = (n: number) => n.toLocaleString();
 
-const KpiCard: React.FC<{
-  title: string;
-  value: string;
-  sub?: string;
-  icon: React.ReactNode;
-  gradient: string;
-  glow: string;
-  delay?: string;
-}> = ({ title, value, sub, icon, gradient, glow, delay = "0s" }) => (
-  <div className="db-kpi-card" style={{ animationDelay: delay }}>
-    <div
-      className="db-kpi-icon"
-      style={{ background: gradient, boxShadow: glow }}
-    >
-      {icon}
-    </div>
-    <div className="db-kpi-body">
-      <p className="db-kpi-title">{title}</p>
-      <h3 className="db-kpi-value">{value}</h3>
-      {sub && <p className="db-kpi-sub">{sub}</p>}
-    </div>
-    <div className="db-kpi-shimmer" />
-  </div>
-);
+// const KpiCard: React.FC<{
+//   title: string;
+//   value: string;
+//   sub?: string;
+//   icon: React.ReactNode;
+//   gradient: string;
+//   glow: string;
+//   delay?: string;
+// }> = ({ title, value, sub, icon, gradient, glow, delay = "0s" }) => (
+//   <div className="db-kpi-card" style={{ animationDelay: delay }}>
+//     <div
+//       className="db-kpi-icon"
+//       style={{ background: gradient, boxShadow: glow }}
+//     >
+//       {icon}
+//     </div>
+//     <div className="db-kpi-body">
+//       <p className="db-kpi-title">{title}</p>
+//       <h3 className="db-kpi-value">{value}</h3>
+//       {sub && <p className="db-kpi-sub">{sub}</p>}
+//     </div>
+//     <div className="db-kpi-shimmer" />
+//   </div>
+// );
 
 const SortIcon: React.FC<{
   field: SortField;
