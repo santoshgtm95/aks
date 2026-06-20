@@ -49,6 +49,109 @@
   font-weight: 500;
 }
 
+/* Report Filters */
+.report-filter-section {
+  margin-bottom: 25px;
+}
+
+.date-range-controls {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(220px, 1fr)) auto;
+  gap: 16px;
+  align-items: end;
+}
+
+.date-field {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.date-field span {
+  color: #1a3a52;
+  font-size: 12px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.4px;
+}
+
+.date-input-wrap {
+  position: relative;
+  display: flex;
+  align-items: center;
+  width: 100%;
+  min-height: 46px;
+  border: 1px solid #cbd5e1;
+  border-radius: 8px;
+  background: linear-gradient(180deg, #ffffff 0%, #f8fbff 100%);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.9);
+  transition:
+    border-color 0.2s ease,
+    box-shadow 0.2s ease,
+    background 0.2s ease;
+}
+
+.date-input-wrap::after {
+  content: "";
+  position: absolute;
+  right: 13px;
+  width: 16px;
+  height: 16px;
+  pointer-events: none;
+  opacity: 0.7;
+  background:
+    linear-gradient(#0066cc, #0066cc) 3px 5px / 10px 1.5px no-repeat,
+    linear-gradient(#0066cc, #0066cc) 3px 9px / 10px 1.5px no-repeat,
+    linear-gradient(#0066cc, #0066cc) 5px 1px / 1.5px 4px no-repeat,
+    linear-gradient(#0066cc, #0066cc) 10px 1px / 1.5px 4px no-repeat;
+  border: 1.5px solid #0066cc;
+  border-radius: 4px;
+}
+
+.date-input-wrap:hover {
+  border-color: #0066cc;
+  background: #ffffff;
+  box-shadow: 0 4px 12px rgba(0, 102, 204, 0.12);
+}
+
+.date-input-wrap:focus-within {
+  border-color: #0066cc;
+  background: #ffffff;
+  box-shadow:
+    0 0 0 3px rgba(0, 102, 204, 0.12),
+    0 4px 12px rgba(0, 102, 204, 0.12);
+}
+
+.date-input-wrap input {
+  width: 100%;
+  min-height: 44px;
+  padding: 10px 42px 10px 13px;
+  border: 0;
+  color: #1a3a52;
+  font-size: 14px;
+  font-weight: 600;
+  background: transparent;
+  cursor: pointer;
+}
+
+.date-input-wrap input:focus {
+  outline: none;
+}
+
+.date-input-wrap input::-webkit-calendar-picker-indicator {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  opacity: 0;
+  cursor: pointer;
+}
+
+.download-report-btn {
+  min-height: 46px;
+  white-space: nowrap;
+}
+
 /* Marker Selector */
 .marker-selector {
   margin-bottom: 25px;
@@ -629,6 +732,10 @@
 
   .report-actions {
     flex-direction: column;
+  }
+
+  .date-range-controls {
+    grid-template-columns: 1fr;
   }
 
   .btn {

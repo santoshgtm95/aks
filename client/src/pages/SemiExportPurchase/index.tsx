@@ -550,9 +550,7 @@ const SemiExportPurchase: React.FC = () => {
           size: row.size,
           weight: parseFloat(row.weight) || 0,
           price:
-            (parseFloat(row.weight) || 0) > 0
-              ? parseFloat(row.price) || 0
-              : 0,
+            (parseFloat(row.weight) || 0) > 0 ? parseFloat(row.price) || 0 : 0,
         })),
       });
 
@@ -1479,8 +1477,8 @@ const SemiExportPurchase: React.FC = () => {
                 id="sep-sorting-rate"
                 type="number"
                 value={sortingExchangeRate}
-                readOnly
                 title="Active CNY to MMK rate from ExchangeRates"
+                onChange={(e) => setSortingExchangeRate(e.target.value)}
               />
               <span>MMK</span>
             </div>

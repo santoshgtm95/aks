@@ -42,7 +42,10 @@ const Report: React.FC = () => {
   );
   const [loading, setLoading] = useState(false);
   const [pdfLoading, setPdfLoading] = useState(false);
+  const [excelDownloading, setExcelDownloading] = useState(false);
   const [error, setError] = useState("");
+  const [fromDate, setFromDate] = useState("");
+  const [toDate, setToDate] = useState("");
 
   // Fetch exported markers on component mount
   useEffect(() => {
@@ -127,6 +130,66 @@ const Report: React.FC = () => {
       setError((err as Error).message);
     } finally {
       setLoading(false);
+    }
+  };
+
+  const getDownloadFileName = (contentDisposition: string | null) => {
+    if (!contentDisposition)
+      return `${fromDate.replaceAll("-", "_")}_To_${toDate.replaceAll("-", "_")}.xlsx`;
+
+    const utf8Match = contentDisposition.match(/filename\*=UTF-8''([^;]+)/i);
+    if (utf8Match?.[1]) return decodeURIComponent(utf8Match[1]);
+
+    const filenameMatch = contentDisposition.match(/filename="?([^";]+)"?/i);
+    if (filenameMatch?.[1]) return filenameMatch[1];
+
+    return `${fromDate.replaceAll("-", "_")}_To_${toDate.replaceAll("-", "_")}.xlsx`;
+  };
+
+  const downloadExcelReport = async () => {
+    if (!fromDate || !toDate) {
+      setError("Please select both From Date and To Date");
+      return;
+    }
+
+    if (new Date(fromDate) > new Date(toDate)) {
+      setError("From Date cannot be later than To Date");
+      return;
+    }
+
+    try {
+      setExcelDownloading(true);
+      setError("");
+
+      const params = new URLSearchParams({ fromDate, toDate });
+      const response = await fetch(
+        `/api/reports/download-excel?${params.toString()}`,
+      );
+      if (!response.ok) {
+        let message = "Failed to download report";
+        try {
+          const errorData = await response.json();
+          message = errorData.message || message;
+        } catch {}
+        throw new Error(message);
+      }
+
+      const blob = await response.blob();
+      const fileName = getDownloadFileName(
+        response.headers.get("content-disposition"),
+      );
+      const url = window.URL.createObjectURL(blob);
+      const link = document.createElement("a");
+      link.href = url;
+      link.download = fileName;
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+      window.URL.revokeObjectURL(url);
+    } catch (err) {
+      setError((err as Error).message);
+    } finally {
+      setExcelDownloading(false);
     }
   };
 
@@ -481,6 +544,39 @@ const Report: React.FC = () => {
       <h1>Report Generator</h1>
 
       {error && <div className="error-message">{error}</div>}
+
+      <div className="report-section report-filter-section">
+        <h2>Excel Report Section</h2>
+        <div className="date-range-controls">
+          <label className="date-field">
+            <span>From Date</span>
+            <div className="date-input-wrap">
+              <input
+                type="date"
+                value={fromDate}
+                onChange={(e) => setFromDate(e.target.value)}
+              />
+            </div>
+          </label>
+          <label className="date-field">
+            <span>To Date</span>
+            <div className="date-input-wrap">
+              <input
+                type="date"
+                value={toDate}
+                onChange={(e) => setToDate(e.target.value)}
+              />
+            </div>
+          </label>
+          <button
+            className="btn btn-pdf download-report-btn"
+            onClick={downloadExcelReport}
+            disabled={excelDownloading}
+          >
+            {excelDownloading ? "Downloading..." : "Download Report"}
+          </button>
+        </div>
+      </div>
 
       <div className="report-section">
         <h2>Select Markers</h2>

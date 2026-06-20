@@ -303,6 +303,12 @@ const SemiExport: React.FC = () => {
         ? new Date(record.createdAt).toDateString()
         : "---";
       const groupKey = `purchase-${createdDate}`;
+      const markerName = record.createdAt
+        ? new Date(record.createdAt).toLocaleDateString()
+        : "---";
+
+      if (markersInLedgers.has(markerName)) return;
+
       const totalWeight = record.sizes
         .filter((size) => size.size !== "Lost")
         .reduce((sum, size) => sum + (Number(size.weight) || 0), 0);
@@ -311,9 +317,7 @@ const SemiExport: React.FC = () => {
 
       if (!groups[groupKey]) {
         groups[groupKey] = {
-          markerName: record.createdAt
-            ? new Date(record.createdAt).toLocaleDateString()
-            : "---",
+          markerName,
           records: [],
           combinedWeight: 0,
           date: record.createdAt,
@@ -447,7 +451,14 @@ const SemiExport: React.FC = () => {
 
   const completedMarkers = useMemo(() => {
     return groupedRecords.filter((group) => {
-      if (group.source === "purchase") return false;
+      if (group.source === "purchase") {
+        const purchaseRecords = group.purchaseRecords || [];
+
+        return (
+          purchaseRecords.length > 0 &&
+          purchaseRecords.every((record) => getSavedPurchaseExport(record))
+        );
+      }
 
       const marker = group.markerName;
 
@@ -4509,7 +4520,7 @@ const SemiExport: React.FC = () => {
               ) : (
                 completedMarkers.map((group) => (
                   <label
-                    key={group.markerName}
+                    key={getPurchaseGroupKey(group)}
                     style={{
                       display: "flex",
                       alignItems: "center",
@@ -4560,7 +4571,9 @@ const SemiExport: React.FC = () => {
                         {group.markerName}
                       </span>
                       <span style={{ fontSize: "12px", color: "#64748b" }}>
-                        {group.warehouseNames.join(", ") || "---"}
+                        {group.source === "purchase"
+                          ? `Purchase - ${(group.customerNames || []).join(", ") || "---"} - ${(group.colors || []).join(", ") || "---"}`
+                          : group.warehouseNames.join(", ") || "---"}
                       </span>
                     </div>
                   </label>

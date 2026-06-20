@@ -1,6 +1,6 @@
-import React, { useEffect, useState, useMemo } from 'react';
-import { dashboardAPI } from '../../services/api';
-import type { DashboardStats, MarkerSortingStats } from '../../types';
+import React, { useEffect, useState, useMemo } from "react";
+import { dashboardAPI } from "../../services/api";
+import type { DashboardStats, MarkerSortingStats } from "../../types";
 import {
   Package,
   TrendingUp,
@@ -16,13 +16,19 @@ import {
   Minus,
   BarChart2,
   Tag,
-} from 'lucide-react';
-import './index.css';
+} from "lucide-react";
+import "./index.css";
 
-type SortField = 'marker' | 'totalSorted' | 'totalLost' | 'totalSpoilage' | 'totalReturns' | 'recordCount';
-type SortDir = 'asc' | 'desc';
+type SortField =
+  | "marker"
+  | "totalSorted"
+  | "totalLost"
+  | "totalSpoilage"
+  | "totalReturns"
+  | "recordCount";
+type SortDir = "asc" | "desc";
 
-const fmt = (n: number) => n.toFixed(3).replace(/\B(?=(\d{3})+(?!\d))/g, ',');
+const fmt = (n: number) => n.toFixed(3).replace(/\B(?=(\d{3})+(?!\d))/g, ",");
 const fmtInt = (n: number) => n.toLocaleString();
 
 const KpiCard: React.FC<{
@@ -33,9 +39,12 @@ const KpiCard: React.FC<{
   gradient: string;
   glow: string;
   delay?: string;
-}> = ({ title, value, sub, icon, gradient, glow, delay = '0s' }) => (
+}> = ({ title, value, sub, icon, gradient, glow, delay = "0s" }) => (
   <div className="db-kpi-card" style={{ animationDelay: delay }}>
-    <div className="db-kpi-icon" style={{ background: gradient, boxShadow: glow }}>
+    <div
+      className="db-kpi-icon"
+      style={{ background: gradient, boxShadow: glow }}
+    >
       {icon}
     </div>
     <div className="db-kpi-body">
@@ -47,26 +56,32 @@ const KpiCard: React.FC<{
   </div>
 );
 
-const SortIcon: React.FC<{ field: SortField; current: SortField; dir: SortDir }> = ({ field, current, dir }) => {
+const SortIcon: React.FC<{
+  field: SortField;
+  current: SortField;
+  dir: SortDir;
+}> = ({ field, current, dir }) => {
   if (field !== current) return <Minus size={12} style={{ opacity: 0.3 }} />;
-  return dir === 'asc' ? <ChevronUp size={14} /> : <ChevronDown size={14} />;
+  return dir === "asc" ? <ChevronUp size={14} /> : <ChevronDown size={14} />;
 };
 
 const Dashboard: React.FC = () => {
   const [stats, setStats] = useState<DashboardStats | null>(null);
   const [loading, setLoading] = useState(true);
-  const [search, setSearch] = useState('');
-  const [sortField, setSortField] = useState<SortField>('totalSorted');
-  const [sortDir, setSortDir] = useState<SortDir>('desc');
+  const [search, setSearch] = useState("");
+  const [sortField, setSortField] = useState<SortField>("totalSorted");
+  const [sortDir, setSortDir] = useState<SortDir>("desc");
 
-  useEffect(() => { loadStats(); }, []);
+  useEffect(() => {
+    loadStats();
+  }, []);
 
   const loadStats = async () => {
     try {
       const data = await dashboardAPI.getStats();
       setStats(data);
     } catch (error) {
-      console.error('Failed to load dashboard stats:', error);
+      console.error("Failed to load dashboard stats:", error);
     } finally {
       setLoading(false);
     }
@@ -74,10 +89,10 @@ const Dashboard: React.FC = () => {
 
   const handleSort = (field: SortField) => {
     if (field === sortField) {
-      setSortDir(d => d === 'asc' ? 'desc' : 'asc');
+      setSortDir((d) => (d === "asc" ? "desc" : "asc"));
     } else {
       setSortField(field);
-      setSortDir('desc');
+      setSortDir("desc");
     }
   };
 
@@ -86,16 +101,18 @@ const Dashboard: React.FC = () => {
     const arr = stats.markerSortingStats ?? [];
     const q = search.toLowerCase();
     return [...arr]
-      .filter(m =>
-        m.marker.toLowerCase().includes(q) ||
-        m.warehouseName.toLowerCase().includes(q) ||
-        m.category.toLowerCase().includes(q)
+      .filter(
+        (m) =>
+          m.marker.toLowerCase().includes(q) ||
+          m.warehouseName.toLowerCase().includes(q) ||
+          m.category.toLowerCase().includes(q),
       )
       .sort((a, b) => {
         const av = a[sortField];
         const bv = b[sortField];
-        const mul = sortDir === 'asc' ? 1 : -1;
-        if (typeof av === 'string' && typeof bv === 'string') return mul * av.localeCompare(bv);
+        const mul = sortDir === "asc" ? 1 : -1;
+        if (typeof av === "string" && typeof bv === "string")
+          return mul * av.localeCompare(bv);
         return mul * ((av as number) - (bv as number));
       });
   }, [stats, search, sortField, sortDir]);
@@ -104,20 +121,23 @@ const Dashboard: React.FC = () => {
     if (!stats) return null;
     const arr = stats.markerSortingStats ?? [];
     if (arr.length === 0) return null;
-    return arr.reduce((acc, m) => ({
-      sorted: acc.sorted + m.totalSorted,
-      lost: acc.lost + m.totalLost,
-      spoilage: acc.spoilage + m.totalSpoilage,
-      returns: acc.returns + m.totalReturns,
-    }), { sorted: 0, lost: 0, spoilage: 0, returns: 0 });
+    return arr.reduce(
+      (acc, m) => ({
+        sorted: acc.sorted + m.totalSorted,
+        lost: acc.lost + m.totalLost,
+        spoilage: acc.spoilage + m.totalSpoilage,
+        returns: acc.returns + m.totalReturns,
+      }),
+      { sorted: 0, lost: 0, spoilage: 0, returns: 0 },
+    );
   }, [stats]);
 
   if (loading) {
     return (
       <div className="db-loading">
         <div className="db-pulse-ring" />
-        <div className="db-pulse-ring" style={{ animationDelay: '0.2s' }} />
-        <div className="db-pulse-ring" style={{ animationDelay: '0.4s' }} />
+        <div className="db-pulse-ring" style={{ animationDelay: "0.2s" }} />
+        <div className="db-pulse-ring" style={{ animationDelay: "0.4s" }} />
         <p>Loading dashboard…</p>
       </div>
     );
@@ -129,7 +149,9 @@ const Dashboard: React.FC = () => {
       <div className="db-header">
         <div>
           <h1 className="db-title">Dashboard</h1>
-          <p className="db-subtitle">Overview of operations &amp; sorting metrics</p>
+          <p className="db-subtitle">
+            Overview of operations &amp; sorting metrics
+          </p>
         </div>
         <div className="db-live-badge">
           <span className="db-live-dot" />
@@ -178,7 +200,7 @@ const Dashboard: React.FC = () => {
         <KpiCard
           delay="0.28s"
           title="Total Sorted"
-          value={totals ? `${fmt(totals.sorted)} viss` : '—'}
+          value={totals ? `${fmt(totals.sorted)} viss` : "—"}
           sub={`${(stats?.markerSortingStats ?? []).length} markers`}
           icon={<Layers size={26} color="#fff" />}
           gradient="linear-gradient(135deg,#8b5cf6,#7c3aed)"
@@ -187,7 +209,7 @@ const Dashboard: React.FC = () => {
         <KpiCard
           delay="0.35s"
           title="Total Lost"
-          value={totals ? `${fmt(totals.lost)} viss` : '—'}
+          value={totals ? `${fmt(totals.lost)} viss` : "—"}
           sub="across all markers"
           icon={<AlertTriangle size={26} color="#fff" />}
           gradient="linear-gradient(135deg,#ef4444,#dc2626)"
@@ -201,7 +223,9 @@ const Dashboard: React.FC = () => {
           <div className="db-section-title-wrap">
             <BarChart2 size={22} className="db-section-icon" />
             <h2 className="db-section-title">Sorting Stats by Marker</h2>
-            <span className="db-badge">{(stats?.markerSortingStats ?? []).length} markers</span>
+            <span className="db-badge">
+              {(stats?.markerSortingStats ?? []).length} markers
+            </span>
           </div>
           <div className="db-search-wrap">
             <Search size={16} className="db-search-icon" />
@@ -209,7 +233,7 @@ const Dashboard: React.FC = () => {
               className="db-search"
               placeholder="Search marker, warehouse…"
               value={search}
-              onChange={e => setSearch(e.target.value)}
+              onChange={(e) => setSearch(e.target.value)}
             />
           </div>
         </div>
@@ -219,7 +243,9 @@ const Dashboard: React.FC = () => {
           <div className="db-summary-bar">
             <div className="db-summary-item db-summary-sorted">
               <span className="db-summary-label">Total Sorted</span>
-              <span className="db-summary-value">{fmt(totals.sorted)} viss</span>
+              <span className="db-summary-value">
+                {fmt(totals.sorted)} viss
+              </span>
             </div>
             <div className="db-summary-divider" />
             <div className="db-summary-item db-summary-lost">
@@ -229,12 +255,16 @@ const Dashboard: React.FC = () => {
             <div className="db-summary-divider" />
             <div className="db-summary-item db-summary-spoilage">
               <span className="db-summary-label">Total Spoilage</span>
-              <span className="db-summary-value">{fmt(totals.spoilage)} viss</span>
+              <span className="db-summary-value">
+                {fmt(totals.spoilage)} viss
+              </span>
             </div>
             <div className="db-summary-divider" />
             <div className="db-summary-item db-summary-returns">
               <span className="db-summary-label">Total Returns</span>
-              <span className="db-summary-value">{fmt(totals.returns)} viss</span>
+              <span className="db-summary-value">
+                {fmt(totals.returns)} viss
+              </span>
             </div>
           </div>
         )}
@@ -243,42 +273,84 @@ const Dashboard: React.FC = () => {
           <table className="db-table">
             <thead>
               <tr>
-                <th className="db-th db-th-sort" onClick={() => handleSort('marker')}>
+                <th
+                  className="db-th db-th-sort"
+                  onClick={() => handleSort("marker")}
+                >
                   <div className="db-th-inner">
                     <span>Marker</span>
-                    <SortIcon field="marker" current={sortField} dir={sortDir} />
+                    <SortIcon
+                      field="marker"
+                      current={sortField}
+                      dir={sortDir}
+                    />
                   </div>
                 </th>
                 <th className="db-th">Warehouse</th>
                 <th className="db-th">Category</th>
-                <th className="db-th db-th-sort db-th-num" onClick={() => handleSort('recordCount')}>
+                <th
+                  className="db-th db-th-sort db-th-num"
+                  onClick={() => handleSort("recordCount")}
+                >
                   <div className="db-th-inner db-th-inner-right">
                     <span>Records</span>
-                    <SortIcon field="recordCount" current={sortField} dir={sortDir} />
+                    <SortIcon
+                      field="recordCount"
+                      current={sortField}
+                      dir={sortDir}
+                    />
                   </div>
                 </th>
-                <th className="db-th db-th-sort db-th-num sorted-col" onClick={() => handleSort('totalSorted')}>
+                <th
+                  className="db-th db-th-sort db-th-num sorted-col"
+                  onClick={() => handleSort("totalSorted")}
+                >
                   <div className="db-th-inner db-th-inner-right">
                     <span>Total Sorted</span>
-                    <SortIcon field="totalSorted" current={sortField} dir={sortDir} />
+                    <SortIcon
+                      field="totalSorted"
+                      current={sortField}
+                      dir={sortDir}
+                    />
                   </div>
                 </th>
-                <th className="db-th db-th-sort db-th-num lost-col" onClick={() => handleSort('totalLost')}>
+                <th
+                  className="db-th db-th-sort db-th-num lost-col"
+                  onClick={() => handleSort("totalLost")}
+                >
                   <div className="db-th-inner db-th-inner-right">
                     <span>Total Lost</span>
-                    <SortIcon field="totalLost" current={sortField} dir={sortDir} />
+                    <SortIcon
+                      field="totalLost"
+                      current={sortField}
+                      dir={sortDir}
+                    />
                   </div>
                 </th>
-                <th className="db-th db-th-sort db-th-num spoil-col" onClick={() => handleSort('totalSpoilage')}>
+                <th
+                  className="db-th db-th-sort db-th-num spoil-col"
+                  onClick={() => handleSort("totalSpoilage")}
+                >
                   <div className="db-th-inner db-th-inner-right">
                     <span>Total Spoilage</span>
-                    <SortIcon field="totalSpoilage" current={sortField} dir={sortDir} />
+                    <SortIcon
+                      field="totalSpoilage"
+                      current={sortField}
+                      dir={sortDir}
+                    />
                   </div>
                 </th>
-                <th className="db-th db-th-sort db-th-num ret-col" onClick={() => handleSort('totalReturns')}>
+                <th
+                  className="db-th db-th-sort db-th-num ret-col"
+                  onClick={() => handleSort("totalReturns")}
+                >
                   <div className="db-th-inner db-th-inner-right">
                     <span>Total Returns</span>
-                    <SortIcon field="totalReturns" current={sortField} dir={sortDir} />
+                    <SortIcon
+                      field="totalReturns"
+                      current={sortField}
+                      dir={sortDir}
+                    />
                   </div>
                 </th>
                 <th className="db-th db-th-num">Loss %</th>
@@ -294,23 +366,29 @@ const Dashboard: React.FC = () => {
                 </tr>
               ) : (
                 filteredMarkers.map((m, idx) => {
-                  const lossRate = m.totalSorted > 0
-                    ? ((m.totalLost / m.totalSorted) * 100)
-                    : 0;
+                  const lossRate =
+                    m.totalSorted > 0 ? (m.totalLost / m.totalSorted) * 100 : 0;
                   const isHighLoss = lossRate > 5;
                   return (
-                    <tr key={m.marker} className={`db-tr ${idx % 2 === 0 ? 'db-tr-even' : ''}`}>
+                    <tr
+                      key={m.marker}
+                      className={`db-tr ${idx % 2 === 0 ? "db-tr-even" : ""}`}
+                    >
                       <td className="db-td">
                         <div className="db-marker-cell">
                           <span className="db-marker-dot" />
                           <span className="db-marker-name">{m.marker}</span>
                         </div>
                       </td>
-                      <td className="db-td db-td-muted">{m.warehouseName || '—'}</td>
+                      <td className="db-td db-td-muted">
+                        {m.warehouseName || "—"}
+                      </td>
                       <td className="db-td">
                         {m.category ? (
                           <span className="db-cat-badge">{m.category}</span>
-                        ) : '—'}
+                        ) : (
+                          "—"
+                        )}
                       </td>
                       <td className="db-td db-td-num">
                         <span className="db-rec-count">{m.recordCount}</span>
@@ -327,25 +405,37 @@ const Dashboard: React.FC = () => {
                             <ArrowDownRight size={13} />
                             {fmt(m.totalLost)}
                           </span>
-                        ) : <span className="db-zero">—</span>}
+                        ) : (
+                          <span className="db-zero">—</span>
+                        )}
                       </td>
                       <td className="db-td db-td-num spoil-col">
                         {m.totalSpoilage > 0 ? (
-                          <span className="db-spoil-val">{fmt(m.totalSpoilage)}</span>
-                        ) : <span className="db-zero">—</span>}
+                          <span className="db-spoil-val">
+                            {fmt(m.totalSpoilage)}
+                          </span>
+                        ) : (
+                          <span className="db-zero">—</span>
+                        )}
                       </td>
                       <td className="db-td db-td-num ret-col">
                         {m.totalReturns > 0 ? (
-                          <span className="db-ret-val">{fmt(m.totalReturns)}</span>
-                        ) : <span className="db-zero">—</span>}
+                          <span className="db-ret-val">
+                            {fmt(m.totalReturns)}
+                          </span>
+                        ) : (
+                          <span className="db-zero">—</span>
+                        )}
                       </td>
                       <td className="db-td db-td-num">
                         <div className="db-loss-bar-wrap">
                           <div
-                            className={`db-loss-bar ${isHighLoss ? 'db-loss-bar-high' : ''}`}
+                            className={`db-loss-bar ${isHighLoss ? "db-loss-bar-high" : ""}`}
                             style={{ width: `${Math.min(lossRate * 4, 100)}%` }}
                           />
-                          <span className={`db-loss-pct ${isHighLoss ? 'db-loss-pct-high' : ''}`}>
+                          <span
+                            className={`db-loss-pct ${isHighLoss ? "db-loss-pct-high" : ""}`}
+                          >
                             {lossRate.toFixed(1)}%
                           </span>
                         </div>
@@ -356,114 +446,6 @@ const Dashboard: React.FC = () => {
               )}
             </tbody>
           </table>
-        </div>
-      </div>
-
-      {/* Bottom grid: Recent Sales + Low Stock */}
-      <div className="db-bottom-grid">
-        {/* Recent Sales */}
-        <div className="db-section-card">
-          <div className="db-section-header">
-            <div className="db-section-title-wrap">
-              <ShoppingCart size={20} className="db-section-icon" />
-              <h2 className="db-section-title">Recent Sales</h2>
-            </div>
-          </div>
-          <div className="db-table-scroll">
-            <table className="db-table">
-              <thead>
-                <tr>
-                  <th className="db-th">Date</th>
-                  <th className="db-th">Marker</th>
-                  <th className="db-th db-th-num">Weight</th>
-                  <th className="db-th db-th-num">Price</th>
-                  <th className="db-th">Seller</th>
-                </tr>
-              </thead>
-              <tbody>
-                {(stats?.recentSales || []).slice(0, 8).map((sale, idx) => (
-                  <tr key={sale.id} className={`db-tr ${idx % 2 === 0 ? 'db-tr-even' : ''}`}>
-                    <td className="db-td db-td-muted">{new Date(sale.date).toLocaleDateString()}</td>
-                    <td className="db-td">
-                      <div className="db-marker-cell">
-                        <span className="db-marker-dot db-dot-green" />
-                        <div>
-                          <div className="db-marker-name">{sale.productMarker}</div>
-                          <div className="db-td-muted" style={{ fontSize: '11px' }}>{sale.warehouseName}</div>
-                        </div>
-                      </div>
-                    </td>
-                    <td className="db-td db-td-num">{sale.weight} {sale.unit}</td>
-                    <td className="db-td db-td-num">{(sale.price).toLocaleString()} {sale.currency}</td>
-                    <td className="db-td db-td-muted">{sale.sellerName}</td>
-                  </tr>
-                ))}
-                {(stats?.recentSales || []).length === 0 && (
-                  <tr><td colSpan={5} className="db-td-empty"><p>No recent sales</p></td></tr>
-                )}
-              </tbody>
-            </table>
-          </div>
-        </div>
-
-        {/* Low Stock */}
-        <div className="db-section-card">
-          <div className="db-section-header">
-            <div className="db-section-title-wrap">
-              <AlertTriangle size={20} className="db-section-icon db-icon-warn" />
-              <h2 className="db-section-title">Low Stock Alert</h2>
-              {(stats?.lowStockProducts || []).length > 0 && (
-                <span className="db-badge db-badge-warn">{stats!.lowStockProducts.length}</span>
-              )}
-            </div>
-          </div>
-          <div className="db-table-scroll">
-            <table className="db-table">
-              <thead>
-                <tr>
-                  <th className="db-th">Marker</th>
-                  <th className="db-th db-th-num">Remaining</th>
-                  <th className="db-th db-th-num">Original</th>
-                  <th className="db-th">Status</th>
-                </tr>
-              </thead>
-              <tbody>
-                {(stats?.lowStockProducts || []).slice(0, 8).map((product, idx) => {
-                  const pct = product.weight > 0 ? (product.remainingWeight / product.weight) * 100 : 0;
-                  return (
-                    <tr key={product.id} className={`db-tr ${idx % 2 === 0 ? 'db-tr-even' : ''}`}>
-                      <td className="db-td">
-                        <div className="db-marker-cell">
-                          <span className="db-marker-dot db-dot-warn" />
-                          <span className="db-marker-name">{product.marker}</span>
-                        </div>
-                      </td>
-                      <td className="db-td db-td-num">
-                        <span className="db-low-stock-val">{product.remainingWeight.toFixed(2)} {product.unit}</span>
-                      </td>
-                      <td className="db-td db-td-num db-td-muted">{product.weight.toFixed(2)} {product.unit}</td>
-                      <td className="db-td">
-                        <div className="db-stock-wrap">
-                          <div className="db-stock-bar-bg">
-                            <div className="db-stock-bar" style={{ width: `${Math.max(pct, 2)}%` }} />
-                          </div>
-                          <span className="db-stock-pct">{pct.toFixed(0)}%</span>
-                        </div>
-                      </td>
-                    </tr>
-                  );
-                })}
-                {(stats?.lowStockProducts || []).length === 0 && (
-                  <tr>
-                    <td colSpan={4} className="db-td-empty db-td-empty-good">
-                      <TrendingUp size={28} />
-                      <p>All stock levels healthy</p>
-                    </td>
-                  </tr>
-                )}
-              </tbody>
-            </table>
-          </div>
         </div>
       </div>
     </div>
