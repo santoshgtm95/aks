@@ -113,6 +113,8 @@ const SemiExportPurchase: React.FC = () => {
   const [selectedHistoryRecord, setSelectedHistoryRecord] =
     useState<SemiExportPurchaseRecord | null>(null);
   const [saving, setSaving] = useState(false);
+  const [showTotalAmount, setShowTotalAmount] = useState(true);
+  const [showExchangeRate, setShowExchangeRate] = useState(true);
   const [activeRates, setActiveRates] = useState<ExchangeRate[]>([]);
   const [sortingExchangeRate, setSortingExchangeRate] = useState("0");
   const [sortingWorkerFees, setSortingWorkerFees] = useState("");
@@ -295,6 +297,38 @@ const SemiExportPurchase: React.FC = () => {
     } catch (error) {
       console.error("Failed to delete purchase:", error);
       alert("Failed to delete purchase order");
+    }
+  };
+
+  const handleDeleteProcessing = async (e: React.MouseEvent, id: number) => {
+    e.stopPropagation();
+    if (!confirm("Are you sure you want to delete this processing record?")) {
+      return;
+    }
+    try {
+      await semiExportPurchaseProcessingAPI.delete(id);
+      setProcessingList((prev) => prev.filter((p) => p.id !== id));
+      // Also remove associated sorting history entries (backend cascade deletes them)
+      setSortingHistory((prev) =>
+        prev.filter((r) => r.semiExportPurchaseProcessingId !== id),
+      );
+    } catch (error) {
+      console.error("Failed to delete processing record:", error);
+      alert("Failed to delete processing record");
+    }
+  };
+
+  const handleDeleteHistory = async (e: React.MouseEvent, id: number) => {
+    e.stopPropagation();
+    if (!confirm("Are you sure you want to delete this sorting history record?")) {
+      return;
+    }
+    try {
+      await semiExportPurchaseRecordsAPI.delete(id);
+      setSortingHistory((prev) => prev.filter((r) => r.id !== id));
+    } catch (error) {
+      console.error("Failed to delete sorting history record:", error);
+      alert("Failed to delete sorting history record");
     }
   };
 
@@ -497,9 +531,11 @@ const SemiExportPurchase: React.FC = () => {
           </table>
 
           <div style="margin-top: 20px; font-size: 14px;">
-            <div style="margin-bottom: 8px;"><strong>Exchange Rate:</strong> 1 CNY = ${rate.toLocaleString()} MMK</div>
+            ${showExchangeRate ? `<div style="margin-bottom: 8px;"><strong>Exchange Rate:</strong> 1 CNY = ${rate.toLocaleString()} MMK</div>` : ""}
+            ${showTotalAmount ? `
             <div style="margin-bottom: 8px;"><strong>Total Amount (CNY):</strong> ¥${totalAmt.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</div>
             <div style="margin-bottom: 8px;"><strong>Total Amount (MMK):</strong> ${Math.round(totalMmk).toLocaleString()} MMK</div>
+            ` : ""}
             <div style="margin-top: 15px; padding-top: 15px; border-top: 1px dashed black;"><strong>Lost Weight:</strong> ${lostWeight.toFixed(3)} viss</div>
           </div>
         </body>
@@ -665,6 +701,7 @@ const SemiExportPurchase: React.FC = () => {
               <th className="sep-num">Assign weight</th>
               <th className="sep-num">Lost weight</th>
               <th>Assign Date</th>
+              <th style={{ width: "60px" }}>Action</th>
             </tr>
           </thead>
           <tbody>
@@ -697,6 +734,20 @@ const SemiExportPurchase: React.FC = () => {
                   {item.lostWeight.toFixed(3)}
                 </td>
                 <td>{formatDateTime(item.createdAt)}</td>
+                <td
+                  style={{ textAlign: "center" }}
+                  onClick={(e) => e.stopPropagation()}
+                >
+                  {hasPermission("SemiExport.Delete") && (
+                    <button
+                      className="sep-delete-btn"
+                      title="Delete processing record"
+                      onClick={(e) => handleDeleteProcessing(e, item.id)}
+                    >
+                      <Trash2 size={14} />
+                    </button>
+                  )}
+                </td>
               </tr>
             ))}
           </tbody>
@@ -736,6 +787,7 @@ const SemiExportPurchase: React.FC = () => {
               <th className="sep-num">Worker fees</th>
               <th className="sep-num">Rate</th>
               <th>Saved Date</th>
+              <th style={{ width: "60px" }}>Action</th>
             </tr>
           </thead>
           <tbody>
@@ -782,6 +834,20 @@ const SemiExportPurchase: React.FC = () => {
                   {record.exchangeRateRate.toLocaleString()}
                 </td>
                 <td>{formatDateTime(record.createdAt)}</td>
+                <td
+                  style={{ textAlign: "center" }}
+                  onClick={(e) => e.stopPropagation()}
+                >
+                  {hasPermission("SemiExport.Delete") && (
+                    <button
+                      className="sep-delete-btn"
+                      title="Delete sorting history record"
+                      onClick={(e) => handleDeleteHistory(e, record.id)}
+                    >
+                      <Trash2 size={14} />
+                    </button>
+                  )}
+                </td>
               </tr>
             ))}
           </tbody>
@@ -909,29 +975,12 @@ const SemiExportPurchase: React.FC = () => {
                     gap: "12px",
                   }}
                 >
-                  <div className="rf-input-group">
-                    <div
-                      style={{
-                        display: "flex",
-                        alignItems: "center",
-                        justifyContent: "space-between",
-                        gap: "10px",
-                        marginBottom: "4px",
-                      }}
-                    >
-                      <label
-                        className="rf-input-label"
-                        style={{ margin: 0, whiteSpace: "nowrap" }}
-                      >
-                        Weight
-                      </label>
-                      <div
-                        className="rf-input-wrapper"
-                        style={{ flex: 1, minWidth: 0 }}
-                      >
+                  <div className="sep-input-group">       
+                      <div className="sep-input-wrapper">
+                         <label className="sep-input-label">Weight</label>
                         <input
                           type="number"
-                          className="rf-input-field"
+                          className="sep-input-field"
                           step="0.001"
                           min="0"
                           max={purchase.totalReceiveWeight}
@@ -946,7 +995,7 @@ const SemiExportPurchase: React.FC = () => {
                         />
                         <button
                           type="button"
-                          className="rf-max-btn"
+                          className="sep-max-btn"
                           onClick={() =>
                             setAssignWeights((prev) => ({
                               ...prev,
@@ -955,56 +1004,36 @@ const SemiExportPurchase: React.FC = () => {
                             }))
                           }
                           title="Fill max weight"
-                          style={{ height: "28px" }}
+                          style={{ height: "38px" }}
                         >
                           Max
                         </button>
                       </div>
-                    </div>
+                   
                   </div>
 
-                  <div className="rf-input-group">
+                  <div className="sep-input-group">
                     <div
-                      style={{
-                        display: "flex",
-                        alignItems: "center",
-                        justifyContent: "space-between",
-                        gap: "10px",
-                      }}
+                      className="sep-input-wrapper"
                     >
-                      <label
-                        className="rf-input-label"
-                        style={{ margin: 0, whiteSpace: "nowrap" }}
-                      >
-                        Lost
-                      </label>
+                      <label className="sep-input-label">Lost</label>
                       <input
                         type="text"
-                        className={`rf-input-field ${getLostWeight(purchase) > 0 ? "has-loss" : ""}`}
+                        className={`sep-input-field ${getLostWeight(purchase) > 0 ? "has-loss" : ""}`}
                         readOnly
                         value={getLostWeight(purchase).toFixed(3)}
-                        style={{ flex: 1, minWidth: 0, textAlign: "right" }}
+                        style={{ textAlign: "right" }}
                       />
                     </div>
                   </div>
 
-                  <div className="rf-input-group">
+                  <div className="sep-input-group">
                     <div
-                      style={{
-                        display: "flex",
-                        alignItems: "center",
-                        justifyContent: "space-between",
-                        gap: "10px",
-                      }}
+                     className="sep-input-wrapper"
                     >
-                      <label
-                        className="rf-input-label"
-                        style={{ margin: 0, whiteSpace: "nowrap" }}
-                      >
-                        Worker
-                      </label>
+                      <label className="sep-input-label">Worker</label>
                       <select
-                        className="rf-input-field"
+                        className="sep-input-field"
                         value={selectedWorkers[purchase.id] ?? ""}
                         onChange={(e) =>
                           setSelectedWorkers((prev) => ({
@@ -1013,8 +1042,6 @@ const SemiExportPurchase: React.FC = () => {
                           }))
                         }
                         style={{
-                          flex: 1,
-                          minWidth: 0,
                           background: "white",
                           cursor: "pointer",
                         }}
@@ -1057,8 +1084,7 @@ const SemiExportPurchase: React.FC = () => {
                         });
 
                       setProcessingList((prev) => [result, ...prev]);
-                      alert("Assigned to sorting successfully");
-
+                   
                       // Clear selection for this card
                       setAssignWeights((prev) => {
                         const next = { ...prev };
@@ -1494,13 +1520,33 @@ const SemiExportPurchase: React.FC = () => {
 
               <div className="sep-size-card">
                 <div className="sep-size-card-header">
-                  <button
-                    type="button"
-                    onClick={handleSortingSaveAndPrint}
-                    disabled={saving}
-                  >
-                    {saving ? "Saving..." : "Save and Print"}
-                  </button>
+                  <div style={{ display: "flex", alignItems: "center", gap: "20px" }}>
+                    <button
+                      type="button"
+                      onClick={handleSortingSaveAndPrint}
+                      disabled={saving}
+                    >
+                      {saving ? "Saving..." : "Save and Print"}
+                    </button>
+                    <label style={{ display: "flex", alignItems: "center", gap: "8px", fontSize: "13.5px", fontWeight: "600", color: "#475569", cursor: "pointer", userSelect: "none" }}>
+                      <input
+                        type="checkbox"
+                        checked={showTotalAmount}
+                        onChange={(e) => setShowTotalAmount(e.target.checked)}
+                        style={{ width: "16px", height: "16px", cursor: "pointer" }}
+                      />
+                      Show Total Amount
+                    </label>
+                    <label style={{ display: "flex", alignItems: "center", gap: "8px", fontSize: "13.5px", fontWeight: "600", color: "#475569", cursor: "pointer", userSelect: "none" }}>
+                      <input
+                        type="checkbox"
+                        checked={showExchangeRate}
+                        onChange={(e) => setShowExchangeRate(e.target.checked)}
+                        style={{ width: "16px", height: "16px", cursor: "pointer" }}
+                      />
+                      Show Exchange Rate
+                    </label>
+                  </div>
                 </div>
 
                 <div className="sep-size-table-wrap">
@@ -1717,19 +1763,39 @@ const SemiExportPurchase: React.FC = () => {
 
               <div className="sep-size-card">
                 <div className="sep-size-card-header">
-                  <button
-                    type="button"
-                    onClick={() =>
-                      printSortingPurchasePdf(
-                        selectedHistoryRecord,
-                        getHistorySortingRows(selectedHistoryRecord),
-                        selectedHistoryRecord.exchangeRateRate.toString(),
-                        false,
-                      )
-                    }
-                  >
-                    Print
-                  </button>
+                  <div style={{ display: "flex", alignItems: "center", gap: "20px" }}>
+                    <button
+                      type="button"
+                      onClick={() =>
+                        printSortingPurchasePdf(
+                          selectedHistoryRecord,
+                          getHistorySortingRows(selectedHistoryRecord),
+                          selectedHistoryRecord.exchangeRateRate.toString(),
+                          false,
+                        )
+                      }
+                    >
+                      Print
+                    </button>
+                    <label style={{ display: "flex", alignItems: "center", gap: "8px", fontSize: "13.5px", fontWeight: "600", color: "#475569", cursor: "pointer", userSelect: "none" }}>
+                      <input
+                        type="checkbox"
+                        checked={showTotalAmount}
+                        onChange={(e) => setShowTotalAmount(e.target.checked)}
+                        style={{ width: "16px", height: "16px", cursor: "pointer" }}
+                      />
+                      Show Total Amount
+                    </label>
+                    <label style={{ display: "flex", alignItems: "center", gap: "8px", fontSize: "13.5px", fontWeight: "600", color: "#475569", cursor: "pointer", userSelect: "none" }}>
+                      <input
+                        type="checkbox"
+                        checked={showExchangeRate}
+                        onChange={(e) => setShowExchangeRate(e.target.checked)}
+                        style={{ width: "16px", height: "16px", cursor: "pointer" }}
+                      />
+                      Show Exchange Rate
+                    </label>
+                  </div>
                 </div>
 
                 <div className="sep-size-table-wrap">

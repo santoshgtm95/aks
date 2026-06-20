@@ -356,6 +356,12 @@ public class AKZDbContext : DbContext
         modelBuilder.Entity<WashGradingWorker>().HasQueryFilter(e => e.DeleteFlg == 0);
         modelBuilder.Entity<WashGradingProcess>().HasQueryFilter(e => e.DeleteFlg == 0);
         modelBuilder.Entity<WashGradingRecord>().HasQueryFilter(e => e.DeleteFlg == 0);
+        modelBuilder.Entity<SemiExportPurchase>().HasQueryFilter(e => e.DeleteFlg == 0);
+        modelBuilder.Entity<SemiExportPurchaseProcessing>().HasQueryFilter(e => e.DeleteFlg == 0);
+        modelBuilder.Entity<MessLabourWorker>().HasQueryFilter(e => e.DeleteFlg == 0);
+        modelBuilder.Entity<ImportedSemiExport>().HasQueryFilter(e => e.DeleteFlg == 0);
+        modelBuilder.Entity<WorkerPayment>().HasQueryFilter(e => e.DeleteFlg == 0);
+        modelBuilder.Entity<PurificationWorker>().HasQueryFilter(e => e.DeleteFlg == 0);
 
         modelBuilder.Entity<RefinementProcess>()
             .HasOne(r => r.PurifiedRecord)

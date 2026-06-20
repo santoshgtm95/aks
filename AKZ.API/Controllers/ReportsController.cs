@@ -338,7 +338,11 @@ public class ReportsController : ControllerBase
             }
         }
 
-        worksheet.Columns(1, headers.Count).AdjustToContents();
+        foreach (var col in worksheet.Columns(1, headers.Count))
+        {
+            col.AdjustToContents();
+            col.Width = Math.Max(col.Width + 4, 12);
+        }
     }
 
     private static IXLWorksheet GetOrCreateWorksheet(XLWorkbook workbook, int position, string sheetName)

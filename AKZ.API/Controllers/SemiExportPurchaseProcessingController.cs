@@ -87,4 +87,22 @@ public class SemiExportPurchaseProcessingController : ControllerBase
 
         return Ok(resultDto);
     }
+
+    [HttpDelete("{id}")]
+    public async Task<IActionResult> Delete(int id)
+    {
+        var record = await _context.SemiExportPurchaseProcessings.FindAsync(id);
+        if (record == null)
+            return NotFound(new { message = "Processing record not found" });
+
+        // Remove any associated sorting history records first (FK Restrict constraint)
+        var relatedRecords = _context.SemiExportPurchaseRecords
+            .Where(r => r.SemiExportPurchaseProcessingId == id);
+        _context.SemiExportPurchaseRecords.RemoveRange(relatedRecords);
+
+        _context.SemiExportPurchaseProcessings.Remove(record);
+        await _context.SaveChangesAsync();
+        return NoContent();
+    }
 }
+

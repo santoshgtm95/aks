@@ -178,11 +178,12 @@
 }
 
 /* ── INPUT DESIGN ── */
-.rf-input-group {
-  margin-top: 4px;
+.sep-input-group {
+  margin-top: 8px;
+  width: 100%;
 }
 
-.rf-input-label {
+.sep-input-label {
   display: block;
   font-size: 11px;
   font-weight: 700;
@@ -190,9 +191,11 @@
   text-transform: uppercase;
   letter-spacing: 0.5px;
   margin-bottom: 6px;
+  align-self: center;
 }
 
-.rf-input-field {
+.sep-input-field {
+  width: 100%;
   flex: 1;
   min-width: 0;
   padding: 8px 12px;
@@ -206,30 +209,31 @@
   box-sizing: border-box;
 }
 
-.rf-input-field:focus {
+.sep-input-field:focus {
   border-color: #3b82f6;
   box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
 }
 
-.rf-input-field:read-only {
+.sep-input-field:read-only {
   background: #f8fafc;
   color: #64748b;
   cursor: not-allowed;
   border-style: dashed;
 }
 
-.rf-input-field.has-loss {
+.sep-input-field.has-loss {
   color: #ef4444;
   border-color: #fca5a5;
   background: #fff1f2;
 }
 
-.rf-input-wrapper {
+.sep-input-wrapper {
   display: flex;
   gap: 6px;
+  width: 100%;
 }
 
-.rf-max-btn {
+.sep-max-btn {
   padding: 0 10px;
   border-radius: 8px;
   border: 1.5px solid #3b82f6;
@@ -246,7 +250,7 @@
   white-space: nowrap;
 }
 
-.rf-max-btn:hover {
+.sep-max-btn:hover {
   background: #3b82f6;
   color: white;
 }
@@ -859,4 +863,29 @@
     width: 100%;
     height: auto;
   }
+}
+
+/* Delete button inside Processing / Sorting History tables */
+.sep-delete-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  border: none;
+  border-radius: 6px;
+  background: transparent;
+  color: #94a3b8;
+  cursor: pointer;
+  transition: background 0.15s ease, color 0.15s ease;
+  padding: 0;
+}
+
+.sep-delete-btn:hover {
+  background: rgba(239, 68, 68, 0.12);
+  color: #ef4444;
+}
+
+.sep-delete-btn:active {
+  background: rgba(239, 68, 68, 0.22);
 }

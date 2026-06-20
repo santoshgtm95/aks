@@ -685,18 +685,24 @@ export const semiExportPurchaseProcessingAPI = {
     const response = await api.post<any>("/SemiExportPurchaseProcessing", data);
     return response.data;
   },
+  delete: async (id: number): Promise<void> => {
+    await api.delete(`/SemiExportPurchaseProcessing/${id}`);
+  },
 };
 
-  export const semiExportPurchaseRecordsAPI = {
-    getAll: async (): Promise<any[]> => {
-      const response = await api.get<any[]>("/SemiExportPurchaseRecords");
-      return response.data;
-    },
-    create: async (data: any): Promise<any> => {
-      const response = await api.post<any>("/SemiExportPurchaseRecords", data);
-      return response.data;
-    },
-  };
+export const semiExportPurchaseRecordsAPI = {
+  getAll: async (): Promise<any[]> => {
+    const response = await api.get<any[]>("/SemiExportPurchaseRecords");
+    return response.data;
+  },
+  create: async (data: any): Promise<any> => {
+    const response = await api.post<any>("/SemiExportPurchaseRecords", data);
+    return response.data;
+  },
+  delete: async (id: number): Promise<void> => {
+    await api.delete(`/SemiExportPurchaseRecords/${id}`);
+  },
+};
 
 export default api;
 export const cashFlowAPI = {

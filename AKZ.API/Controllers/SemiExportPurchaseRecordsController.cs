@@ -162,4 +162,18 @@ public class SemiExportPurchaseRecordsController : ControllerBase
                 new() { Size = "Lost", Weight = record.LostSizeWeight, Price = record.LostSizePrice },
             ]
         };
+
+    [HttpDelete("{id}")]
+    public async Task<IActionResult> Delete(int id)
+    {
+        var record = await _context.SemiExportPurchaseRecords.FindAsync(id);
+        if (record == null)
+            return NotFound(new { message = "Sorting history record not found" });
+
+        _context.SemiExportPurchaseRecords.Remove(record);
+        await _context.SaveChangesAsync();
+        return NoContent();
+    }
 }
+
+
