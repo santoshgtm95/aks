@@ -432,9 +432,22 @@
 .rf-table-wrap {
   border-radius: 14px;
   border: 1px solid #e2e8f0;
-  overflow: hidden;
+  overflow-x: auto;
+  overflow-y: auto;
   background: white;
   margin-top: 8px;
+}
+
+.rf-table-wrap::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+.rf-table-wrap::-webkit-scrollbar-thumb {
+  background: #cbd5e1;
+  border-radius: 4px;
+}
+.rf-table-wrap::-webkit-scrollbar-track {
+  background: #f1f5f9;
 }
 
 .rf-table {
@@ -453,6 +466,9 @@
   letter-spacing: 0.6px;
   border-bottom: 1px solid #e2e8f0;
   white-space: nowrap;
+  position: sticky;
+  top: 0;
+  z-index: 10;
 }
 
 .rf-th-right {

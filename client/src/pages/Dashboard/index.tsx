@@ -145,8 +145,8 @@ const Dashboard: React.FC = () => {
 
   return (
     <div className="db-root fade-in">
-      {/* Header */}
-      <div className="db-header">
+      
+      {/* <div className="db-header">
         <div>
           <h1 className="db-title">Dashboard</h1>
           <p className="db-subtitle">
@@ -159,7 +159,7 @@ const Dashboard: React.FC = () => {
         </div>
       </div>
 
-      {/* KPI Cards */}
+      
       <div className="db-kpi-grid">
         <KpiCard
           delay="0s"
@@ -215,7 +215,7 @@ const Dashboard: React.FC = () => {
           gradient="linear-gradient(135deg,#ef4444,#dc2626)"
           glow="0 8px 24px rgba(239,68,68,0.4)"
         />
-      </div>
+      </div> */}
 
       {/* Per-Marker Stats Table */}
       <div className="db-section-card">
