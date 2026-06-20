@@ -577,7 +577,7 @@ const Report: React.FC = () => {
           </button>
         </div>
       </div>
-
+{/* 
       <div className="report-section">
         <h2>Select Markers</h2>
         <div className="marker-selector">
@@ -611,9 +611,9 @@ const Report: React.FC = () => {
             ))}
           </div>
         </div>
-      </div>
+      </div> */}
 
-      <div className="report-section">
+      {/* <div className="report-section">
         <h2>Select Report Types</h2>
         <div className="report-type-selector">
           {Object.entries(selectedReports).map(([reportType, isSelected]) => (
@@ -631,8 +631,8 @@ const Report: React.FC = () => {
             </label>
           ))}
         </div>
-      </div>
-
+      </div> */}
+{/* 
       <div className="report-actions">
         <button
           className="btn btn-primary"
@@ -650,7 +650,7 @@ const Report: React.FC = () => {
             {pdfLoading ? "⏳ Generating PDF..." : "📄 Generate PDF"}
           </button>
         )}
-      </div>
+      </div> */}
 
       {reportData && (
         <div className="report-preview">

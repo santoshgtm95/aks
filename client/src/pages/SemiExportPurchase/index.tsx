@@ -355,6 +355,7 @@ const SemiExportPurchase: React.FC = () => {
       | null = selectedSortingRecord,
     rows: SortingSizeRow[] = sortingSizes,
     rateValue: string = sortingExchangeRate,
+    isSave: boolean,
   ) => {
     if (!record) return;
 
@@ -402,7 +403,10 @@ const SemiExportPurchase: React.FC = () => {
       .map((size) => {
         const row = sizeMap.get(size);
         const weight = parseFloat(row?.weight || "0") || 0;
-        const price = parseFloat(row?.price || "0") || 0;
+        const price =
+          (isSave
+            ? parseFloat(row?.price || "0") * 1.633
+            : parseFloat(row?.price || "0") * 1) || 0;
         const amount = weight * price;
         if (weight > 0 && price > 0) totalAmt += amount;
 
@@ -550,14 +554,16 @@ const SemiExportPurchase: React.FC = () => {
           size: row.size,
           weight: parseFloat(row.weight) || 0,
           price:
-            (parseFloat(row.weight) || 0) > 0 ? parseFloat(row.price) || 0 : 0,
+            (parseFloat(row.weight) || 0) > 0
+              ? parseFloat(row.price) * 1.633 || 0
+              : 0,
         })),
       });
 
       setSortingHistory((prev) => [savedRecord, ...prev]);
       closeSortingRecordsModal();
       setTimeout(() => {
-        printSortingPurchasePdf(printRecord, printRows, printRate);
+        printSortingPurchasePdf(printRecord, printRows, printRate, true);
       }, 250);
     } catch (error) {
       console.error("Failed to save semi export purchase record:", error);
@@ -1503,6 +1509,7 @@ const SemiExportPurchase: React.FC = () => {
                       <tr>
                         <th>SIZE</th>
                         <th>WEIGHT (VISS)</th>
+                        <th>WEIGHT (Kg)</th>
                         <th>PRICE (CNY)</th>
                         <th className="sep-num">AMOUNT (CNY)</th>
                         <th className="sep-num sep-mmk-col">AMOUNT (MMK)</th>
@@ -1547,6 +1554,23 @@ const SemiExportPurchase: React.FC = () => {
                               />
                             </td>
                             <td>
+                              <input
+                                type="number"
+                                step="0.001"
+                                placeholder="0.000"
+                                value={
+                                  row.size === "Lost"
+                                    ? (
+                                        getCalculatedSortingLostWeight() * 1.633
+                                      ).toFixed(3)
+                                    : (
+                                        (parseFloat(row.weight) || 0) * 1.633
+                                      ).toFixed(3)
+                                }
+                                disabled={true}
+                              />
+                            </td>
+                            <td>
                               {row.size !== "Lost" && (
                                 <input
                                   type="number"
@@ -1565,17 +1589,23 @@ const SemiExportPurchase: React.FC = () => {
                             <td className="sep-num">
                               {row.size === "Lost"
                                 ? ""
-                                : amountCny.toLocaleString(undefined, {
-                                    minimumFractionDigits: 2,
-                                    maximumFractionDigits: 2,
-                                  })}
+                                : (amountCny * 1.633).toLocaleString(
+                                    undefined,
+                                    {
+                                      minimumFractionDigits: 2,
+                                      maximumFractionDigits: 2,
+                                    },
+                                  )}
                             </td>
                             <td className="sep-num sep-mmk-col">
                               {row.size === "Lost"
                                 ? ""
-                                : amountMmk.toLocaleString(undefined, {
-                                    maximumFractionDigits: 0,
-                                  })}
+                                : (amountMmk * 1.633).toLocaleString(
+                                    undefined,
+                                    {
+                                      maximumFractionDigits: 0,
+                                    },
+                                  )}
                             </td>
                           </tr>
                         );
@@ -1694,6 +1724,7 @@ const SemiExportPurchase: React.FC = () => {
                         selectedHistoryRecord,
                         getHistorySortingRows(selectedHistoryRecord),
                         selectedHistoryRecord.exchangeRateRate.toString(),
+                        false,
                       )
                     }
                   >
