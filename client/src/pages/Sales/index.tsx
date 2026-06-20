@@ -3,7 +3,16 @@ import { useAuth } from "../../context/AuthContext";
 import { salesAPI, productsAPI } from "../../services/api";
 import { useNotification } from "../../context/NotificationContext";
 import type { Sale, Product, CreateSaleDto } from "../../types";
-import { Trash2 } from "lucide-react";
+import {
+  Trash2,
+  ShoppingCart,
+  TrendingUp,
+  Search,
+  ClipboardList,
+  User,
+  Phone,
+  AlignLeft
+} from "lucide-react";
 import {
   formatDateTime,
   getMyanmarNow,
@@ -20,6 +29,7 @@ const Sales: React.FC = () => {
   const [products, setProducts] = useState<Product[]>([]);
   const [loading, setLoading] = useState(true);
   const [weightAdjustment, setWeightAdjustment] = useState<number>(0);
+  const [searchTerm, setSearchTerm] = useState("");
   const [formData, setFormData] = useState<CreateSaleDto>({
     date: getMyanmarNow(),
     productId: 0,
@@ -143,342 +153,429 @@ const Sales: React.FC = () => {
     if (!product) return 0;
     return product.remainingWeight + weightAdjustment - formData.weight;
   };
+ 
+  // Search filter
+  const filteredSales = sales.filter((sale) => {
+    const term = searchTerm.toLowerCase();
+    return (
+      sale.marker.toLowerCase().includes(term) ||
+      (sale.customerName?.toLowerCase() || "").includes(term) ||
+      (sale.customerContact?.toLowerCase() || "").includes(term) ||
+      (sale.sellerName?.toLowerCase() || "").includes(term) ||
+      (sale.warehouseName?.toLowerCase() || "").includes(term) ||
+      (sale.remark?.toLowerCase() || "").includes(term)
+    );
+  });
 
   if (loading) {
     return <div className="spinner"></div>;
   }
 
   return (
-    <div className="sales fade-in">
-      <h1 className="page-title">Sales Management</h1>
+    <div className="sales-page-container fade-in">
+      {/* Header Area */}
+      <div className="sales-header">
+        <h1 className="sales-title">Sales Management</h1>
+        <p className="sales-subtitle">
+          Monitor transactions, adjust product weights, and register new raw material sales
+        </p>
+      </div>
 
-      {hasPermission("Sales.Create") && (
-        <div className="card registration-card">
-          <h2 className="card-title">New Sale Transaction</h2>
-          <form onSubmit={handleSubmit} className="sale-form">
-            <div className="form-grid">
-              <div className="form-group">
-                <label className="form-label">Date</label>
-                <input
-                  type="date"
-                  name="date"
-                  className="form-control"
-                  value={formData.date}
-                  onChange={handleInputChange}
-                  required
-                />
-              </div>
-
-              <div className="form-group">
-                <label className="form-label">Select Product (Marker)</label>
-                <select
-                  name="productId"
-                  className="form-select"
-                  value={formData.productId}
-                  onChange={handleInputChange}
-                  required
-                >
-                  <option value="0">-- Select Product --</option>
-                  {products.map((p) => (
-                    <option key={p.id} value={p.id}>
-                      {p.marker} ({p.remainingWeight} {p.unit} available)
-                    </option>
-                  ))}
-                </select>
-              </div>
-
-              <div className="form-group">
-                <label className="form-label">Weight to Sell</label>
-                <input
-                  type="number"
-                  name="weight"
-                  step="0.01"
-                  className="form-control"
-                  value={formData.weight || ""}
-                  onChange={handleInputChange}
-                  required
-                  min="0.01"
-                  placeholder="0"
-                  onFocus={(e) =>
-                    e.target.value === "0" && (e.target.value = "")
-                  }
-                />
-              </div>
-
-              <div className="form-group">
-                <label className="form-label">+/- Weight</label>
-                <input
-                  type="number"
-                  step="0.01"
-                  className="form-control"
-                  value={weightAdjustment === 0 ? "" : weightAdjustment}
-                  onChange={(e) =>
-                    setWeightAdjustment(
-                      e.target.value === "" ? 0 : parseFloat(e.target.value),
-                    )
-                  }
-                  placeholder="0"
-                  style={{
-                    borderColor:
-                      weightAdjustment > 0
-                        ? "#16a34a"
-                        : weightAdjustment < 0
-                          ? "#dc2626"
-                          : undefined,
-                    backgroundColor:
-                      weightAdjustment > 0
-                        ? "#f0fdf4"
-                        : weightAdjustment < 0
-                          ? "#fef2f2"
-                          : undefined,
-                    color:
-                      weightAdjustment > 0
-                        ? "#15803d"
-                        : weightAdjustment < 0
-                          ? "#b91c1c"
-                          : undefined,
-                    fontWeight: weightAdjustment !== 0 ? 600 : undefined,
-                    transition:
-                      "border-color 0.2s, background-color 0.2s, color 0.2s",
-                  }}
-                />
-              </div>
-
-              <div className="form-group">
-                <label className="form-label">Price</label>
-                <div className="price-input-group">
-                  <input
-                    type="number"
-                    name="price"
-                    step="0.01"
-                    className="form-control"
-                    value={formData.price || ""}
-                    readOnly
-                    style={{
-                      backgroundColor: "#f8fafc",
-                      cursor: "not-allowed",
-                    }}
-                    required
-                    placeholder="0"
-                    onFocus={(e) =>
-                      e.target.value === "0" && (e.target.value = "")
-                    }
-                  />
-                  <span
-                    style={{
-                      padding: "0 15px",
-                      display: "flex",
-                      alignItems: "center",
-                      backgroundColor: "#f1f5f9",
-                      borderRadius: "0 8px 8px 0",
-                      border: "1px solid #e2e8f0",
-                      borderLeft: "none",
-                      fontWeight: 600,
-                      color: "#475569",
-                      minWidth: "70px",
-                      justifyContent: "center",
-                    }}
-                  >
-                    {formData.currency}
-                  </span>
-                </div>
-              </div>
-
-              <div className="form-group">
-                <label className="form-label">Total Amount</label>
-                <div className="price-input-group">
-                  <input
-                    type="text"
-                    className="form-control"
-                    value={(
-                      (formData.weight || 0) * (formData.price || 0)
-                    ).toLocaleString(undefined, {
-                      minimumFractionDigits: 2,
-                      maximumFractionDigits: 2,
-                    })}
-                    readOnly
-                    style={{
-                      backgroundColor: "#f0f9ff",
-                      fontWeight: "bold",
-                      color: "#0369a1",
-                      cursor: "default",
-                    }}
-                  />
-                  <span
-                    style={{
-                      padding: "0 15px",
-                      display: "flex",
-                      alignItems: "center",
-                      backgroundColor: "#e0f2fe",
-                      borderRadius: "0 8px 8px 0",
-                      border: "1px solid #bae6fd",
-                      borderLeft: "none",
-                      fontWeight: 600,
-                      color: "#0369a1",
-                      minWidth: "70px",
-                      justifyContent: "center",
-                    }}
-                  >
-                    {formData.currency}
-                  </span>
-                </div>
-              </div>
-
-              <div className="form-group">
-                <label className="form-label">
-                  Total Remaining (After Sale)
-                </label>
-                <input
-                  type="text"
-                  className="form-control"
-                  value={`${getRemainingAfterSale().toFixed(2)} ${formData.unit}`}
-                  disabled
-                />
-              </div>
-
-              <div className="form-group">
-                <label className="form-label">Customer Name</label>
-                <input
-                  type="text"
-                  name="customerName"
-                  className="form-control"
-                  value={formData.customerName || ""}
-                  onChange={handleInputChange}
-                  placeholder="Enter customer name (optional)"
-                  maxLength={255}
-                />
-              </div>
-
-              <div className="form-group">
-                <label className="form-label">Customer Contact</label>
-                <input
-                  type="text"
-                  name="customerContact"
-                  className="form-control"
-                  value={formData.customerContact || ""}
-                  onChange={handleInputChange}
-                  placeholder="Phone/Email (optional)"
-                  maxLength={50}
-                />
-              </div>
-
-              <div className="form-group" style={{ gridColumn: "1 / -1" }}>
-                <label className="form-label">Remark</label>
-                <textarea
-                  name="remark"
-                  className="form-control"
-                  value={formData.remark || ""}
-                  onChange={handleInputChange}
-                  placeholder="Add any additional remarks (optional)"
-                  maxLength={1000}
-                  rows={3}
-                  style={{ resize: "vertical" }}
-                />
+ 
+      {/* Main Split Layout */}
+      <div className="sales-main-layout">
+        {/* Left Column - New Sale Form */}
+        {hasPermission("Sales.Create") && (
+          <div className="sales-card">
+            <div className="sales-card-header">
+              <div className="sales-card-title-wrap">
+                <ShoppingCart className="sales-card-icon" size={20} />
+                <h2 className="sales-card-title">New Sale Transaction</h2>
               </div>
             </div>
-
-            <div className="form-actions">
-              <button type="submit" className="btn btn-primary">
-                Complete Sale
-              </button>
-            </div>
-          </form>
-        </div>
-      )}
-
-      <div className="card list-card">
-        <h2 className="card-title">Sales History</h2>
-        <div className="table-container">
-          <table className="table">
-            <thead>
-              <tr>
-                <th>Date</th>
-                <th>Marker</th>
-                <th>Weight</th>
-                <th>+/- Weight</th>
-                <th>Price</th>
-                <th>Total</th>
-                <th>Seller</th>
-                <th>Customer Name</th>
-                <th>Customer Contact</th>
-                <th>Remark</th>
-                {hasPermission("Sales.Delete") && (
-                  <th style={{ textAlign: "center" }}>Actions</th>
-                )}
-              </tr>
-            </thead>
-            <tbody>
-              {sales.map((sale) => (
-                <tr key={sale.id}>
-                  <td>{formatDateTime(sale.date)}</td>
-                  <td>
-                    <div style={{ fontWeight: 600 }}>{sale.marker}</div>
-                    <div style={{ fontSize: "11px", color: "#64748b" }}>
-                      {sale.warehouseName}
-                    </div>
-                  </td>
-                  <td>
-                    {sale.weight} {sale.unit}
-                  </td>
-                  <td
-                    style={{
-                      color:
-                        sale.plusMinusWeight > 0
-                          ? "#15803d"
-                          : sale.plusMinusWeight < 0
-                            ? "#b91c1c"
-                            : undefined,
-                      fontWeight: sale.plusMinusWeight !== 0 ? 600 : undefined,
-                    }}
-                  >
-                    {sale.plusMinusWeight || 0}
-                  </td>
-                  <td>
-                    {sale.price} {sale.currency}
-                  </td>
-                  <td>
-                    {(sale.weight * sale.price).toFixed(2)} {sale.currency}
-                  </td>
-                  <td>{sale.sellerName}</td>
-                  <td>{sale.customerName || "-"}</td>
-                  <td>{sale.customerContact || "-"}</td>
-                  <td style={{ maxWidth: "200px", wordBreak: "break-word" }}>
-                    {sale.remark || "-"}
-                  </td>
-                  {hasPermission("Sales.Delete") && (
-                    <td style={{ textAlign: "center" }}>
-                      <button
-                        className="btn-delete"
-                        onClick={() => handleDeleteSale(sale.id)}
-                        title="Delete Sale"
-                        style={{
-                          background: "none",
-                          border: "none",
-                          color: "#ef4444",
-                          cursor: "pointer",
-                          padding: "4px",
-                          display: "inline-flex",
-                          alignItems: "center",
-                          justifyContent: "center",
-                          borderRadius: "4px",
-                          transition: "background-color 0.2s",
-                        }}
-                        onMouseOver={(e) =>
-                          (e.currentTarget.style.backgroundColor = "#fee2e2")
-                        }
-                        onMouseOut={(e) =>
-                          (e.currentTarget.style.backgroundColor =
-                            "transparent")
-                        }
+            <div className="sales-card-body">
+              <form onSubmit={handleSubmit} className="sales-form">
+                <div className="sales-form-section-title">Product & Sizing</div>
+                <div className="sales-form-grid">
+                  <div className="sales-input-group">
+                    <label className="sales-label">Select Product (Marker)</label>
+                    <div className="sales-input-field-wrapper">
+                      <select
+                        name="productId"
+                        className="sales-control sales-control-select"
+                        value={formData.productId}
+                        onChange={handleInputChange}
+                        required
                       >
-                        <Trash2 size={18} />
-                      </button>
-                    </td>
-                  )}
-                </tr>
-              ))}
-            </tbody>
-          </table>
+                        <option value="0">-- Select Product --</option>
+                        {products.map((p) => (
+                          <option key={p.id} value={p.id}>
+                            {p.marker} ({p.remainingWeight} {p.unit} available)
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+                  </div>
+
+                  <div className="sales-input-group">
+                    <label className="sales-label">Weight to Sell</label>
+                    <div className="sales-input-field-wrapper">
+                      <input
+                        type="number"
+                        name="weight"
+                        step="0.01"
+                        className="sales-control sales-control-with-suffix"
+                        value={formData.weight || ""}
+                        onChange={handleInputChange}
+                        required
+                        min="0.01"
+                        placeholder="0.00"
+                        onFocus={(e) =>
+                          e.target.value === "0" && (e.target.value = "")
+                        }
+                      />
+                      <span className="sales-input-suffix">{formData.unit}</span>
+                    </div>
+                  </div>
+
+                  <div className="sales-input-group">
+                    <label className="sales-label">+/- Weight Adjustment</label>
+                    <div className="sales-input-field-wrapper">
+                      <input
+                        type="number"
+                        step="0.01"
+                        className="sales-control"
+                        value={weightAdjustment === 0 ? "" : weightAdjustment}
+                        onChange={(e) =>
+                          setWeightAdjustment(
+                            e.target.value === "" ? 0 : parseFloat(e.target.value),
+                          )
+                        }
+                        placeholder="0.00"
+                        style={{
+                          borderColor:
+                            weightAdjustment > 0
+                              ? "#16a34a"
+                              : weightAdjustment < 0
+                                ? "#dc2626"
+                                : undefined,
+                          backgroundColor:
+                            weightAdjustment > 0
+                              ? "#f0fdf4"
+                              : weightAdjustment < 0
+                                ? "#fef2f2"
+                                : undefined,
+                          color:
+                            weightAdjustment > 0
+                              ? "#15803d"
+                              : weightAdjustment < 0
+                                ? "#b91c1c"
+                                : undefined,
+                          fontWeight: weightAdjustment !== 0 ? 600 : undefined,
+                        }}
+                      />
+                    </div>
+                  </div>
+
+                  <div className="sales-input-group">
+                    <label className="sales-label">Price per Unit</label>
+                    <div className="sales-input-field-wrapper">
+                      <input
+                        type="number"
+                        name="price"
+                        step="0.01"
+                        className="sales-control sales-control-with-suffix"
+                        value={formData.price || ""}
+                        readOnly
+                        required
+                        placeholder="0.00"
+                      />
+                      <span className="sales-input-suffix">
+                        {formData.currency}
+                      </span>
+                    </div>
+                  </div>
+
+                  {/* Calculations Info widgets */}
+                  <div className="sales-calculator-panels">
+                    <div className="sales-calc-panel sales-calc-panel-blue">
+                      <span className="sales-calc-label">Total Amount</span>
+                      <span className="sales-calc-value">
+                        {(
+                          (formData.weight || 0) * (formData.price || 0)
+                        ).toLocaleString(undefined, {
+                          minimumFractionDigits: 2,
+                          maximumFractionDigits: 2,
+                        })}{" "}
+                        <span style={{ fontSize: "10px", fontWeight: "600" }}>
+                          {formData.currency}
+                        </span>
+                      </span>
+                    </div>
+
+                    <div
+                      className={`sales-calc-panel ${
+                        getRemainingAfterSale() < 0
+                          ? "sales-calc-panel-red"
+                          : "sales-calc-panel-green"
+                      }`}
+                    >
+                      <span className="sales-calc-label">Remaining</span>
+                      <span className="sales-calc-value">
+                        {getRemainingAfterSale().toFixed(2)}{" "}
+                        <span style={{ fontSize: "10px", fontWeight: "600" }}>
+                          {formData.unit}
+                        </span>
+                      </span>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="sales-form-section-title">Customer & Date</div>
+                <div className="sales-form-grid">
+                  <div className="sales-input-group">
+                    <label className="sales-label">Date</label>
+                    <div className="sales-input-field-wrapper">
+                      <input
+                        type="date"
+                        name="date"
+                        className="sales-control"
+                        value={formData.date}
+                        onChange={handleInputChange}
+                        required
+                      />
+                    </div>
+                  </div>
+
+                  <div className="sales-input-group">
+                    <label className="sales-label">Customer Name</label>
+                    <div className="sales-input-field-wrapper">
+                      <User className="sales-input-icon" size={16} />
+                      <input
+                        type="text"
+                        name="customerName"
+                        className="sales-control sales-control-with-icon"
+                        value={formData.customerName || ""}
+                        onChange={handleInputChange}
+                        placeholder="Customer name (optional)"
+                        maxLength={255}
+                      />
+                    </div>
+                  </div>
+
+                  <div className="sales-input-group">
+                    <label className="sales-label">Customer Contact</label>
+                    <div className="sales-input-field-wrapper">
+                      <Phone className="sales-input-icon" size={16} />
+                      <input
+                        type="text"
+                        name="customerContact"
+                        className="sales-control sales-control-with-icon"
+                        value={formData.customerContact || ""}
+                        onChange={handleInputChange}
+                        placeholder="Phone or email (optional)"
+                        maxLength={50}
+                      />
+                    </div>
+                  </div>
+
+                  <div className="sales-input-group">
+                    <label className="sales-label">Remark</label>
+                    <div className="sales-input-field-wrapper">
+                      <AlignLeft
+                        className="sales-input-icon"
+                        style={{ top: "16px" }}
+                        size={16}
+                      />
+                      <textarea
+                        name="remark"
+                        className="sales-control sales-control-with-icon"
+                        value={formData.remark || ""}
+                        onChange={handleInputChange}
+                        placeholder="Add remarks (optional)"
+                        maxLength={1000}
+                        rows={2}
+                        style={{ resize: "vertical" }}
+                      />
+                    </div>
+                  </div>
+                </div>
+
+                <button
+                  type="submit"
+                  className="btn-complete-sale"
+                  disabled={getRemainingAfterSale() < 0}
+                >
+                  <TrendingUp size={16} /> Complete Sale
+                </button>
+              </form>
+            </div>
+          </div>
+        )}
+
+        {/* Right Column - Sales History list */}
+        <div
+          className="sales-card"
+          style={{ gridColumn: !hasPermission("Sales.Create") ? "1 / -1" : undefined }}
+        >
+          <div className="sales-card-header">
+            <div className="sales-card-title-wrap">
+              <ClipboardList className="sales-card-icon" size={20} />
+              <h2 className="sales-card-title">Sales History</h2>
+            </div>
+            <span className="rf-count-badge" style={{ margin: 0 }}>
+              {filteredSales.length} Transactions
+            </span>
+          </div>
+
+          <div className="sales-history-controls">
+            <div className="sales-search-box">
+              <Search className="sales-input-icon" size={16} />
+              <input
+                type="text"
+                className="sales-search-control"
+                placeholder="Search sales history..."
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+              />
+            </div>
+          </div>
+
+          <div className="sales-card-body" style={{ padding: 0 }}>
+            <div className="sales-table-wrap">
+              {filteredSales.length === 0 ? (
+                <div className="sales-empty-state">
+                  <ShoppingCart className="sales-empty-icon" size={40} />
+                  <p className="sales-empty-text">
+                    No sale transactions match your search criteria.
+                  </p>
+                </div>
+              ) : (
+                <table className="sales-table">
+                  <thead>
+                    <tr>
+                      <th>Date</th>
+                      <th>Marker</th>
+                      <th>Weight</th>
+                      <th>+/- Weight</th>
+                      <th>Price</th>
+                      <th>Total</th>
+                      <th>Seller</th>
+                      <th>Customer Details</th>
+                      <th>Remark</th>
+                      {hasPermission("Sales.Delete") && (
+                        <th style={{ textAlign: "center" }}>Actions</th>
+                      )}
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {filteredSales.map((sale) => (
+                      <tr key={sale.id}>
+                        <td style={{ whiteSpace: "nowrap" }}>
+                          {formatDateTime(sale.date)}
+                        </td>
+                        <td>
+                          <div className="sales-badge-marker">{sale.marker}</div>
+                          <div className="sales-badge-warehouse">
+                            {sale.warehouseName}
+                          </div>
+                        </td>
+                        <td style={{ fontWeight: 600, color: "#1e293b" }}>
+                          {sale.weight.toFixed(2)}{" "}
+                          <span style={{ fontSize: "11px", color: "#64748b" }}>
+                            {sale.unit}
+                          </span>
+                        </td>
+                        <td
+                          style={{
+                            color:
+                              sale.plusMinusWeight > 0
+                                ? "#15803d"
+                                : sale.plusMinusWeight < 0
+                                  ? "#b91c1c"
+                                  : "#64748b",
+                            fontWeight: sale.plusMinusWeight !== 0 ? 600 : undefined,
+                          }}
+                        >
+                          {sale.plusMinusWeight > 0
+                            ? `+${sale.plusMinusWeight}`
+                            : sale.plusMinusWeight || 0}
+                        </td>
+                        <td style={{ whiteSpace: "nowrap" }}>
+                          {sale.price.toLocaleString(undefined, {
+                            minimumFractionDigits: 2,
+                          })}{" "}
+                          <span style={{ fontSize: "11px", color: "#64748b" }}>
+                            {sale.currency}
+                          </span>
+                        </td>
+                        <td className="sales-row-total" style={{ whiteSpace: "nowrap" }}>
+                          {(sale.weight * sale.price).toLocaleString(undefined, {
+                            minimumFractionDigits: 2,
+                          })}{" "}
+                          <span style={{ fontSize: "11px", color: "#64748b" }}>
+                            {sale.currency}
+                          </span>
+                        </td>
+                        <td>{sale.sellerName}</td>
+                        <td>
+                          {sale.customerName ? (
+                            <>
+                              <div className="sales-badge-customer">
+                                {sale.customerName}
+                              </div>
+                              {sale.customerContact && (
+                                <div className="sales-badge-contact">
+                                  {sale.customerContact}
+                                </div>
+                              )}
+                            </>
+                          ) : (
+                            <span style={{ color: "#94a3b8" }}>-</span>
+                          )}
+                        </td>
+                        <td style={{ maxWidth: "200px", wordBreak: "break-word" }}>
+                          {sale.remark || (
+                            <span style={{ color: "#94a3b8" }}>-</span>
+                          )}
+                        </td>
+                        {hasPermission("Sales.Delete") && (
+                          <td style={{ textAlign: "center" }}>
+                            <button
+                              className="btn-delete"
+                              onClick={() => handleDeleteSale(sale.id)}
+                              title="Delete Sale"
+                              style={{
+                                background: "none",
+                                border: "none",
+                                color: "#ef4444",
+                                cursor: "pointer",
+                                padding: "6px",
+                                display: "inline-flex",
+                                alignItems: "center",
+                                justifyContent: "center",
+                                borderRadius: "8px",
+                                transition: "all 0.2s",
+                              }}
+                              onMouseOver={(e) =>
+                                (e.currentTarget.style.backgroundColor = "#fee2e2")
+                              }
+                              onMouseOut={(e) =>
+                                (e.currentTarget.style.backgroundColor =
+                                  "transparent")
+                              }
+                            >
+                              <Trash2 size={16} />
+                            </button>
+                          </td>
+                        )}
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              )}
+            </div>
+          </div>
         </div>
       </div>
     </div>
