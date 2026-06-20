@@ -13,6 +13,18 @@ import {
   getMyanmarNow,
   combineDateWithMyanmarTime,
 } from "../../utils/format";
+import {
+  Pencil,
+  Trash2,
+  Package,
+  ClipboardList,
+  Building2,
+  Search,
+  Calendar,
+  Layers,
+  Sparkles,
+  AlertCircle
+} from "lucide-react";
 import "./index.css";
 
 const Inventory: React.FC = () => {
@@ -45,6 +57,7 @@ const Inventory: React.FC = () => {
     weight: 0,
     remaining: 0,
   });
+  const [searchTerm, setSearchTerm] = useState("");
 
   useEffect(() => {
     loadData();
@@ -161,152 +174,330 @@ const Inventory: React.FC = () => {
     );
   };
 
+  const filteredProducts = products.filter((product) => {
+    const term = searchTerm.toLowerCase();
+    const warehouseName = product.warehouseName || "No Warehouse";
+    return (
+      product.marker.toLowerCase().includes(term) ||
+      product.packages.toLowerCase().includes(term) ||
+      warehouseName.toLowerCase().includes(term)
+    );
+  });
+
   if (loading) {
     return <div className="spinner"></div>;
   }
 
   return (
-    <div className="warehouse fade-in">
-      <h1 className="page-title">Inventory Management</h1>
+    <div className="inventory-page-container fade-in">
+      {/* Header Area */}
+      <div className="inventory-header">
+        <h1 className="inventory-title">Inventory Management</h1>
+        <p className="inventory-subtitle">
+          Register new products, track stock levels, and monitor warehouse distribution
+        </p>
+      </div>
 
-      {hasPermission("Inventory.Create") && (
-        <div className="card registration-card">
-          <h2 className="card-title">Register New Product</h2>
-          <form onSubmit={handleSubmit} className="product-form">
-            <div className="form-grid">
-              <div className="form-group">
-                <label className="form-label">Date</label>
-                <input
-                  type="date"
-                  name="date"
-                  className="form-control"
-                  value={formData.date}
-                  onChange={handleInputChange}
-                  required
-                />
+      {/* Main Split Layout */}
+      <div className="inventory-main-layout">
+        {/* Left Column - Register New Product */}
+        {hasPermission("Inventory.Create") && (
+          <div className="inventory-card">
+            <div className="inventory-card-header">
+              <div className="inventory-card-title-wrap">
+                <Package className="inventory-card-icon" size={20} />
+                <h2 className="inventory-card-title">Register Product</h2>
               </div>
+            </div>
+            <div className="inventory-card-body">
+              <form onSubmit={handleSubmit} className="inventory-form">
+                <div className="inventory-form-section-title">Stock Details</div>
+                <div className="inventory-form-grid">
+                  <div className="inventory-input-group">
+                    <label className="inventory-label">Date</label>
+                    <div className="inventory-input-field-wrapper">
+                      <Calendar className="inventory-input-icon" size={16} />
+                      <input
+                        type="date"
+                        name="date"
+                        className="inventory-control inventory-control-with-icon"
+                        value={formData.date}
+                        onChange={handleInputChange}
+                        required
+                      />
+                    </div>
+                  </div>
 
-              <div className="form-group">
-                <label className="form-label">Warehouse</label>
-                <select
-                  name="warehouseId"
-                  className="form-select"
-                  value={formData.warehouseId || ""}
-                  onChange={handleInputChange}
-                  required
-                >
-                  <option value="">Select Warehouse</option>
-                  {warehouses
-                    .filter(
-                      (w) => !user?.warehouseId || w.id === user.warehouseId,
-                    )
-                    .map((w) => (
-                      <option key={w.id} value={w.id}>
-                        {w.name}
-                      </option>
-                    ))}
-                </select>
-              </div>
+                  <div className="inventory-input-group">
+                    <label className="inventory-label">Warehouse</label>
+                    <div className="inventory-input-field-wrapper">
+                      <Building2 className="inventory-input-icon" size={16} />
+                      <select
+                        name="warehouseId"
+                        className="inventory-control inventory-control-select inventory-control-with-icon"
+                        value={formData.warehouseId || ""}
+                        onChange={handleInputChange}
+                        required
+                      >
+                        <option value="">Select Warehouse</option>
+                        {warehouses
+                          .filter(
+                            (w) => !user?.warehouseId || w.id === user.warehouseId,
+                          )
+                          .map((w) => (
+                            <option key={w.id} value={w.id}>
+                              {w.name}
+                            </option>
+                          ))}
+                      </select>
+                    </div>
+                  </div>
 
-              <div className="form-group">
-                <label className="form-label">Marker</label>
-                <input
-                  type="text"
-                  name="marker"
-                  className="form-control"
-                  value={formData.marker}
-                  onChange={handleInputChange}
-                  required
-                  placeholder="Enter marker"
-                />
-              </div>
+                  <div className="inventory-input-group">
+                    <label className="inventory-label">Marker</label>
+                    <div className="inventory-input-field-wrapper">
+                      <input
+                        type="text"
+                        name="marker"
+                        className="inventory-control"
+                        value={formData.marker}
+                        onChange={handleInputChange}
+                        required
+                        placeholder="Enter marker"
+                      />
+                    </div>
+                  </div>
 
-              <div className="form-group">
-                <label className="form-label">Packages</label>
-                <input
-                  type="text"
-                  name="packages"
-                  className="form-control"
-                  value={formData.packages}
-                  onChange={handleInputChange}
-                  required
-                  placeholder="e.g. 50 Bags"
-                />
-              </div>
+                  <div className="inventory-input-group">
+                    <label className="inventory-label">Packages</label>
+                    <div className="inventory-input-field-wrapper">
+                      <Layers className="inventory-input-icon" size={16} />
+                      <input
+                        type="text"
+                        name="packages"
+                        className="inventory-control inventory-control-with-icon"
+                        value={formData.packages}
+                        onChange={handleInputChange}
+                        required
+                        placeholder="e.g. 50 Bags"
+                      />
+                    </div>
+                  </div>
 
-              <div className="form-group">
-                <label className="form-label">Unit</label>
-                <select
-                  name="unit"
-                  className="form-select"
-                  value={formData.unit}
-                  onChange={handleInputChange}
-                  required
-                >
-                  <option value="kg">kg</option>
-                  <option value="viss">viss</option>
-                </select>
-              </div>
+                  <div className="inventory-input-group">
+                    <label className="inventory-label">Unit</label>
+                    <div className="inventory-input-field-wrapper">
+                      <select
+                        name="unit"
+                        className="inventory-control inventory-control-select"
+                        value={formData.unit}
+                        onChange={handleInputChange}
+                        required
+                      >
+                        <option value="kg">kg</option>
+                        <option value="viss">viss</option>
+                      </select>
+                    </div>
+                  </div>
 
-              <div className="form-group">
-                <label className="form-label">Weight</label>
-                <input
-                  type="number"
-                  name="weight"
-                  step="0.01"
-                  className="form-control"
-                  value={formData.weight || ""}
-                  onChange={handleInputChange}
-                  required
-                  min="0"
-                  placeholder="0"
-                  onFocus={(e) =>
-                    e.target.value === "0" && (e.target.value = "")
-                  }
-                />
-              </div>
+                  <div className="inventory-input-group">
+                    <label className="inventory-label">Weight</label>
+                    <div className="inventory-input-field-wrapper">
+                      <input
+                        type="number"
+                        name="weight"
+                        step="0.01"
+                        className="inventory-control inventory-control-with-suffix"
+                        value={formData.weight || ""}
+                        onChange={handleInputChange}
+                        required
+                        min="0"
+                        placeholder="0.00"
+                        onFocus={(e) =>
+                          e.target.value === "0" && (e.target.value = "")
+                        }
+                      />
+                      <span className="inventory-input-suffix">{formData.unit}</span>
+                    </div>
+                  </div>
 
-              <div className="form-group">
-                <label className="form-label">Price</label>
-                <div className="price-input-group">
-                  <input
-                    type="number"
-                    name="price"
-                    step="0.01"
-                    className="form-control"
-                    value={formData.price || ""}
-                    onChange={handleInputChange}
-                    required
-                    min="0"
-                    placeholder="0"
-                    onFocus={(e) =>
-                      e.target.value === "0" && (e.target.value = "")
-                    }
-                  />
-                  <select
-                    name="currency"
-                    className="form-select currency-select"
-                    value={formData.currency}
-                    onChange={handleInputChange}
-                    required
-                  >
-                    <option value="MMK">MMK</option>
-                    <option value="CNY">CNY</option>
-                    <option value="INR">INR</option>
-                  </select>
+                  <div className="inventory-input-group">
+                    <label className="inventory-label">Price</label>
+                    <div className="inventory-price-input-group">
+                      <div className="inventory-input-field-wrapper" style={{ flex: 1 }}>
+                        <input
+                          type="number"
+                          name="price"
+                          step="0.01"
+                          className="inventory-control"
+                          value={formData.price || ""}
+                          onChange={handleInputChange}
+                          required
+                          min="0"
+                          placeholder="0.00"
+                          onFocus={(e) =>
+                            e.target.value === "0" && (e.target.value = "")
+                          }
+                        />
+                      </div>
+                      <select
+                        name="currency"
+                        className="inventory-control inventory-control-select inventory-currency-select"
+                        value={formData.currency}
+                        onChange={handleInputChange}
+                        required
+                      >
+                        <option value="MMK">MMK</option>
+                        <option value="CNY">CNY</option>
+                        <option value="INR">INR</option>
+                      </select>
+                    </div>
+                  </div>
                 </div>
-              </div>
-            </div>
 
-            <div className="form-actions">
-              <button type="submit" className="btn btn-primary">
-                Register Product
-              </button>
+                <button type="submit" className="btn-register-product">
+                  <Sparkles size={16} /> Register Product
+                </button>
+              </form>
             </div>
-          </form>
+          </div>
+        )}
+
+        {/* Right Column - Product List */}
+        <div
+          className="inventory-card"
+          style={{ gridColumn: !hasPermission("Inventory.Create") ? "1 / -1" : undefined }}
+        >
+          <div className="inventory-card-header">
+            <div className="inventory-card-title-wrap">
+              <ClipboardList className="inventory-card-icon" size={20} />
+              <h2 className="inventory-card-title">Product List</h2>
+            </div>
+            <span className="inventory-count-badge">
+              {filteredProducts.length} Products
+            </span>
+          </div>
+
+          <div className="inventory-history-controls">
+            <div className="inventory-search-box">
+              <Search className="inventory-input-icon" size={16} />
+              <input
+                type="text"
+                className="inventory-search-control"
+                placeholder="Search by marker or warehouse..."
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+              />
+            </div>
+          </div>
+
+          <div className="inventory-card-body" style={{ padding: 0 }}>
+            <div className="inventory-table-wrap">
+              {filteredProducts.length === 0 ? (
+                <div className="inventory-empty-state">
+                  <Package className="inventory-empty-icon" size={40} />
+                  <p className="inventory-empty-text">
+                    No products found matching your search.
+                  </p>
+                </div>
+              ) : (
+                <table className="inventory-table">
+                  <thead>
+                    <tr>
+                      <th>Date</th>
+                      <th>Warehouse</th>
+                      <th>Marker</th>
+                      <th>Packages</th>
+                      <th>Weight</th>
+                      <th>Price</th>
+                      <th>Remaining</th>
+                      <th style={{ textAlign: "center" }}>Actions</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {filteredProducts.map((product) => (
+                      <tr key={product.id}>
+                        <td style={{ whiteSpace: "nowrap" }}>
+                          {formatDateTime(product.date)}
+                        </td>
+                        <td>
+                          <span className="inventory-badge-warehouse">
+                            {product.warehouseName || "No Warehouse"}
+                          </span>
+                        </td>
+                        <td>
+                          <div className="inventory-badge-marker">{product.marker}</div>
+                        </td>
+                        <td style={{ fontWeight: 600, color: "#475569" }}>
+                          {product.packages}
+                        </td>
+                        <td style={{ fontWeight: 600, color: "#1e293b" }}>
+                          {product.weight}{" "}
+                          <span style={{ fontSize: "11px", color: "#64748b" }}>
+                            {product.unit}
+                          </span>
+                        </td>
+                        <td style={{ whiteSpace: "nowrap" }}>
+                          {product.price.toLocaleString(undefined, {
+                            minimumFractionDigits: 2,
+                          })}{" "}
+                          <span style={{ fontSize: "11px", color: "#64748b" }}>
+                            {product.currency}
+                          </span>
+                        </td>
+                        <td>
+                          <span
+                            className={`inventory-badge-status ${
+                              product.remainingWeight < product.weight * 0.2
+                                ? "status-danger"
+                                : "status-success"
+                            }`}
+                          >
+                            {product.remainingWeight.toFixed(2)} {product.unit}
+                          </span>
+                        </td>
+                        <td>
+                          <div className="inventory-action-buttons">
+                            {hasPermission("Inventory.Edit") && (
+                              <button
+                                className="btn-action-edit"
+                                onClick={() => handleEdit(product)}
+                                title="Edit Product"
+                              >
+                                <Pencil size={14} />
+                              </button>
+                            )}
+                            {hasPermission("Inventory.Delete") && (
+                              <button
+                                className={`btn-action-delete ${
+                                  product.isUsed ? "disabled" : ""
+                                }`}
+                                onClick={() =>
+                                  !product.isUsed && handleDelete(product.id)
+                                }
+                                title={
+                                  product.isUsed
+                                    ? "Cannot delete: This product has sales or processing records"
+                                    : "Delete Product"
+                                }
+                                disabled={product.isUsed}
+                              >
+                                <Trash2 size={14} />
+                              </button>
+                            )}
+                          </div>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              )}
+            </div>
+          </div>
         </div>
-      )}
+      </div>
 
+      {/* Edit Modal */}
       <Modal
         isOpen={isEditModalOpen}
         onClose={() => {
@@ -324,160 +515,172 @@ const Inventory: React.FC = () => {
           });
         }}
         title="Edit Product"
-        maxWidth="1000px"
+        maxWidth="650px"
       >
-        <form onSubmit={handleSubmit} className="product-form">
-          <div className="form-grid">
-            <div className="form-group">
-              <label className="form-label">Date</label>
-              <input
-                type="date"
-                name="date"
-                className="form-control"
-                value={formData.date}
-                onChange={handleInputChange}
-                required
-              />
-            </div>
-
-            <div className="form-group">
-              <label className="form-label">Warehouse</label>
-              <select
-                name="warehouseId"
-                className="form-select"
-                value={formData.warehouseId || ""}
-                onChange={handleInputChange}
-                required
-              >
-                <option value="">Select Warehouse</option>
-                {warehouses
-                  .filter(
-                    (w) => !user?.warehouseId || w.id === user.warehouseId,
-                  )
-                  .map((w) => (
-                    <option key={w.id} value={w.id}>
-                      {w.name}
-                    </option>
-                  ))}
-              </select>
-            </div>
-
-            <div className="form-group">
-              <label className="form-label">Marker</label>
-              <input
-                type="text"
-                name="marker"
-                className="form-control"
-                value={formData.marker}
-                onChange={handleInputChange}
-                required
-                placeholder="Enter marker"
-              />
-            </div>
-
-            <div className="form-group">
-              <label className="form-label">Packages</label>
-              <input
-                type="text"
-                name="packages"
-                className="form-control"
-                value={formData.packages}
-                onChange={handleInputChange}
-                required
-                placeholder="e.g. 50 Bags"
-              />
-            </div>
-
-            <div className="form-group">
-              <label className="form-label">Unit</label>
-              <select
-                name="unit"
-                className="form-select"
-                value={formData.unit}
-                onChange={handleInputChange}
-                required
-                disabled={originalWeights.remaining < originalWeights.weight}
-              >
-                <option value="kg">kg</option>
-                <option value="viss">viss</option>
-              </select>
-            </div>
-
-            <div className="form-group">
-              <label className="form-label">Weight</label>
-              <input
-                type="number"
-                name="weight"
-                step="0.01"
-                className="form-control"
-                value={formData.weight || ""}
-                onChange={handleInputChange}
-                required
-                min="0"
-                placeholder="0"
-                onFocus={(e) => e.target.value === "0" && (e.target.value = "")}
-                disabled={originalWeights.remaining < originalWeights.weight}
-              />
-            </div>
-
-            {originalWeights.remaining < originalWeights.weight && (
-              <div className="form-group">
-                <label className="form-label" style={{ color: "#ef4444" }}>
-                  Adjust Weight (+/-)
-                </label>
+        <form onSubmit={handleSubmit} className="inventory-form" style={{ marginTop: "10px" }}>
+          <div className="inventory-modal-grid">
+            <div className="inventory-input-group">
+              <label className="inventory-label">Date</label>
+              <div className="inventory-input-field-wrapper">
+                <Calendar className="inventory-input-icon" size={16} />
                 <input
-                  type="number"
-                  name="adjustment"
-                  step="0.01"
-                  className="form-control"
-                  style={{ borderColor: "#ef4444" }}
-                  value={weightAdjustment || ""}
-                  onChange={(e) =>
-                    setWeightAdjustment(
-                      e.target.value === "" ? 0 : parseFloat(e.target.value),
-                    )
-                  }
-                  placeholder="Add (+) or Reduce (-)"
+                  type="date"
+                  name="date"
+                  className="inventory-control inventory-control-with-icon"
+                  value={formData.date}
+                  onChange={handleInputChange}
+                  required
                 />
-                <div style={{ marginTop: "8px", fontSize: "14px" }}>
-                  <span style={{ marginRight: "16px" }}>
-                    New Total:{" "}
-                    <strong>
-                      {(originalWeights.weight + weightAdjustment).toFixed(2)}
-                    </strong>
-                  </span>
-                  <span>
-                    New Remaining:{" "}
-                    <strong>
-                      {(originalWeights.remaining + weightAdjustment).toFixed(
-                        2,
-                      )}
-                    </strong>
-                  </span>
-                </div>
               </div>
-            )}
+            </div>
 
-            <div className="form-group">
-              <label className="form-label">Price</label>
-              <div className="price-input-group">
+            <div className="inventory-input-group">
+              <label className="inventory-label">Warehouse</label>
+              <div className="inventory-input-field-wrapper">
+                <Building2 className="inventory-input-icon" size={16} />
+                <select
+                  name="warehouseId"
+                  className="inventory-control inventory-control-select inventory-control-with-icon"
+                  value={formData.warehouseId || ""}
+                  onChange={handleInputChange}
+                  required
+                >
+                  <option value="">Select Warehouse</option>
+                  {warehouses
+                    .filter(
+                      (w) => !user?.warehouseId || w.id === user.warehouseId,
+                    )
+                    .map((w) => (
+                      <option key={w.id} value={w.id}>
+                        {w.name}
+                      </option>
+                    ))}
+                </select>
+              </div>
+            </div>
+
+            <div className="inventory-input-group">
+              <label className="inventory-label">Marker</label>
+              <div className="inventory-input-field-wrapper">
+                <input
+                  type="text"
+                  name="marker"
+                  className="inventory-control"
+                  value={formData.marker}
+                  onChange={handleInputChange}
+                  required
+                  placeholder="Enter marker"
+                />
+              </div>
+            </div>
+
+            <div className="inventory-input-group">
+              <label className="inventory-label">Packages</label>
+              <div className="inventory-input-field-wrapper">
+                <Layers className="inventory-input-icon" size={16} />
+                <input
+                  type="text"
+                  name="packages"
+                  className="inventory-control inventory-control-with-icon"
+                  value={formData.packages}
+                  onChange={handleInputChange}
+                  required
+                  placeholder="e.g. 50 Bags"
+                />
+              </div>
+            </div>
+
+            <div className="inventory-input-group">
+              <label className="inventory-label">Unit</label>
+              <div className="inventory-input-field-wrapper">
+                <select
+                  name="unit"
+                  className="inventory-control inventory-control-select"
+                  value={formData.unit}
+                  onChange={handleInputChange}
+                  required
+                  disabled={originalWeights.remaining < originalWeights.weight}
+                >
+                  <option value="kg">kg</option>
+                  <option value="viss">viss</option>
+                </select>
+              </div>
+            </div>
+
+            <div className="inventory-input-group">
+              <label className="inventory-label">Original Weight</label>
+              <div className="inventory-input-field-wrapper">
                 <input
                   type="number"
-                  name="price"
+                  name="weight"
                   step="0.01"
-                  className="form-control"
-                  value={formData.price || ""}
+                  className="inventory-control inventory-control-with-suffix"
+                  value={formData.weight || ""}
                   onChange={handleInputChange}
                   required
                   min="0"
                   placeholder="0"
-                  onFocus={(e) =>
-                    e.target.value === "0" && (e.target.value = "")
-                  }
+                  onFocus={(e) => e.target.value === "0" && (e.target.value = "")}
+                  disabled={originalWeights.remaining < originalWeights.weight}
                 />
+                <span className="inventory-input-suffix">{formData.unit}</span>
+              </div>
+            </div>
+
+            {originalWeights.remaining < originalWeights.weight && (
+              <div className="inventory-input-group" style={{ gridColumn: "1 / -1" }}>
+                <label className="inventory-label" style={{ color: "#ef4444", display: "flex", alignItems: "center", gap: "6px" }}>
+                  <AlertCircle size={14} /> Adjust Weight (+/-)
+                </label>
+                <div className="inventory-input-field-wrapper">
+                  <input
+                    type="number"
+                    name="adjustment"
+                    step="0.01"
+                    className="inventory-control"
+                    style={{ borderColor: "#fca5a5", backgroundColor: "#fff5f5" }}
+                    value={weightAdjustment || ""}
+                    onChange={(e) =>
+                      setWeightAdjustment(
+                        e.target.value === "" ? 0 : parseFloat(e.target.value),
+                      )
+                    }
+                    placeholder="Add (+) or Reduce (-)"
+                  />
+                </div>
+                <div className="inventory-adjustment-preview">
+                  <div className="inventory-adjustment-badge badge-total">
+                    New Total: <strong>{(originalWeights.weight + weightAdjustment).toFixed(2)}</strong> {formData.unit}
+                  </div>
+                  <div className="inventory-adjustment-badge badge-remaining">
+                    New Remaining: <strong>{(originalWeights.remaining + weightAdjustment).toFixed(2)}</strong> {formData.unit}
+                  </div>
+                </div>
+              </div>
+            )}
+
+            <div className="inventory-input-group" style={{ gridColumn: originalWeights.remaining < originalWeights.weight ? "1 / -1" : undefined }}>
+              <label className="inventory-label">Price</label>
+              <div className="inventory-price-input-group">
+                <div className="inventory-input-field-wrapper" style={{ flex: 1 }}>
+                  <input
+                    type="number"
+                    name="price"
+                    step="0.01"
+                    className="inventory-control"
+                    value={formData.price || ""}
+                    onChange={handleInputChange}
+                    required
+                    min="0"
+                    placeholder="0"
+                    onFocus={(e) =>
+                      e.target.value === "0" && (e.target.value = "")
+                    }
+                  />
+                </div>
                 <select
                   name="currency"
-                  className="form-select currency-select"
+                  className="inventory-control inventory-control-select inventory-currency-select"
                   value={formData.currency}
                   onChange={handleInputChange}
                   required
@@ -490,13 +693,13 @@ const Inventory: React.FC = () => {
             </div>
           </div>
 
-          <div className="form-actions">
-            <button type="submit" className="btn btn-primary">
+          <div className="inventory-modal-actions">
+            <button type="submit" className="btn-modal-submit">
               Update Product
             </button>
             <button
               type="button"
-              className="btn btn-secondary"
+              className="btn-modal-cancel"
               onClick={() => {
                 setIsEditModalOpen(false);
                 setEditingId(null);
@@ -517,96 +720,6 @@ const Inventory: React.FC = () => {
           </div>
         </form>
       </Modal>
-
-      <div className="card list-card">
-        <h2 className="card-title">Product List</h2>
-        <div className="table-container">
-          <table className="table inventory-table">
-            <thead>
-              <tr>
-                <th>Date</th>
-                <th>Warehouse</th>
-                <th>Marker</th>
-                <th>Packages</th>
-                <th>Weight</th>
-                <th>Price</th>
-                <th>Remaining</th>
-                <th>Actions</th>
-              </tr>
-            </thead>
-            <tbody>
-              {products.map((product) => (
-                <tr key={product.id}>
-                  <td>{formatDateTime(product.date)}</td>
-                  <td>
-                    <span
-                      className="warehouse-badge"
-                      style={{
-                        background: "#f1f5f9",
-                        padding: "4px 8px",
-                        borderRadius: "6px",
-                        fontSize: "13px",
-                        fontWeight: 600,
-                      }}
-                    >
-                      {product.warehouseName || "No Warehouse"}
-                    </span>
-                  </td>
-                  <td>{product.marker}</td>
-                  <td>{product.packages}</td>
-                  <td>
-                    {product.weight} {product.unit}
-                  </td>
-                  <td>
-                    {product.price} {product.currency}
-                  </td>
-                  <td>
-                    <span
-                      className={`badge ${product.remainingWeight < product.weight * 0.2 ? "badge-danger" : "badge-success"}`}
-                    >
-                      {product.remainingWeight.toFixed(2)} {product.unit}
-                    </span>
-                  </td>
-                  <td>
-                    <div className="action-buttons">
-                      {hasPermission("Inventory.Edit") && (
-                        <button
-                          className="btn-icon"
-                          onClick={() => handleEdit(product)}
-                          title="Edit"
-                        >
-                          ✏️
-                        </button>
-                      )}
-                      {hasPermission("Inventory.Delete") && (
-                        <button
-                          className={`btn-icon btn-icon-danger ${product.isUsed ? "disabled" : ""}`}
-                          onClick={() =>
-                            !product.isUsed && handleDelete(product.id)
-                          }
-                          title={
-                            product.isUsed
-                              ? "Cannot delete: This product has sales or processing records"
-                              : "Delete"
-                          }
-                          disabled={product.isUsed}
-                          style={
-                            product.isUsed
-                              ? { opacity: 0.5, cursor: "not-allowed" }
-                              : {}
-                          }
-                        >
-                          🗑️
-                        </button>
-                      )}
-                    </div>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-      </div>
     </div>
   );
 };
