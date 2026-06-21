@@ -677,13 +677,19 @@ const MessLabour: React.FC = () => {
                       {record.warehouseName}
                     </span>
                   </div>
-                  <span className="rf-badge category-natural">
-                    Washed
-                  </span>
+                  {record.washGradingWorkerId ? (
+                    <span className="rf-badge category-natural">
+                      Washed
+                    </span>
+                  ) : (
+                    <span className="rf-badge category-unwashed" style={{ background: "#fee2e2", color: "#ef4444" }}>
+                      Unwashed
+                    </span>
+                  )}
                 </div>
                 <div className="card-details">
                   <span style={{ fontSize: "11px", color: "#64748b" }}>
-                    {record.washGradingWorkerName || "No worker"}
+                    {record.washGradingWorkerName || "Skipped (Unwashed)"}
                   </span>
                   <span
                     style={{
@@ -783,7 +789,7 @@ const MessLabour: React.FC = () => {
                     >
                       Bag Marker: <strong>{selectedWashRecord.productMarker}</strong>
                       <span style={{ fontSize: "12px", color: "#64748b", marginLeft: "8px" }}>
-                        (from Wash/Grading)
+                        ({selectedWashRecord.washGradingWorkerId ? "Washed" : "Unwashed"} from Wash/Grading)
                       </span>
                     </p>
                   </div>

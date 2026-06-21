@@ -520,7 +520,14 @@ const WashGrading: React.FC = () => {
                     <tr key={r.id}>
                       <td className="wg-td-date">{formatDateTime(r.date)}</td>
                       <td>
-                        <div className="wg-marker">{r.productMarker}</div>
+                        <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+                          <span className="wg-marker">{r.productMarker}</span>
+                          {r.washGradingWorkerId ? (
+                            <span className="wg-status-badge wg-status-washed">Washed</span>
+                          ) : (
+                            <span className="wg-status-badge wg-status-unwashed">Unwashed</span>
+                          )}
+                        </div>
                         <div className="wg-warehouse">{r.warehouseName || "---"}</div>
                       </td>
                       <td className="wg-td-weight wg-green">{r.weight.toFixed(3)}</td>
@@ -528,7 +535,7 @@ const WashGrading: React.FC = () => {
                       <td>
                         <div className="wg-worker-cell">
                           <User size={13} />
-                          {r.washGradingWorkerName || "---"}
+                          {r.washGradingWorkerName || "Skipped (Unwashed)"}
                         </div>
                       </td>
                       <td>
