@@ -254,6 +254,13 @@ body {
 
 /* Responsive & Mobile Layout Enforcers */
 @media (max-width: 1200px) {
+  /* Ensure layout shell doesn't overflow horizontally */
+  .layout,
+  .main-content {
+    max-width: 100% !important;
+    overflow-x: hidden !important;
+  }
+
   /* Page layouts utilizing .rf-container split-view */
   .rf-container {
     flex-direction: column !important;
@@ -272,6 +279,30 @@ body {
   }
 
   .rf-main, .rf-main-content {
+    width: 100% !important;
+    max-width: 100% !important;
+    height: auto !important;
+  }
+
+  /* Custom split-view containers stacking */
+  .wg-container {
+    flex-direction: column !important;
+    height: auto !important;
+    min-height: calc(100vh - 64px) !important;
+    overflow: visible !important;
+    padding: 16px !important;
+  }
+
+  .wg-sidebar {
+    width: 100% !important;
+    max-width: 100% !important;
+    height: auto !important;
+    max-height: 350px !important;
+    flex-shrink: 0 !important;
+  }
+
+  .wg-main,
+  .wg-main-card {
     width: 100% !important;
     max-width: 100% !important;
     height: auto !important;
@@ -333,7 +364,13 @@ body {
   .table-wrap,
   .rf-table-wrap,
   .sales-table-wrap,
-  .inventory-table-wrap {
+  .inventory-table-wrap,
+  .wg-table-wrap,
+  .sep-table-wrap,
+  .sep-size-table-wrap,
+  .audit-table-wrapper,
+  .table-responsive,
+  .db-table-scroll {
     overflow-x: auto !important;
     -webkit-overflow-scrolling: touch !important;
     width: 100% !important;
@@ -349,6 +386,12 @@ body {
   .rf-table-wrap table,
   .sales-table-wrap table,
   .inventory-table-wrap table,
+  .wg-table-wrap table,
+  .sep-table-wrap table,
+  .sep-size-table-wrap table,
+  .audit-table-wrapper table,
+  .table-responsive table,
+  .db-table-scroll table,
   table.table,
   table.sales-table,
   table.inventory-table,
