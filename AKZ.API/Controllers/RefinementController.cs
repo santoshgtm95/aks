@@ -139,7 +139,7 @@ public class RefinementController : ControllerBase
                 WarehouseName = warehouseName,
                 RefinementWorkerId = r.RefinementWorkerId,
                 RefinementWorkerName = r.RefinementWorker?.Name ?? "",
-                WorkerFees = r.WorkerFees
+                WorkerFees = r.WorkerFees,
             });
         }
 
@@ -192,7 +192,8 @@ public class RefinementController : ControllerBase
                 LostWeight = r.LostWeight,
                 SpoilageWeight = r.SpoilageWeight,
                 ReturnWeight = r.ReturnWeight,
-                WorkerFees = r.WorkerFees
+                WorkerFees = r.WorkerFees,
+                IsLocked = _context.SingleDoubleDrawnRecords.Any(rr => rr.RefinementRecordId == r.Id && rr.DeleteFlg == 0)
             });
         }
 

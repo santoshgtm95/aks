@@ -38,6 +38,7 @@ public class PurifiedRecordDto
     public decimal WorkerFees { get; set; }
     public decimal SupervisorFees { get; set; }
     public List<PurificationWorkerDto> Workers { get; set; } = new();
+    public bool IsLocked { get; set; }
 }
 
 public class PurificationWorkerDto

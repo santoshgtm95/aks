@@ -173,7 +173,8 @@ public class SingleDoubleDrawnController : ControllerBase
                 WashGradingWorkerName = r.RefinementRecord?.PurifiedRecord?.ProcessingRecord?.WashGradingRecord?.WashGradingWorker?.Name ?? "",
                 WashGradingWorkerFees = r.RefinementRecord?.PurifiedRecord?.ProcessingRecord?.WashGradingRecord?.WorkerFees ?? 0M,
                 WashGradingLostWeight = r.RefinementRecord?.PurifiedRecord?.ProcessingRecord?.WashGradingRecord?.LostWeight ?? 0M,
-                WashGradingRecordId = r.RefinementRecord?.PurifiedRecord?.ProcessingRecord?.WashGradingRecordId
+                WashGradingRecordId = r.RefinementRecord?.PurifiedRecord?.ProcessingRecord?.WashGradingRecordId,
+                IsLocked = _context.SemiExportRecords.Any(se => se.SingleDoubleDrawnRecordId == r.Id && se.DeleteFlg == 0)
             });
         }
 

@@ -254,6 +254,7 @@ const SingleDoubleDrawn: React.FC = () => {
       ]);
       setRefinedRecords(recordsData);
       setSavedRecords(savedData);
+
       setWorkers(workersData);
     } catch (error) {
       console.error("Failed to load data:", error);
@@ -2169,6 +2170,12 @@ const SingleDoubleDrawn: React.FC = () => {
                                           handleDeleteRecord(record.id)
                                         }
                                         className="rf-action-btn rf-delete-btn"
+                                        disabled={record.isLocked}
+                                        style={{
+                                          cursor: record.isLocked
+                                            ? "not-allowed"
+                                            : "pointer",
+                                        }}
                                       >
                                         <Trash2 size={14} />
                                       </button>

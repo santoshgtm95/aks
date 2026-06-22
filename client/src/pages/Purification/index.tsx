@@ -733,6 +733,10 @@ const Purification: React.FC = () => {
                             <button
                               className="rf-action-btn rf-delete-btn"
                               onClick={() => handleDeleteRecord(p.id)}
+                              disabled={p.isLocked}
+                              style={{
+                                cursor: p.isLocked ? "not-allowed" : "pointer",
+                              }}
                             >
                               <Trash2 size={14} />
                             </button>

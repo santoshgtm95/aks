@@ -301,6 +301,7 @@ export interface PurifiedRecord {
     count: number;
     workerFees: number;
   }[];
+  isLocked?: boolean;
 }
 
 export interface CreatePurificationProcessDto {
@@ -448,6 +449,7 @@ export interface RefinementRecord {
   refinementWorkerId?: number;
   refinementWorkerName?: string;
   workerFees?: number;
+  isLocked: boolean;
 }
 
 export interface CreateRefinementProcessDto {
@@ -597,6 +599,7 @@ export interface SingleDoubleDrawnRecord {
   returnSize: number;
   priceSpoilageSize: number;
   priceReturnSize: number;
+  isLocked: boolean;
 }
 
 export interface LedgerDto {

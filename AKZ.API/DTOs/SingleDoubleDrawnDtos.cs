@@ -84,6 +84,7 @@ public class SingleDoubleDrawnRecordDto
     public decimal WashGradingWorkerFees { get; set; }
     public decimal WashGradingLostWeight { get; set; }
     public int? WashGradingRecordId { get; set; }
+    public bool IsLocked { get; set; }
 }
 
 public class CreateSingleDoubleDrawnRecordDto

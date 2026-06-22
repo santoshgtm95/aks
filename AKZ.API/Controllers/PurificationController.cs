@@ -222,7 +222,9 @@ public class PurificationController : ControllerBase
                     PurifierName = pw.Purifier?.Name ?? "",
                     Count = pw.Count,
                     WorkerFees = pw.WorkerFees
-                }).ToList()
+                }).ToList(),
+                IsLocked = _context.RefinementProcesses.Any(r => r.PurifiedRecordId == p.Id && p.DeleteFlg == 0) ||
+                           _context.RefinementRecords.Any(rr => rr.PurifiedRecordId == p.Id && rr.DeleteFlg == 0)
             });
         }
 

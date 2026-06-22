@@ -33,6 +33,7 @@ public class RefinementRecordDto
     public decimal SpoilageWeight { get; set; }
     public decimal ReturnWeight { get; set; }
     public decimal WorkerFees { get; set; }
+    public bool IsLocked { get; set; }
 }
 
 public class CreateRefinementProcessDto
