@@ -37,9 +37,9 @@ const MessLabour: React.FC = () => {
   const [workers, setWorkers] = useState<MessLabourWorker[]>([]);
   const [records, setRecords] = useState<ProcessingRecord[]>([]);
   const [loading, setLoading] = useState(true);
-  const [selectedWashRecordId, setSelectedWashRecordId] = useState<number | null>(
-    null,
-  );
+  const [selectedWashRecordId, setSelectedWashRecordId] = useState<
+    number | null
+  >(null);
   const [selectedWorkers, setSelectedWorkers] = useState<
     { messLabourWorkerId: number; workerFee: number }[]
   >([]);
@@ -527,26 +527,22 @@ const MessLabour: React.FC = () => {
       await loadData();
     } catch (error) {
       console.error("Failed to update record:", error);
-      showAlert("Error", "မှတ်တမ်း ပြင်ဆင်ရာတွင် အမှားဖြစ်သည်", "error");
+      showAlert("Error", "Failed to update record", "error");
     }
   };
 
   const handleDeleteRecord = async (record: ProcessingRecord) => {
     showConfirm(
       "Confirm Delete",
-      `မှတ်တမ်း (${record.productMarker}) ကို ဖျက်မည်လား?\nဤလုပ်ဆောင်ချက်ကို ပြောင်းပြန်ဆောင်ရွက်၍ မရပါ။`,
+      `Are you show want to delete (${record.productMarker})?`,
       async () => {
         try {
           await processingAPI.delete(record.id);
           await loadData();
-          showAlert(
-            "Success",
-            "မှတ်တမ်းကို အောင်မြင်စွာ ဖျက်ပြီးပါပြီ",
-            "success",
-          );
+          showAlert("Success", "Record deleted successfully!", "success");
         } catch (error) {
           console.error("Failed to delete record:", error);
-          showAlert("Error", "မှတ်တမ်း ဖျက်ရာတွင် အမှားဖြစ်သည်", "error");
+          showAlert("Error", "Failed to delete record", "error");
         }
       },
     );
@@ -554,7 +550,11 @@ const MessLabour: React.FC = () => {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!selectedWashRecordId || !selectedWashRecord || selectedWorkers.length === 0) {
+    if (
+      !selectedWashRecordId ||
+      !selectedWashRecord ||
+      selectedWorkers.length === 0
+    ) {
       showAlert(
         "Validation",
         "Please select a washed item and at least one worker",
@@ -678,11 +678,12 @@ const MessLabour: React.FC = () => {
                     </span>
                   </div>
                   {record.washGradingWorkerId ? (
-                    <span className="rf-badge category-natural">
-                      Washed
-                    </span>
+                    <span className="rf-badge category-natural">Washed</span>
                   ) : (
-                    <span className="rf-badge category-unwashed" style={{ background: "#fee2e2", color: "#ef4444" }}>
+                    <span
+                      className="rf-badge category-unwashed"
+                      style={{ background: "#fee2e2", color: "#ef4444" }}
+                    >
                       Unwashed
                     </span>
                   )}
@@ -787,9 +788,20 @@ const MessLabour: React.FC = () => {
                         fontWeight: "500",
                       }}
                     >
-                      Bag Marker: <strong>{selectedWashRecord.productMarker}</strong>
-                      <span style={{ fontSize: "12px", color: "#64748b", marginLeft: "8px" }}>
-                        ({selectedWashRecord.washGradingWorkerId ? "Washed" : "Unwashed"} from Wash/Grading)
+                      Bag Marker:{" "}
+                      <strong>{selectedWashRecord.productMarker}</strong>
+                      <span
+                        style={{
+                          fontSize: "12px",
+                          color: "#64748b",
+                          marginLeft: "8px",
+                        }}
+                      >
+                        (
+                        {selectedWashRecord.washGradingWorkerId
+                          ? "Washed"
+                          : "Unwashed"}{" "}
+                        from Wash/Grading)
                       </span>
                     </p>
                   </div>
@@ -1120,13 +1132,13 @@ const MessLabour: React.FC = () => {
                         <Calculator size={24} />
                         <span>Weight Balance:</span>
                         <span>
-                          {totals.rwViss.toFixed(3)} -{" "}
-                          {totals.categorizedWeight.toFixed(3)}
+                          {totals.rwViss.toFixed(4)} -{" "}
+                          {totals.categorizedWeight.toFixed(4)}
                         </span>
                         <span>=</span>
                       </div>
                       <div className="calc-right">
-                        {totals.remainingWeight.toFixed(3)} viss
+                        {totals.remainingWeight.toFixed(4)} viss
                       </div>
                     </div>
 
@@ -1361,7 +1373,9 @@ const MessLabour: React.FC = () => {
                 </thead>
                 <tbody>
                   {(selectedWashRecordId
-                    ? records.filter((r) => r.washGradingRecordId === selectedWashRecordId)
+                    ? records.filter(
+                        (r) => r.washGradingRecordId === selectedWashRecordId,
+                      )
                     : records
                   ).map((record) => (
                     <tr
@@ -1521,7 +1535,7 @@ const MessLabour: React.FC = () => {
         </div>
       </main>
 
-      {/* â”€â”€â”€ Edit Record Modal â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */}
+      {/*  Edit Record Modal  */}
       {editingRecord && (
         <div
           className="modal-overlay"
@@ -1809,7 +1823,8 @@ const MessLabour: React.FC = () => {
                   (editFormData.naturalRed || 0) +
                   (editFormData.shortCut || 0) +
                   (editFormData.artificial || 0) +
-                  (editFormData.short || 0);
+                  (editFormData.short || 0) +
+                  (editFormData.lossWeight || 0);
                 const remainingCount = originalTotal - catSum;
                 const remainingWeight = remainingCount * uw;
                 // WashGrading records are always in viss
@@ -1941,7 +1956,7 @@ const MessLabour: React.FC = () => {
               <div className="vm-highlight-box highlight-blue">
                 <div className="vm-hl-label">Remaining Count</div>
                 <div className="vm-hl-value">
-                  {viewingRecord.remainingCount}{" "}
+                  {viewingRecord.remainingCount?.toFixed(4) || "0.0000"}{" "}
                   <span className="vm-hl-unit">bundles</span>
                 </div>
                 <div className="vm-hl-desc">
@@ -2037,8 +2052,7 @@ const MessLabour: React.FC = () => {
                   {viewingRecord.lossWeight > 0 && (
                     <div className="vm-cat-card vm-cat-lost">
                       <span className="vm-cat-label">Lost</span>
-                      <span className="vm-cat-count">—</span>
-                      <span className="vm-cat-weight">
+                      <span className="vm-cat-count">
                         {Number(viewingRecord.lossWeight).toFixed(3)} viss
                       </span>
                     </div>
