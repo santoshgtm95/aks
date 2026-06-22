@@ -21,6 +21,7 @@ import {
   Weight,
   CheckCircle2,
   X,
+  Settings,
 } from "lucide-react";
 
 import { formatDateTime } from "../../utils/format";
@@ -771,18 +772,10 @@ const SingleDoubleDrawn: React.FC = () => {
               <button
                 type="button"
                 onClick={() => setShowWorkerManagement(true)}
-                style={{
-                  padding: "8px 16px",
-                  background: "#3b82f6",
-                  color: "white",
-                  border: "none",
-                  borderRadius: "8px",
-                  cursor: "pointer",
-                  fontWeight: 600,
-                  fontSize: "13px",
-                }}
+                className="btn-manage-sd-workers"
               >
-                Register SingleDoubleDrawnWorker
+                <Settings size={16} />
+                Manage Single & Double Drawn Worker
               </button>
             </div>
           </div>

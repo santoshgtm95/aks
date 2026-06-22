@@ -7,7 +7,7 @@ import {
   processingAPI,
   purificationAPI,
   refinementAPI,
-  singleDoubleDrawnAPI
+  singleDoubleDrawnAPI,
 } from "../../services/api";
 import type { DashboardStats, MarkerSortingStats } from "../../types";
 import Modal from "../../components/Modal";
@@ -27,7 +27,7 @@ import {
   Droplet,
   Users,
   Compass,
-  FileText
+  FileText,
 } from "lucide-react";
 import "./index.css";
 
@@ -84,7 +84,9 @@ const Dashboard: React.FC = () => {
   const [sortField, setSortField] = useState<SortField>("totalSorted");
   const [sortDir, setSortDir] = useState<SortDir>("desc");
 
-  const [selectedMarkerName, setSelectedMarkerName] = useState<string | null>(null);
+  const [selectedMarkerName, setSelectedMarkerName] = useState<string | null>(
+    null,
+  );
   const [detailsLoading, setDetailsLoading] = useState(false);
   const [detailsData, setDetailsData] = useState<any | null>(null);
   const [detailsTab, setDetailsTab] = useState("inventory");
@@ -101,7 +103,7 @@ const Dashboard: React.FC = () => {
         processingList,
         purificationList,
         refinementList,
-        sddList
+        sddList,
       ] = await Promise.all([
         productsAPI.getAll(true),
         salesAPI.getAll("Sales"),
@@ -109,18 +111,38 @@ const Dashboard: React.FC = () => {
         processingAPI.getAll(),
         purificationAPI.getPurifiedRecords(),
         refinementAPI.getRefinementRecords(),
-        singleDoubleDrawnAPI.getAll()
+        singleDoubleDrawnAPI.getAll(),
       ]);
 
       const markerLower = markerName.toLowerCase();
-      
-      const filteredProducts = productsList.filter(p => p.marker && p.marker.toLowerCase() === markerLower);
-      const filteredSales = salesList.filter(s => (s.productMarker && s.productMarker.toLowerCase() === markerLower) || (s.marker && s.marker.toLowerCase() === markerLower));
-      const filteredWashGrading = washGradingList.filter(wg => wg.productMarker && wg.productMarker.toLowerCase() === markerLower);
-      const filteredProcessing = processingList.filter(p => p.productMarker && p.productMarker.toLowerCase() === markerLower);
-      const filteredPurification = purificationList.filter(pu => pu.productMarker && pu.productMarker.toLowerCase() === markerLower);
-      const filteredRefinement = refinementList.filter(r => r.productMarker && r.productMarker.toLowerCase() === markerLower);
-      const filteredSdd = sddList.filter(sdd => sdd.refinementRecordMarker && sdd.refinementRecordMarker.toLowerCase() === markerLower);
+
+      const filteredProducts = productsList.filter(
+        (p) => p.marker && p.marker.toLowerCase() === markerLower,
+      );
+      const filteredSales = salesList.filter(
+        (s) =>
+          (s.productMarker && s.productMarker.toLowerCase() === markerLower) ||
+          (s.marker && s.marker.toLowerCase() === markerLower),
+      );
+      const filteredWashGrading = washGradingList.filter(
+        (wg) =>
+          wg.productMarker && wg.productMarker.toLowerCase() === markerLower,
+      );
+      const filteredProcessing = processingList.filter(
+        (p) => p.productMarker && p.productMarker.toLowerCase() === markerLower,
+      );
+      const filteredPurification = purificationList.filter(
+        (pu) =>
+          pu.productMarker && pu.productMarker.toLowerCase() === markerLower,
+      );
+      const filteredRefinement = refinementList.filter(
+        (r) => r.productMarker && r.productMarker.toLowerCase() === markerLower,
+      );
+      const filteredSdd = sddList.filter(
+        (sdd) =>
+          sdd.refinementRecordMarker &&
+          sdd.refinementRecordMarker.toLowerCase() === markerLower,
+      );
 
       let originalWeightKg = 0;
       let originalWeightViss = 0;
@@ -132,7 +154,7 @@ const Dashboard: React.FC = () => {
       let warehouseNamesSet = new Set<string>();
 
       if (filteredProducts.length > 0) {
-        filteredProducts.forEach(p => {
+        filteredProducts.forEach((p) => {
           const w = p.weight || 0;
           const rem = p.remainingWeight || 0;
           if (p.unit === "kg") {
@@ -156,7 +178,7 @@ const Dashboard: React.FC = () => {
       let soldWeightKg = 0;
       let soldWeightViss = 0;
       let totalSalesAmount = 0;
-      filteredSales.forEach(s => {
+      filteredSales.forEach((s) => {
         const w = s.weight || 0;
         if (s.unit === "kg") {
           soldWeightKg += w;
@@ -165,14 +187,14 @@ const Dashboard: React.FC = () => {
           soldWeightViss += w;
           soldWeightKg += w * 1.633;
         }
-        totalSalesAmount += (w * s.price) || 0;
+        totalSalesAmount += w * s.price || 0;
       });
 
       let washWeight = 0;
       let washLostWeight = 0;
       let washWashedStock = 0;
       let washWorkerFees = 0;
-      filteredWashGrading.forEach(wg => {
+      filteredWashGrading.forEach((wg) => {
         washWeight += wg.weight || 0;
         washLostWeight += wg.lostWeight || 0;
         washWashedStock += wg.remainingWeight || 0;
@@ -181,18 +203,18 @@ const Dashboard: React.FC = () => {
 
       let mlLostWeight = 0;
       let mlWorkerFees = 0;
-      let mlColors: Record<string, { weight: number, count: number }> = {};
-      
+      let mlColors: Record<string, { weight: number; count: number }> = {};
+
       const initializeColor = (colName: string) => {
         if (!mlColors[colName]) {
           mlColors[colName] = { weight: 0, count: 0 };
         }
       };
 
-      filteredProcessing.forEach(p => {
+      filteredProcessing.forEach((p) => {
         mlLostWeight += p.lossWeight || 0;
         mlWorkerFees += p.workerFees || 0;
-        
+
         if (p.redWeight || p.redCount) {
           initializeColor("Red");
           mlColors["Red"].weight += p.redWeight || 0;
@@ -244,7 +266,7 @@ const Dashboard: React.FC = () => {
       let purifyCount = 0;
       let purifyWorkerFees = 0;
       let purifySupervisorFees = 0;
-      filteredPurification.forEach(pu => {
+      filteredPurification.forEach((pu) => {
         purifyWeight += pu.weight || 0;
         purifyCount += pu.count || 0;
         purifyWorkerFees += pu.workerFees || 0;
@@ -257,7 +279,7 @@ const Dashboard: React.FC = () => {
       let refineSpoilageWeight = 0;
       let refineReturnWeight = 0;
       let refineWorkerFees = 0;
-      filteredRefinement.forEach(r => {
+      filteredRefinement.forEach((r) => {
         refineWeight += r.weight || 0;
         refineCount += r.count || 0;
         refineLostWeight += r.lostWeight || 0;
@@ -271,14 +293,27 @@ const Dashboard: React.FC = () => {
       let sddSpoilageWeight = 0;
       let sddReturnWeight = 0;
       let sddSingleDoubleLostWeight = 0;
-      
+
       let sddSizes: Record<string, number> = {
-        "Size 6": 0, "Size 7": 0, "Size 8": 0, "Size 9": 0, "Size 10": 0, "Size 10B": 0,
-        "Size 12": 0, "Size 14": 0, "Size 16": 0, "Size 18": 0, "Size 20": 0, "Size 22": 0,
-        "Size 24": 0, "Size 26": 0, "Size 28": 0, "Size Bar": 0
+        "Size 6": 0,
+        "Size 7": 0,
+        "Size 8": 0,
+        "Size 9": 0,
+        "Size 10": 0,
+        "Size 10B": 0,
+        "Size 12": 0,
+        "Size 14": 0,
+        "Size 16": 0,
+        "Size 18": 0,
+        "Size 20": 0,
+        "Size 22": 0,
+        "Size 24": 0,
+        "Size 26": 0,
+        "Size 28": 0,
+        "Size Bar": 0,
       };
 
-      filteredSdd.forEach(s => {
+      filteredSdd.forEach((s) => {
         sddWorkerFees += s.workerFees || 0;
         sddLostWeight += s.lostWeight || 0;
         sddSpoilageWeight += s.spoilageWeight || 0;
@@ -303,9 +338,18 @@ const Dashboard: React.FC = () => {
         sddSizes["Size Bar"] += s.sizeBar || 0;
       });
 
-      const totalSortedWeight = Object.values(sddSizes).reduce((a, b) => a + b, 0);
+      const totalSortedWeight = Object.values(sddSizes).reduce(
+        (a, b) => a + b,
+        0,
+      );
 
-      const grandTotalFees = washWorkerFees + mlWorkerFees + purifyWorkerFees + purifySupervisorFees + refineWorkerFees + sddWorkerFees;
+      const grandTotalFees =
+        washWorkerFees +
+        mlWorkerFees +
+        purifyWorkerFees +
+        purifySupervisorFees +
+        refineWorkerFees +
+        sddWorkerFees;
 
       setDetailsData({
         products: filteredProducts,
@@ -323,7 +367,8 @@ const Dashboard: React.FC = () => {
           price: filteredProducts.length > 0 ? filteredProducts[0].price : 0,
           currency,
           unit,
-          warehouseNames: Array.from(warehouseNamesSet).join(", ") || "No Warehouse",
+          warehouseNames:
+            Array.from(warehouseNamesSet).join(", ") || "No Warehouse",
           soldWeightKg,
           soldWeightViss,
           totalSalesAmount,
@@ -351,10 +396,9 @@ const Dashboard: React.FC = () => {
           sddSingleDoubleLostWeight,
           sddSizes,
           totalSortedWeight,
-          grandTotalFees
-        }
+          grandTotalFees,
+        },
       });
-
     } catch (e) {
       console.error("Error loading marker details:", e);
     } finally {
@@ -435,7 +479,6 @@ const Dashboard: React.FC = () => {
 
   return (
     <div className="db-root fade-in">
-      
       {/* <div className="db-header">
         <div>
           <h1 className="db-title">Dashboard</h1>
@@ -663,18 +706,33 @@ const Dashboard: React.FC = () => {
                     <tr
                       key={m.marker}
                       className={`db-tr ${idx % 2 === 0 ? "db-tr-even" : ""}`}
+                      onClick={() => handleViewDetails(m.marker)}
                     >
                       <td className="db-td">
                         <div
                           className="db-marker-cell clickable-marker"
                           onClick={() => handleViewDetails(m.marker)}
-                          style={{ cursor: "pointer", display: "inline-flex", alignItems: "center" }}
+                          style={{
+                            cursor: "pointer",
+                            display: "inline-flex",
+                            alignItems: "center",
+                          }}
                         >
                           <span className="db-marker-dot" />
-                          <span className="db-marker-name" style={{ color: "#4f46e5", fontWeight: "600", textDecoration: "underline" }}>
+                          <span
+                            className="db-marker-name"
+                            style={{
+                              color: "#4f46e5",
+                              fontWeight: "600",
+                              textDecoration: "underline",
+                            }}
+                          >
                             {m.marker}
                           </span>
-                          <BarChart2 size={13} style={{ marginLeft: "6px", color: "#6366f1" }} />
+                          <BarChart2
+                            size={13}
+                            style={{ marginLeft: "6px", color: "#6366f1" }}
+                          />
                         </div>
                       </td>
                       <td className="db-td db-td-muted">
@@ -766,46 +824,66 @@ const Dashboard: React.FC = () => {
               {/* Top Summary Widgets */}
               <div className="marker-details-header-stats">
                 <div className="details-kpi-card bg-inventory">
-                  <div className="details-kpi-icon"><Scale size={18} /></div>
+                  <div className="details-kpi-icon">
+                    <Scale size={18} />
+                  </div>
                   <div className="details-kpi-body">
                     <span className="details-kpi-title">Inventory Weight</span>
                     <h4 className="details-kpi-value">
-                      {fmt(detailsData.metrics.originalWeightViss)} <span className="kpi-unit">viss</span>
+                      {fmt(detailsData.metrics.originalWeightViss)}{" "}
+                      <span className="kpi-unit">viss</span>
                     </h4>
-                    <span className="details-kpi-footer">({fmt(detailsData.metrics.originalWeightKg)} kg)</span>
+                    <span className="details-kpi-footer">
+                      ({fmt(detailsData.metrics.originalWeightKg)} kg)
+                    </span>
                   </div>
                 </div>
 
                 <div className="details-kpi-card bg-sales">
-                  <div className="details-kpi-icon"><TrendingUp size={18} /></div>
+                  <div className="details-kpi-icon">
+                    <TrendingUp size={18} />
+                  </div>
                   <div className="details-kpi-body">
                     <span className="details-kpi-title">Weight Sold</span>
                     <h4 className="details-kpi-value">
-                      {fmt(detailsData.metrics.soldWeightViss)} <span className="kpi-unit">viss</span>
+                      {fmt(detailsData.metrics.soldWeightViss)}{" "}
+                      <span className="kpi-unit">viss</span>
                     </h4>
-                    <span className="details-kpi-footer">({fmt(detailsData.metrics.soldWeightKg)} kg)</span>
+                    <span className="details-kpi-footer">
+                      ({fmt(detailsData.metrics.soldWeightKg)} kg)
+                    </span>
                   </div>
                 </div>
 
                 <div className="details-kpi-card bg-washed">
-                  <div className="details-kpi-icon"><Droplet size={18} /></div>
+                  <div className="details-kpi-icon">
+                    <Droplet size={18} />
+                  </div>
                   <div className="details-kpi-body">
                     <span className="details-kpi-title">Washed Weight</span>
                     <h4 className="details-kpi-value">
-                      {fmt(detailsData.metrics.washWashedStock)} <span className="kpi-unit">viss</span>
+                      {fmt(detailsData.metrics.washWashedStock)}{" "}
+                      <span className="kpi-unit">viss</span>
                     </h4>
-                    <span className="details-kpi-footer">({fmt(detailsData.metrics.washWeight)} viss raw)</span>
+                    <span className="details-kpi-footer">
+                      ({fmt(detailsData.metrics.washWeight)} viss raw)
+                    </span>
                   </div>
                 </div>
 
                 <div className="details-kpi-card bg-sorted">
-                  <div className="details-kpi-icon"><Layers size={18} /></div>
+                  <div className="details-kpi-icon">
+                    <Layers size={18} />
+                  </div>
                   <div className="details-kpi-body">
                     <span className="details-kpi-title">Sorted Weight</span>
                     <h4 className="details-kpi-value">
-                      {fmt(detailsData.metrics.totalSortedWeight)} <span className="kpi-unit">viss</span>
+                      {fmt(detailsData.metrics.totalSortedWeight)}{" "}
+                      <span className="kpi-unit">viss</span>
                     </h4>
-                    <span className="details-kpi-footer">({detailsData.sdd.length} SDD batches)</span>
+                    <span className="details-kpi-footer">
+                      ({detailsData.sdd.length} SDD batches)
+                    </span>
                   </div>
                 </div>
               </div>
@@ -845,7 +923,9 @@ const Dashboard: React.FC = () => {
                   <div className="details-pane">
                     <div className="details-section-grid">
                       <div className="details-section-box">
-                        <h3 className="section-box-title">Inventory Registration</h3>
+                        <h3 className="section-box-title">
+                          Inventory Registration
+                        </h3>
                         <div className="details-table-wrapper">
                           <table className="details-inner-table">
                             <thead>
@@ -860,16 +940,26 @@ const Dashboard: React.FC = () => {
                             <tbody>
                               {detailsData.products.map((p: any) => (
                                 <tr key={p.id}>
-                                  <td>{new Date(p.date).toLocaleDateString()}</td>
+                                  <td>
+                                    {new Date(p.date).toLocaleDateString()}
+                                  </td>
                                   <td>{p.warehouseName || "—"}</td>
-                                  <td>{p.weight} {p.unit}</td>
-                                  <td>{p.price.toLocaleString()} {p.currency}</td>
-                                  <td>{p.remainingWeight} {p.unit}</td>
+                                  <td>
+                                    {p.weight} {p.unit}
+                                  </td>
+                                  <td>
+                                    {p.price.toLocaleString()} {p.currency}
+                                  </td>
+                                  <td>
+                                    {p.remainingWeight} {p.unit}
+                                  </td>
                                 </tr>
                               ))}
                               {detailsData.products.length === 0 && (
                                 <tr>
-                                  <td colSpan={5} className="empty-row">No inventory registration records found.</td>
+                                  <td colSpan={5} className="empty-row">
+                                    No inventory registration records found.
+                                  </td>
                                 </tr>
                               )}
                             </tbody>
@@ -878,7 +968,9 @@ const Dashboard: React.FC = () => {
                       </div>
 
                       <div className="details-section-box">
-                        <h3 className="section-box-title">Raw Material Sales</h3>
+                        <h3 className="section-box-title">
+                          Raw Material Sales
+                        </h3>
                         <div className="details-table-wrapper">
                           <table className="details-inner-table">
                             <thead>
@@ -893,16 +985,27 @@ const Dashboard: React.FC = () => {
                             <tbody>
                               {detailsData.sales.map((s: any) => (
                                 <tr key={s.id}>
-                                  <td>{new Date(s.date).toLocaleDateString()}</td>
+                                  <td>
+                                    {new Date(s.date).toLocaleDateString()}
+                                  </td>
                                   <td>{s.customerName || "—"}</td>
-                                  <td>{s.weight} {s.unit}</td>
-                                  <td>{s.price.toLocaleString()} {s.currency}</td>
-                                  <td>{(s.weight * s.price).toLocaleString()} {s.currency}</td>
+                                  <td>
+                                    {s.weight} {s.unit}
+                                  </td>
+                                  <td>
+                                    {s.price.toLocaleString()} {s.currency}
+                                  </td>
+                                  <td>
+                                    {(s.weight * s.price).toLocaleString()}{" "}
+                                    {s.currency}
+                                  </td>
                                 </tr>
                               ))}
                               {detailsData.sales.length === 0 && (
                                 <tr>
-                                  <td colSpan={5} className="empty-row">No raw material sales records found.</td>
+                                  <td colSpan={5} className="empty-row">
+                                    No raw material sales records found.
+                                  </td>
                                 </tr>
                               )}
                             </tbody>
@@ -918,7 +1021,9 @@ const Dashboard: React.FC = () => {
                   <div className="details-pane">
                     <div className="details-section-grid">
                       <div className="details-section-box">
-                        <h3 className="section-box-title">Wash &amp; Grading Operations</h3>
+                        <h3 className="section-box-title">
+                          Wash &amp; Grading Operations
+                        </h3>
                         <div className="details-table-wrapper">
                           <table className="details-inner-table">
                             <thead>
@@ -934,17 +1039,26 @@ const Dashboard: React.FC = () => {
                             <tbody>
                               {detailsData.washGrading.map((wg: any) => (
                                 <tr key={wg.id}>
-                                  <td>{new Date(wg.date).toLocaleDateString()}</td>
+                                  <td>
+                                    {new Date(wg.date).toLocaleDateString()}
+                                  </td>
                                   <td>{wg.washGradingWorkerName || "—"}</td>
                                   <td>{wg.weight} viss</td>
                                   <td>{wg.lostWeight} viss</td>
-                                  <td>{(wg.weight - wg.lostWeight).toFixed(3)} viss</td>
-                                  <td>{wg.workerFees?.toLocaleString() || 0} MMK</td>
+                                  <td>
+                                    {(wg.weight - wg.lostWeight).toFixed(3)}{" "}
+                                    viss
+                                  </td>
+                                  <td>
+                                    {wg.workerFees?.toLocaleString() || 0} MMK
+                                  </td>
                                 </tr>
                               ))}
                               {detailsData.washGrading.length === 0 && (
                                 <tr>
-                                  <td colSpan={6} className="empty-row">No washing records found.</td>
+                                  <td colSpan={6} className="empty-row">
+                                    No washing records found.
+                                  </td>
                                 </tr>
                               )}
                             </tbody>
@@ -953,35 +1067,75 @@ const Dashboard: React.FC = () => {
                       </div>
 
                       <div className="details-section-box">
-                        <h3 className="section-box-title">Mess Labour Colors &amp; Counts Breakdown</h3>
+                        <h3 className="section-box-title">
+                          Mess Labour Colors &amp; Counts Breakdown
+                        </h3>
                         <div className="details-table-wrapper">
                           <table className="details-inner-table">
                             <thead>
                               <tr>
                                 <th>Color</th>
-                                <th style={{ textAlign: "right" }}>Total Count (strands)</th>
-                                <th style={{ textAlign: "right" }}>Total Weight (viss)</th>
+                                <th style={{ textAlign: "right" }}>
+                                  Total Count (strands)
+                                </th>
+                                <th style={{ textAlign: "right" }}>
+                                  Total Weight (viss)
+                                </th>
                               </tr>
                             </thead>
                             <tbody>
-                              {Object.keys(detailsData.metrics.mlColors).map((colorName: string) => (
-                                <tr key={colorName}>
-                                  <td style={{ fontWeight: "700" }}>{colorName}</td>
-                                  <td style={{ textAlign: "right" }}>{detailsData.metrics.mlColors[colorName].count.toLocaleString()}</td>
-                                  <td style={{ textAlign: "right" }}>{detailsData.metrics.mlColors[colorName].weight.toFixed(3)} viss</td>
-                                </tr>
-                              ))}
-                              {Object.keys(detailsData.metrics.mlColors).length === 0 && (
+                              {Object.keys(detailsData.metrics.mlColors).map(
+                                (colorName: string) => (
+                                  <tr key={colorName}>
+                                    <td style={{ fontWeight: "700" }}>
+                                      {colorName}
+                                    </td>
+                                    <td style={{ textAlign: "right" }}>
+                                      {detailsData.metrics.mlColors[
+                                        colorName
+                                      ].count.toLocaleString()}
+                                    </td>
+                                    <td style={{ textAlign: "right" }}>
+                                      {detailsData.metrics.mlColors[
+                                        colorName
+                                      ].weight.toFixed(3)}{" "}
+                                      viss
+                                    </td>
+                                  </tr>
+                                ),
+                              )}
+                              {Object.keys(detailsData.metrics.mlColors)
+                                .length === 0 && (
                                 <tr>
-                                  <td colSpan={3} className="empty-row">No color breakdown records found.</td>
+                                  <td colSpan={3} className="empty-row">
+                                    No color breakdown records found.
+                                  </td>
                                 </tr>
                               )}
                             </tbody>
                           </table>
                         </div>
-                        <div className="ml-summary-stats" style={{ marginTop: "15px", display: "flex", justifyContent: "space-between", background: "#f8fafc", padding: "10px 14px", borderRadius: "8px", fontSize: "13px" }}>
-                          <span><strong>Mess Labour Loss:</strong> {detailsData.metrics.mlLostWeight.toFixed(3)} viss</span>
-                          <span><strong>Mess Labour Fees:</strong> {detailsData.metrics.mlWorkerFees.toLocaleString()} MMK</span>
+                        <div
+                          className="ml-summary-stats"
+                          style={{
+                            marginTop: "15px",
+                            display: "flex",
+                            justifyContent: "space-between",
+                            background: "#f8fafc",
+                            padding: "10px 14px",
+                            borderRadius: "8px",
+                            fontSize: "13px",
+                          }}
+                        >
+                          <span>
+                            <strong>Mess Labour Loss:</strong>{" "}
+                            {detailsData.metrics.mlLostWeight.toFixed(3)} viss
+                          </span>
+                          <span>
+                            <strong>Mess Labour Fees:</strong>{" "}
+                            {detailsData.metrics.mlWorkerFees.toLocaleString()}{" "}
+                            MMK
+                          </span>
                         </div>
                       </div>
                     </div>
@@ -993,7 +1147,9 @@ const Dashboard: React.FC = () => {
                   <div className="details-pane">
                     <div className="details-section-grid">
                       <div className="details-section-box">
-                        <h3 className="section-box-title">Purification Details</h3>
+                        <h3 className="section-box-title">
+                          Purification Details
+                        </h3>
                         <div className="details-table-wrapper">
                           <table className="details-inner-table">
                             <thead>
@@ -1008,16 +1164,31 @@ const Dashboard: React.FC = () => {
                             <tbody>
                               {detailsData.purification.map((pu: any) => (
                                 <tr key={pu.id}>
-                                  <td>{new Date(pu.date).toLocaleDateString()}</td>
-                                  <td><span className="db-cat-badge">{pu.category}</span></td>
+                                  <td>
+                                    {new Date(pu.date).toLocaleDateString()}
+                                  </td>
+                                  <td>
+                                    <span className="db-cat-badge">
+                                      {pu.category}
+                                    </span>
+                                  </td>
                                   <td>{pu.placeName || "—"}</td>
-                                  <td>{pu.count.toLocaleString()} pcs / {pu.weight.toFixed(3)} viss</td>
-                                  <td>{(pu.supervisorFees || 0).toLocaleString()} / {(pu.workerFees || 0).toLocaleString()} MMK</td>
+                                  <td>
+                                    {pu.count.toLocaleString()} pcs /{" "}
+                                    {pu.weight.toFixed(3)} viss
+                                  </td>
+                                  <td>
+                                    {(pu.supervisorFees || 0).toLocaleString()}{" "}
+                                    / {(pu.workerFees || 0).toLocaleString()}{" "}
+                                    MMK
+                                  </td>
                                 </tr>
                               ))}
                               {detailsData.purification.length === 0 && (
                                 <tr>
-                                  <td colSpan={5} className="empty-row">No purification records found.</td>
+                                  <td colSpan={5} className="empty-row">
+                                    No purification records found.
+                                  </td>
                                 </tr>
                               )}
                             </tbody>
@@ -1026,7 +1197,9 @@ const Dashboard: React.FC = () => {
                       </div>
 
                       <div className="details-section-box">
-                        <h3 className="section-box-title">Girdle-bush Refinement Details</h3>
+                        <h3 className="section-box-title">
+                          Girdle-bush Refinement Details
+                        </h3>
                         <div className="details-table-wrapper">
                           <table className="details-inner-table">
                             <thead>
@@ -1042,21 +1215,39 @@ const Dashboard: React.FC = () => {
                             <tbody>
                               {detailsData.refinement.map((r: any) => (
                                 <tr key={r.id}>
-                                  <td>{new Date(r.date).toLocaleDateString()}</td>
-                                  <td><span className="db-cat-badge">{r.category}</span></td>
+                                  <td>
+                                    {new Date(r.date).toLocaleDateString()}
+                                  </td>
+                                  <td>
+                                    <span className="db-cat-badge">
+                                      {r.category}
+                                    </span>
+                                  </td>
                                   <td>{r.refinementWorkerName || "—"}</td>
                                   <td>{r.weight.toFixed(3)} viss</td>
                                   <td>
-                                    <span style={{ color: "#ef4444" }}>L: {r.lostWeight}</span> |{" "}
-                                    <span style={{ color: "#f59e0b" }}>S: {r.spoilageWeight}</span> |{" "}
-                                    <span style={{ color: "#10b981" }}>R: {r.returnWeight}</span>
+                                    <span style={{ color: "#ef4444" }}>
+                                      L: {r.lostWeight}
+                                    </span>{" "}
+                                    |{" "}
+                                    <span style={{ color: "#f59e0b" }}>
+                                      S: {r.spoilageWeight}
+                                    </span>{" "}
+                                    |{" "}
+                                    <span style={{ color: "#10b981" }}>
+                                      R: {r.returnWeight}
+                                    </span>
                                   </td>
-                                  <td>{r.workerFees?.toLocaleString() || 0} MMK</td>
+                                  <td>
+                                    {r.workerFees?.toLocaleString() || 0} MMK
+                                  </td>
                                 </tr>
                               ))}
                               {detailsData.refinement.length === 0 && (
                                 <tr>
-                                  <td colSpan={6} className="empty-row">No refinement records found.</td>
+                                  <td colSpan={6} className="empty-row">
+                                    No refinement records found.
+                                  </td>
                                 </tr>
                               )}
                             </tbody>
@@ -1070,30 +1261,65 @@ const Dashboard: React.FC = () => {
                 {/* 4. Final Sorting & Fees Summary */}
                 {detailsTab === "sorting" && (
                   <div className="details-pane">
-                    <div style={{ display: "flex", flexDirection: "column", gap: "20px" }}>
-                      
+                    <div
+                      style={{
+                        display: "flex",
+                        flexDirection: "column",
+                        gap: "20px",
+                      }}
+                    >
                       {/* Sizing Grid Card */}
                       <div className="details-section-box">
-                        <h3 className="section-box-title">Single &amp; Double Drawn Sorted Sizes (viss)</h3>
+                        <h3 className="section-box-title">
+                          Single &amp; Double Drawn Sorted Sizes (viss)
+                        </h3>
                         <div className="sdd-sizes-grid">
-                          {Object.keys(detailsData.metrics.sddSizes).map((sizeKey: string) => (
-                            <div className="sdd-size-cell" key={sizeKey}>
-                              <span className="sdd-size-label">{sizeKey.replace("Size ", "")}</span>
-                              <span className="sdd-size-val">{detailsData.metrics.sddSizes[sizeKey].toFixed(3)}</span>
-                            </div>
-                          ))}
+                          {Object.keys(detailsData.metrics.sddSizes).map(
+                            (sizeKey: string) => (
+                              <div className="sdd-size-cell" key={sizeKey}>
+                                <span className="sdd-size-label">
+                                  {sizeKey.replace("Size ", "")}
+                                </span>
+                                <span className="sdd-size-val">
+                                  {detailsData.metrics.sddSizes[
+                                    sizeKey
+                                  ].toFixed(3)}
+                                </span>
+                              </div>
+                            ),
+                          )}
                         </div>
-                        <div className="sdd-summary-row" style={{ marginTop: "15px", display: "flex", justifyContent: "space-between", background: "#f8fafc", padding: "10px 14px", borderRadius: "8px", fontSize: "13px" }}>
-                          <span><strong>SDD Total Sorted Weight:</strong> {detailsData.metrics.totalSortedWeight.toFixed(3)} viss</span>
-                          <span><strong>SDD Worker Fees:</strong> {detailsData.metrics.sddWorkerFees.toLocaleString()} MMK</span>
+                        <div
+                          className="sdd-summary-row"
+                          style={{
+                            marginTop: "15px",
+                            display: "flex",
+                            justifyContent: "space-between",
+                            background: "#f8fafc",
+                            padding: "10px 14px",
+                            borderRadius: "8px",
+                            fontSize: "13px",
+                          }}
+                        >
+                          <span>
+                            <strong>SDD Total Sorted Weight:</strong>{" "}
+                            {detailsData.metrics.totalSortedWeight.toFixed(3)}{" "}
+                            viss
+                          </span>
+                          <span>
+                            <strong>SDD Worker Fees:</strong>{" "}
+                            {detailsData.metrics.sddWorkerFees.toLocaleString()}{" "}
+                            MMK
+                          </span>
                         </div>
                       </div>
 
                       <div className="details-section-grid">
-                        
                         {/* SDD Records Table */}
                         <div className="details-section-box">
-                          <h3 className="section-box-title">Sorted Batches Logs</h3>
+                          <h3 className="section-box-title">
+                            Sorted Batches Logs
+                          </h3>
                           <div className="details-table-wrapper">
                             <table className="details-inner-table">
                               <thead>
@@ -1107,15 +1333,21 @@ const Dashboard: React.FC = () => {
                               <tbody>
                                 {detailsData.sdd.map((s: any) => (
                                   <tr key={s.id}>
-                                    <td>{new Date(s.date).toLocaleDateString()}</td>
+                                    <td>
+                                      {new Date(s.date).toLocaleDateString()}
+                                    </td>
                                     <td>{s.workerName || "—"}</td>
                                     <td>{s.note || "—"}</td>
-                                    <td>{s.workerFees?.toLocaleString() || 0} MMK</td>
+                                    <td>
+                                      {s.workerFees?.toLocaleString() || 0} MMK
+                                    </td>
                                   </tr>
                                 ))}
                                 {detailsData.sdd.length === 0 && (
                                   <tr>
-                                    <td colSpan={4} className="empty-row">No sorted records found.</td>
+                                    <td colSpan={4} className="empty-row">
+                                      No sorted records found.
+                                    </td>
                                   </tr>
                                 )}
                               </tbody>
@@ -1125,50 +1357,81 @@ const Dashboard: React.FC = () => {
 
                         {/* Grand Total Fees Table */}
                         <div className="details-section-box">
-                          <h3 className="section-box-title">Total Worker Fees Summary (All Process)</h3>
+                          <h3 className="section-box-title">
+                            Total Worker Fees Summary (All Process)
+                          </h3>
                           <div className="details-table-wrapper">
                             <table className="details-inner-table">
                               <thead>
                                 <tr>
                                   <th>Process Step</th>
-                                  <th style={{ textAlign: "right" }}>Total Fees (MMK)</th>
+                                  <th style={{ textAlign: "right" }}>
+                                    Total Fees (MMK)
+                                  </th>
                                 </tr>
                               </thead>
                               <tbody>
                                 <tr>
                                   <td>Wash &amp; Grading Worker Fees</td>
-                                  <td style={{ textAlign: "right" }}>{detailsData.metrics.washWorkerFees.toLocaleString()} MMK</td>
+                                  <td style={{ textAlign: "right" }}>
+                                    {detailsData.metrics.washWorkerFees.toLocaleString()}{" "}
+                                    MMK
+                                  </td>
                                 </tr>
                                 <tr>
                                   <td>Mess Labour Worker Fees</td>
-                                  <td style={{ textAlign: "right" }}>{detailsData.metrics.mlWorkerFees.toLocaleString()} MMK</td>
+                                  <td style={{ textAlign: "right" }}>
+                                    {detailsData.metrics.mlWorkerFees.toLocaleString()}{" "}
+                                    MMK
+                                  </td>
                                 </tr>
                                 <tr>
                                   <td>Purification Supervisor Fees</td>
-                                  <td style={{ textAlign: "right" }}>{detailsData.metrics.purifySupervisorFees.toLocaleString()} MMK</td>
+                                  <td style={{ textAlign: "right" }}>
+                                    {detailsData.metrics.purifySupervisorFees.toLocaleString()}{" "}
+                                    MMK
+                                  </td>
                                 </tr>
                                 <tr>
                                   <td>Purification Purifier Fees</td>
-                                  <td style={{ textAlign: "right" }}>{detailsData.metrics.purifyWorkerFees.toLocaleString()} MMK</td>
+                                  <td style={{ textAlign: "right" }}>
+                                    {detailsData.metrics.purifyWorkerFees.toLocaleString()}{" "}
+                                    MMK
+                                  </td>
                                 </tr>
                                 <tr>
                                   <td>Girdle-bush Refinement Fees</td>
-                                  <td style={{ textAlign: "right" }}>{detailsData.metrics.refineWorkerFees.toLocaleString()} MMK</td>
+                                  <td style={{ textAlign: "right" }}>
+                                    {detailsData.metrics.refineWorkerFees.toLocaleString()}{" "}
+                                    MMK
+                                  </td>
                                 </tr>
                                 <tr>
                                   <td>Single &amp; Double Drawn Worker Fees</td>
-                                  <td style={{ textAlign: "right" }}>{detailsData.metrics.sddWorkerFees.toLocaleString()} MMK</td>
+                                  <td style={{ textAlign: "right" }}>
+                                    {detailsData.metrics.sddWorkerFees.toLocaleString()}{" "}
+                                    MMK
+                                  </td>
                                 </tr>
-                                <tr style={{ background: "#eff6ff", fontWeight: "800", fontSize: "15px", color: "#1e40af" }}>
+                                <tr
+                                  style={{
+                                    background: "#eff6ff",
+                                    fontWeight: "800",
+                                    fontSize: "15px",
+                                    color: "#1e40af",
+                                  }}
+                                >
                                   <td>GRAND TOTAL WORKER FEES</td>
-                                  <td style={{ textAlign: "right" }}>{detailsData.metrics.grandTotalFees.toLocaleString()} MMK</td>
+                                  <td style={{ textAlign: "right" }}>
+                                    {detailsData.metrics.grandTotalFees.toLocaleString()}{" "}
+                                    MMK
+                                  </td>
                                 </tr>
                               </tbody>
                             </table>
                           </div>
                         </div>
                       </div>
-
                     </div>
                   </div>
                 )}
