@@ -307,6 +307,13 @@ body {
     max-width: 100% !important;
     height: auto !important;
   }
+
+  /* Table wrappers need horizontal scroll once the layout stacks on tablet */
+  .wg-table-wrap,
+  .rf-table-wrap {
+    overflow-x: auto !important;
+    -webkit-overflow-scrolling: touch !important;
+  }
 }
 
 @media (max-width: 768px) {
@@ -370,17 +377,16 @@ body {
   .sep-size-table-wrap,
   .audit-table-wrapper,
   .table-responsive,
-  .db-table-scroll {
+  .db-table-scroll,
+  .details-table-wrapper {
     overflow-x: auto !important;
     -webkit-overflow-scrolling: touch !important;
     width: 100% !important;
     max-width: 100% !important;
     margin-bottom: 16px !important;
-    border: 1px solid #e2e8f0 !important;
-    border-radius: 8px !important;
   }
 
-  /* Maintain a readable width for columns in scrollable tables to prevent text squishing */
+  /* Maintain a readable minimum width for columns to prevent text squishing */
   .table-container table,
   .table-wrap table,
   .rf-table-wrap table,
@@ -388,15 +394,40 @@ body {
   .inventory-table-wrap table,
   .wg-table-wrap table,
   .sep-table-wrap table,
-  .sep-size-table-wrap table,
   .audit-table-wrapper table,
   .table-responsive table,
   .db-table-scroll table,
   table.table,
   table.sales-table,
   table.inventory-table,
+  table.rf-table,
+  table.wg-table,
+  table.data-table,
+  table.sep-data-table {
+    min-width: 800px !important;
+  }
+
+  /* Sep-size tables have their own 760px in page CSS — keep above that */
+  .sep-size-table-wrap table,
+  table.sep-size-table {
+    min-width: 800px !important;
+  }
+
+  /* Dashboard main table — many columns */
   table.db-table {
-    min-width: 850px !important;
+    min-width: 950px !important;
+  }
+
+  /* CashFlow — 11 columns with nowrap content */
+  table.cf-table {
+    min-width: 1100px !important;
+  }
+
+  /* Compact 2-3 column tables */
+  table.audit-changes-table,
+  table.details-inner-table,
+  .details-table-wrapper table {
+    min-width: 400px !important;
   }
 
   /* Stats grid and dashboards */
@@ -425,6 +456,16 @@ body {
   .inventory-card-header .inventory-card-title-wrap {
     width: 100% !important;
     justify-content: space-between !important;
+  }
+
+  /* Page headers used by worker management pages */
+  .page-header {
+    flex-wrap: wrap !important;
+    gap: 12px !important;
+  }
+
+  .page-header .header-info h1 {
+    font-size: 1.4rem !important;
   }
 
   /* Bottom Exchange Rates widget */

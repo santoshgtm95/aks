@@ -282,3 +282,27 @@
   gap: 1rem;
   margin-top: 2rem;
 }
+
+@media (max-width: 768px) {
+  .cash-flow-container {
+    padding: 1rem;
+  }
+
+  .cf-toolbar {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 0.75rem;
+  }
+
+  .search-bar {
+    width: 100%;
+  }
+
+  .place-filter {
+    width: 100%;
+  }
+
+  .place-filter select {
+    flex: 1;
+  }
+}

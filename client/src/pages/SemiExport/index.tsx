@@ -2231,7 +2231,7 @@ const SemiExport: React.FC = () => {
               Colors Breakdown
             </h3>
           </div>
-          <div style={{ padding: "20px" }}>
+          <div style={{ padding: "20px", overflowX: "auto", WebkitOverflowScrolling: "touch" }}>
             <table
               className="table"
               style={{
