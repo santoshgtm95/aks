@@ -173,12 +173,23 @@ const Sales: React.FC = () => {
 
   return (
     <div className="sales-page-container fade-in">
-      {/* Header Area */}
-      <div className="sales-header">
-        <h1 className="sales-title">Sales Management</h1>
-        <p className="sales-subtitle">
-          Monitor transactions, adjust product weights, and register new raw material sales
-        </p>
+      {/* Hero Header */}
+      <div className="sales-hero">
+        <div className="sales-hero-left">
+          <div className="sales-hero-icon">
+            <ShoppingCart size={30} strokeWidth={1.8} />
+          </div>
+          <div className="sales-hero-text">
+            <h1>Sales Management</h1>
+            <p>Monitor transactions, adjust product weights, and register new raw material sales</p>
+          </div>
+        </div>
+        <div className="sales-hero-right">
+          <div className="sales-stat-pill">
+            <span className="stat-num">{sales.length}</span>
+            <span className="stat-label">{sales.length === 1 ? 'Transaction' : 'Transactions'}</span>
+          </div>
+        </div>
       </div>
 
  

@@ -4,29 +4,129 @@
   flex-direction: column;
   gap: 24px;
   width: 100%;
-  font-family: 'Inter', sans-serif;
+  font-family: "Inter", sans-serif;
   color: #1e293b;
   box-sizing: border-box;
 }
 
-/* Header Area */
-.inventory-header {
+/* ── Hero Header (shared style with Warehouse Management) ── */
+.inventory-hero {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  border-radius: 24px;
+  padding: 10px 20px;
   display: flex;
-  flex-direction: column;
-  gap: 4px;
+  align-items: center;
+  justify-content: space-between;
+  gap: 24px;
+  position: relative;
+  overflow: hidden;
+  box-shadow: 0 20px 60px -10px rgba(102, 126, 234, 0.5);
 }
 
-.inventory-title {
-  font-size: 26px;
+.inventory-hero::before {
+  content: "";
+  position: absolute;
+  top: -60px;
+  right: -60px;
+  width: 240px;
+  height: 240px;
+  background: rgba(255, 255, 255, 0.07);
+  border-radius: 50%;
+}
+
+.inventory-hero::after {
+  content: "";
+  position: absolute;
+  bottom: -80px;
+  left: 30%;
+  width: 180px;
+  height: 180px;
+  background: rgba(255, 255, 255, 0.05);
+  border-radius: 50%;
+}
+
+.inventory-hero-left {
+  display: flex;
+  align-items: center;
+  gap: 20px;
+  position: relative;
+  z-index: 1;
+}
+
+.inventory-hero-icon {
+  width: 64px;
+  height: 64px;
+  background: rgba(255, 255, 255, 0.2);
+  border-radius: 18px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: white;
+  backdrop-filter: blur(8px);
+  border: 1px solid rgba(255, 255, 255, 0.25);
+  flex-shrink: 0;
+}
+
+.inventory-hero-text h1 {
+  font-size: 1.9rem;
   font-weight: 800;
-  color: #0f172a;
+  color: #fff;
+  margin: 0 0 4px;
   letter-spacing: -0.5px;
 }
 
-.inventory-subtitle {
-  font-size: 14px;
-  color: #64748b;
-  margin-bottom: 4px;
+.inventory-hero-text p {
+  color: rgba(255, 255, 255, 0.75);
+  font-size: 0.92rem;
+  margin: 0;
+}
+
+.inventory-hero-right {
+  display: flex;
+  align-items: center;
+  gap: 20px;
+  position: relative;
+  z-index: 1;
+}
+
+.inventory-stat-pill {
+  background: rgba(255, 255, 255, 0.15);
+  border: 1px solid rgba(255, 255, 255, 0.25);
+  border-radius: 16px;
+  padding: 12px 22px;
+  text-align: center;
+  backdrop-filter: blur(8px);
+  color: white;
+}
+
+.inventory-stat-pill .stat-num {
+  font-size: 2rem;
+  font-weight: 800;
+  line-height: 1;
+  display: block;
+}
+
+.inventory-stat-pill .stat-label {
+  font-size: 0.75rem;
+  color: rgba(255, 255, 255, 0.75);
+  font-weight: 500;
+  margin-top: 2px;
+  display: block;
+}
+
+@media (max-width: 768px) {
+  .inventory-hero {
+    flex-direction: column;
+    align-items: flex-start;
+    padding: 28px 24px;
+    gap: 20px;
+  }
+  .inventory-hero-right {
+    width: 100%;
+  }
+  .inventory-hero-text h1 {
+    font-size: 1.5rem;
+  }
 }
 
 /* Main Dashboard Split Layout */
@@ -164,7 +264,8 @@
   box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.1);
 }
 
-.inventory-control:disabled, .inventory-control:read-only {
+.inventory-control:disabled,
+.inventory-control:read-only {
   background: #f8fafc;
   color: #64748b;
   cursor: not-allowed;
@@ -394,7 +495,8 @@
   justify-content: center;
 }
 
-.btn-action-edit, .btn-action-delete {
+.btn-action-edit,
+.btn-action-delete {
   background: none;
   border: none;
   cursor: pointer;
@@ -454,7 +556,8 @@
   padding-top: 16px;
 }
 
-.btn-modal-submit, .btn-modal-cancel {
+.btn-modal-submit,
+.btn-modal-cancel {
   padding: 10px 20px;
   font-weight: 700;
   font-size: 13.5px;

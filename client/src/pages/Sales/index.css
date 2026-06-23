@@ -4,29 +4,115 @@
   flex-direction: column;
   gap: 24px;
   width: 100%;
-  font-family: 'Inter', sans-serif;
+  font-family: "Inter", sans-serif;
   color: #1e293b;
   box-sizing: border-box;
 }
 
-/* Header Area */
-.sales-header {
+/* ── Hero Header (shared style with Warehouse Management) ── */
+.sales-hero {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  border-radius: 24px;
+  padding: 10px 20px;
   display: flex;
-  flex-direction: column;
-  gap: 4px;
+  align-items: center;
+  justify-content: space-between;
+  gap: 24px;
+  position: relative;
+  overflow: hidden;
+  box-shadow: 0 20px 60px -10px rgba(102, 126, 234, 0.5);
 }
 
-.sales-title {
-  font-size: 26px;
+.sales-hero::before {
+  content: "";
+  position: absolute;
+  top: -60px;
+  right: -60px;
+  width: 240px;
+  height: 240px;
+  background: rgba(255, 255, 255, 0.07);
+  border-radius: 50%;
+}
+
+.sales-hero::after {
+  content: "";
+  position: absolute;
+  bottom: -80px;
+  left: 30%;
+  width: 180px;
+  height: 180px;
+  background: rgba(255, 255, 255, 0.05);
+  border-radius: 50%;
+}
+
+.sales-hero-left {
+  display: flex;
+  align-items: center;
+  gap: 20px;
+  position: relative;
+  z-index: 1;
+}
+
+.sales-hero-icon {
+  width: 64px;
+  height: 64px;
+  background: rgba(255, 255, 255, 0.2);
+  border-radius: 18px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: white;
+  backdrop-filter: blur(8px);
+  border: 1px solid rgba(255, 255, 255, 0.25);
+  flex-shrink: 0;
+}
+
+.sales-hero-text h1 {
+  font-size: 1.9rem;
   font-weight: 800;
-  color: #0f172a;
+  color: #fff;
+  margin: 0 0 4px;
   letter-spacing: -0.5px;
 }
 
-.sales-subtitle {
-  font-size: 14px;
-  color: #64748b;
-  margin-bottom: 4px;
+.sales-hero-text p {
+  color: rgba(255, 255, 255, 0.75);
+  font-size: 0.92rem;
+  margin: 0;
+}
+
+.sales-hero-right {
+  display: flex;
+  align-items: center;
+  gap: 20px;
+  position: relative;
+  z-index: 1;
+}
+
+.sales-stat-pill {
+  background: rgba(255, 255, 255, 0.15);
+  border: 1px solid rgba(255, 255, 255, 0.25);
+  border-radius: 16px;
+  padding: 12px 22px;
+  text-align: center;
+  backdrop-filter: blur(8px);
+  color: white;
+}
+
+.sales-stat-pill .stat-num {
+  display: block;
+  font-size: 1.6rem;
+  font-weight: 800;
+  line-height: 1.2;
+}
+
+.sales-stat-pill .stat-label {
+  font-size: 0.75rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  opacity: 0.8;
+  color: rgba(255, 255, 255, 0.75);
 }
 
 /* Stats Dashboard Grid */
@@ -51,7 +137,9 @@
 
 .sales-stats-card:hover {
   transform: translateY(-2px);
-  box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.05), 0 4px 6px -2px rgba(0, 0, 0, 0.01);
+  box-shadow:
+    0 10px 15px -3px rgba(0, 0, 0, 0.05),
+    0 4px 6px -2px rgba(0, 0, 0, 0.01);
   border-color: #cbd5e1;
 }
 
@@ -238,7 +326,8 @@
   box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.1);
 }
 
-.sales-control:disabled, .sales-control:read-only {
+.sales-control:disabled,
+.sales-control:read-only {
   background: #f8fafc;
   color: #64748b;
   cursor: not-allowed;

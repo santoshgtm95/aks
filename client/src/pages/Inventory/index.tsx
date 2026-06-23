@@ -190,12 +190,23 @@ const Inventory: React.FC = () => {
 
   return (
     <div className="inventory-page-container fade-in">
-      {/* Header Area */}
-      <div className="inventory-header">
-        <h1 className="inventory-title">Inventory Management</h1>
-        <p className="inventory-subtitle">
-          Register new products, track stock levels, and monitor warehouse distribution
-        </p>
+      {/* Hero Header */}
+      <div className="inventory-hero">
+        <div className="inventory-hero-left">
+          <div className="inventory-hero-icon">
+            <Package size={30} strokeWidth={1.8} />
+          </div>
+          <div className="inventory-hero-text">
+            <h1>Inventory Management</h1>
+            <p>Register new products, track stock levels, and monitor warehouse distribution</p>
+          </div>
+        </div>
+        <div className="inventory-hero-right">
+          <div className="inventory-stat-pill">
+            <span className="stat-num">{products.length}</span>
+            <span className="stat-label">{products.length === 1 ? 'Product' : 'Products'}</span>
+          </div>
+        </div>
       </div>
 
       {/* Main Split Layout */}
