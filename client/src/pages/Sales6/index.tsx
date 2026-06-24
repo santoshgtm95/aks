@@ -1024,8 +1024,28 @@ const Sales6: React.FC = () => {
   }
 
   return (
-    <div className="rf-container fade-in">
-      <aside className="rf-sidebar">
+    <div className="export-list-container fade-in">
+      {/* Hero Header */}
+      <div className="export-list-hero">
+        <div className="export-list-hero-left">
+          <div className="export-list-hero-icon">
+            <ClipboardList size={30} strokeWidth={1.8} />
+          </div>
+          <div className="export-list-hero-text">
+            <h1>Export List</h1>
+            <p>Track export ledgers, finalized sales, and shipment summaries</p>
+          </div>
+        </div>
+        <div className="export-list-hero-right">
+          <div className="export-list-stat-pill">
+            <span className="stat-num">{exports.length}</span>
+            <span className="stat-label">{exports.length === 1 ? 'Record' : 'Records'}</span>
+          </div>
+        </div>
+      </div>
+
+      <div className="export-list-layout">
+        <aside className="rf-sidebar">
         <div className="rf-sidebar-header">
           <ClipboardList size={18} />
           <span>Export Ledger</span>
@@ -1803,6 +1823,7 @@ const Sales6: React.FC = () => {
           )}
         </div>
       </main>
+    </div>
 
       {/* History Detail Modal */}
       {isHistoryModalOpen &&

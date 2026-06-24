@@ -7,7 +7,7 @@ import {
   semiExportPurchaseRecordsAPI,
   singleDoubleDrawnWorkersAPI,
 } from "../../services/api";
-import { Package, FilePlus, Trash2, X, Send, Loader2 } from "lucide-react";
+import { Package, FilePlus, Trash2, X, Send, Loader2, Sparkles } from "lucide-react";
 import "./index.css";
 import type { ExchangeRate, SingleDoubleDrawnWorker } from "../../types";
 import { formatDateTime } from "../../utils/format";
@@ -857,9 +857,29 @@ const SemiExportPurchase: React.FC = () => {
   };
 
   return (
-    <div className="rf-container fade-in">
-      {/* Left Sidebar */}
-      <aside className="rf-sidebar">
+    <div className="sep-container fade-in">
+      {/* Hero Header */}
+      <div className="sep-hero">
+        <div className="sep-hero-left">
+          <div className="sep-hero-icon">
+            <Sparkles size={30} strokeWidth={1.8} />
+          </div>
+          <div className="sep-hero-text">
+            <h1>Semi Export Purchase</h1>
+            <p>Track semi-export purchase orders, pricing, and supplier records</p>
+          </div>
+        </div>
+        <div className="sep-hero-right">
+          <div className="sep-stat-pill">
+            <span className="stat-num">{purchases.length}</span>
+            <span className="stat-label">{purchases.length === 1 ? 'Order' : 'Orders'}</span>
+          </div>
+        </div>
+      </div>
+
+      <div className="sep-layout">
+        {/* Left Sidebar */}
+        <aside className="rf-sidebar">
         <div className="rf-sidebar-header">
           <Package size={18} />
           <span>Purchase Orders</span>
@@ -1165,6 +1185,7 @@ const SemiExportPurchase: React.FC = () => {
           </div>
         </div>
       </main>
+    </div>
 
       {/* Modal */}
       {showModal && (

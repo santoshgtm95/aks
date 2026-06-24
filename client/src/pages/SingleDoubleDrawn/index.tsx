@@ -655,9 +655,29 @@ const SingleDoubleDrawn: React.FC = () => {
   }
 
   return (
-    <div className="rf-container fade-in">
-      {/* Left Sidebar: Refined Stock List */}
-      <aside className="rf-sidebar">
+    <div className="sdd-container fade-in">
+      {/* Hero Header */}
+      <div className="sdd-hero">
+        <div className="sdd-hero-left">
+          <div className="sdd-hero-icon">
+            <Sparkles size={30} strokeWidth={1.8} />
+          </div>
+          <div className="sdd-hero-text">
+            <h1>Single & Double Drawn</h1>
+            <p>Manage drawn records, length categorization, and worker wages</p>
+          </div>
+        </div>
+        <div className="sdd-hero-right">
+          <div className="sdd-stat-pill">
+            <span className="stat-num">{savedRecords.length}</span>
+            <span className="stat-label">{savedRecords.length === 1 ? 'Record' : 'Records'}</span>
+          </div>
+        </div>
+      </div>
+
+      <div className="sdd-layout">
+        {/* Left Sidebar: Refined Stock List */}
+        <aside className="rf-sidebar">
         <div className="rf-sidebar-header">
           <Package size={18} />
           <span>Refined Stock</span>
@@ -2188,6 +2208,7 @@ const SingleDoubleDrawn: React.FC = () => {
           </div>
         </div>
       </main>
+    </div>
       {/* Worker Management Modal */}
       {showWorkerManagement && (
         <div

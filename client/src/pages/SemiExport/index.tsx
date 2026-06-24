@@ -35,6 +35,7 @@ import {
   X,
   Layers,
   Clock,
+  TrendingUp,
 } from "lucide-react";
 import { formatDateTime } from "../../utils/format";
 import "./index.css";
@@ -3738,9 +3739,29 @@ const SemiExport: React.FC = () => {
   };
 
   return (
-    <div className="rf-container fade-in">
-      {/* Left Sidebar: Single Double Drawn Sorting List */}
-      <aside className="rf-sidebar">
+    <div className="semiexport-container fade-in">
+      {/* Hero Header */}
+      <div className="semiexport-hero">
+        <div className="semiexport-hero-left">
+          <div className="semiexport-hero-icon">
+            <TrendingUp size={30} strokeWidth={1.8} />
+          </div>
+          <div className="semiexport-hero-text">
+            <h1>Semi Export</h1>
+            <p>Manage export batches, worker fees, and price breakdowns</p>
+          </div>
+        </div>
+        <div className="semiexport-hero-right">
+          <div className="semiexport-stat-pill">
+            <span className="stat-num">{savedExports.length}</span>
+            <span className="stat-label">{savedExports.length === 1 ? 'Record' : 'Records'}</span>
+          </div>
+        </div>
+      </div>
+
+      <div className="semiexport-layout">
+        {/* Left Sidebar: Single Double Drawn Sorting List */}
+        <aside className="rf-sidebar">
         <div className="rf-sidebar-header">
           <Package size={18} />
           <span>Sorted Batches</span>
@@ -4242,6 +4263,7 @@ const SemiExport: React.FC = () => {
           )}
         </div>
       </main>
+    </div>
 
       {/* History Detail Modal */}
       {showHistoryModal && selectedMarker && (

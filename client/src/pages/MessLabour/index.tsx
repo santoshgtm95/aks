@@ -631,9 +631,29 @@ const MessLabour: React.FC = () => {
   if (loading) return <div className="spinner"></div>;
 
   return (
-    <div className="rf-container fade-in">
-      {/* Left Sidebar: Product List */}
-      <aside className="rf-sidebar">
+    <div className="mess-labour-container fade-in">
+      {/* Hero Header */}
+      <div className="mess-labour-hero">
+        <div className="mess-labour-hero-left">
+          <div className="mess-labour-hero-icon">
+            <Scissors size={30} strokeWidth={1.8} />
+          </div>
+          <div className="mess-labour-hero-text">
+            <h1>Mess-Labour Management</h1>
+            <p>Track sorting records, worker assignments, and daily wages</p>
+          </div>
+        </div>
+        <div className="mess-labour-hero-right">
+          <div className="mess-labour-stat-pill">
+            <span className="stat-num">{records.length}</span>
+            <span className="stat-label">{records.length === 1 ? 'Record' : 'Records'}</span>
+          </div>
+        </div>
+      </div>
+
+      <div className="mess-labour-layout">
+        {/* Left Sidebar: Product List */}
+        <aside className="rf-sidebar">
         <div className="rf-sidebar-header">
           <Package size={18} />
           <span>Select a bag to sort</span>
@@ -1534,6 +1554,7 @@ const MessLabour: React.FC = () => {
           )}
         </div>
       </main>
+    </div>
 
       {/*  Edit Record Modal  */}
       {editingRecord && (

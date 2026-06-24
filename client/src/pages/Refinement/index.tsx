@@ -308,7 +308,27 @@ const Refinement: React.FC = () => {
   }
 
   return (
-    <div className="rf-container fade-in">
+    <div className="ref-container fade-in">
+      {/* Hero Header */}
+      <div className="ref-hero">
+        <div className="ref-hero-left">
+          <div className="ref-hero-icon">
+            <Sparkles size={30} strokeWidth={1.8} />
+          </div>
+          <div className="ref-hero-text">
+            <h1>Girdle-bush List</h1>
+            <p>Track refinement processes, worker fees, and bag outputs</p>
+          </div>
+        </div>
+        <div className="ref-hero-right">
+          <div className="ref-stat-pill">
+            <span className="stat-num">{refinementRecords.length}</span>
+            <span className="stat-label">{refinementRecords.length === 1 ? 'Record' : 'Records'}</span>
+          </div>
+        </div>
+      </div>
+
+      <div className="ref-layout">
       {/* ── LEFT SIDEBAR ── */}
       <aside className="rf-sidebar">
         <div className="rf-sidebar-header">
@@ -697,6 +717,7 @@ const Refinement: React.FC = () => {
           </div>
         </div>
       </main>
+    </div>
 
       {/* Refinement Worker Management Modal */}
       {showRefinementWorkerManagement && (

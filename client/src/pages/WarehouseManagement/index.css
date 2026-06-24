@@ -23,15 +23,14 @@
 .wh-hero {
   background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
   border-radius: 24px;
-  padding: 10px 20px;
+  padding: 10px 10px;
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 24px;
-  margin-bottom: 32px;
+  gap: 15px;
   position: relative;
   overflow: hidden;
-  box-shadow: 0 20px 60px -10px rgba(102, 126, 234, 0.5);
+  margin-bottom: 15px;
 }
 
 .wh-hero::before {
@@ -65,8 +64,8 @@
 }
 
 .wh-hero-icon {
-  width: 64px;
-  height: 64px;
+  width: 50px;
+  height: 50px;
   background: rgba(255, 255, 255, 0.2);
   border-radius: 18px;
   display: flex;
@@ -79,7 +78,7 @@
 }
 
 .wh-hero-text h1 {
-  font-size: 1.9rem;
+  font-size: 1.25rem;
   font-weight: 800;
   color: #fff;
   margin: 0 0 4px;
@@ -88,7 +87,7 @@
 
 .wh-hero-text p {
   color: rgba(255, 255, 255, 0.75);
-  font-size: 0.92rem;
+  font-size: 0.8rem;
   margin: 0;
 }
 
@@ -104,14 +103,14 @@
   background: rgba(255, 255, 255, 0.15);
   border: 1px solid rgba(255, 255, 255, 0.25);
   border-radius: 16px;
-  padding: 12px 22px;
+  padding: 1px 10px;
   text-align: center;
   backdrop-filter: blur(8px);
   color: white;
 }
 
 .wh-stat-pill .stat-num {
-  font-size: 2rem;
+  font-size: 1.25rem;
   font-weight: 800;
   line-height: 1;
   display: block;
@@ -119,10 +118,10 @@
 
 .wh-stat-pill .stat-label {
   font-size: 0.75rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
   color: rgba(255, 255, 255, 0.75);
-  font-weight: 500;
-  margin-top: 2px;
-  display: block;
 }
 
 .wh-create-btn {

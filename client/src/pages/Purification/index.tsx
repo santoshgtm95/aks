@@ -20,6 +20,7 @@ import {
   X,
   Pencil,
   Trash2,
+  Sparkles,
 } from "lucide-react";
 import PurifierManagement from "../PurifierManagement";
 import {
@@ -320,8 +321,28 @@ const Purification: React.FC = () => {
   }
 
   return (
-    <div className="rf-container fade-in">
-      <aside className="rf-sidebar">
+    <div className="purification-container fade-in">
+      {/* Hero Header */}
+      <div className="purification-hero">
+        <div className="purification-hero-left">
+          <div className="purification-hero-icon">
+            <Sparkles size={30} strokeWidth={1.8} />
+          </div>
+          <div className="purification-hero-text">
+            <h1>Purification</h1>
+            <p>Monitor purification stages, worker fees, and refined outputs</p>
+          </div>
+        </div>
+        <div className="purification-hero-right">
+          <div className="purification-stat-pill">
+            <span className="stat-num">{purifiedRecords.length}</span>
+            <span className="stat-label">{purifiedRecords.length === 1 ? 'Record' : 'Records'}</span>
+          </div>
+        </div>
+      </div>
+
+      <div className="purification-layout">
+        <aside className="rf-sidebar">
         <div className="rf-sidebar-header">
           <Package size={18} />
           <span>Select Category to Purify</span>
@@ -751,6 +772,7 @@ const Purification: React.FC = () => {
           </div>
         </div>
       </main>
+    </div>
 
       {showPlaceManagement && (
         <div

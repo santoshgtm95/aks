@@ -275,8 +275,28 @@ const WashGrading: React.FC = () => {
 
   return (
     <div className="wg-container fade-in">
-      {/* ── LEFT SIDEBAR ── */}
-      <aside className="wg-sidebar">
+      {/* Hero Header */}
+      <div className="wg-hero">
+        <div className="wg-hero-left">
+          <div className="wg-hero-icon">
+            <Sparkles size={30} strokeWidth={1.8} />
+          </div>
+          <div className="wg-hero-text">
+            <h1>Wash & Grading</h1>
+            <p>Manage raw materials washing, sorting, and grading processes</p>
+          </div>
+        </div>
+        <div className="wg-hero-right">
+          <div className="wg-stat-pill">
+            <span className="stat-num">{records.length}</span>
+            <span className="stat-label">{records.length === 1 ? 'Record' : 'Records'}</span>
+          </div>
+        </div>
+      </div>
+
+      <div className="wg-layout">
+        {/* ── LEFT SIDEBAR ── */}
+        <aside className="wg-sidebar">
         <div className="wg-sidebar-header">
           <Sparkles size={18} />
           <span>Select Inventory to Wash</span>
@@ -567,6 +587,7 @@ const WashGrading: React.FC = () => {
           </div>
         </div>
       </main>
+    </div>
 
       {/* ── WORKER MANAGEMENT MODAL ── */}
       {showWorkerManagement && (

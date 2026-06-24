@@ -5,15 +5,127 @@
 @import url("https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap");
 
 /* ── LAYOUT ── */
-.rf-container {
+.sdd-container {
   display: flex;
-  gap: 24px;
-  padding: 24px;
+  flex-direction: column;
+  gap: 15px;
   background: #f1f5f9;
   height: calc(100vh - 64px);
   font-family: "Inter", sans-serif;
   box-sizing: border-box;
   overflow: hidden;
+}
+
+.sdd-layout {
+  display: flex;
+  gap: 24px;
+  width: 100%;
+  flex: 1;
+  min-height: 0;
+  overflow: hidden;
+}
+
+/* ── Hero Header ── */
+.sdd-hero {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  border-radius: 24px;
+  padding: 10px 10px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  position: relative;
+  overflow: hidden;
+}
+
+.sdd-hero::before {
+  content: "";
+  position: absolute;
+  top: -60px;
+  right: -60px;
+  width: 240px;
+  height: 240px;
+  background: rgba(255, 255, 255, 0.07);
+  border-radius: 50%;
+}
+
+.sdd-hero::after {
+  content: "";
+  position: absolute;
+  bottom: -80px;
+  left: 30%;
+  width: 180px;
+  height: 180px;
+  background: rgba(255, 255, 255, 0.05);
+  border-radius: 50%;
+}
+
+.sdd-hero-left {
+  display: flex;
+  align-items: center;
+  gap: 20px;
+  position: relative;
+  z-index: 1;
+}
+
+.sdd-hero-icon {
+  width: 50px;
+  height: 50px;
+  background: rgba(255, 255, 255, 0.2);
+  border-radius: 18px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: white;
+  backdrop-filter: blur(8px);
+  border: 1px solid rgba(255, 255, 255, 0.25);
+  flex-shrink: 0;
+}
+
+.sdd-hero-text h1 {
+  font-size: 1.25rem;
+  font-weight: 800;
+  color: #fff;
+  margin: 0 0 4px;
+  letter-spacing: -0.5px;
+}
+
+.sdd-hero-text p {
+  color: rgba(255, 255, 255, 0.75);
+  font-size: 0.8rem;
+  margin: 0;
+}
+
+.sdd-hero-right {
+  display: flex;
+  align-items: center;
+  gap: 20px;
+  position: relative;
+  z-index: 1;
+}
+
+.sdd-stat-pill {
+  background: rgba(255, 255, 255, 0.15);
+  border: 1px solid rgba(255, 255, 255, 0.25);
+  border-radius: 16px;
+  padding: 1px 10px;
+  text-align: center;
+  backdrop-filter: blur(8px);
+  color: white;
+}
+
+.sdd-stat-pill .stat-num {
+  display: block;
+  font-size: 1.25rem;
+  font-weight: 800;
+  line-height: 1.2;
+}
+
+.sdd-stat-pill .stat-label {
+  font-size: 0.75rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  color: rgba(255, 255, 255, 0.75);
 }
 
 .fade-in {
@@ -600,7 +712,7 @@
    RESPONSIVE OVERRIDES
    ========================================================================== */
 @media (max-width: 1200px) {
-  .rf-container {
+  .sdd-layout {
     flex-direction: column;
   }
   .rf-sidebar {
@@ -617,7 +729,7 @@
 }
 
 @media (max-width: 768px) {
-  .rf-container {
+  .sdd-container {
     padding: 16px;
     gap: 16px;
   }

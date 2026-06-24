@@ -31,21 +31,134 @@
 }
 
 /* ── LAYOUT ── */
-.rf-container {
+.ref-container {
   display: flex;
-  gap: 24px;
-  padding: 24px;
+  flex-direction: column;
+  gap: 15px;
   background: #f1f5f9;
   min-height: calc(100vh - 64px);
   font-family: "Inter", sans-serif;
   box-sizing: border-box;
 }
 
+.ref-layout {
+  display: flex;
+  gap: 24px;
+  width: 100%;
+}
+
+/* ── Hero Header ── */
+.ref-hero {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  border-radius: 24px;
+  padding: 10px 10px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  position: relative;
+  overflow: hidden;
+}
+
+.ref-hero::before {
+  content: "";
+  position: absolute;
+  top: -60px;
+  right: -60px;
+  width: 240px;
+  height: 240px;
+  background: rgba(255, 255, 255, 0.07);
+  border-radius: 50%;
+}
+
+.ref-hero::after {
+  content: "";
+  position: absolute;
+  bottom: -80px;
+  left: 30%;
+  width: 180px;
+  height: 180px;
+  background: rgba(255, 255, 255, 0.05);
+  border-radius: 50%;
+}
+
+.ref-hero-left {
+  display: flex;
+  align-items: center;
+  gap: 20px;
+  position: relative;
+  z-index: 1;
+}
+
+.ref-hero-icon {
+  width: 50px;
+  height: 50px;
+  background: rgba(255, 255, 255, 0.2);
+  border-radius: 18px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: white;
+  backdrop-filter: blur(8px);
+  border: 1px solid rgba(255, 255, 255, 0.25);
+  flex-shrink: 0;
+}
+
+.ref-hero-text h1 {
+  font-size: 1.25rem;
+  font-weight: 800;
+  color: #fff;
+  margin: 0 0 4px;
+  letter-spacing: -0.5px;
+}
+
+.ref-hero-text p {
+  color: rgba(255, 255, 255, 0.75);
+  font-size: 0.8rem;
+  margin: 0;
+}
+
+.ref-hero-right {
+  display: flex;
+  align-items: center;
+  gap: 20px;
+  position: relative;
+  z-index: 1;
+}
+
+.ref-stat-pill {
+  background: rgba(255, 255, 255, 0.15);
+  border: 1px solid rgba(255, 255, 255, 0.25);
+  border-radius: 16px;
+  padding: 1px 10px;
+  text-align: center;
+  backdrop-filter: blur(8px);
+  color: white;
+}
+
+.ref-stat-pill .stat-num {
+  font-size: 1.25rem;
+  font-weight: 800;
+  line-height: 1;
+  display: block;
+}
+
+.ref-stat-pill .stat-label {
+  font-size: 0.75rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  color: rgba(255, 255, 255, 0.75);
+}
+
 @media (min-width: 1201px) {
-  .rf-container {
+  .ref-container {
     height: calc(100vh - 64px);
     min-height: auto;
     overflow: hidden;
+  }
+  .ref-layout {
+    flex: 1;
+    min-height: 0;
   }
   .rf-sidebar {
     overflow: hidden;

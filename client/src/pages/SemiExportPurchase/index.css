@@ -1,11 +1,120 @@
-.rf-container {
+.sep-container {
   display: flex;
-  gap: 24px;
-  padding: 24px;
+  flex-direction: column;
+  gap: 15px;
   background: #f1f5f9;
   min-height: calc(100vh - 64px);
   font-family: "Inter", sans-serif;
   box-sizing: border-box;
+}
+
+.sep-layout {
+  display: flex;
+  gap: 24px;
+  width: 100%;
+}
+
+/* ── Hero Header ── */
+.sep-hero {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  border-radius: 24px;
+  padding: 10px 10px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  position: relative;
+  overflow: hidden;
+}
+
+.sep-hero::before {
+  content: "";
+  position: absolute;
+  top: -60px;
+  right: -60px;
+  width: 240px;
+  height: 240px;
+  background: rgba(255, 255, 255, 0.07);
+  border-radius: 50%;
+}
+
+.sep-hero::after {
+  content: "";
+  position: absolute;
+  bottom: -80px;
+  left: 30%;
+  width: 180px;
+  height: 180px;
+  background: rgba(255, 255, 255, 0.05);
+  border-radius: 50%;
+}
+
+.sep-hero-left {
+  display: flex;
+  align-items: center;
+  gap: 20px;
+  position: relative;
+  z-index: 1;
+}
+
+.sep-hero-icon {
+  width: 50px;
+  height: 50px;
+  background: rgba(255, 255, 255, 0.2);
+  border-radius: 18px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: white;
+  backdrop-filter: blur(8px);
+  border: 1px solid rgba(255, 255, 255, 0.25);
+  flex-shrink: 0;
+}
+
+.sep-hero-text h1 {
+  font-size: 1.25rem;
+  font-weight: 800;
+  color: #fff;
+  margin: 0 0 4px;
+  letter-spacing: -0.5px;
+}
+
+.sep-hero-text p {
+  color: rgba(255, 255, 255, 0.75);
+  font-size: 0.8rem;
+  margin: 0;
+}
+
+.sep-hero-right {
+  display: flex;
+  align-items: center;
+  gap: 20px;
+  position: relative;
+  z-index: 1;
+}
+
+.sep-stat-pill {
+  background: rgba(255, 255, 255, 0.15);
+  border: 1px solid rgba(255, 255, 255, 0.25);
+  border-radius: 16px;
+  padding: 1px 10px;
+  text-align: center;
+  backdrop-filter: blur(8px);
+  color: white;
+}
+
+.sep-stat-pill .stat-num {
+  display: block;
+  font-size: 1.25rem;
+  font-weight: 800;
+  line-height: 1.2;
+}
+
+.sep-stat-pill .stat-label {
+  font-size: 0.75rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  color: rgba(255, 255, 255, 0.75);
 }
 
 .fade-in {
@@ -810,7 +919,7 @@
 }
 
 @media (max-width: 1024px) {
-  .rf-container {
+  .sep-layout {
     flex-direction: column;
     gap: 16px;
   }
@@ -826,7 +935,7 @@
 }
 
 @media (max-width: 768px) {
-  .rf-container {
+  .sep-container {
     padding: 16px;
     min-height: calc(100vh - 56px);
   }
@@ -877,7 +986,9 @@
   background: transparent;
   color: #94a3b8;
   cursor: pointer;
-  transition: background 0.15s ease, color 0.15s ease;
+  transition:
+    background 0.15s ease,
+    color 0.15s ease;
   padding: 0;
 }
 

@@ -132,11 +132,23 @@ const CashFlow: React.FC = () => {
 
   return (
     <div className="cash-flow-container">
-      <div className="cf-header">
-        <h1>
-          <DollarSign className="cf-icon" /> Worker Cash Flow
-        </h1>
-        <p>View total fees across all process flows</p>
+      {/* Hero Header */}
+      <div className="cf-hero">
+        <div className="cf-hero-left">
+          <div className="cf-hero-icon">
+            <DollarSign size={30} strokeWidth={1.8} />
+          </div>
+          <div className="cf-hero-text">
+            <h1>Cash Flow</h1>
+            <p>View total fees and payment status across all process flows</p>
+          </div>
+        </div>
+        <div className="cf-hero-right">
+          <div className="cf-stat-pill">
+            <span className="stat-num">{data.length}</span>
+            <span className="stat-label">{data.length === 1 ? 'Worker' : 'Workers'}</span>
+          </div>
+        </div>
       </div>
 
       <div className="cf-toolbar">
