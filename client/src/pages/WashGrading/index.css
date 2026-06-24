@@ -34,7 +34,6 @@
 .wg-container {
   display: flex;
   flex-direction: column;
-  gap: 10px;
   background: #f1f5f9;
   min-height: calc(100vh - 64px);
   font-family: "Inter", sans-serif;
