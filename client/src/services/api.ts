@@ -55,6 +55,7 @@ import type {
   WashGradingProcess,
   WashGradingRecord,
   CreateWashGradingProcessDto,
+  MarkerByDateDto,
 } from "../types";
 
 const API_BASE_URL = "/api";
@@ -667,6 +668,12 @@ export const semiExportPurchaseAPI = {
     const response = await api.get<any[]>("/SemiExportPurchase");
     return response.data;
   },
+  getByDate: async (fromDate: string, toDate: string): Promise<any[]> => {
+    const response = await api.get<any[]>("/SemiExportPurchase/by-date", {
+      params: { fromDate, toDate },
+    });
+    return response.data;
+  },
   create: async (data: any): Promise<any> => {
     const response = await api.post<any>("/SemiExportPurchase", data);
     return response.data;
@@ -701,6 +708,16 @@ export const semiExportPurchaseRecordsAPI = {
   },
   delete: async (id: number): Promise<void> => {
     await api.delete(`/SemiExportPurchaseRecords/${id}`);
+  },
+};
+
+// Reports API
+export const reportsAPI = {
+  getMarkersByDate: async (fromDate: string, toDate: string): Promise<MarkerByDateDto[]> => {
+    const response = await api.get<MarkerByDateDto[]>("/reports/markers-by-date", {
+      params: { fromDate, toDate },
+    });
+    return response.data;
   },
 };
 

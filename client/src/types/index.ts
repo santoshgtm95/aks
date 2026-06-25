@@ -802,6 +802,14 @@ export interface UpdateMessLabourWorkerDto {
 }
 
 // Report Types
+export interface MarkerByDateDto {
+  id: number;
+  markerName: string;
+  date: string;
+  warehouseName: string;
+  weight: number;
+}
+
 export interface ExportedMarkerDto {
   markerId: number;
   markerName: string;

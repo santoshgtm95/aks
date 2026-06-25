@@ -41,6 +41,41 @@ public class SemiExportPurchaseController : ControllerBase
         return Ok(result);
     }
 
+    [HttpGet("by-date")]
+    public async Task<ActionResult<List<SemiExportPurchaseDto>>> GetByDate([FromQuery] DateTime fromDate, [FromQuery] DateTime toDate)
+    {
+        if (fromDate == default || toDate == default)
+        {
+            return BadRequest(new { message = "From date and to date are required" });
+        }
+
+        if (fromDate.Date > toDate.Date)
+        {
+            return BadRequest(new { message = "From date cannot be later than to date" });
+        }
+
+        var from = fromDate.Date;
+        var toExclusive = toDate.Date.AddDays(1);
+
+        var records = await _context.SemiExportPurchases
+            .Where(p => p.DeleteFlg == 0 && p.ReceiveDateTime >= from && p.ReceiveDateTime < toExclusive)
+            .OrderByDescending(r => r.ReceiveDateTime)
+            .ToListAsync();
+
+        var result = records.Select(r => new SemiExportPurchaseDto
+        {
+            Id = r.Id,
+            CustomerName = r.CustomerName,
+            Contact = r.Contact,
+            TotalReceiveWeight = r.TotalReceiveWeight,
+            ReceiveDateTime = r.ReceiveDateTime,
+            Color = r.Color,
+            CreatedAt = r.CreatedAt
+        }).ToList();
+
+        return Ok(result);
+    }
+
     [HttpGet("{id}")]
     public async Task<ActionResult<SemiExportPurchaseDto>> GetById(int id)
     {

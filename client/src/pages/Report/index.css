@@ -56,7 +56,7 @@
 
 .date-range-controls {
   display: grid;
-  grid-template-columns: repeat(2, minmax(220px, 1fr)) auto;
+  grid-template-columns: 1fr 1fr auto auto;
   gap: 16px;
   align-items: end;
 }
@@ -152,6 +152,11 @@
   white-space: nowrap;
 }
 
+.search-report-btn {
+  min-height: 46px;
+  white-space: nowrap;
+}
+
 /* Marker Selector */
 .marker-selector {
   margin-bottom: 25px;
@@ -166,12 +171,33 @@
   font-size: 15px;
 }
 
+.marker-selector > label input:disabled {
+  cursor: not-allowed;
+  opacity: 0.5;
+}
+
 .marker-selector input[type="checkbox"] {
   margin-right: 10px;
   cursor: pointer;
   width: 20px;
   height: 20px;
   accent-color: #0066cc;
+}
+
+.markers-loading {
+  padding: 20px;
+  text-align: center;
+  color: #0066cc;
+  font-weight: 600;
+  font-size: 14px;
+}
+
+.markers-empty {
+  padding: 20px;
+  text-align: center;
+  color: #888;
+  font-size: 14px;
+  font-style: italic;
 }
 
 .marker-list {
@@ -199,6 +225,11 @@
   box-shadow: 0 4px 12px rgba(0, 102, 204, 0.15);
 }
 
+.marker-item.selected {
+  border-color: #0066cc;
+  background: linear-gradient(135deg, #f0f5ff 0%, #e3f2fd 100%);
+}
+
 .marker-item input[type="checkbox"] {
   margin-right: 12px;
   width: 18px;
@@ -224,6 +255,36 @@
   font-weight: 700;
   min-width: 100px;
   text-align: right;
+}
+
+/* Semi Purchase Header */
+.semi-purchase-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 15px;
+}
+
+.semi-purchase-header > label {
+  display: flex;
+  align-items: center;
+  font-weight: 600;
+  color: #1a3a52;
+  font-size: 15px;
+  cursor: pointer;
+}
+
+.semi-purchase-header > label input:disabled {
+  cursor: not-allowed;
+  opacity: 0.5;
+}
+
+.semi-purchase-header input[type="checkbox"] {
+  margin-right: 10px;
+  cursor: pointer;
+  width: 20px;
+  height: 20px;
+  accent-color: #0066cc;
 }
 
 /* Report Type Selector */
@@ -736,6 +797,12 @@
 
   .date-range-controls {
     grid-template-columns: 1fr;
+  }
+
+  .date-range-controls .download-report-btn,
+  .date-range-controls .search-report-btn {
+    grid-column: 1;
+    width: 100%;
   }
 
   .btn {
