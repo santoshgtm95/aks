@@ -4482,7 +4482,7 @@
 /* ── Hero Header ── */
 .mess-labour-hero {
   background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-  border-radius: 24px;
+  border-radius: 24px 24px 0 0;
   padding: 10px 10px;
   display: flex;
   align-items: center;
@@ -4637,7 +4637,7 @@
   gap: 8px;
   padding: 14px 18px;
   background: white;
-  border-radius: 14px;
+  border-radius: 0 0 14px 14px !important;
   border: 1px solid #e2e8f0;
   font-size: 14px;
   font-weight: 700;
@@ -4726,7 +4726,7 @@
 
 .rf-main-card {
   background: white;
-  border-radius: 18px;
+  border-radius: 0 0 18px 18px !important;
   padding: 28px 32px;
   box-shadow: 0 4px 24px rgba(0, 0, 0, 0.06);
   border: 1px solid #e2e8f0;

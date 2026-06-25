@@ -1,8 +1,9 @@
 import React, { useEffect, useState } from 'react';
 import { useAuth } from '../../context/AuthContext';
 import { usersAPI, warehousesAPI } from '../../services/api';
-import type { User, Role, CreateUserDto, Warehouse } from '../../types';
+import type { User, Role, CreateUserDto, UpdateUserDto, Warehouse } from '../../types';
 import Modal from '../../components/Modal';
+import { useNotification } from '../../context/NotificationContext';
 import {
     Users,
     UserPlus,
@@ -16,15 +17,20 @@ import {
     Building2,
     Pencil,
     UserX,
+    AlertCircle,
 } from 'lucide-react';
 import './index.css';
 
 const Staff: React.FC = () => {
     const { hasPermission } = useAuth();
+    const { showAlert, showConfirm } = useNotification();
     const [users, setUsers] = useState<User[]>([]);
     const [roles, setRoles] = useState<Role[]>([]);
     const [warehouses, setWarehouses] = useState<Warehouse[]>([]);
     const [loading, setLoading] = useState(true);
+    const [submitting, setSubmitting] = useState(false);
+    const [formError, setFormError] = useState('');
+    const [editError, setEditError] = useState('');
     const [isEditModalOpen, setIsEditModalOpen] = useState(false);
     const [editingUserId, setEditingUserId] = useState<number | null>(null);
     const [searchTerm, setSearchTerm] = useState('');
@@ -35,6 +41,14 @@ const Staff: React.FC = () => {
         email: '',
         phoneNumber: '',
         roleId: 0,
+        warehouseId: undefined,
+    });
+    const [editFormData, setEditFormData] = useState<UpdateUserDto>({
+        fullName: '',
+        email: '',
+        phoneNumber: '',
+        roleId: 0,
+        isActive: true,
         warehouseId: undefined,
     });
 
@@ -71,66 +85,96 @@ const Staff: React.FC = () => {
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
+        setFormError('');
+
+        // Client-side validation
+        if (!formData.fullName.trim()) { setFormError('Full name is required.'); return; }
+        if (!formData.username.trim()) { setFormError('Username is required.'); return; }
+        if (!formData.password.trim()) { setFormError('Password is required.'); return; }
+        if (!formData.email.trim()) { setFormError('Email is required.'); return; }
+        if (!formData.roleId || formData.roleId === 0) { setFormError('Please select a role.'); return; }
+
+        setSubmitting(true);
         try {
             await usersAPI.create(formData);
             await loadData();
-            setFormData({
-                username: '',
-                password: '',
-                fullName: '',
-                email: '',
-                phoneNumber: '',
-                roleId: 0,
-                warehouseId: undefined,
-            });
-        } catch (error) {
-            console.error('Failed to create staff:', error);
+            setFormData({ username: '', password: '', fullName: '', email: '', phoneNumber: '', roleId: 0, warehouseId: undefined });
+            showAlert('Success', 'Staff member created successfully!', 'success');
+        } catch (error: any) {
+            const msg = error?.response?.data?.message
+                || error?.response?.data
+                || error?.message
+                || 'Failed to create staff member.';
+            setFormError(typeof msg === 'string' ? msg : JSON.stringify(msg));
+        } finally {
+            setSubmitting(false);
         }
     };
 
     const handleEdit = (user: User) => {
         setEditingUserId(user.id);
-        setFormData({
-            username: user.username,
-            password: '',
+        // Find the roleId by matching roleName from the loaded roles list
+        const matchedRole = roles.find(r => r.name === user.roleName);
+        setEditFormData({
             fullName: user.fullName,
             email: user.email,
             phoneNumber: user.phoneNumber || '',
-            roleId: user.roleId,
+            roleId: matchedRole?.id ?? 0,
+            isActive: true,
             warehouseId: user.warehouseId,
         });
         setIsEditModalOpen(true);
     };
 
+    const handleEditFormChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
+        const { name, value } = e.target;
+        setEditFormData((prev) => ({
+            ...prev,
+            [name]: name === 'roleId' ? parseInt(value) :
+                    name === 'warehouseId' ? (value === '' ? undefined : parseInt(value)) :
+                    value,
+        }));
+    };
+
     const handleUpdateSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
         if (!editingUserId) return;
+        setEditError('');
+
+        if (!editFormData.roleId || editFormData.roleId === 0) { setEditError('Please select a role.'); return; }
+
+        setSubmitting(true);
         try {
-            await usersAPI.update(editingUserId, formData);
+            await usersAPI.update(editingUserId, editFormData);
             await loadData();
             setIsEditModalOpen(false);
             setEditingUserId(null);
-            setFormData({
-                username: '',
-                password: '',
-                fullName: '',
-                email: '',
-                phoneNumber: '',
-                roleId: 0,
-                warehouseId: undefined,
-            });
-        } catch (error) {
-            console.error('Failed to update staff:', error);
+            showAlert('Success', 'Staff member updated successfully!', 'success');
+        } catch (error: any) {
+            const msg = error?.response?.data?.message
+                || error?.response?.data
+                || error?.message
+                || 'Failed to update staff member.';
+            setEditError(typeof msg === 'string' ? msg : JSON.stringify(msg));
+        } finally {
+            setSubmitting(false);
         }
     };
 
     const handleDelete = async (id: number) => {
-        try {
-            await usersAPI.delete(id);
-            await loadData();
-        } catch (error) {
-            console.error('Failed to delete staff:', error);
-        }
+        showConfirm(
+            'Remove Staff Member',
+            'Are you sure you want to remove this staff member?',
+            async () => {
+                try {
+                    await usersAPI.delete(id);
+                    await loadData();
+                } catch (error: any) {
+                    const msg = error?.response?.data?.message || error?.message || 'Failed to remove staff member.';
+                    showAlert('Error', typeof msg === 'string' ? msg : 'Failed to remove staff member.', 'error');
+                }
+            }
+        );
     };
 
     const filteredUsers = users.filter((u) =>
@@ -303,8 +347,20 @@ const Staff: React.FC = () => {
 
                                 </div>
 
-                                <button type="submit" className="btn-register-staff">
-                                    <UserPlus size={16} /> Create Staff Member
+                                {formError && (
+                                    <div style={{
+                                        display: 'flex', alignItems: 'center', gap: 8,
+                                        background: '#fef2f2', border: '1px solid #fecaca',
+                                        borderRadius: 10, padding: '10px 14px',
+                                        color: '#dc2626', fontSize: 13, fontWeight: 600,
+                                    }}>
+                                        <AlertCircle size={15} />
+                                        {formError}
+                                    </div>
+                                )}
+
+                                <button type="submit" className="btn-register-staff" disabled={submitting}>
+                                    <UserPlus size={16} /> {submitting ? 'Creating...' : 'Create Staff Member'}
                                 </button>
                             </form>
                         </div>
@@ -425,11 +481,7 @@ const Staff: React.FC = () => {
             {/* Edit Modal */}
             <Modal
                 isOpen={isEditModalOpen}
-                onClose={() => {
-                    setIsEditModalOpen(false);
-                    setEditingUserId(null);
-                    setFormData({ username: '', password: '', fullName: '', email: '', phoneNumber: '', roleId: 0, warehouseId: undefined });
-                }}
+                onClose={() => { setIsEditModalOpen(false); setEditingUserId(null); }}
                 title="Edit Staff Member"
             >
                 <form onSubmit={handleUpdateSubmit} className="staff-form">
@@ -440,7 +492,7 @@ const Staff: React.FC = () => {
                             <div className="staff-input-field-wrapper">
                                 <UserIcon className="staff-input-icon" size={16} />
                                 <input type="text" name="fullName" className="staff-control staff-control-with-icon"
-                                    value={formData.fullName} onChange={handleInputChange} required />
+                                    value={editFormData.fullName} onChange={handleEditFormChange} required />
                             </div>
                         </div>
 
@@ -449,7 +501,7 @@ const Staff: React.FC = () => {
                             <div className="staff-input-field-wrapper">
                                 <AtSign className="staff-input-icon" size={16} />
                                 <input type="email" name="email" className="staff-control staff-control-with-icon"
-                                    value={formData.email} onChange={handleInputChange} required />
+                                    value={editFormData.email} onChange={handleEditFormChange} required />
                             </div>
                         </div>
 
@@ -458,7 +510,7 @@ const Staff: React.FC = () => {
                             <div className="staff-input-field-wrapper">
                                 <Phone className="staff-input-icon" size={16} />
                                 <input type="text" name="phoneNumber" className="staff-control staff-control-with-icon"
-                                    value={formData.phoneNumber} onChange={handleInputChange} />
+                                    value={editFormData.phoneNumber ?? ''} onChange={handleEditFormChange} />
                             </div>
                         </div>
 
@@ -467,7 +519,7 @@ const Staff: React.FC = () => {
                             <div className="staff-input-field-wrapper">
                                 <ShieldCheck className="staff-input-icon" size={16} />
                                 <select name="roleId" className="staff-control staff-control-with-icon staff-control-select"
-                                    value={formData.roleId} onChange={handleInputChange} required>
+                                    value={editFormData.roleId} onChange={handleEditFormChange} required>
                                     <option value="0">-- Select Role --</option>
                                     {roles.map(role => (
                                         <option key={role.id} value={role.id}>{role.name}</option>
@@ -481,7 +533,7 @@ const Staff: React.FC = () => {
                             <div className="staff-input-field-wrapper">
                                 <Building2 className="staff-input-icon" size={16} />
                                 <select name="warehouseId" className="staff-control staff-control-with-icon staff-control-select"
-                                    value={formData.warehouseId ?? ''} onChange={handleInputChange}>
+                                    value={editFormData.warehouseId ?? ''} onChange={handleEditFormChange}>
                                     <option value="">-- All Warehouses (Admin) --</option>
                                     {warehouses.map(w => (
                                         <option key={w.id} value={w.id}>{w.name}</option>
@@ -493,12 +545,23 @@ const Staff: React.FC = () => {
                     </div>
 
                     <div className="staff-modal-actions">
+                        {editError && (
+                            <div style={{
+                                display: 'flex', alignItems: 'center', gap: 8,
+                                background: '#fef2f2', border: '1px solid #fecaca',
+                                borderRadius: 8, padding: '8px 12px',
+                                color: '#dc2626', fontSize: 13, fontWeight: 600, flex: 1,
+                            }}>
+                                <AlertCircle size={14} />
+                                {editError}
+                            </div>
+                        )}
                         <button type="button" className="btn-staff-modal-cancel"
-                            onClick={() => { setIsEditModalOpen(false); setEditingUserId(null); }}>
+                            onClick={() => { setIsEditModalOpen(false); setEditingUserId(null); setEditError(''); }}>
                             Cancel
                         </button>
-                        <button type="submit" className="btn-staff-modal-submit">
-                            Update Staff
+                        <button type="submit" className="btn-staff-modal-submit" disabled={submitting}>
+                            {submitting ? 'Updating...' : 'Update Staff'}
                         </button>
                     </div>
                 </form>
