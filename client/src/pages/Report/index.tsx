@@ -1,4 +1,5 @@
 import React, { useState } from "react";
+import { FileBarChart, Download, Search } from "lucide-react";
 import { reportsAPI, semiExportPurchaseAPI } from "../../services/api";
 import type { MarkerByDateDto, SemiExportPurchase } from "../../types";
 import "./index.css";
@@ -215,7 +216,28 @@ const Report: React.FC = () => {
 
   return (
     <div className="report-container">
-      <h1>Report Generator</h1>
+      {/* Hero Header */}
+      <div className="report-hero">
+        <div className="report-hero-left">
+          <div className="report-hero-icon">
+            <FileBarChart size={30} strokeWidth={1.8} />
+          </div>
+          <div className="report-hero-text">
+            <h1>Report Generator</h1>
+            <p>Generate &amp; download comprehensive reports by date range</p>
+          </div>
+        </div>
+        <div className="report-hero-right">
+          <div className="report-stat-pill">
+            <span className="stat-num">{markers.length}</span>
+            <span className="stat-label">Markers</span>
+          </div>
+          <div className="report-stat-pill">
+            <span className="stat-num">{semiPurchases.length}</span>
+            <span className="stat-label">Semi Purchases</span>
+          </div>
+        </div>
+      </div>
 
       {error && <div className="error-message">{error}</div>}
 
