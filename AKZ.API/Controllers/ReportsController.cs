@@ -164,9 +164,6 @@ public class ReportsController : ControllerBase
         if (types.Count == 0 || types.Contains("RawMaterialSales"))
             await PopulateRawMaterialReportAsync(workbook, from, toExclusive, ids);
 
-        if (types.Count == 0 || types.Contains("Washed"))
-            await PopulateWashedAsync(workbook, from, toExclusive, ids);
-
         if (types.Count == 0 || types.Contains("MessLabour"))
             await PopulateMessLabourReportAsync(workbook, from, toExclusive, ids);
 
@@ -178,6 +175,9 @@ public class ReportsController : ControllerBase
 
         if (types.Count == 0 || types.Contains("SingleDoubleDrawn"))
             await PopulateSingleDoubleDrawnReportAsync(workbook, from, toExclusive, ids);
+
+        if (types.Count == 0 || types.Contains("Washed"))
+            await PopulateWashedAsync(workbook, from, toExclusive, ids);
 
         if (types.Count == 0 || types.Contains("ExportedReport"))
             await PopulateExportedReportAsync(workbook, from, toExclusive);
@@ -249,7 +249,7 @@ public class ReportsController : ControllerBase
             .OrderBy(s => s.CreateDate)
             .Select(s => new object?[]
             {
-               
+
                 s.Date,
                 s.Product.Marker,
                 s.Marker,
@@ -282,7 +282,7 @@ public class ReportsController : ControllerBase
             .OrderBy(p => p.CreateDate)
             .Select(p => new object?[]
             {
-               
+
                 p.Date,
                 p.Product.Marker,
                 p.Product.Packages,
@@ -320,7 +320,7 @@ public class ReportsController : ControllerBase
             .OrderBy(p => p.CreateDate)
             .Select(p => new object?[]
             {
-                 
+
                 p.Date,
                 p.ProcessingRecord.Product.Marker,
                 p.Category,
@@ -350,7 +350,7 @@ public class ReportsController : ControllerBase
             .OrderBy(r => r.CreateDate)
             .Select(r => new object?[]
             {
-                
+
                 r.Date,
                 r.PurifiedRecord.ProcessingRecord.Product.Marker,
                 r.Category,
@@ -421,7 +421,7 @@ public class ReportsController : ControllerBase
     private async Task PopulateWashedAsync(XLWorkbook workbook, DateTime from, DateTime toExclusive, List<int>? markerIds = null)
     {
         var records = await _context.WashGradingRecords
-            .Where(w => w.DeleteFlg == 0 && w.CreateDate >= from && w.CreateDate < toExclusive
+            .Where(w => w.DeleteFlg == 0 && w.CreateDate >= from && w.CreateDate < toExclusive && w.WashGradingWorkerId != null
                 && (markerIds == null || markerIds.Contains(w.ProductId)))
             .OrderBy(w => w.CreateDate)
             .Select(w => new object?[]
@@ -637,13 +637,16 @@ public class ReportsController : ControllerBase
             return existing;
         }
 
+        // Try to reuse an existing sheet at the target position
         if (workbook.Worksheets.Count >= position)
         {
             var worksheet = workbook.Worksheet(position);
+            // Only reuse if the sheet name doesn't match another known report sheet
             worksheet.Name = sheetName;
             return worksheet;
         }
 
+        // Add a new sheet at the end
         return workbook.Worksheets.Add(sheetName);
     }
 
