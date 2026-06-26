@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { FileBarChart, Download, Search } from "lucide-react";
+import { FileBarChart } from "lucide-react";
 import { reportsAPI, semiExportPurchaseAPI } from "../../services/api";
 import type { MarkerByDateDto, SemiExportPurchase } from "../../types";
 import "./index.css";
@@ -130,7 +130,9 @@ const Report: React.FC = () => {
 
       const params = new URLSearchParams({ fromDate, toDate });
       enabledReportTypes.forEach((rt) => params.append("reportTypes", rt));
-      selectedMarkerIds.forEach((id) => params.append("markerIds", id.toString()));
+      selectedMarkerIds.forEach((id) =>
+        params.append("markerIds", id.toString()),
+      );
       selectedSemiPurchaseIds.forEach((id) =>
         params.append("semiPurchaseIds", id.toString()),
       );
