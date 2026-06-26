@@ -7,7 +7,15 @@ import {
   semiExportPurchaseRecordsAPI,
   singleDoubleDrawnWorkersAPI,
 } from "../../services/api";
-import { Package, FilePlus, Trash2, X, Send, Loader2, Sparkles } from "lucide-react";
+import {
+  Package,
+  FilePlus,
+  Trash2,
+  X,
+  Send,
+  Loader2,
+  Sparkles,
+} from "lucide-react";
 import "./index.css";
 import type { ExchangeRate, SingleDoubleDrawnWorker } from "../../types";
 import { formatDateTime } from "../../utils/format";
@@ -320,7 +328,9 @@ const SemiExportPurchase: React.FC = () => {
 
   const handleDeleteHistory = async (e: React.MouseEvent, id: number) => {
     e.stopPropagation();
-    if (!confirm("Are you sure you want to delete this sorting history record?")) {
+    if (
+      !confirm("Are you sure you want to delete this sorting history record?")
+    ) {
       return;
     }
     try {
@@ -437,6 +447,8 @@ const SemiExportPurchase: React.FC = () => {
       .map((size) => {
         const row = sizeMap.get(size);
         const weight = parseFloat(row?.weight || "0") || 0;
+        if (weight === 0) return "";
+
         const price =
           (isSave
             ? parseFloat(row?.price || "0") * 1.633
@@ -450,9 +462,17 @@ const SemiExportPurchase: React.FC = () => {
           <tr>
             <td style="text-align: center; border: 1px solid black; padding: 4px;">${idx++}</td>
             <td style="text-align: center; border: 1px solid black; padding: 4px;">${escapePrintText(displaySize)}</td>
-            <td style="text-align: right; border: 1px solid black; padding: 4px;">${weight > 0 ? `${weight.toFixed(3)} viss` : "0"}</td>
-            <td style="text-align: right; border: 1px solid black; padding: 4px;">${price > 0 ? price.toFixed(2) : "0"}</td>
+            <td style="text-align: right; border: 1px solid black; padding: 4px;">${weight.toFixed(3)} viss</td>
+   ${
+     showTotalAmount
+       ? `
+           <td style="text-align: right; border: 1px solid black; padding: 4px;">${price > 0 ? price.toFixed(2) : "0"}</td>
             <td style="text-align: right; border: 1px solid black; padding: 4px;">${amount > 0 ? amount.toFixed(4) : "0"}</td>
+           
+            `
+       : ""
+   }
+   
           </tr>
         `;
       })
@@ -475,26 +495,33 @@ const SemiExportPurchase: React.FC = () => {
         <head>
           <style>
             @media print {
-              @page { margin: 0; }
-              body { font-family: sans-serif; padding: 10mm; }
+              @page { size: A5 portrait; margin: 6mm; }
+              body { margin: 0; padding: 0; }
             }
-            .header { text-align: center; margin-bottom: 20px; }
-            .header h3 { margin: 2px; }
-            .header h2 { margin: 5px; }
-            .header p { margin: 2px; font-size: 14px; }
-            table { width: 100%; border-collapse: collapse; margin-top: 10px; font-size: 13px; }
-            th, td { border: 1px solid black; padding: 6px; }
+            * { box-sizing: border-box; }
+            body { font-family: sans-serif; font-size: 10px; line-height: 1.3; }
+            .header { text-align: center; margin-bottom: 5px; }
+            .header h2 { margin: 0; font-size: 15px; }
+            .header h3 { margin: 1px 0; font-size: 11px; font-weight: normal; }
+            .header p  { margin: 1px 0; font-size: 9px; }
+            .info-table { width: 100%; border-collapse: collapse; margin-bottom: 5px; font-size: 10px; }
+            .info-table td { border: none; padding: 2px 4px; vertical-align: top; line-height: 1.4; }
+            .data-table { width: 100%; border-collapse: collapse; font-size: 10px; }
+            .data-table th, .data-table td { border: 1px solid black; padding: 3px 5px; }
+            .data-table th { background: #f5f5f5; text-align: center; }
+            .footer { margin-top: 6px; font-size: 10px; }
+            .footer div { margin-bottom: 2px; }
+            .divider { border-top: 1px dashed black; margin-top: 5px; padding-top: 5px; }
           </style>
         </head>
         <body>
           <div class="header">
-            <h3>AKZ</h3>
-            <h2 style="font-size: 24px;">အောင်ကြွယ်စင်</h2>
-            <h3 style="font-size: 18px;">ဆံပင်ရောင်းဝယ်ရေး</h3>
+            <h2>အောင်ကြွယ်စင်</h2>
+            <h3>ဆံပင်ရောင်းဝယ်ရေး</h3>
             <p>ဖုန်း - 09 400900608 / 09 400900609</p>
           </div>
 
-          <table class="info-table" style="  margin: 0 0 15px; table-layout: fixed;">
+          <table class="info-table" style="table-layout: fixed;">
             <colgroup>
               <col style="width: 18%;" />
               <col style="width: 40%;" />
@@ -502,41 +529,63 @@ const SemiExportPurchase: React.FC = () => {
               <col style="width: 25%;" />
             </colgroup>
             <tr>
-              <td style="border: none; padding: 8px 8px; vertical-align: top; line-height: 1.55;">အမည်<br/>ခုံတင်ချိန်</td>
-              <td style="border: none; padding: 8px 8px; vertical-align: top; line-height: 1.55;">- ${escapePrintText(record.customerName)} (${escapePrintText(record.color)})<br/>- ${totalWt.toFixed(3)} viss</td>
-              <td style="border: none; padding: 8px 8px; vertical-align: top; line-height: 1.55;">ကုန်အပ်ရက်<br/>နေ့စွဲ</td>
-              <td style="border: none; padding: 8px 8px; vertical-align: top; line-height: 1.55;">${escapePrintText(receiveDate)}<br/>${escapePrintText(printDate)}</td>
+              <td>အမည်<br/>ခုံတင်ချိန်</td>
+              <td>- ${escapePrintText(record.customerName)} (${escapePrintText(record.color)})<br/>- ${totalWt.toFixed(3)} viss</td>
+              <td>ကုန်အပ်ရက်<br/>နေ့စွဲ</td>
+              <td>${escapePrintText(receiveDate)}<br/>${escapePrintText(printDate)}</td>
             </tr>
           </table>
 
-          <table>
+          <table class="data-table">
             <thead>
               <tr>
                 <th>စဉ်</th>
                 <th>ဆိုဒ်</th>
                 <th>အလေးချိန်</th>
-                <th>နှုန်း</th>
+                   ${
+                     showTotalAmount
+                       ? `
+          <th>နှုန်း</th>
                 <th>သင့်ငွေ</th>
+           
+            `
+                       : ""
+                   }
+              
               </tr>
             </thead>
             <tbody>
               ${rowsHtml}
               <tr>
-                <td colspan="2" style="text-align: right; border: 1px solid black; padding: 6px;">စုစုပေါင်း</td>
-                <td style="text-align: right; border: 1px solid black; padding: 6px;">${totalWt.toFixed(3)} viss</td>
-                <td style="border: 1px solid black;"></td>
-                <td style="text-align: right; border: 1px solid black; padding: 6px; font-weight: bold;">¥${totalAmt.toFixed(2)}</td>
+                <td colspan="2" style="text-align: right; padding: 3px 5px;">စုစုပေါင်း</td>
+                <td style="text-align: right; padding: 3px 5px;">${totalWt.toFixed(3)} viss</td>
+                ${
+                  showTotalAmount
+                    ? `
+            
+                <td></td>
+                <td style="text-align: right; padding: 3px 5px; font-weight: bold;">¥${totalAmt.toFixed(2)}</td>
+           
+            `
+                    : ""
+                }
+             
               </tr>
             </tbody>
           </table>
 
-          <div style="margin-top: 20px; font-size: 14px;">
-            ${showExchangeRate ? `<div style="margin-bottom: 8px;"><strong>Exchange Rate:</strong> 1 CNY = ${rate.toLocaleString()} MMK</div>` : ""}
-            ${showTotalAmount ? `
-            <div style="margin-bottom: 8px;"><strong>Total Amount (CNY):</strong> ¥${totalAmt.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</div>
-            <div style="margin-bottom: 8px;"><strong>Total Amount (MMK):</strong> ${Math.round(totalMmk).toLocaleString()} MMK</div>
-            ` : ""}
-            <div style="margin-top: 15px; padding-top: 15px; border-top: 1px dashed black;"><strong>Lost Weight:</strong> ${lostWeight.toFixed(3)} viss</div>
+          <div class="footer">
+            ${showExchangeRate ? `<div><strong>Exchange Rate:</strong> 1 CNY = ${rate.toLocaleString()} MMK</div>` : ""}
+            ${
+              showTotalAmount
+                ? `
+            <div><strong>Total (CNY):</strong> ¥${totalAmt.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</div>
+           
+            `
+                : ""
+            }
+             <div><strong>Total (MMK):</strong> ${Math.round(totalMmk).toLocaleString()} MMK</div>
+            <div class="divider"><strong>Lost Weight:</strong> ${lostWeight.toFixed(3)} viss</div>
           </div>
         </body>
       </html>
@@ -866,13 +915,17 @@ const SemiExportPurchase: React.FC = () => {
           </div>
           <div className="sep-hero-text">
             <h1>Semi Export Purchase</h1>
-            <p>Track semi-export purchase orders, pricing, and supplier records</p>
+            <p>
+              Track semi-export purchase orders, pricing, and supplier records
+            </p>
           </div>
         </div>
         <div className="sep-hero-right">
           <div className="sep-stat-pill">
             <span className="stat-num">{purchases.length}</span>
-            <span className="stat-label">{purchases.length === 1 ? 'Order' : 'Orders'}</span>
+            <span className="stat-label">
+              {purchases.length === 1 ? "Order" : "Orders"}
+            </span>
           </div>
         </div>
       </div>
@@ -880,124 +933,125 @@ const SemiExportPurchase: React.FC = () => {
       <div className="sep-layout">
         {/* Left Sidebar */}
         <aside className="rf-sidebar">
-        <div className="rf-sidebar-header">
-          <Package size={18} />
-          <span>Purchase Orders</span>
-        </div>
-        <div style={{ padding: "16px" }}>
-          {hasPermission("SemiExport.Create") && (
-            <button
-              onClick={() => setShowModal(true)}
-              className="btn btn-primary"
-              style={{
-                width: "100%",
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "center",
-                gap: "8px",
-                padding: "10px 16px",
-                borderRadius: "8px",
-                fontSize: "14px",
-                fontWeight: "700",
-                cursor: "pointer",
-              }}
-            >
-              <FilePlus size={18} />
-              Purchase
-            </button>
-          )}
-        </div>
+          <div className="rf-sidebar-header">
+            <Package size={18} />
+            <span>Purchase Orders</span>
+          </div>
+          <div style={{ padding: "16px" }}>
+            {hasPermission("SemiExport.Create") && (
+              <button
+                onClick={() => setShowModal(true)}
+                className="btn btn-primary"
+                style={{
+                  width: "100%",
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  gap: "8px",
+                  padding: "10px 16px",
+                  borderRadius: "8px",
+                  fontSize: "14px",
+                  fontWeight: "700",
+                  cursor: "pointer",
+                }}
+              >
+                <FilePlus size={18} />
+                Purchase
+              </button>
+            )}
+          </div>
 
-        {/* Purchase Orders List */}
-        <div className="rf-card-list">
-          {loading ? (
-            <div className="rf-empty-sidebar">Loading...</div>
-          ) : availablePurchases.length === 0 ? (
-            <div className="rf-empty-sidebar">No purchase orders yet</div>
-          ) : (
-            availablePurchases.map((purchase) => (
-              <div key={purchase.id} className="rf-bag-card">
-                {/* Card Top */}
-                <div className="rf-card-top">
-                  <div className="rf-card-info">
-                    <div
-                      style={{
-                        display: "flex",
-                        alignItems: "center",
-                        gap: "8px",
-                      }}
-                    >
-                      <span className="rf-card-marker">
-                        {purchase.customerName}
-                      </span>
-                      <span
-                        className="rf-card-warehouse"
-                        style={{ marginTop: "2px" }}
+          {/* Purchase Orders List */}
+          <div className="rf-card-list">
+            {loading ? (
+              <div className="rf-empty-sidebar">Loading...</div>
+            ) : availablePurchases.length === 0 ? (
+              <div className="rf-empty-sidebar">No purchase orders yet</div>
+            ) : (
+              availablePurchases.map((purchase) => (
+                <div key={purchase.id} className="rf-bag-card">
+                  {/* Card Top */}
+                  <div className="rf-card-top">
+                    <div className="rf-card-info">
+                      <div
+                        style={{
+                          display: "flex",
+                          alignItems: "center",
+                          gap: "8px",
+                        }}
                       >
-                        {purchase.contact || "---"}
+                        <span className="rf-card-marker">
+                          {purchase.customerName}
+                        </span>
+                        <span
+                          className="rf-card-warehouse"
+                          style={{ marginTop: "2px" }}
+                        >
+                          {purchase.contact || "---"}
+                        </span>
+                      </div>
+                    </div>
+                    {hasPermission("SemiExport.Create") && (
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleDelete(purchase.id);
+                        }}
+                        style={{
+                          background: "transparent",
+                          border: "none",
+                          color: "#ef4444",
+                          cursor: "pointer",
+                          padding: "4px",
+                          display: "flex",
+                          alignItems: "center",
+                          justifyContent: "center",
+                        }}
+                        title="Delete"
+                      >
+                        <Trash2 size={14} />
+                      </button>
+                    )}
+                  </div>
+
+                  {/* Stats Row */}
+                  <div className="rf-stats-row">
+                    <div className="rf-stat">
+                      <span className="rf-stat-label">Weight</span>
+                      <span className="rf-stat-value rf-stat-blue">
+                        {purchase.totalReceiveWeight.toFixed(3)}{" "}
+                        <span className="rf-stat-unit">viss</span>
                       </span>
                     </div>
+                    <div className="rf-stat rf-stat-right">
+                      <span className="rf-stat-label">Color</span>
+                      <span className="rf-stat-value">{purchase.color}</span>
+                    </div>
                   </div>
-                  {hasPermission("SemiExport.Create") && (
-                    <button
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        handleDelete(purchase.id);
-                      }}
-                      style={{
-                        background: "transparent",
-                        border: "none",
-                        color: "#ef4444",
-                        cursor: "pointer",
-                        padding: "4px",
-                        display: "flex",
-                        alignItems: "center",
-                        justifyContent: "center",
-                      }}
-                      title="Delete"
-                    >
-                      <Trash2 size={14} />
-                    </button>
-                  )}
-                </div>
 
-                {/* Stats Row */}
-                <div className="rf-stats-row">
-                  <div className="rf-stat">
-                    <span className="rf-stat-label">Weight</span>
-                    <span className="rf-stat-value rf-stat-blue">
-                      {purchase.totalReceiveWeight.toFixed(3)}{" "}
-                      <span className="rf-stat-unit">viss</span>
-                    </span>
+                  {/* Date Info */}
+                  <div
+                    style={{
+                      fontSize: "14px",
+                      color: "#94a3b8",
+                      marginBottom: "10px",
+                    }}
+                  >
+                    Receive DateTime :{" "}
+                    {formatDateTime(purchase.receiveDateTime)}
                   </div>
-                  <div className="rf-stat rf-stat-right">
-                    <span className="rf-stat-label">Color</span>
-                    <span className="rf-stat-value">{purchase.color}</span>
-                  </div>
-                </div>
 
-                {/* Date Info */}
-                <div
-                  style={{
-                    fontSize: "14px",
-                    color: "#94a3b8",
-                    marginBottom: "10px",
-                  }}
-                >
-                  Receive DateTime : {formatDateTime(purchase.receiveDateTime)}
-                </div>
-
-                {/* Assign Weight + Lost Weight */}
-                <div
-                  style={{
-                    display: "flex",
-                    flexDirection: "column",
-                    gap: "12px",
-                  }}
-                >
-                  <div className="sep-input-group">       
+                  {/* Assign Weight + Lost Weight */}
+                  <div
+                    style={{
+                      display: "flex",
+                      flexDirection: "column",
+                      gap: "12px",
+                    }}
+                  >
+                    <div className="sep-input-group">
                       <div className="sep-input-wrapper">
-                         <label className="sep-input-label">Weight</label>
+                        <label className="sep-input-label">Weight</label>
                         <input
                           type="number"
                           className="sep-input-field"
@@ -1029,163 +1083,158 @@ const SemiExportPurchase: React.FC = () => {
                           Max
                         </button>
                       </div>
-                   
-                  </div>
+                    </div>
 
-                  <div className="sep-input-group">
-                    <div
-                      className="sep-input-wrapper"
-                    >
-                      <label className="sep-input-label">Lost</label>
-                      <input
-                        type="text"
-                        className={`sep-input-field ${getLostWeight(purchase) > 0 ? "has-loss" : ""}`}
-                        readOnly
-                        value={getLostWeight(purchase).toFixed(3)}
-                        style={{ textAlign: "right" }}
-                      />
+                    <div className="sep-input-group">
+                      <div className="sep-input-wrapper">
+                        <label className="sep-input-label">Lost</label>
+                        <input
+                          type="text"
+                          className={`sep-input-field ${getLostWeight(purchase) > 0 ? "has-loss" : ""}`}
+                          readOnly
+                          value={getLostWeight(purchase).toFixed(3)}
+                          style={{ textAlign: "right" }}
+                        />
+                      </div>
+                    </div>
+
+                    <div className="sep-input-group">
+                      <div className="sep-input-wrapper">
+                        <label className="sep-input-label">Worker</label>
+                        <select
+                          className="sep-input-field"
+                          value={selectedWorkers[purchase.id] ?? ""}
+                          onChange={(e) =>
+                            setSelectedWorkers((prev) => ({
+                              ...prev,
+                              [purchase.id]: e.target.value,
+                            }))
+                          }
+                          style={{
+                            background: "white",
+                            cursor: "pointer",
+                          }}
+                        >
+                          <option value="">Choose a worker...</option>
+                          {workers.map((worker) => (
+                            <option key={worker.id} value={worker.id}>
+                              {worker.name}
+                            </option>
+                          ))}
+                        </select>
+                      </div>
                     </div>
                   </div>
 
-                  <div className="sep-input-group">
-                    <div
-                     className="sep-input-wrapper"
-                    >
-                      <label className="sep-input-label">Worker</label>
-                      <select
-                        className="sep-input-field"
-                        value={selectedWorkers[purchase.id] ?? ""}
-                        onChange={(e) =>
-                          setSelectedWorkers((prev) => ({
-                            ...prev,
-                            [purchase.id]: e.target.value,
-                          }))
-                        }
-                        style={{
-                          background: "white",
-                          cursor: "pointer",
-                        }}
-                      >
-                        <option value="">Choose a worker...</option>
-                        {workers.map((worker) => (
-                          <option key={worker.id} value={worker.id}>
-                            {worker.name}
-                          </option>
-                        ))}
-                      </select>
-                    </div>
-                  </div>
-                </div>
+                  {/* Assign Button */}
+                  <button
+                    className="rf-assign-btn"
+                    onClick={async () => {
+                      const assignVal = getAssignWeight(purchase.id);
+                      const workerId = selectedWorkers[purchase.id];
+                      if (assignVal <= 0) {
+                        alert("Please assign a weight greater than 0");
+                        return;
+                      }
+                      if (!workerId) {
+                        alert("Please select a worker");
+                        return;
+                      }
 
-                {/* Assign Button */}
-                <button
-                  className="rf-assign-btn"
-                  onClick={async () => {
-                    const assignVal = getAssignWeight(purchase.id);
-                    const workerId = selectedWorkers[purchase.id];
-                    if (assignVal <= 0) {
-                      alert("Please assign a weight greater than 0");
-                      return;
-                    }
-                    if (!workerId) {
-                      alert("Please select a worker");
-                      return;
-                    }
+                      try {
+                        setSaving(true);
+                        const lostVal = getLostWeight(purchase);
+                        const result =
+                          await semiExportPurchaseProcessingAPI.create({
+                            semiExportPurchaseId: purchase.id,
+                            workerId: parseInt(workerId),
+                            assignWeight: assignVal,
+                            lostWeight: lostVal,
+                          });
 
-                    try {
-                      setSaving(true);
-                      const lostVal = getLostWeight(purchase);
-                      const result =
-                        await semiExportPurchaseProcessingAPI.create({
-                          semiExportPurchaseId: purchase.id,
-                          workerId: parseInt(workerId),
-                          assignWeight: assignVal,
-                          lostWeight: lostVal,
+                        setProcessingList((prev) => [result, ...prev]);
+
+                        // Clear selection for this card
+                        setAssignWeights((prev) => {
+                          const next = { ...prev };
+                          delete next[purchase.id];
+                          return next;
                         });
+                        setSelectedWorkers((prev) => {
+                          const next = { ...prev };
+                          delete next[purchase.id];
+                          return next;
+                        });
+                      } catch (error) {
+                        console.error("Failed to assign:", error);
+                        alert("Failed to assign to sorting");
+                      } finally {
+                        setSaving(false);
+                      }
+                    }}
+                    disabled={saving}
+                    style={{ marginTop: "12px" }}
+                  >
+                    {saving ? (
+                      <>
+                        <Loader2 className="rf-spin" size={16} /> Assigning...
+                      </>
+                    ) : (
+                      <>
+                        <Send size={16} /> Assign to Sorting
+                      </>
+                    )}
+                  </button>
+                </div>
+              ))
+            )}
+          </div>
+        </aside>
 
-                      setProcessingList((prev) => [result, ...prev]);
-                   
-                      // Clear selection for this card
-                      setAssignWeights((prev) => {
-                        const next = { ...prev };
-                        delete next[purchase.id];
-                        return next;
-                      });
-                      setSelectedWorkers((prev) => {
-                        const next = { ...prev };
-                        delete next[purchase.id];
-                        return next;
-                      });
-                    } catch (error) {
-                      console.error("Failed to assign:", error);
-                      alert("Failed to assign to sorting");
-                    } finally {
-                      setSaving(false);
-                    }
-                  }}
-                  disabled={saving}
-                  style={{ marginTop: "12px" }}
-                >
-                  {saving ? (
-                    <>
-                      <Loader2 className="rf-spin" size={16} /> Assigning...
-                    </>
-                  ) : (
-                    <>
-                      <Send size={16} /> Assign to Sorting
-                    </>
-                  )}
-                </button>
+        {/* Right Main Content */}
+        <main className="rf-main">
+          <div className="rf-main-card">
+            <div className="rf-main-header">
+              <div className="rf-header-left">
+                <div className="rf-tab-group">
+                  <button
+                    type="button"
+                    onClick={() => setActiveTab("processing")}
+                    className={`rf-tab rf-tab-green ${activeTab === "processing" ? "rf-tab-active" : ""}`}
+                  >
+                    <span className="rf-tab-title">Processing</span>
+                    <span className="rf-tab-sub">
+                      Semi export purchase processings
+                    </span>
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setActiveTab("history")}
+                    className={`rf-tab ${activeTab === "history" ? "rf-tab-active" : ""}`}
+                  >
+                    <span className="rf-tab-title">Sorting History</span>
+                    <span className="rf-tab-sub">Saved purchase records</span>
+                  </button>
+                </div>
               </div>
-            ))
-          )}
-        </div>
-      </aside>
 
-      {/* Right Main Content */}
-      <main className="rf-main">
-        <div className="rf-main-card">
-          <div className="rf-main-header">
-            <div className="rf-header-left">
-              <div className="rf-tab-group">
-                <button
-                  type="button"
-                  onClick={() => setActiveTab("processing")}
-                  className={`rf-tab rf-tab-green ${activeTab === "processing" ? "rf-tab-active" : ""}`}
-                >
-                  <span className="rf-tab-title">Processing</span>
-                  <span className="rf-tab-sub">
-                    Semi export purchase processings
-                  </span>
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setActiveTab("history")}
-                  className={`rf-tab ${activeTab === "history" ? "rf-tab-active" : ""}`}
-                >
-                  <span className="rf-tab-title">Sorting History</span>
-                  <span className="rf-tab-sub">Saved purchase records</span>
-                </button>
+              <div className="rf-header-right">
+                <span className="rf-count-badge">
+                  {activeTab === "processing"
+                    ? `${visibleProcessingList.length} Processing`
+                    : `${sortingHistory.length} Saved`}
+                </span>
               </div>
             </div>
 
-            <div className="rf-header-right">
-              <span className="rf-count-badge">
-                {activeTab === "processing"
-                  ? `${visibleProcessingList.length} Processing`
-                  : `${sortingHistory.length} Saved`}
-              </span>
+            <div className="rf-main-content">
+              {activeTab === "processing"
+                ? renderProcessingTable()
+                : renderHistoryTable()}
             </div>
           </div>
-
-          <div className="rf-main-content">
-            {activeTab === "processing"
-              ? renderProcessingTable()
-              : renderHistoryTable()}
-          </div>
-        </div>
-      </main>
-    </div>
+        </main>
+      </div>
 
       {/* Modal */}
       {showModal && (
@@ -1541,7 +1590,13 @@ const SemiExportPurchase: React.FC = () => {
 
               <div className="sep-size-card">
                 <div className="sep-size-card-header">
-                  <div style={{ display: "flex", alignItems: "center", gap: "20px" }}>
+                  <div
+                    style={{
+                      display: "flex",
+                      alignItems: "center",
+                      gap: "20px",
+                    }}
+                  >
                     <button
                       type="button"
                       onClick={handleSortingSaveAndPrint}
@@ -1549,21 +1604,51 @@ const SemiExportPurchase: React.FC = () => {
                     >
                       {saving ? "Saving..." : "Save and Print"}
                     </button>
-                    <label style={{ display: "flex", alignItems: "center", gap: "8px", fontSize: "13.5px", fontWeight: "600", color: "#475569", cursor: "pointer", userSelect: "none" }}>
+                    <label
+                      style={{
+                        display: "flex",
+                        alignItems: "center",
+                        gap: "8px",
+                        fontSize: "13.5px",
+                        fontWeight: "600",
+                        color: "#475569",
+                        cursor: "pointer",
+                        userSelect: "none",
+                      }}
+                    >
                       <input
                         type="checkbox"
                         checked={showTotalAmount}
                         onChange={(e) => setShowTotalAmount(e.target.checked)}
-                        style={{ width: "16px", height: "16px", cursor: "pointer" }}
+                        style={{
+                          width: "16px",
+                          height: "16px",
+                          cursor: "pointer",
+                        }}
                       />
-                      Show Total Amount
+                      Show Amount
                     </label>
-                    <label style={{ display: "flex", alignItems: "center", gap: "8px", fontSize: "13.5px", fontWeight: "600", color: "#475569", cursor: "pointer", userSelect: "none" }}>
+                    <label
+                      style={{
+                        display: "flex",
+                        alignItems: "center",
+                        gap: "8px",
+                        fontSize: "13.5px",
+                        fontWeight: "600",
+                        color: "#475569",
+                        cursor: "pointer",
+                        userSelect: "none",
+                      }}
+                    >
                       <input
                         type="checkbox"
                         checked={showExchangeRate}
                         onChange={(e) => setShowExchangeRate(e.target.checked)}
-                        style={{ width: "16px", height: "16px", cursor: "pointer" }}
+                        style={{
+                          width: "16px",
+                          height: "16px",
+                          cursor: "pointer",
+                        }}
                       />
                       Show Exchange Rate
                     </label>
@@ -1784,7 +1869,13 @@ const SemiExportPurchase: React.FC = () => {
 
               <div className="sep-size-card">
                 <div className="sep-size-card-header">
-                  <div style={{ display: "flex", alignItems: "center", gap: "20px" }}>
+                  <div
+                    style={{
+                      display: "flex",
+                      alignItems: "center",
+                      gap: "20px",
+                    }}
+                  >
                     <button
                       type="button"
                       onClick={() =>
@@ -1798,21 +1889,51 @@ const SemiExportPurchase: React.FC = () => {
                     >
                       Print
                     </button>
-                    <label style={{ display: "flex", alignItems: "center", gap: "8px", fontSize: "13.5px", fontWeight: "600", color: "#475569", cursor: "pointer", userSelect: "none" }}>
+                    <label
+                      style={{
+                        display: "flex",
+                        alignItems: "center",
+                        gap: "8px",
+                        fontSize: "13.5px",
+                        fontWeight: "600",
+                        color: "#475569",
+                        cursor: "pointer",
+                        userSelect: "none",
+                      }}
+                    >
                       <input
                         type="checkbox"
                         checked={showTotalAmount}
                         onChange={(e) => setShowTotalAmount(e.target.checked)}
-                        style={{ width: "16px", height: "16px", cursor: "pointer" }}
+                        style={{
+                          width: "16px",
+                          height: "16px",
+                          cursor: "pointer",
+                        }}
                       />
-                      Show Total Amount
+                      Show Amount
                     </label>
-                    <label style={{ display: "flex", alignItems: "center", gap: "8px", fontSize: "13.5px", fontWeight: "600", color: "#475569", cursor: "pointer", userSelect: "none" }}>
+                    <label
+                      style={{
+                        display: "flex",
+                        alignItems: "center",
+                        gap: "8px",
+                        fontSize: "13.5px",
+                        fontWeight: "600",
+                        color: "#475569",
+                        cursor: "pointer",
+                        userSelect: "none",
+                      }}
+                    >
                       <input
                         type="checkbox"
                         checked={showExchangeRate}
                         onChange={(e) => setShowExchangeRate(e.target.checked)}
-                        style={{ width: "16px", height: "16px", cursor: "pointer" }}
+                        style={{
+                          width: "16px",
+                          height: "16px",
+                          cursor: "pointer",
+                        }}
                       />
                       Show Exchange Rate
                     </label>
