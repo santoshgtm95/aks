@@ -39,7 +39,7 @@ const Login: React.FC = () => {
     <div className="login-container">
       <div className="login-card fade-in">
         <div className="login-header">
-          <h1>AKZ Management System</h1>
+          <h1>King Panthera Management System</h1>
           <p>Welcome back! Please login to your account</p>
         </div>
 

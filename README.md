@@ -1,4 +1,4 @@
-# AKZ Management System
+# King Panthera Management System
 
 A full-stack management system built with ASP.NET Core Web API and React TypeScript.
 

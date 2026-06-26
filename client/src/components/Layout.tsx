@@ -64,7 +64,7 @@ const Layout: React.FC = () => {
 
       <aside className={`sidebar ${isMobileMenuOpen ? "mobile-open" : ""}`}>
         <div className="sidebar-header">
-          <h2>AKZ System</h2>
+          <h2>King Panthera</h2>
           <p>{user?.roleName}</p>
         </div>
 
