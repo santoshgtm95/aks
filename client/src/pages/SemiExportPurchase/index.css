@@ -635,8 +635,12 @@
 }
 
 @keyframes sep-modalOverlayIn {
-  from { opacity: 0; }
-  to { opacity: 1; }
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
 }
 
 .sep-sorting-modal {
@@ -656,8 +660,14 @@
 }
 
 @keyframes sep-modalSlideIn {
-  from { opacity: 0; transform: translateY(24px) scale(0.97); }
-  to { opacity: 1; transform: translateY(0) scale(1); }
+  from {
+    opacity: 0;
+    transform: translateY(24px) scale(0.97);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
 }
 
 .sep-sorting-modal::-webkit-scrollbar {
@@ -924,7 +934,7 @@
   align-items: center;
   justify-content: space-between;
   gap: 16px;
-  margin-bottom: 20px;
+  margin-top: 20px;
   padding-bottom: 16px;
   border-bottom: 1px solid #f1f5f9;
 }
@@ -1089,6 +1099,33 @@
   height: 16px;
   cursor: pointer;
   accent-color: #6366f1;
+}
+
+.sep-company-label {
+  cursor: default;
+  gap: 6px;
+}
+
+.sep-company-label:hover {
+  border-color: #e2e8f0;
+  background: #f8fafc;
+}
+
+.sep-company-input {
+  width: 140px;
+  padding: 2px 8px;
+  border: 1px solid #c7d2fe;
+  border-radius: 6px;
+  font-size: 13px;
+  font-weight: 500;
+  color: #1e293b;
+  background: #fff;
+  outline: none;
+  transition: border-color 0.2s;
+}
+
+.sep-company-input:focus {
+  border-color: #6366f1;
 }
 
 @media print {

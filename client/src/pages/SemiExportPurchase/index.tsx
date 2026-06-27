@@ -123,6 +123,7 @@ const SemiExportPurchase: React.FC = () => {
   const [saving, setSaving] = useState(false);
   const [showTotalAmount, setShowTotalAmount] = useState(true);
   const [showExchangeRate, setShowExchangeRate] = useState(true);
+  const [companyName, setCompanyName] = useState("King Panthera");
   const [activeRates, setActiveRates] = useState<ExchangeRate[]>([]);
   const [sortingExchangeRate, setSortingExchangeRate] = useState("0");
   const [sortingWorkerFees, setSortingWorkerFees] = useState("");
@@ -484,11 +485,7 @@ const SemiExportPurchase: React.FC = () => {
       parseFloat(lostRow?.weight || "0") ||
       Math.max(0, record.assignWeight - totalWt);
     const receiveDate = formatDateTime(record.receiveDateTime);
-    const printDate = new Date().toLocaleDateString("en-GB", {
-      day: "numeric",
-      month: "short",
-      year: "numeric",
-    });
+    const printDate = new Date();
 
     const outputHtml = `
       <html>
@@ -508,7 +505,7 @@ const SemiExportPurchase: React.FC = () => {
         </head>
         <body>
           <div class="header">
-            <h2>King Panthera</h2>
+            <h2>${escapePrintText(companyName || "King Panthera")}</h2>
             <h3>ဆံပင်ရောင်းဝယ်ရေး</h3>
             <p>ဖုန်း - 09 400900608 / 09 400900609</p>
           </div>
@@ -524,7 +521,7 @@ const SemiExportPurchase: React.FC = () => {
               <td style="border: none; padding: 8px 8px; vertical-align: top; line-height: 1.55;">အမည်<br/>ခုံတင်ချိန်</td>
               <td style="border: none; padding: 8px 8px; vertical-align: top; line-height: 1.55;">- ${escapePrintText(record.customerName)} (${escapePrintText(record.color)})<br/>- ${totalWt.toFixed(3)} viss</td>
               <td style="border: none; padding: 8px 8px; vertical-align: top; line-height: 1.55;">ကုန်အပ်ရက်<br/>နေ့စွဲ</td>
-              <td style="border: none; padding: 8px 8px; vertical-align: top; line-height: 1.55;">${escapePrintText(receiveDate)}<br/>${escapePrintText(printDate)}</td>
+              <td style="border: none; padding: 8px 8px; vertical-align: top; line-height: 1.55;">${escapePrintText(receiveDate)}<br/>${formatDateTime(printDate)}</td>
             </tr>
           </table>
 
@@ -1589,44 +1586,6 @@ const SemiExportPurchase: React.FC = () => {
                 <h3>Color Categories &amp; Sizes</h3>
 
                 <div className="sep-size-card">
-                  <div className="sep-size-card-header">
-                    <div
-                      style={{
-                        display: "flex",
-                        alignItems: "center",
-                        gap: "12px",
-                        flexWrap: "wrap",
-                      }}
-                    >
-                      <button
-                        type="button"
-                        className="sep-save-print-btn"
-                        onClick={handleSortingSaveAndPrint}
-                        disabled={saving}
-                      >
-                        {saving ? "Saving..." : "Save and Print"}
-                      </button>
-                      <label className="sep-check-label">
-                        <input
-                          type="checkbox"
-                          checked={showTotalAmount}
-                          onChange={(e) => setShowTotalAmount(e.target.checked)}
-                        />
-                        Show Amount
-                      </label>
-                      <label className="sep-check-label">
-                        <input
-                          type="checkbox"
-                          checked={showExchangeRate}
-                          onChange={(e) =>
-                            setShowExchangeRate(e.target.checked)
-                          }
-                        />
-                        Show Exchange Rate
-                      </label>
-                    </div>
-                  </div>
-
                   <div className="sep-size-table-wrap">
                     <table className="sep-size-table">
                       <thead>
@@ -1739,6 +1698,53 @@ const SemiExportPurchase: React.FC = () => {
                         })}
                       </tbody>
                     </table>
+                  </div>
+                  <div className="sep-size-card-header">
+                    <div
+                      style={{
+                        display: "flex",
+                        alignItems: "center",
+                        gap: "12px",
+                        flexWrap: "wrap",
+                      }}
+                    >
+                      <button
+                        type="button"
+                        className="sep-save-print-btn"
+                        onClick={handleSortingSaveAndPrint}
+                        disabled={saving}
+                      >
+                        {saving ? "Saving..." : "Save and Print"}
+                      </button>
+                      <label className="sep-check-label">
+                        <input
+                          type="checkbox"
+                          checked={showTotalAmount}
+                          onChange={(e) => setShowTotalAmount(e.target.checked)}
+                        />
+                        Show Amount
+                      </label>
+                      <label className="sep-check-label">
+                        <input
+                          type="checkbox"
+                          checked={showExchangeRate}
+                          onChange={(e) =>
+                            setShowExchangeRate(e.target.checked)
+                          }
+                        />
+                        Show Exchange Rate
+                      </label>
+                      <label className="sep-check-label sep-company-label">
+                        Company Name:
+                        <input
+                          type="text"
+                          className="sep-company-input"
+                          value={companyName}
+                          onChange={(e) => setCompanyName(e.target.value)}
+                          placeholder="King Panthera"
+                        />
+                      </label>
+                    </div>
                   </div>
                 </div>
               </section>
@@ -1862,50 +1868,6 @@ const SemiExportPurchase: React.FC = () => {
                 <h3>Color Categories &amp; Sizes</h3>
 
                 <div className="sep-size-card">
-                  <div className="sep-size-card-header">
-                    <div
-                      style={{
-                        display: "flex",
-                        alignItems: "center",
-                        gap: "12px",
-                        flexWrap: "wrap",
-                      }}
-                    >
-                      <button
-                        type="button"
-                        className="sep-save-print-btn"
-                        onClick={() =>
-                          printSortingPurchasePdf(
-                            selectedHistoryRecord,
-                            getHistorySortingRows(selectedHistoryRecord),
-                            selectedHistoryRecord.exchangeRateRate.toString(),
-                            false,
-                          )
-                        }
-                      >
-                        Print
-                      </button>
-                      <label className="sep-check-label">
-                        <input
-                          type="checkbox"
-                          checked={showTotalAmount}
-                          onChange={(e) => setShowTotalAmount(e.target.checked)}
-                        />
-                        Show Amount
-                      </label>
-                      <label className="sep-check-label">
-                        <input
-                          type="checkbox"
-                          checked={showExchangeRate}
-                          onChange={(e) =>
-                            setShowExchangeRate(e.target.checked)
-                          }
-                        />
-                        Show Exchange Rate
-                      </label>
-                    </div>
-                  </div>
-
                   <div className="sep-size-table-wrap">
                     <table className="sep-size-table">
                       <thead>
@@ -1976,6 +1938,60 @@ const SemiExportPurchase: React.FC = () => {
                         )}
                       </tbody>
                     </table>
+                  </div>
+
+                  <div className="sep-size-card-header">
+                    <div
+                      style={{
+                        display: "flex",
+                        alignItems: "center",
+                        gap: "12px",
+                        flexWrap: "wrap",
+                      }}
+                    >
+                      <button
+                        type="button"
+                        className="sep-save-print-btn"
+                        onClick={() =>
+                          printSortingPurchasePdf(
+                            selectedHistoryRecord,
+                            getHistorySortingRows(selectedHistoryRecord),
+                            selectedHistoryRecord.exchangeRateRate.toString(),
+                            false,
+                          )
+                        }
+                      >
+                        Print
+                      </button>
+                      <label className="sep-check-label">
+                        <input
+                          type="checkbox"
+                          checked={showTotalAmount}
+                          onChange={(e) => setShowTotalAmount(e.target.checked)}
+                        />
+                        Show Amount
+                      </label>
+                      <label className="sep-check-label">
+                        <input
+                          type="checkbox"
+                          checked={showExchangeRate}
+                          onChange={(e) =>
+                            setShowExchangeRate(e.target.checked)
+                          }
+                        />
+                        Show Exchange Rate
+                      </label>
+                      <label className="sep-check-label sep-company-label">
+                        Company Name:
+                        <input
+                          type="text"
+                          className="sep-company-input"
+                          value={companyName}
+                          onChange={(e) => setCompanyName(e.target.value)}
+                          placeholder="King Panthera"
+                        />
+                      </label>
+                    </div>
                   </div>
                 </div>
               </section>
