@@ -495,28 +495,20 @@ const SemiExportPurchase: React.FC = () => {
         <head>
           <style>
             @media print {
-              @page { size: A5 portrait; margin: 6mm; }
-              body { margin: 0; padding: 0; }
+              @page { size: A5 portrait; margin: 0; }
+              body { font-family: sans-serif; padding: 10mm; }
             }
-            * { box-sizing: border-box; }
-            body { font-family: sans-serif; font-size: 10px; line-height: 1.3; }
-            .header { text-align: center; margin-bottom: 5px; }
-            .header h2 { margin: 0; font-size: 15px; }
-            .header h3 { margin: 1px 0; font-size: 11px; font-weight: normal; }
-            .header p  { margin: 1px 0; font-size: 9px; }
-            .info-table { width: 100%; border-collapse: collapse; margin-bottom: 5px; font-size: 10px; }
-            .info-table td { border: none; padding: 2px 4px; vertical-align: top; line-height: 1.4; }
-            .data-table { width: 100%; border-collapse: collapse; font-size: 10px; }
-            .data-table th, .data-table td { border: 1px solid black; padding: 3px 5px; }
-            .data-table th { background: #f5f5f5; text-align: center; }
-            .footer { margin-top: 6px; font-size: 10px; }
-            .footer div { margin-bottom: 2px; }
-            .divider { border-top: 1px dashed black; margin-top: 5px; padding-top: 5px; }
+            .header { text-align: center; margin-bottom: 20px; }
+            .header h3 { margin: 2px; }
+            .header h2 { margin: 5px; }
+            .header p { margin: 2px; font-size: 14px; }
+            table { width: 100%; border-collapse: collapse; margin-top: 10px; font-size: 13px; }
+            th, td { border: 1px solid black; padding: 6px; }
           </style>
         </head>
         <body>
           <div class="header">
-            <h2>အောင်ကြွယ်စင်</h2>
+            <h2>King Panthera</h2>
             <h3>ဆံပင်ရောင်းဝယ်ရေး</h3>
             <p>ဖုန်း - 09 400900608 / 09 400900609</p>
           </div>
@@ -529,10 +521,10 @@ const SemiExportPurchase: React.FC = () => {
               <col style="width: 25%;" />
             </colgroup>
             <tr>
-              <td>အမည်<br/>ခုံတင်ချိန်</td>
-              <td>- ${escapePrintText(record.customerName)} (${escapePrintText(record.color)})<br/>- ${totalWt.toFixed(3)} viss</td>
-              <td>ကုန်အပ်ရက်<br/>နေ့စွဲ</td>
-              <td>${escapePrintText(receiveDate)}<br/>${escapePrintText(printDate)}</td>
+              <td style="border: none; padding: 8px 8px; vertical-align: top; line-height: 1.55;">အမည်<br/>ခုံတင်ချိန်</td>
+              <td style="border: none; padding: 8px 8px; vertical-align: top; line-height: 1.55;">- ${escapePrintText(record.customerName)} (${escapePrintText(record.color)})<br/>- ${totalWt.toFixed(3)} viss</td>
+              <td style="border: none; padding: 8px 8px; vertical-align: top; line-height: 1.55;">ကုန်အပ်ရက်<br/>နေ့စွဲ</td>
+              <td style="border: none; padding: 8px 8px; vertical-align: top; line-height: 1.55;">${escapePrintText(receiveDate)}<br/>${escapePrintText(printDate)}</td>
             </tr>
           </table>
 
@@ -542,16 +534,13 @@ const SemiExportPurchase: React.FC = () => {
                 <th>စဉ်</th>
                 <th>ဆိုဒ်</th>
                 <th>အလေးချိန်</th>
-                   ${
-                     showTotalAmount
-                       ? `
-          <th>နှုန်း</th>
-                <th>သင့်ငွေ</th>
-           
-            `
-                       : ""
-                   }
-              
+                 ${
+                   showTotalAmount
+                     ? `
+                <th>နှုန်း</th>
+                <th>သင့်ငွေ</th>`
+                     : ""
+                 }      
               </tr>
             </thead>
             <tbody>
@@ -564,28 +553,23 @@ const SemiExportPurchase: React.FC = () => {
                     ? `
             
                 <td></td>
-                <td style="text-align: right; padding: 3px 5px; font-weight: bold;">¥${totalAmt.toFixed(2)}</td>
-           
-            `
+                <td style="text-align: right; padding: 3px 5px; font-weight: bold;">¥${totalAmt.toFixed(2)}</td>`
                     : ""
-                }
-             
+                }   
               </tr>
             </tbody>
           </table>
 
-          <div class="footer">
-            ${showExchangeRate ? `<div><strong>Exchange Rate:</strong> 1 CNY = ${rate.toLocaleString()} MMK</div>` : ""}
+          <div style="margin-top: 20px; font-size: 14px;">
+            ${showExchangeRate ? `<div style="margin-bottom: 8px;"><strong>Exchange Rate:</strong> 1 CNY = ${rate.toLocaleString()} MMK</div>` : ""}
             ${
               showTotalAmount
                 ? `
-            <div><strong>Total (CNY):</strong> ¥${totalAmt.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</div>
-           
-            `
+            <div style="margin-bottom: 8px;"><strong>Total Amount (CNY):</strong> ¥${totalAmt.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</div>`
                 : ""
             }
-             <div><strong>Total (MMK):</strong> ${Math.round(totalMmk).toLocaleString()} MMK</div>
-            <div class="divider"><strong>Lost Weight:</strong> ${lostWeight.toFixed(3)} viss</div>
+            <div style="margin-bottom: 8px;"><strong>Total Amount (MMK):</strong> ${Math.round(totalMmk).toLocaleString()} MMK</div>
+            <div style="margin-top: 15px; padding-top: 15px; border-top: 1px dashed black;"><strong>Lost Weight:</strong> ${lostWeight.toFixed(3)} viss</div>
           </div>
         </body>
       </html>
@@ -929,7 +913,6 @@ const SemiExportPurchase: React.FC = () => {
           </div>
         </div>
       </div>
-
       <div className="sep-layout">
         {/* Left Sidebar */}
         <aside className="rf-sidebar">
@@ -1235,7 +1218,6 @@ const SemiExportPurchase: React.FC = () => {
           </div>
         </main>
       </div>
-
       {/* Modal */}
       {showModal && (
         <div
@@ -1498,7 +1480,6 @@ const SemiExportPurchase: React.FC = () => {
           </div>
         </div>
       )}
-
       {showSortingRecordsModal && selectedSortingRecord && (
         <div
           className="sep-sorting-modal-overlay"
@@ -1508,456 +1489,161 @@ const SemiExportPurchase: React.FC = () => {
             className="sep-sorting-modal"
             onClick={(e) => e.stopPropagation()}
           >
-            <button
-              type="button"
-              className="sep-sorting-modal-close"
-              onClick={closeSortingRecordsModal}
-              title="Close"
-            >
-              <X size={18} />
-            </button>
-
-            <div className="sep-record-summary">
-              <div className="sep-record-summary-main">
-                <span className="sep-record-eyebrow">Sorting Record</span>
-                <h3>{selectedSortingRecord.customerName}</h3>
-              </div>
-              <div className="sep-record-summary-grid">
-                <div>
-                  <span>Contact</span>
-                  <strong>{selectedSortingRecord.contact || "---"}</strong>
+            {/* Modal Top Bar */}
+            <div className="sep-modal-topbar">
+              <div className="sep-modal-topbar-left">
+                <div className="sep-modal-topbar-icon">
+                  <Sparkles size={20} />
                 </div>
                 <div>
-                  <span>Color</span>
-                  <strong>{selectedSortingRecord.color || "---"}</strong>
-                </div>
-                <div>
-                  <span>Receive DateTime</span>
-                  <strong>
-                    {formatDateTime(selectedSortingRecord.receiveDateTime)}
-                  </strong>
-                </div>
-                <div>
-                  <span>Assign Weight</span>
-                  <strong>
-                    {selectedSortingRecord.assignWeight.toFixed(3)} viss
-                  </strong>
-                </div>
-                <div>
-                  <span>Lost Weight</span>
-                  <strong
-                    className={
-                      selectedSortingRecord.lostWeight > 0
-                        ? "sep-record-loss"
-                        : ""
-                    }
-                  >
-                    {selectedSortingRecord.lostWeight.toFixed(3)} viss
-                  </strong>
-                </div>
-              </div>
-            </div>
-
-            <div className="sep-rate-panel">
-              <label htmlFor="sep-worker-name">Worker:</label>
-              <input
-                id="sep-worker-name"
-                type="text"
-                value={selectedSortingRecord.workerName || ""}
-                readOnly
-              />
-              <label htmlFor="sep-worker-fees">Worker Fees:</label>
-              <input
-                id="sep-worker-fees"
-                type="number"
-                value={sortingWorkerFees}
-                placeholder="0"
-                onChange={(e) => setSortingWorkerFees(e.target.value)}
-              />
-              <label htmlFor="sep-sorting-rate">CNY to MMK Rate:</label>
-              <input
-                id="sep-sorting-rate"
-                type="number"
-                value={sortingExchangeRate}
-                title="Active CNY to MMK rate from ExchangeRates"
-                onChange={(e) => setSortingExchangeRate(e.target.value)}
-              />
-              <span>MMK</span>
-            </div>
-
-            <section className="sep-size-section">
-              <h3>Color Categories &amp; Sizes</h3>
-
-              <div className="sep-size-card">
-                <div className="sep-size-card-header">
-                  <div
-                    style={{
-                      display: "flex",
-                      alignItems: "center",
-                      gap: "20px",
-                    }}
-                  >
-                    <button
-                      type="button"
-                      onClick={handleSortingSaveAndPrint}
-                      disabled={saving}
-                    >
-                      {saving ? "Saving..." : "Save and Print"}
-                    </button>
-                    <label
-                      style={{
-                        display: "flex",
-                        alignItems: "center",
-                        gap: "8px",
-                        fontSize: "13.5px",
-                        fontWeight: "600",
-                        color: "#475569",
-                        cursor: "pointer",
-                        userSelect: "none",
-                      }}
-                    >
-                      <input
-                        type="checkbox"
-                        checked={showTotalAmount}
-                        onChange={(e) => setShowTotalAmount(e.target.checked)}
-                        style={{
-                          width: "16px",
-                          height: "16px",
-                          cursor: "pointer",
-                        }}
-                      />
-                      Show Amount
-                    </label>
-                    <label
-                      style={{
-                        display: "flex",
-                        alignItems: "center",
-                        gap: "8px",
-                        fontSize: "13.5px",
-                        fontWeight: "600",
-                        color: "#475569",
-                        cursor: "pointer",
-                        userSelect: "none",
-                      }}
-                    >
-                      <input
-                        type="checkbox"
-                        checked={showExchangeRate}
-                        onChange={(e) => setShowExchangeRate(e.target.checked)}
-                        style={{
-                          width: "16px",
-                          height: "16px",
-                          cursor: "pointer",
-                        }}
-                      />
-                      Show Exchange Rate
-                    </label>
+                  <div className="sep-modal-topbar-title">Sorting Record</div>
+                  <div className="sep-modal-topbar-subtitle">
+                    {selectedSortingRecord.customerName} —{" "}
+                    {selectedSortingRecord.color}
                   </div>
                 </div>
-
-                <div className="sep-size-table-wrap">
-                  <table className="sep-size-table">
-                    <thead>
-                      <tr>
-                        <th>SIZE</th>
-                        <th>WEIGHT (VISS)</th>
-                        <th>WEIGHT (Kg)</th>
-                        <th>PRICE (CNY)</th>
-                        <th className="sep-num">AMOUNT (CNY)</th>
-                        <th className="sep-num sep-mmk-col">AMOUNT (MMK)</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {sortingSizes.map((row) => {
-                        const amountCny = getSortingAmount(row);
-                        const amountMmk =
-                          amountCny * (parseFloat(sortingExchangeRate) || 0);
-                        const isSpecial = [
-                          "Return",
-                          "Spoilage",
-                          "Lost",
-                        ].includes(row.size);
-
-                        return (
-                          <tr key={row.size}>
-                            <td className={isSpecial ? "sep-special-size" : ""}>
-                              {formatSortingSize(row.size)}
-                            </td>
-                            <td>
-                              <input
-                                type="number"
-                                step="0.001"
-                                placeholder="0.000"
-                                value={
-                                  row.size === "Lost"
-                                    ? getCalculatedSortingLostWeight().toFixed(
-                                        3,
-                                      )
-                                    : row.weight
-                                }
-                                disabled={row.size === "Lost"}
-                                onChange={(e) =>
-                                  updateSortingSize(
-                                    row.size,
-                                    "weight",
-                                    e.target.value,
-                                  )
-                                }
-                              />
-                            </td>
-                            <td>
-                              <input
-                                type="number"
-                                step="0.001"
-                                placeholder="0.000"
-                                value={
-                                  row.size === "Lost"
-                                    ? (
-                                        getCalculatedSortingLostWeight() * 1.633
-                                      ).toFixed(3)
-                                    : (
-                                        (parseFloat(row.weight) || 0) * 1.633
-                                      ).toFixed(3)
-                                }
-                                disabled={true}
-                              />
-                            </td>
-                            <td>
-                              {row.size !== "Lost" && (
-                                <input
-                                  type="number"
-                                  value={row.price}
-                                  placeholder="0.000"
-                                  onChange={(e) =>
-                                    updateSortingSize(
-                                      row.size,
-                                      "price",
-                                      e.target.value,
-                                    )
-                                  }
-                                />
-                              )}
-                            </td>
-                            <td className="sep-num">
-                              {row.size === "Lost"
-                                ? ""
-                                : (amountCny * 1.633).toLocaleString(
-                                    undefined,
-                                    {
-                                      minimumFractionDigits: 2,
-                                      maximumFractionDigits: 2,
-                                    },
-                                  )}
-                            </td>
-                            <td className="sep-num sep-mmk-col">
-                              {row.size === "Lost"
-                                ? ""
-                                : (amountMmk * 1.633).toLocaleString(
-                                    undefined,
-                                    {
-                                      maximumFractionDigits: 0,
-                                    },
-                                  )}
-                            </td>
-                          </tr>
-                        );
-                      })}
-                    </tbody>
-                  </table>
-                </div>
               </div>
-            </section>
-          </div>
-        </div>
-      )}
-
-      {showHistoryModal && selectedHistoryRecord && (
-        <div className="sep-sorting-modal-overlay" onClick={closeHistoryModal}>
-          <div
-            className="sep-sorting-modal"
-            onClick={(e) => e.stopPropagation()}
-          >
-            <button
-              type="button"
-              className="sep-sorting-modal-close"
-              onClick={closeHistoryModal}
-              title="Close"
-            >
-              <X size={18} />
-            </button>
-
-            <div className="sep-record-summary">
-              <div className="sep-record-summary-main">
-                <span className="sep-record-eyebrow">Sorting History</span>
-                <h3>{selectedHistoryRecord.customerName}</h3>
-              </div>
-              <div className="sep-record-summary-grid">
-                <div>
-                  <span>Contact</span>
-                  <strong>{selectedHistoryRecord.contact || "---"}</strong>
-                </div>
-                <div>
-                  <span>Color</span>
-                  <strong>{selectedHistoryRecord.color || "---"}</strong>
-                </div>
-                <div>
-                  <span>Receive DateTime</span>
-                  <strong>
-                    {formatDateTime(selectedHistoryRecord.receiveDateTime)}
-                  </strong>
-                </div>
-                <div>
-                  <span>Assign Weight</span>
-                  <strong>
-                    {selectedHistoryRecord.assignWeight.toFixed(3)} viss
-                  </strong>
-                </div>
-                <div>
-                  <span>Lost Weight</span>
-                  <strong
-                    className={
-                      selectedHistoryRecord.lostWeight > 0
-                        ? "sep-record-loss"
-                        : ""
-                    }
-                  >
-                    {selectedHistoryRecord.lostWeight.toFixed(3)} viss
-                  </strong>
-                </div>
-                <div>
-                  <span>Sorting Lost Weight</span>
-                  <strong
-                    className={
-                      getHistorySortingLostWeight(selectedHistoryRecord) > 0
-                        ? "sep-record-loss"
-                        : ""
-                    }
-                  >
-                    {getHistorySortingLostWeight(selectedHistoryRecord).toFixed(
-                      3,
-                    )}{" "}
-                    viss
-                  </strong>
-                </div>
+              <div className="sep-modal-topbar-right">
+                <button
+                  type="button"
+                  className="sep-sorting-modal-close"
+                  onClick={closeSortingRecordsModal}
+                  title="Close"
+                >
+                  <X size={18} />
+                </button>
               </div>
             </div>
 
-            <div className="sep-rate-panel">
-              <label>Worker:</label>
-              <input
-                type="text"
-                value={selectedHistoryRecord.workerName || "---"}
-                readOnly
-              />
-              <label>Worker Fees:</label>
-              <input
-                type="number"
-                value={selectedHistoryRecord.workerFees || 0}
-                readOnly
-              />
-              <label>CNY to MMK Rate:</label>
-              <input
-                type="number"
-                value={selectedHistoryRecord.exchangeRateRate}
-                readOnly
-              />
-              <span>MMK</span>
-            </div>
-
-            <section className="sep-size-section">
-              <h3>Color Categories &amp; Sizes</h3>
-
-              <div className="sep-size-card">
-                <div className="sep-size-card-header">
-                  <div
-                    style={{
-                      display: "flex",
-                      alignItems: "center",
-                      gap: "20px",
-                    }}
-                  >
-                    <button
-                      type="button"
-                      onClick={() =>
-                        printSortingPurchasePdf(
-                          selectedHistoryRecord,
-                          getHistorySortingRows(selectedHistoryRecord),
-                          selectedHistoryRecord.exchangeRateRate.toString(),
-                          false,
-                        )
+            {/* Modal Body */}
+            <div className="sep-modal-body">
+              <div className="sep-record-summary">
+                <div className="sep-record-summary-main">
+                  <span className="sep-record-eyebrow">Sorting Record</span>
+                  <h3>{selectedSortingRecord.customerName}</h3>
+                </div>
+                <div className="sep-record-summary-grid">
+                  <div>
+                    <span>Contact</span>
+                    <strong>{selectedSortingRecord.contact || "---"}</strong>
+                  </div>
+                  <div>
+                    <span>Color</span>
+                    <strong>{selectedSortingRecord.color || "---"}</strong>
+                  </div>
+                  <div>
+                    <span>Receive DateTime</span>
+                    <strong>
+                      {formatDateTime(selectedSortingRecord.receiveDateTime)}
+                    </strong>
+                  </div>
+                  <div>
+                    <span>Assign Weight</span>
+                    <strong>
+                      {selectedSortingRecord.assignWeight.toFixed(3)} viss
+                    </strong>
+                  </div>
+                  <div>
+                    <span>Lost Weight</span>
+                    <strong
+                      className={
+                        selectedSortingRecord.lostWeight > 0
+                          ? "sep-record-loss"
+                          : ""
                       }
                     >
-                      Print
-                    </button>
-                    <label
-                      style={{
-                        display: "flex",
-                        alignItems: "center",
-                        gap: "8px",
-                        fontSize: "13.5px",
-                        fontWeight: "600",
-                        color: "#475569",
-                        cursor: "pointer",
-                        userSelect: "none",
-                      }}
-                    >
-                      <input
-                        type="checkbox"
-                        checked={showTotalAmount}
-                        onChange={(e) => setShowTotalAmount(e.target.checked)}
-                        style={{
-                          width: "16px",
-                          height: "16px",
-                          cursor: "pointer",
-                        }}
-                      />
-                      Show Amount
-                    </label>
-                    <label
-                      style={{
-                        display: "flex",
-                        alignItems: "center",
-                        gap: "8px",
-                        fontSize: "13.5px",
-                        fontWeight: "600",
-                        color: "#475569",
-                        cursor: "pointer",
-                        userSelect: "none",
-                      }}
-                    >
-                      <input
-                        type="checkbox"
-                        checked={showExchangeRate}
-                        onChange={(e) => setShowExchangeRate(e.target.checked)}
-                        style={{
-                          width: "16px",
-                          height: "16px",
-                          cursor: "pointer",
-                        }}
-                      />
-                      Show Exchange Rate
-                    </label>
+                      {selectedSortingRecord.lostWeight.toFixed(3)} viss
+                    </strong>
                   </div>
                 </div>
+              </div>
 
-                <div className="sep-size-table-wrap">
-                  <table className="sep-size-table">
-                    <thead>
-                      <tr>
-                        <th>SIZE</th>
-                        <th>WEIGHT (VISS)</th>
-                        <th>PRICE (CNY)</th>
-                        <th className="sep-num">AMOUNT (CNY)</th>
-                        <th className="sep-num sep-mmk-col">AMOUNT (MMK)</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {getHistorySortingRows(selectedHistoryRecord).map(
-                        (row) => {
+              <div className="sep-rate-panel">
+                <label htmlFor="sep-worker-name">Worker:</label>
+                <input
+                  id="sep-worker-name"
+                  type="text"
+                  value={selectedSortingRecord.workerName || ""}
+                  readOnly
+                />
+                <label htmlFor="sep-worker-fees">Worker Fees:</label>
+                <input
+                  id="sep-worker-fees"
+                  type="number"
+                  value={sortingWorkerFees}
+                  placeholder="0"
+                  onChange={(e) => setSortingWorkerFees(e.target.value)}
+                />
+                <label htmlFor="sep-sorting-rate">CNY to MMK Rate:</label>
+                <input
+                  id="sep-sorting-rate"
+                  type="number"
+                  value={sortingExchangeRate}
+                  title="Active CNY to MMK rate from ExchangeRates"
+                  onChange={(e) => setSortingExchangeRate(e.target.value)}
+                />
+                <span>MMK</span>
+              </div>
+
+              <section className="sep-size-section">
+                <h3>Color Categories &amp; Sizes</h3>
+
+                <div className="sep-size-card">
+                  <div className="sep-size-card-header">
+                    <div
+                      style={{
+                        display: "flex",
+                        alignItems: "center",
+                        gap: "12px",
+                        flexWrap: "wrap",
+                      }}
+                    >
+                      <button
+                        type="button"
+                        className="sep-save-print-btn"
+                        onClick={handleSortingSaveAndPrint}
+                        disabled={saving}
+                      >
+                        {saving ? "Saving..." : "Save and Print"}
+                      </button>
+                      <label className="sep-check-label">
+                        <input
+                          type="checkbox"
+                          checked={showTotalAmount}
+                          onChange={(e) => setShowTotalAmount(e.target.checked)}
+                        />
+                        Show Amount
+                      </label>
+                      <label className="sep-check-label">
+                        <input
+                          type="checkbox"
+                          checked={showExchangeRate}
+                          onChange={(e) =>
+                            setShowExchangeRate(e.target.checked)
+                          }
+                        />
+                        Show Exchange Rate
+                      </label>
+                    </div>
+                  </div>
+
+                  <div className="sep-size-table-wrap">
+                    <table className="sep-size-table">
+                      <thead>
+                        <tr>
+                          <th>SIZE</th>
+                          <th>WEIGHT (VISS)</th>
+                          <th>WEIGHT (Kg)</th>
+                          <th>PRICE (CNY)</th>
+                          <th className="sep-num">AMOUNT (CNY)</th>
+                          <th className="sep-num sep-mmk-col">AMOUNT (MMK)</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {sortingSizes.map((row) => {
                           const amountCny = getSortingAmount(row);
                           const amountMmk =
-                            amountCny *
-                            (selectedHistoryRecord.exchangeRateRate || 0);
+                            amountCny * (parseFloat(sortingExchangeRate) || 0);
                           const isSpecial = [
                             "Return",
                             "Spoilage",
@@ -1974,8 +1660,41 @@ const SemiExportPurchase: React.FC = () => {
                               <td>
                                 <input
                                   type="number"
-                                  value={row.weight}
-                                  readOnly
+                                  step="0.001"
+                                  placeholder="0.000"
+                                  value={
+                                    row.size === "Lost"
+                                      ? getCalculatedSortingLostWeight().toFixed(
+                                          3,
+                                        )
+                                      : row.weight
+                                  }
+                                  disabled={row.size === "Lost"}
+                                  onChange={(e) =>
+                                    updateSortingSize(
+                                      row.size,
+                                      "weight",
+                                      e.target.value,
+                                    )
+                                  }
+                                />
+                              </td>
+                              <td>
+                                <input
+                                  type="number"
+                                  step="0.001"
+                                  placeholder="0.000"
+                                  value={
+                                    row.size === "Lost"
+                                      ? (
+                                          getCalculatedSortingLostWeight() *
+                                          1.633
+                                        ).toFixed(3)
+                                      : (
+                                          (parseFloat(row.weight) || 0) * 1.633
+                                        ).toFixed(3)
+                                  }
+                                  disabled={true}
                                 />
                               </td>
                               <td>
@@ -1983,37 +1702,288 @@ const SemiExportPurchase: React.FC = () => {
                                   <input
                                     type="number"
                                     value={row.price}
-                                    readOnly
+                                    placeholder="0.000"
+                                    onChange={(e) =>
+                                      updateSortingSize(
+                                        row.size,
+                                        "price",
+                                        e.target.value,
+                                      )
+                                    }
                                   />
                                 )}
                               </td>
                               <td className="sep-num">
                                 {row.size === "Lost"
                                   ? ""
-                                  : amountCny.toLocaleString(undefined, {
-                                      minimumFractionDigits: 2,
-                                      maximumFractionDigits: 2,
-                                    })}
+                                  : (amountCny * 1.633).toLocaleString(
+                                      undefined,
+                                      {
+                                        minimumFractionDigits: 2,
+                                        maximumFractionDigits: 2,
+                                      },
+                                    )}
                               </td>
                               <td className="sep-num sep-mmk-col">
                                 {row.size === "Lost"
                                   ? ""
-                                  : amountMmk.toLocaleString(undefined, {
-                                      maximumFractionDigits: 0,
-                                    })}
+                                  : (amountMmk * 1.633).toLocaleString(
+                                      undefined,
+                                      {
+                                        maximumFractionDigits: 0,
+                                      },
+                                    )}
                               </td>
                             </tr>
                           );
-                        },
-                      )}
-                    </tbody>
-                  </table>
+                        })}
+                      </tbody>
+                    </table>
+                  </div>
                 </div>
-              </div>
-            </section>
+              </section>
+            </div>
           </div>
         </div>
       )}
+      {showHistoryModal && selectedHistoryRecord && (
+        <div className="sep-sorting-modal-overlay" onClick={closeHistoryModal}>
+          <div
+            className="sep-sorting-modal"
+            onClick={(e) => e.stopPropagation()}
+          >
+            {/* Modal Top Bar */}
+            <div className="sep-modal-topbar">
+              <div className="sep-modal-topbar-left">
+                <div className="sep-modal-topbar-icon">
+                  <Sparkles size={20} />
+                </div>
+                <div>
+                  <div className="sep-modal-topbar-title">Sorting History</div>
+                  <div className="sep-modal-topbar-subtitle">
+                    {selectedHistoryRecord.customerName} —{" "}
+                    {selectedHistoryRecord.color}
+                  </div>
+                </div>
+              </div>
+              <div className="sep-modal-topbar-right">
+                <button
+                  type="button"
+                  className="sep-sorting-modal-close"
+                  onClick={closeHistoryModal}
+                  title="Close"
+                >
+                  <X size={18} />
+                </button>
+              </div>
+            </div>
+
+            {/* Modal Body */}
+            <div className="sep-modal-body">
+              <div className="sep-record-summary">
+                <div className="sep-record-summary-main">
+                  <span className="sep-record-eyebrow">Sorting History</span>
+                  <h3>{selectedHistoryRecord.customerName}</h3>
+                </div>
+                <div className="sep-record-summary-grid">
+                  <div>
+                    <span>Contact</span>
+                    <strong>{selectedHistoryRecord.contact || "---"}</strong>
+                  </div>
+                  <div>
+                    <span>Color</span>
+                    <strong>{selectedHistoryRecord.color || "---"}</strong>
+                  </div>
+                  <div>
+                    <span>Receive DateTime</span>
+                    <strong>
+                      {formatDateTime(selectedHistoryRecord.receiveDateTime)}
+                    </strong>
+                  </div>
+                  <div>
+                    <span>Assign Weight</span>
+                    <strong>
+                      {selectedHistoryRecord.assignWeight.toFixed(3)} viss
+                    </strong>
+                  </div>
+                  <div>
+                    <span>Lost Weight</span>
+                    <strong
+                      className={
+                        selectedHistoryRecord.lostWeight > 0
+                          ? "sep-record-loss"
+                          : ""
+                      }
+                    >
+                      {selectedHistoryRecord.lostWeight.toFixed(3)} viss
+                    </strong>
+                  </div>
+                  <div>
+                    <span>Sorting Lost Weight</span>
+                    <strong
+                      className={
+                        getHistorySortingLostWeight(selectedHistoryRecord) > 0
+                          ? "sep-record-loss"
+                          : ""
+                      }
+                    >
+                      {getHistorySortingLostWeight(
+                        selectedHistoryRecord,
+                      ).toFixed(3)}{" "}
+                      viss
+                    </strong>
+                  </div>
+                </div>
+              </div>
+
+              <div className="sep-rate-panel">
+                <label>Worker:</label>
+                <input
+                  type="text"
+                  value={selectedHistoryRecord.workerName || "---"}
+                  readOnly
+                />
+                <label>Worker Fees:</label>
+                <input
+                  type="number"
+                  value={selectedHistoryRecord.workerFees || 0}
+                  readOnly
+                />
+                <label>CNY to MMK Rate:</label>
+                <input
+                  type="number"
+                  value={selectedHistoryRecord.exchangeRateRate}
+                  readOnly
+                />
+                <span>MMK</span>
+              </div>
+
+              <section className="sep-size-section">
+                <h3>Color Categories &amp; Sizes</h3>
+
+                <div className="sep-size-card">
+                  <div className="sep-size-card-header">
+                    <div
+                      style={{
+                        display: "flex",
+                        alignItems: "center",
+                        gap: "12px",
+                        flexWrap: "wrap",
+                      }}
+                    >
+                      <button
+                        type="button"
+                        className="sep-save-print-btn"
+                        onClick={() =>
+                          printSortingPurchasePdf(
+                            selectedHistoryRecord,
+                            getHistorySortingRows(selectedHistoryRecord),
+                            selectedHistoryRecord.exchangeRateRate.toString(),
+                            false,
+                          )
+                        }
+                      >
+                        Print
+                      </button>
+                      <label className="sep-check-label">
+                        <input
+                          type="checkbox"
+                          checked={showTotalAmount}
+                          onChange={(e) => setShowTotalAmount(e.target.checked)}
+                        />
+                        Show Amount
+                      </label>
+                      <label className="sep-check-label">
+                        <input
+                          type="checkbox"
+                          checked={showExchangeRate}
+                          onChange={(e) =>
+                            setShowExchangeRate(e.target.checked)
+                          }
+                        />
+                        Show Exchange Rate
+                      </label>
+                    </div>
+                  </div>
+
+                  <div className="sep-size-table-wrap">
+                    <table className="sep-size-table">
+                      <thead>
+                        <tr>
+                          <th>SIZE</th>
+                          <th>WEIGHT (VISS)</th>
+                          <th>PRICE (CNY)</th>
+                          <th className="sep-num">AMOUNT (CNY)</th>
+                          <th className="sep-num sep-mmk-col">AMOUNT (MMK)</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {getHistorySortingRows(selectedHistoryRecord).map(
+                          (row) => {
+                            const amountCny = getSortingAmount(row);
+                            const amountMmk =
+                              amountCny *
+                              (selectedHistoryRecord.exchangeRateRate || 0);
+                            const isSpecial = [
+                              "Return",
+                              "Spoilage",
+                              "Lost",
+                            ].includes(row.size);
+
+                            return (
+                              <tr key={row.size}>
+                                <td
+                                  className={
+                                    isSpecial ? "sep-special-size" : ""
+                                  }
+                                >
+                                  {formatSortingSize(row.size)}
+                                </td>
+                                <td>
+                                  <input
+                                    type="number"
+                                    value={row.weight}
+                                    readOnly
+                                  />
+                                </td>
+                                <td>
+                                  {row.size !== "Lost" && (
+                                    <input
+                                      type="number"
+                                      value={row.price}
+                                      readOnly
+                                    />
+                                  )}
+                                </td>
+                                <td className="sep-num">
+                                  {row.size === "Lost"
+                                    ? ""
+                                    : amountCny.toLocaleString(undefined, {
+                                        minimumFractionDigits: 2,
+                                        maximumFractionDigits: 2,
+                                      })}
+                                </td>
+                                <td className="sep-num sep-mmk-col">
+                                  {row.size === "Lost"
+                                    ? ""
+                                    : amountMmk.toLocaleString(undefined, {
+                                        maximumFractionDigits: 0,
+                                      })}
+                                </td>
+                              </tr>
+                            );
+                          },
+                        )}
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
+              </section>
+            </div>
+          </div>
+        </div>
+      )}
+      ;
     </div>
   );
 };
