@@ -29,7 +29,7 @@ public class WashGradingRecord : BaseEntity
     public int? WashGradingWorkerId { get; set; }
 
     [ForeignKey("WashGradingWorkerId")]
-    public WashGradingWorker? WashGradingWorker { get; set; }
+    public Worker? Worker { get; set; }
 
     public int? WashGradingProcessId { get; set; }
 

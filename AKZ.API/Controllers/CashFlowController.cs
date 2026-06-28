@@ -159,12 +159,12 @@ public class CashFlowController : ControllerBase
 
             // 3.5 Wash & Grading
             var washGradingRecords = await _context.WashGradingRecords
-                .Include(r => r.WashGradingWorker)
-                .Where(r => r.WashGradingWorker != null && r.DeleteFlg == 0 && r.WashGradingWorker.DeleteFlg == 0)
+                .Include(r => r.Worker)
+                .Where(r => r.Worker != null && r.DeleteFlg == 0 && r.Worker.DeleteFlg == 0)
                 .ToListAsync();
             foreach (var r in washGradingRecords)
             {
-                var cf = EnsureWorker(r.WashGradingWorker!.Name);
+                var cf = EnsureWorker(r.Worker!.Name);
                 cf.WashGradingFees += r.WorkerFees;
             }
 

@@ -442,7 +442,7 @@ public class AKZDbContext : DbContext
             .OnDelete(DeleteBehavior.Restrict);
 
         modelBuilder.Entity<WashGradingProcess>()
-            .HasOne(r => r.WashGradingWorker)
+            .HasOne(r => r.Worker)
             .WithMany()
             .HasForeignKey(r => r.WashGradingWorkerId)
             .OnDelete(DeleteBehavior.Restrict);
@@ -454,7 +454,7 @@ public class AKZDbContext : DbContext
             .OnDelete(DeleteBehavior.Restrict);
 
         modelBuilder.Entity<WashGradingRecord>()
-            .HasOne(r => r.WashGradingWorker)
+            .HasOne(r => r.Worker)
             .WithMany()
             .HasForeignKey(r => r.WashGradingWorkerId)
             .OnDelete(DeleteBehavior.Restrict);

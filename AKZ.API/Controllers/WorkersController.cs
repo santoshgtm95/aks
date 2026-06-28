@@ -2,6 +2,7 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using AKZ.API.Data;
+using AKZ.API.DTOs;
 using AKZ.API.Models;
 
 namespace AKZ.API.Controllers;
@@ -88,5 +89,24 @@ public class WorkersController : ControllerBase
         existing.DeleteDate = DateTime.UtcNow;
         await _context.SaveChangesAsync();
         return NoContent();
+    }
+
+    [HttpGet("washgrading")]
+    public async Task<IActionResult> GetWashGradingWorkers()
+    {
+        var workers = await _context.Workers
+            .Where(w => w.IsActive && w.AssignWashGrading)
+            .OrderBy(w => w.Name)
+            .Select(w => new WashGradingWorkerDto
+            {
+                Id = w.Id,
+                Name = w.Name,
+                WarehouseId = w.WarehouseId ?? 0,
+                WarehouseName = w.WarehouseName ?? "",
+                IsActive = w.IsActive
+            })
+            .ToListAsync();
+
+        return Ok(workers);
     }
 }

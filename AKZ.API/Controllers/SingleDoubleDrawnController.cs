@@ -44,7 +44,7 @@ public class SingleDoubleDrawnController : ControllerBase
                 .ThenInclude(rr => rr.PurifiedRecord)
                     .ThenInclude(p => p.ProcessingRecord)
                         .ThenInclude(pr => pr.WashGradingRecord)
-                            .ThenInclude(wg => wg.WashGradingWorker)
+                            .ThenInclude(wg => wg.Worker)
             .Include(r => r.RefinementRecord)
                 .ThenInclude(rr => rr.RefinementWorker)
             .Include(r => r.RefinementRecord)
@@ -170,7 +170,7 @@ public class SingleDoubleDrawnController : ControllerBase
                 PurifiedRecordId = r.RefinementRecord?.PurifiedRecord?.Id,
                 RefinementWorkerName = r.RefinementRecord?.RefinementWorker?.Name ?? "",
                 RefinementWorkerFees = r.RefinementRecord?.WorkerFees ?? 0M,
-                WashGradingWorkerName = r.RefinementRecord?.PurifiedRecord?.ProcessingRecord?.WashGradingRecord?.WashGradingWorker?.Name ?? "",
+                WashGradingWorkerName = r.RefinementRecord?.PurifiedRecord?.ProcessingRecord?.WashGradingRecord?.Worker?.Name ?? "",
                 WashGradingWorkerFees = r.RefinementRecord?.PurifiedRecord?.ProcessingRecord?.WashGradingRecord?.WorkerFees ?? 0M,
                 WashGradingLostWeight = r.RefinementRecord?.PurifiedRecord?.ProcessingRecord?.WashGradingRecord?.LostWeight ?? 0M,
                 WashGradingRecordId = r.RefinementRecord?.PurifiedRecord?.ProcessingRecord?.WashGradingRecordId,
@@ -197,7 +197,7 @@ public class SingleDoubleDrawnController : ControllerBase
             .Include(rr => rr.PurifiedRecord)
                 .ThenInclude(p => p.ProcessingRecord)
                     .ThenInclude(pr => pr.WashGradingRecord)
-                        .ThenInclude(wg => wg.WashGradingWorker)
+                        .ThenInclude(wg => wg.Worker)
             .Include(rr => rr.RefinementWorker)
             .Include(rr => rr.PurifiedRecord)
                 .ThenInclude(p => p.Place)
@@ -388,7 +388,7 @@ public class SingleDoubleDrawnController : ControllerBase
             PurifiedRecordId = refinementRecord.PurifiedRecord?.Id,
             RefinementWorkerName = refinementRecord.RefinementWorker?.Name ?? "",
             RefinementWorkerFees = refinementRecord.WorkerFees,
-            WashGradingWorkerName = refinementRecord.PurifiedRecord?.ProcessingRecord?.WashGradingRecord?.WashGradingWorker?.Name ?? "",
+            WashGradingWorkerName = refinementRecord.PurifiedRecord?.ProcessingRecord?.WashGradingRecord?.Worker?.Name ?? "",
             WashGradingWorkerFees = refinementRecord.PurifiedRecord?.ProcessingRecord?.WashGradingRecord?.WorkerFees ?? 0M,
             WashGradingLostWeight = refinementRecord.PurifiedRecord?.ProcessingRecord?.WashGradingRecord?.LostWeight ?? 0M
         };

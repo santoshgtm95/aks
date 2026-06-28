@@ -36,7 +36,7 @@ public class WashGradingController : ControllerBase
         var records = await _context.WashGradingRecords
             .Include(r => r.Product)
                 .ThenInclude(p => p.Warehouse)
-            .Include(r => r.WashGradingWorker)
+            .Include(r => r.Worker)
             .Where(r => r.DeleteFlg == 0 && r.RemainingWeight > 0.0001m)
             .Where(r => warehouseId == null || r.Product.WarehouseId == warehouseId)
             .OrderByDescending(r => r.Date)
@@ -52,7 +52,7 @@ public class WashGradingController : ControllerBase
             WarehouseName = r.Product.Warehouse?.Name ?? "",
             WarehouseId = r.Product.WarehouseId,
             WashGradingWorkerId = r.WashGradingWorkerId,
-            WashGradingWorkerName = r.WashGradingWorker?.Name ?? "",
+            WashGradingWorkerName = r.Worker?.Name ?? "",
             LostWeight = r.LostWeight,
             WorkerFees = r.WorkerFees,
             RemainingWeight = r.RemainingWeight,
@@ -97,7 +97,7 @@ public class WashGradingController : ControllerBase
         var processes = await _context.WashGradingProcesses
             .Include(r => r.Product)
                 .ThenInclude(p => p.Warehouse)
-            .Include(r => r.WashGradingWorker)
+            .Include(r => r.Worker)
             .Include(r => r.WashGradingRecords)
             .Where(r => r.DeleteFlg == 0)
             .Where(r => warehouseId == null || r.Product.WarehouseId == warehouseId)
@@ -129,7 +129,7 @@ public class WashGradingController : ControllerBase
                 WarehouseName = warehouseName,
                 WarehouseId = r.Product?.WarehouseId,
                 WashGradingWorkerId = r.WashGradingWorkerId,
-                WashGradingWorkerName = r.WashGradingWorker?.Name ?? "",
+                WashGradingWorkerName = r.Worker?.Name ?? "",
                 WorkerFees = r.WorkerFees
             });
         }
@@ -146,7 +146,7 @@ public class WashGradingController : ControllerBase
         var records = await _context.WashGradingRecords
             .Include(r => r.Product)
                 .ThenInclude(p => p.Warehouse)
-            .Include(r => r.WashGradingWorker)
+            .Include(r => r.Worker)
             .Where(r => r.DeleteFlg == 0)
             .Where(r => warehouseId == null || r.Product.WarehouseId == warehouseId)
             .OrderByDescending(r => r.Date)
@@ -175,7 +175,7 @@ public class WashGradingController : ControllerBase
                 WarehouseName = warehouseName,
                 WarehouseId = r.Product.WarehouseId,
                 WashGradingWorkerId = r.WashGradingWorkerId,
-                WashGradingWorkerName = r.WashGradingWorker?.Name ?? "",
+                WashGradingWorkerName = r.Worker?.Name ?? "",
                 LostWeight = r.LostWeight,
                 WorkerFees = r.WorkerFees,
                 RemainingWeight = r.RemainingWeight,

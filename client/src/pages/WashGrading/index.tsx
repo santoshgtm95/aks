@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from "react";
-import { washGradingAPI, washGradingWorkersAPI } from "../../services/api";
+import { washGradingAPI, workersAPI } from "../../services/api";
 import { useAuth } from "../../context/AuthContext";
 import { useNotification } from "../../context/NotificationContext";
 import type {
@@ -19,9 +19,7 @@ import {
   Trash2,
   X,
   Sparkles,
-  Settings,
 } from "lucide-react";
-import WashGradingWorkerManagement from "../WashGradingWorkerManagement";
 import {
   formatDateTime,
   getMyanmarNow,
@@ -42,7 +40,6 @@ const WashGrading: React.FC = () => {
   const [selectedWorkers, setSelectedWorkers] = useState<Record<number, number>>({});
   const [searchTerm, setSearchTerm] = useState("");
   const [showModal, setShowModal] = useState(false);
-  const [showWorkerManagement, setShowWorkerManagement] = useState(false);
   const [selectedProduct, setSelectedProduct] = useState<AvailableProductDto | null>(null);
   const [editingProcess, setEditingProcess] = useState<WashGradingProcess | null>(null);
   const [editingRecord, setEditingRecord] = useState<WashGradingRecord | null>(null);
@@ -72,7 +69,7 @@ const WashGrading: React.FC = () => {
         washGradingAPI.getAvailableProducts(),
         washGradingAPI.getAll(),
         washGradingAPI.getRecords(),
-        washGradingWorkersAPI.getAll(),
+        workersAPI.getWashGradingWorkers(),
       ]);
       setAvailableProducts(avail);
       setProcesses(procs);
@@ -83,11 +80,6 @@ const WashGrading: React.FC = () => {
     } finally {
       setLoading(false);
     }
-  };
-
-  const handleCloseWorkerManagement = () => {
-    setShowWorkerManagement(false);
-    loadData();
   };
 
   const getVissWeight = (avail: AvailableProductDto): number => {
@@ -443,13 +435,6 @@ const WashGrading: React.FC = () => {
             </div>
 
             <div className="wg-header-right">
-              <button
-                className="btn-manage-wg-workers"
-                onClick={() => setShowWorkerManagement(true)}
-              >
-                <Settings size={16} />
-                Manage Workers
-              </button>
             </div>
           </div>
 
@@ -588,23 +573,6 @@ const WashGrading: React.FC = () => {
         </div>
       </main>
     </div>
-
-      {/* ── WORKER MANAGEMENT MODAL ── */}
-      {showWorkerManagement && (
-        <div className="wg-modal-backdrop">
-          <div className="wg-modal-content wash-grading-workers-modal">
-            <button
-              className="wg-modal-close"
-              onClick={handleCloseWorkerManagement}
-            >
-              <X size={20} />
-            </button>
-            <div className="wash-grading-workers-modal-inner">
-              <WashGradingWorkerManagement />
-            </div>
-          </div>
-        </div>
-      )}
 
       {/* ── FORM POPUP MODAL (COMPLETE / EDIT) ── */}
       {showModal && (

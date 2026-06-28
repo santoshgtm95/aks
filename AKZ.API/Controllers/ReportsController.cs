@@ -429,7 +429,7 @@ public class ReportsController : ControllerBase
                 w.Date,
                 w.Product.Marker,
                 w.Product.Warehouse != null ? w.Product.Warehouse.Name : "",
-                w.WashGradingWorker != null ? w.WashGradingWorker.Name : "",
+                w.Worker != null ? w.Worker.Name : "",
                 w.Weight,
                 w.LostWeight,
                 w.RemainingWeight,

@@ -187,6 +187,10 @@ export const workersAPI = {
     const response = await api.get<Worker[]>("/workers");
     return response.data;
   },
+  getWashGradingWorkers: async (): Promise<WashGradingWorker[]> => {
+    const response = await api.get<WashGradingWorker[]>("/workers/washgrading");
+    return response.data;
+  },
   create: async (data: Partial<Worker>): Promise<Worker> => {
     const response = await api.post<Worker>("/workers", data);
     return response.data;
