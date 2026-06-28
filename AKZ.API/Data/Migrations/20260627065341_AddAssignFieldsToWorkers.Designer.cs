@@ -4,16 +4,19 @@ using AKZ.API.Data;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 #nullable disable
 
-namespace AKZ.API.Migrations
+namespace AKZ.API.Data.Migrations
 {
     [DbContext(typeof(AKZDbContext))]
-    partial class AKZDbContextModelSnapshot : ModelSnapshot
+    [Migration("20260627065341_AddAssignFieldsToWorkers")]
+    partial class AddAssignFieldsToWorkers
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -2592,15 +2595,7 @@ namespace AKZ.API.Migrations
                     b.Property<DateTime>("UpdateDate")
                         .HasColumnType("datetime2");
 
-                    b.Property<int?>("WarehouseId")
-                        .HasColumnType("int");
-
-                    b.Property<string>("WarehouseName")
-                        .HasColumnType("nvarchar(max)");
-
                     b.HasKey("Id");
-
-                    b.HasIndex("WarehouseId");
 
                     b.ToTable("Workers");
                 });
@@ -3144,15 +3139,6 @@ namespace AKZ.API.Migrations
                         .HasForeignKey("WarehouseId")
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
-
-                    b.Navigation("Warehouse");
-                });
-
-            modelBuilder.Entity("AKZ.API.Models.Worker", b =>
-                {
-                    b.HasOne("AKZ.API.Models.Warehouse", "Warehouse")
-                        .WithMany()
-                        .HasForeignKey("WarehouseId");
 
                     b.Navigation("Warehouse");
                 });

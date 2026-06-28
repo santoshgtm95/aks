@@ -191,6 +191,12 @@ export const workersAPI = {
     const response = await api.post<Worker>("/workers", data);
     return response.data;
   },
+  update: async (id: number, data: Partial<Worker>): Promise<void> => {
+    await api.put(`/workers/${id}`, data);
+  },
+  delete: async (id: number): Promise<void> => {
+    await api.delete(`/workers/${id}`);
+  },
 };
 
 // Dashboard API
