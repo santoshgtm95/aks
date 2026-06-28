@@ -35,7 +35,7 @@ public class ProcessingController : ControllerBase
             .Include(r => r.Product)
                 .ThenInclude(p => p.Warehouse)
             .Include(r => r.Workers)
-                .ThenInclude(w => w.MessLabourWorker)
+                .ThenInclude(w => w.Worker)
             .Where(r => warehouseId == null || r.Product.WarehouseId == warehouseId)
             .OrderByDescending(r => r.Date)
             .Select(r => new ProcessingRecordDto
@@ -74,10 +74,10 @@ public class ProcessingController : ControllerBase
                 RemainingWeightKg = r.RemainingWeightKg,
                 Difference = r.Difference,
                 WorkerFees = r.WorkerFees,
-                Workers = r.Workers.Select(w => new ProcessingRecordWorkerDto 
+                Workers = r.Workers.Select(w => new ProcessingRecordWorkerDto
                 {
                     MessLabourWorkerId = w.MessLabourWorkerId,
-                    MessLabourWorkerName = w.MessLabourWorker.Name,
+                    MessLabourWorkerName = w.Worker.Name,
                     WorkerFee = w.WorkerFee
                 }).ToList(),
                 RemRedCount = r.RemRedCount,

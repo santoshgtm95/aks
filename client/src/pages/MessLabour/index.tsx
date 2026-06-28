@@ -2,7 +2,7 @@ import React, { useEffect, useState, useMemo } from "react";
 import { useAuth } from "../../context/AuthContext";
 import {
   washGradingAPI,
-  messLabourWorkersAPI,
+  workersAPI,
   processingAPI,
 } from "../../services/api";
 import type {
@@ -23,9 +23,7 @@ import {
   Save,
   Search,
   AlertCircle,
-  Settings,
 } from "lucide-react";
-import MessLabourWorkerManagement from "../MessLabourWorkerManagement";
 import { combineDateWithMyanmarTime, formatDateTime } from "../../utils/format";
 import { useNotification } from "../../context/NotificationContext";
 import "./index.css";
@@ -47,14 +45,7 @@ const MessLabour: React.FC = () => {
   const [activeTab, setActiveTab] = useState<"processing" | "history">(
     "processing",
   );
-  const [showMessLabourWorkerManagement, setShowMessLabourWorkerManagement] =
-    useState(false);
   const [searchTerm, setSearchTerm] = useState("");
-
-  const handleCloseMessLabourWorkerManagement = () => {
-    setShowMessLabourWorkerManagement(false);
-    loadData();
-  };
 
   const filteredWashRecords = useMemo(() => {
     return washRecords.filter((record) => {
@@ -169,7 +160,7 @@ const MessLabour: React.FC = () => {
     try {
       const [washData, workersData, recordsData] = await Promise.all([
         washGradingAPI.getAvailableForMessLabour(),
-        messLabourWorkersAPI.getAll(),
+        workersAPI.getMessLabourWorkers(),
         processingAPI.getAll(),
       ]);
       setWashRecords(washData);
@@ -761,13 +752,6 @@ const MessLabour: React.FC = () => {
             </div>
 
             <div className="rf-header-right">
-              <button
-                className="btn-manage-messlabour-workers"
-                onClick={() => setShowMessLabourWorkerManagement(true)}
-              >
-                <Settings size={16} />
-                Manage Mess-Labour Workers
-              </button>
             </div>
           </div>
 
@@ -2124,66 +2108,6 @@ const MessLabour: React.FC = () => {
               >
                 Close Details
               </button>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* Worker Management Modal */}
-      {showMessLabourWorkerManagement && (
-        <div
-          className="modal-overlay"
-          style={{ zIndex: 1200 }}
-          onClick={handleCloseMessLabourWorkerManagement}
-        >
-          <div
-            className="worker-manager-modal"
-            onClick={(e) => e.stopPropagation()}
-            style={{
-              background: "#f8fafc",
-              borderRadius: "16px",
-              boxShadow: "0 25px 50px -12px rgba(0, 0, 0, 0.25)",
-              width: "90%",
-              maxWidth: "1100px",
-              maxHeight: "90vh",
-              display: "flex",
-              flexDirection: "column",
-              position: "relative",
-            }}
-          >
-            <div
-              style={{
-                display: "flex",
-                justifyContent: "flex-end",
-                padding: "16px 16px 0 16px",
-              }}
-            >
-              <button
-                className="pm-close-btn"
-                style={{
-                  background: "#e2e8f0",
-                  border: "none",
-                  borderRadius: "50%",
-                  width: "36px",
-                  height: "36px",
-                  display: "flex",
-                  alignItems: "center",
-                  justifyContent: "center",
-                  cursor: "pointer",
-                  transition: "all 0.2s",
-                }}
-                onClick={handleCloseMessLabourWorkerManagement}
-              >
-                <X size={20} color="#475569" />
-              </button>
-            </div>
-            <div
-              style={{
-                overflowY: "auto",
-                paddingBottom: "16px",
-              }}
-            >
-              <MessLabourWorkerManagement />
             </div>
           </div>
         </div>

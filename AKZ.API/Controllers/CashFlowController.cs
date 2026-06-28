@@ -69,7 +69,7 @@ public class CashFlowController : ControllerBase
         {
             var processingRecords = await _context.ProcessingRecords
                 .Include(r => r.Workers)
-                    .ThenInclude(w => w.MessLabourWorker)
+                    .ThenInclude(w => w.Worker)
                 .Where(r => r.DeleteFlg == 0)
                 .ToListAsync();
             
@@ -79,9 +79,9 @@ public class CashFlowController : ControllerBase
                 {
                     foreach (var worker in record.Workers)
                     {
-                        if (worker.MessLabourWorker != null && worker.MessLabourWorker.DeleteFlg == 0)
+                        if (worker.Worker != null && worker.Worker.DeleteFlg == 0)
                         {
-                            var cf = EnsureWorker(worker.MessLabourWorker.Name);
+                            var cf = EnsureWorker(worker.Worker.Name);
                             cf.MessLabourFees += worker.WorkerFee;
                         }
                     }

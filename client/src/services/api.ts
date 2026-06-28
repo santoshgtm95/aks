@@ -51,6 +51,7 @@ import type {
   WashGradingWorker,
   CreateWashGradingWorkerDto,
   UpdateWashGradingWorkerDto,
+  MessLabourWorker,
   AvailableProductDto,
   WashGradingProcess,
   WashGradingRecord,
@@ -189,6 +190,10 @@ export const workersAPI = {
   },
   getWashGradingWorkers: async (): Promise<WashGradingWorker[]> => {
     const response = await api.get<WashGradingWorker[]>("/workers/washgrading");
+    return response.data;
+  },
+  getMessLabourWorkers: async (): Promise<MessLabourWorker[]> => {
+    const response = await api.get<MessLabourWorker[]>("/workers/messlabour");
     return response.data;
   },
   create: async (data: Partial<Worker>): Promise<Worker> => {

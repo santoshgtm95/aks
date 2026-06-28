@@ -17,7 +17,7 @@ public class ProcessingRecordWorker
 
     public int MessLabourWorkerId { get; set; }
     [ForeignKey("MessLabourWorkerId")]
-    public MessLabourWorker MessLabourWorker { get; set; } = null!;
+    public Worker Worker { get; set; } = null!;
 
     [Column(TypeName = "decimal(18,2)")]
     public decimal WorkerFee { get; set; }

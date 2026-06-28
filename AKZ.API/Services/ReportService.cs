@@ -225,7 +225,7 @@ public class ReportService
             var processing = await _context.ProcessingRecords
                 .Where(p => p.ProductId == productId && p.DeleteFlg == 0)
                 .Include(p => p.Workers)
-                    .ThenInclude(w => w.MessLabourWorker)
+                    .ThenInclude(w => w.Worker)
                 .FirstOrDefaultAsync();
 
             if (processing != null)
@@ -241,7 +241,7 @@ public class ReportService
                         report.Workers.Add(new WorkerFeeDetailDto
                         {
                             WorkerId = worker.MessLabourWorkerId,
-                            WorkerName = worker.MessLabourWorker?.Name ?? "Unknown",
+                            WorkerName = worker.Worker?.Name ?? "Unknown",
                             FeeAmount = worker.WorkerFee
                         });
                         report.TotalWorkerFees += worker.WorkerFee;

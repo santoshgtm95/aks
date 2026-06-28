@@ -109,4 +109,23 @@ public class WorkersController : ControllerBase
 
         return Ok(workers);
     }
+
+    [HttpGet("messlabour")]
+    public async Task<IActionResult> GetMessLabourWorkers()
+    {
+        var workers = await _context.Workers
+            .Where(w => w.IsActive && w.AssignMessLabour)
+            .OrderBy(w => w.Name)
+            .Select(w => new MessLabourWorkerDto
+            {
+                Id = w.Id,
+                Name = w.Name,
+                WarehouseId = w.WarehouseId ?? 0,
+                WarehouseName = w.WarehouseName ?? "",
+                IsActive = w.IsActive
+            })
+            .ToListAsync();
+
+        return Ok(workers);
+    }
 }

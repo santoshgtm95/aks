@@ -39,7 +39,7 @@ public class SingleDoubleDrawnController : ControllerBase
                 .ThenInclude(rr => rr.PurifiedRecord)
                     .ThenInclude(p => p.ProcessingRecord)
                         .ThenInclude(pr => pr.Workers)
-                            .ThenInclude(w => w.MessLabourWorker)
+                            .ThenInclude(w => w.Worker)
             .Include(r => r.RefinementRecord)
                 .ThenInclude(rr => rr.PurifiedRecord)
                     .ThenInclude(p => p.ProcessingRecord)
@@ -154,7 +154,7 @@ public class SingleDoubleDrawnController : ControllerBase
                 WorkerFees = r.WorkerFees,
 
                 MessLabourWorkerNames = r.RefinementRecord?.PurifiedRecord?.ProcessingRecord?.Workers != null && r.RefinementRecord.PurifiedRecord.ProcessingRecord.Workers.Any()
-                    ? string.Join(", ", r.RefinementRecord.PurifiedRecord.ProcessingRecord.Workers.Where(w => w.MessLabourWorker != null).Select(w => w.MessLabourWorker.Name).Distinct())
+                    ? string.Join(", ", r.RefinementRecord.PurifiedRecord.ProcessingRecord.Workers.Where(w => w.Worker != null).Select(w => w.Worker.Name).Distinct())
                     : (r.RefinementRecord?.PurifiedRecord?.ProcessingRecord?.WorkerNames ?? ""),
                 MessLabourWorkerFees = r.RefinementRecord?.PurifiedRecord?.ProcessingRecord?.Workers != null && r.RefinementRecord.PurifiedRecord.ProcessingRecord.Workers.Any()
                     ? r.RefinementRecord.PurifiedRecord.ProcessingRecord.Workers.Sum(w => w.WorkerFee)
@@ -193,7 +193,7 @@ public class SingleDoubleDrawnController : ControllerBase
             .Include(rr => rr.PurifiedRecord)
                 .ThenInclude(p => p.ProcessingRecord)
                     .ThenInclude(pr => pr.Workers)
-                        .ThenInclude(w => w.MessLabourWorker)
+                        .ThenInclude(w => w.Worker)
             .Include(rr => rr.PurifiedRecord)
                 .ThenInclude(p => p.ProcessingRecord)
                     .ThenInclude(pr => pr.WashGradingRecord)
@@ -372,7 +372,7 @@ public class SingleDoubleDrawnController : ControllerBase
             WorkerFees = record.WorkerFees,
 
             MessLabourWorkerNames = refinementRecord.PurifiedRecord?.ProcessingRecord?.Workers != null && refinementRecord.PurifiedRecord.ProcessingRecord.Workers.Any()
-                ? string.Join(", ", refinementRecord.PurifiedRecord.ProcessingRecord.Workers.Where(w => w.MessLabourWorker != null).Select(w => w.MessLabourWorker.Name).Distinct())
+                ? string.Join(", ", refinementRecord.PurifiedRecord.ProcessingRecord.Workers.Where(w => w.Worker != null).Select(w => w.Worker.Name).Distinct())
                 : (refinementRecord.PurifiedRecord?.ProcessingRecord?.WorkerNames ?? ""),
             MessLabourWorkerFees = refinementRecord.PurifiedRecord?.ProcessingRecord?.Workers != null && refinementRecord.PurifiedRecord.ProcessingRecord.Workers.Any()
                 ? refinementRecord.PurifiedRecord.ProcessingRecord.Workers.Sum(w => w.WorkerFee)
