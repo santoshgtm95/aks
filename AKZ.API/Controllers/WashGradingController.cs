@@ -70,7 +70,7 @@ public class WashGradingController : ControllerBase
 
         var products = await _context.Products
             .Include(p => p.Warehouse)
-            .Where(p => p.IsActive && p.RemainingWeight > 0.0001m)
+            .Where(p => p.IsActive && p.RemainingWeight > 0.001m)
             .Where(p => warehouseId == null || p.WarehouseId == warehouseId)
             .OrderByDescending(p => p.Date)
             .Select(p => new AvailableProductDto
@@ -203,7 +203,7 @@ public class WashGradingController : ControllerBase
         bool isProductKg = productUnit.Contains("kg") || productUnit.Contains("kilogram");
         decimal weightInProductUnit = isProductKg ? dto.Weight * 1.633m : dto.Weight;
 
-        if (weightInProductUnit > product.RemainingWeight)
+        if (Math.Round(weightInProductUnit, 3) > product.RemainingWeight)
             return BadRequest(new { message = $"လက်ကျန် မလုံလောက်ပါ (ကျန်: {product.RemainingWeight})" });
 
         product.RemainingWeight -= weightInProductUnit;

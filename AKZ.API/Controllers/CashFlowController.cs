@@ -148,12 +148,12 @@ public class CashFlowController : ControllerBase
         {
             // 3. Refinement
             var refinementRecords = await _context.RefinementRecords
-                .Include(r => r.RefinementWorker)
-                .Where(r => r.RefinementWorker != null && r.DeleteFlg == 0 && r.RefinementWorker.DeleteFlg == 0)
+                .Include(r => r.Worker)
+                .Where(r => r.Worker != null && r.DeleteFlg == 0 && r.Worker.DeleteFlg == 0)
                 .ToListAsync();
             foreach (var r in refinementRecords)
             {
-                var cf = EnsureWorker(r.RefinementWorker!.Name);
+                var cf = EnsureWorker(r.Worker!.Name);
                 cf.RefinementFees += r.WorkerFees;
             }
 

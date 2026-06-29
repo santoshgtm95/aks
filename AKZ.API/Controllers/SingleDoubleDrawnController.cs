@@ -46,7 +46,7 @@ public class SingleDoubleDrawnController : ControllerBase
                         .ThenInclude(pr => pr.WashGradingRecord)
                             .ThenInclude(wg => wg.Worker)
             .Include(r => r.RefinementRecord)
-                .ThenInclude(rr => rr.RefinementWorker)
+                .ThenInclude(rr => rr.Worker)
             .Include(r => r.RefinementRecord)
                 .ThenInclude(rr => rr.PurifiedRecord)
                     .ThenInclude(p => p.Place)
@@ -168,7 +168,7 @@ public class SingleDoubleDrawnController : ControllerBase
                 PurificationSupervisorName = r.RefinementRecord?.PurifiedRecord?.Place?.SupervisorName ?? "",
                 PurificationSupervisorFees = r.RefinementRecord?.PurifiedRecord?.SupervisorFees ?? 0M,
                 PurifiedRecordId = r.RefinementRecord?.PurifiedRecord?.Id,
-                RefinementWorkerName = r.RefinementRecord?.RefinementWorker?.Name ?? "",
+                RefinementWorkerName = r.RefinementRecord?.Worker?.Name ?? "",
                 RefinementWorkerFees = r.RefinementRecord?.WorkerFees ?? 0M,
                 WashGradingWorkerName = r.RefinementRecord?.PurifiedRecord?.ProcessingRecord?.WashGradingRecord?.Worker?.Name ?? "",
                 WashGradingWorkerFees = r.RefinementRecord?.PurifiedRecord?.ProcessingRecord?.WashGradingRecord?.WorkerFees ?? 0M,
@@ -198,7 +198,7 @@ public class SingleDoubleDrawnController : ControllerBase
                 .ThenInclude(p => p.ProcessingRecord)
                     .ThenInclude(pr => pr.WashGradingRecord)
                         .ThenInclude(wg => wg.Worker)
-            .Include(rr => rr.RefinementWorker)
+            .Include(rr => rr.Worker)
             .Include(rr => rr.PurifiedRecord)
                 .ThenInclude(p => p.Place)
             .Include(rr => rr.PurifiedRecord)
@@ -386,7 +386,7 @@ public class SingleDoubleDrawnController : ControllerBase
             PurificationSupervisorName = refinementRecord.PurifiedRecord?.Place?.SupervisorName ?? "",
             PurificationSupervisorFees = refinementRecord.PurifiedRecord?.SupervisorFees ?? 0M,
             PurifiedRecordId = refinementRecord.PurifiedRecord?.Id,
-            RefinementWorkerName = refinementRecord.RefinementWorker?.Name ?? "",
+            RefinementWorkerName = refinementRecord.Worker?.Name ?? "",
             RefinementWorkerFees = refinementRecord.WorkerFees,
             WashGradingWorkerName = refinementRecord.PurifiedRecord?.ProcessingRecord?.WashGradingRecord?.Worker?.Name ?? "",
             WashGradingWorkerFees = refinementRecord.PurifiedRecord?.ProcessingRecord?.WashGradingRecord?.WorkerFees ?? 0M,

@@ -30,20 +30,28 @@ import "./index.css";
 const WashGrading: React.FC = () => {
   const { hasPermission } = useAuth();
   const { showAlert, showConfirm } = useNotification();
-  const [availableProducts, setAvailableProducts] = useState<AvailableProductDto[]>([]);
+  const [availableProducts, setAvailableProducts] = useState<
+    AvailableProductDto[]
+  >([]);
   const [processes, setProcesses] = useState<WashGradingProcess[]>([]);
   const [records, setRecords] = useState<WashGradingRecord[]>([]);
   const [activeTab, setActiveTab] = useState<"history" | "stock">("history");
   const [workers, setWorkers] = useState<WashGradingWorker[]>([]);
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState<number | null>(null);
-  const [selectedWorkers, setSelectedWorkers] = useState<Record<number, number>>({});
+  const [selectedWorkers, setSelectedWorkers] = useState<
+    Record<number, number>
+  >({});
   const [searchTerm, setSearchTerm] = useState("");
   const [showModal, setShowModal] = useState(false);
-  const [selectedProduct, setSelectedProduct] = useState<AvailableProductDto | null>(null);
-  const [editingProcess, setEditingProcess] = useState<WashGradingProcess | null>(null);
-  const [editingRecord, setEditingRecord] = useState<WashGradingRecord | null>(null);
-  
+  const [selectedProduct, setSelectedProduct] =
+    useState<AvailableProductDto | null>(null);
+  const [editingProcess, setEditingProcess] =
+    useState<WashGradingProcess | null>(null);
+  const [editingRecord, setEditingRecord] = useState<WashGradingRecord | null>(
+    null,
+  );
+
   const [form, setForm] = useState({
     weight: "",
     lostWeight: "",
@@ -56,8 +64,8 @@ const WashGrading: React.FC = () => {
   const originalWeight = editingProcess
     ? editingProcess.weight
     : editingRecord
-    ? editingRecord.weight + editingRecord.lostWeight
-    : 0;
+      ? editingRecord.weight + editingRecord.lostWeight
+      : 0;
 
   useEffect(() => {
     loadData();
@@ -83,7 +91,9 @@ const WashGrading: React.FC = () => {
   };
 
   const getVissWeight = (avail: AvailableProductDto): number => {
-    const isKg = avail.unit?.toLowerCase().includes("kg") || avail.unit?.toLowerCase().includes("kilogram");
+    const isKg =
+      avail.unit?.toLowerCase().includes("kg") ||
+      avail.unit?.toLowerCase().includes("kilogram");
     return isKg ? avail.remainingWeight / 1.633 : avail.remainingWeight;
   };
 
@@ -92,7 +102,11 @@ const WashGrading: React.FC = () => {
     const weight = getVissWeight(avail);
     const washGradingWorkerId = selectedWorkers[productId];
     if (!washGradingWorkerId) {
-      return showAlert("Validation", "Please select a wash/grading worker", "error");
+      return showAlert(
+        "Validation",
+        "Please select a wash/grading worker",
+        "error",
+      );
     }
     setSubmitting(productId);
     try {
@@ -252,7 +266,9 @@ const WashGrading: React.FC = () => {
     return (
       vissWeight >= 0.001 &&
       (a.productMarker.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        (a.warehouseName || "").toLowerCase().includes(searchTerm.toLowerCase()))
+        (a.warehouseName || "")
+          .toLowerCase()
+          .includes(searchTerm.toLowerCase()))
     );
   });
 
@@ -281,7 +297,9 @@ const WashGrading: React.FC = () => {
         <div className="wg-hero-right">
           <div className="wg-stat-pill">
             <span className="stat-num">{records.length}</span>
-            <span className="stat-label">{records.length === 1 ? 'Record' : 'Records'}</span>
+            <span className="stat-label">
+              {records.length === 1 ? "Record" : "Records"}
+            </span>
           </div>
         </div>
       </div>
@@ -289,221 +307,315 @@ const WashGrading: React.FC = () => {
       <div className="wg-layout">
         {/* ── LEFT SIDEBAR ── */}
         <aside className="wg-sidebar">
-        <div className="wg-sidebar-header">
-          <Sparkles size={18} />
-          <span>Select Inventory to Wash</span>
-        </div>
-
-        <div className="wg-search-box">
-          <Search size={16} className="wg-search-icon" />
-          <input
-            type="text"
-            placeholder="Search bag marker or warehouse..."
-            className="wg-search-input"
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-          />
-        </div>
-
-        <div className="wg-card-list">
-          {filtered.length === 0 ? (
-            <div className="wg-empty-sidebar">
-              {searchTerm ? "No matching products found" : "No products available"}
-            </div>
-          ) : (
-            filtered.map((avail) => {
-              const vissWeight = getVissWeight(avail);
-              return (
-                <div key={avail.productId} className="wg-product-card">
-                  {/* Card Top */}
-                  <div className="wg-card-top">
-                    <div className="wg-card-info">
-                      <span className="wg-card-marker">{avail.productMarker}</span>
-                      <span className="wg-card-warehouse">{avail.warehouseName || "---"}</span>
-                    </div>
-                    <span className="wg-badge">{avail.unit}</span>
-                  </div>
-
-                  {/* Stats Row */}
-                  <div className="wg-stats-row">
-                    <div className="wg-stat">
-                      <span className="wg-stat-label">Remaining</span>
-                      <span className="wg-stat-value">
-                        {avail.remainingWeight.toFixed(2)}{" "}
-                        <span className="wg-stat-unit">{avail.unit}</span>
-                      </span>
-                    </div>
-                    <div className="wg-stat">
-                      <span className="wg-stat-label">Weight</span>
-                      <span className="wg-stat-value wg-stat-blue">
-                        {vissWeight.toFixed(4)}{" "}
-                        <span className="wg-stat-unit">viss</span>
-                      </span>
-                    </div>
-                  </div>
-
-                  {/* Worker Select */}
-                  <div className="wg-worker-select-wrap">
-                    <label className="wg-field-label">Wash/Grading Worker</label>
-                    <select
-                      className="wg-select"
-                      value={selectedWorkers[avail.productId] || ""}
-                      onChange={(e) =>
-                        setSelectedWorkers((prev) => ({
-                          ...prev,
-                          [avail.productId]: parseInt(e.target.value),
-                        }))
-                      }
-                    >
-                      <option value="">-- Select Worker --</option>
-                      {workers
-                        .filter((w) => w.warehouseId === avail.warehouseId && w.isActive)
-                        .map((w) => (
-                          <option key={w.id} value={w.id}>
-                            {w.name}
-                          </option>
-                        ))}
-                    </select>
-                  </div>
-
-                  {/* Assign Button */}
-                  <button
-                    className="wg-assign-btn"
-                    onClick={() => handleInlineSubmit(avail)}
-                    disabled={submitting === avail.productId}
-                  >
-                    {submitting === avail.productId ? (
-                      <>
-                        <Loader2 className="wg-spin" size={16} /> Processing...
-                      </>
-                    ) : (
-                      <>
-                        <Send size={16} /> Assign to Wash
-                      </>
-                    )}
-                  </button>
-
-                  {/* Skip Button */}
-                  <button
-                    className="wg-skip-btn"
-                    onClick={() => handleSkip(avail)}
-                    disabled={submitting === avail.productId}
-                  >
-                    {submitting === avail.productId ? (
-                      <>
-                        <Loader2 className="wg-spin" size={16} /> Processing...
-                      </>
-                    ) : (
-                      <>
-                        Skip
-                      </>
-                    )}
-                  </button>
-                </div>
-              );
-            })
-          )}
-        </div>
-      </aside>
-
-      {/* ── MAIN CONTENT ── */}
-      <main className="wg-main">
-        <div className="wg-main-card">
-          {/* Header */}
-          <div className="wg-main-header">
-            <div className="wg-header-left">
-              <div className="wg-header-icon">
-                <History size={28} />
-              </div>
-
-              <div className="wg-tab-group">
-                <button
-                  className={`wg-tab ${activeTab === "history" ? "wg-tab-active" : ""}`}
-                  onClick={() => setActiveTab("history")}
-                >
-                  <span className="wg-tab-title">Wash/Grading History</span>
-                  <span className="wg-tab-sub">Ongoing processes</span>
-                </button>
-                <button
-                  className={`wg-tab ${activeTab === "stock" ? "wg-tab-active wg-tab-green" : ""}`}
-                  onClick={() => setActiveTab("stock")}
-                >
-                  <span className="wg-tab-title">Washed Stock</span>
-                  <span className="wg-tab-sub">Completed records</span>
-                </button>
-              </div>
-            </div>
-
-            <div className="wg-header-right">
-            </div>
+          <div className="wg-sidebar-header">
+            <Sparkles size={18} />
+            <span>Select Inventory to Wash</span>
           </div>
 
-          {/* Table */}
-          <div className="wg-table-wrap">
-            <table className="wg-table">
-              <thead>
-                {activeTab === "history" ? (
-                  <tr>
-                    <th>Date</th>
-                    <th>Product Marker</th>
-                    <th>Weight (viss)</th>
-                    <th>Worker</th>
-                    <th className="wg-th-right">Actions</th>
-                  </tr>
-                ) : (
-                  <tr>
-                    <th>Date</th>
-                    <th>Product Marker</th>
-                    <th>Output Weight</th>
-                    <th>Lost Weight</th>
-                    <th>Worker</th>
-                    <th>Worker Fees</th>
-                    <th className="wg-th-right">Actions</th>
-                  </tr>
-                )}
-              </thead>
-              <tbody>
-                {activeTab === "history" ? (
-                  processes.length === 0 ? (
+          <div className="wg-search-box">
+            <Search size={16} className="wg-search-icon" />
+            <input
+              type="text"
+              placeholder="Search bag marker or warehouse..."
+              className="wg-search-input"
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+            />
+          </div>
+
+          <div className="wg-card-list">
+            {filtered.length === 0 ? (
+              <div className="wg-empty-sidebar">
+                {searchTerm
+                  ? "No matching products found"
+                  : "No products available"}
+              </div>
+            ) : (
+              filtered.map((avail) => {
+                const vissWeight = getVissWeight(avail);
+                return (
+                  <div key={avail.productId} className="wg-product-card">
+                    {/* Card Top */}
+                    <div className="wg-card-top">
+                      <div className="wg-card-info">
+                        <span className="wg-card-marker">
+                          {avail.productMarker}
+                        </span>
+                        <span className="wg-card-warehouse">
+                          {avail.warehouseName || "---"}
+                        </span>
+                      </div>
+                      <span className="wg-badge">{avail.unit}</span>
+                    </div>
+
+                    {/* Stats Row */}
+                    <div className="wg-stats-row">
+                      <div className="wg-stat">
+                        <span className="wg-stat-label">Remaining</span>
+                        <span className="wg-stat-value">
+                          {avail.remainingWeight.toFixed(2)}{" "}
+                          <span className="wg-stat-unit">{avail.unit}</span>
+                        </span>
+                      </div>
+                      <div className="wg-stat">
+                        <span className="wg-stat-label">Weight</span>
+                        <span className="wg-stat-value wg-stat-blue">
+                          {vissWeight.toFixed(4)}{" "}
+                          <span className="wg-stat-unit">viss</span>
+                        </span>
+                      </div>
+                    </div>
+
+                    {/* Worker Select */}
+                    <div className="wg-worker-select-wrap">
+                      <label className="wg-field-label">
+                        Wash/Grading Worker
+                      </label>
+                      <select
+                        className="wg-select"
+                        value={selectedWorkers[avail.productId] || ""}
+                        onChange={(e) =>
+                          setSelectedWorkers((prev) => ({
+                            ...prev,
+                            [avail.productId]: parseInt(e.target.value),
+                          }))
+                        }
+                      >
+                        <option value="">-- Select Worker --</option>
+                        {workers
+                          .filter(
+                            (w) =>
+                              w.warehouseId === avail.warehouseId && w.isActive,
+                          )
+                          .map((w) => (
+                            <option key={w.id} value={w.id}>
+                              {w.name}
+                            </option>
+                          ))}
+                      </select>
+                    </div>
+
+                    {/* Assign Button */}
+                    <button
+                      className="wg-assign-btn"
+                      onClick={() => handleInlineSubmit(avail)}
+                      disabled={submitting === avail.productId}
+                    >
+                      {submitting === avail.productId ? (
+                        <>
+                          <Loader2 className="wg-spin" size={16} />{" "}
+                          Processing...
+                        </>
+                      ) : (
+                        <>
+                          <Send size={16} /> Assign to Wash
+                        </>
+                      )}
+                    </button>
+
+                    {/* Skip Button */}
+                    <button
+                      className="wg-skip-btn"
+                      onClick={() => handleSkip(avail)}
+                      disabled={submitting === avail.productId}
+                    >
+                      {submitting === avail.productId ? (
+                        <>
+                          <Loader2 className="wg-spin" size={16} />{" "}
+                          Processing...
+                        </>
+                      ) : (
+                        <>Skip</>
+                      )}
+                    </button>
+                  </div>
+                );
+              })
+            )}
+          </div>
+        </aside>
+
+        {/* ── MAIN CONTENT ── */}
+        <main className="wg-main">
+          <div className="wg-main-card">
+            {/* Header */}
+            <div className="wg-main-header">
+              <div className="wg-header-left">
+                <div className="wg-header-icon">
+                  <History size={28} />
+                </div>
+
+                <div className="wg-tab-group">
+                  <button
+                    className={`wg-tab ${activeTab === "history" ? "wg-tab-active" : ""}`}
+                    onClick={() => setActiveTab("history")}
+                  >
+                    <span className="wg-tab-title">Wash/Grading History</span>
+                    <span className="wg-tab-sub">Ongoing processes</span>
+                  </button>
+                  <button
+                    className={`wg-tab ${activeTab === "stock" ? "wg-tab-active wg-tab-green" : ""}`}
+                    onClick={() => setActiveTab("stock")}
+                  >
+                    <span className="wg-tab-title">Washed Stock</span>
+                    <span className="wg-tab-sub">Completed records</span>
+                  </button>
+                </div>
+              </div>
+
+              <div className="wg-header-right"></div>
+            </div>
+
+            {/* Table */}
+            <div className="wg-table-wrap">
+              <table className="wg-table">
+                <thead>
+                  {activeTab === "history" ? (
                     <tr>
-                      <td colSpan={5} className="wg-empty-row">
-                        <History size={44} className="wg-empty-icon" />
-                        <span>No wash/grading processes registered yet</span>
+                      <th>Date</th>
+                      <th>Product Marker</th>
+                      <th>Weight (viss)</th>
+                      <th>Worker</th>
+                      <th className="wg-th-right">Actions</th>
+                    </tr>
+                  ) : (
+                    <tr>
+                      <th>Date</th>
+                      <th>Product Marker</th>
+                      <th>Output Weight</th>
+                      <th>Lost Weight</th>
+                      <th>Worker</th>
+                      <th>Worker Fees</th>
+                      <th className="wg-th-right">Actions</th>
+                    </tr>
+                  )}
+                </thead>
+                <tbody>
+                  {activeTab === "history" ? (
+                    processes.length === 0 ? (
+                      <tr>
+                        <td colSpan={5} className="wg-empty-row">
+                          <History size={44} className="wg-empty-icon" />
+                          <span>No wash/grading processes registered yet</span>
+                        </td>
+                      </tr>
+                    ) : (
+                      processes.map((p) => (
+                        <tr
+                          key={p.id}
+                          className="wg-clickable-row"
+                          onClick={() => handleEditProcess(p)}
+                        >
+                          <td className="wg-td-date">
+                            {formatDateTime(p.date)}
+                          </td>
+                          <td>
+                            <div className="wg-marker">{p.productMarker}</div>
+                            <div className="wg-warehouse">
+                              {p.warehouseName || "---"}
+                            </div>
+                          </td>
+                          <td className="wg-td-weight">
+                            {p.weight.toFixed(3)}
+                          </td>
+                          <td>
+                            <div className="wg-worker-cell">
+                              <User size={13} />
+                              {p.washGradingWorkerName || "---"}
+                            </div>
+                          </td>
+                          <td onClick={(e) => e.stopPropagation()}>
+                            <div className="wg-actions">
+                              {hasPermission("WashGrading.Edit") && (
+                                <button
+                                  className="wg-action-btn wg-edit-btn"
+                                  onClick={() => handleEditProcess(p)}
+                                >
+                                  <Pencil size={14} />
+                                </button>
+                              )}
+                              {hasPermission("WashGrading.Delete") && (
+                                <button
+                                  className="wg-action-btn wg-delete-btn"
+                                  onClick={() => handleDelete(p.id)}
+                                >
+                                  <Trash2 size={14} />
+                                </button>
+                              )}
+                            </div>
+                          </td>
+                        </tr>
+                      ))
+                    )
+                  ) : records.length === 0 ? (
+                    <tr>
+                      <td colSpan={7} className="wg-empty-row">
+                        <Package size={44} className="wg-empty-icon" />
+                        <span>No completed records yet</span>
                       </td>
                     </tr>
                   ) : (
-                    processes.map((p) => (
-                      <tr
-                        key={p.id}
-                        className="wg-clickable-row"
-                        onClick={() => handleEditProcess(p)}
-                      >
-                        <td className="wg-td-date">{formatDateTime(p.date)}</td>
+                    records.map((r) => (
+                      <tr key={r.id}>
+                        <td className="wg-td-date">{formatDateTime(r.date)}</td>
                         <td>
-                          <div className="wg-marker">{p.productMarker}</div>
-                          <div className="wg-warehouse">{p.warehouseName || "---"}</div>
+                          <div
+                            style={{
+                              display: "flex",
+                              alignItems: "center",
+                              gap: "8px",
+                            }}
+                          >
+                            <span className="wg-marker">{r.productMarker}</span>
+                            {r.washGradingWorkerId ? (
+                              <span className="wg-status-badge wg-status-washed">
+                                Washed
+                              </span>
+                            ) : (
+                              <span className="wg-status-badge wg-status-unwashed">
+                                Unwashed
+                              </span>
+                            )}
+                          </div>
+                          <div className="wg-warehouse">
+                            {r.warehouseName || "---"}
+                          </div>
                         </td>
-                        <td className="wg-td-weight">{p.weight.toFixed(3)}</td>
+                        <td className="wg-td-weight wg-green">
+                          {r.weight.toFixed(3)}
+                        </td>
+                        <td className="wg-td-lost">
+                          {r.lostWeight.toFixed(3)}
+                        </td>
                         <td>
                           <div className="wg-worker-cell">
                             <User size={13} />
-                            {p.washGradingWorkerName || "---"}
+                            {r.washGradingWorkerName || "Skipped (Unwashed)"}
                           </div>
                         </td>
-                        <td onClick={(e) => e.stopPropagation()}>
+                        <td>
+                          {r.workerFees?.toLocaleString(undefined, {
+                            minimumFractionDigits: 2,
+                            maximumFractionDigits: 2,
+                          }) || "0.00"}
+                        </td>
+                        <td>
                           <div className="wg-actions">
-                            {hasPermission("WashGrading.Edit") && (
-                              <button
-                                className="wg-action-btn wg-edit-btn"
-                                onClick={() => handleEditProcess(p)}
-                              >
-                                <Pencil size={14} />
-                              </button>
-                            )}
                             {hasPermission("WashGrading.Delete") && (
                               <button
                                 className="wg-action-btn wg-delete-btn"
-                                onClick={() => handleDelete(p.id)}
+                                onClick={() => handleDeleteRecord(r.id)}
+                                disabled={!!r.isUsedInMessLabour}
+                                title={
+                                  r.isUsedInMessLabour
+                                    ? "Cannot delete — this record has been used in Mess Labour processing"
+                                    : "Delete record"
+                                }
+                                style={
+                                  r.isUsedInMessLabour
+                                    ? { opacity: 0.35, cursor: "not-allowed" }
+                                    : undefined
+                                }
                               >
                                 <Trash2 size={14} />
                               </button>
@@ -512,73 +624,25 @@ const WashGrading: React.FC = () => {
                         </td>
                       </tr>
                     ))
-                  )
-                ) : records.length === 0 ? (
-                  <tr>
-                    <td colSpan={7} className="wg-empty-row">
-                      <Package size={44} className="wg-empty-icon" />
-                      <span>No completed records yet</span>
-                    </td>
-                  </tr>
-                ) : (
-                  records.map((r) => (
-                    <tr key={r.id}>
-                      <td className="wg-td-date">{formatDateTime(r.date)}</td>
-                      <td>
-                        <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
-                          <span className="wg-marker">{r.productMarker}</span>
-                          {r.washGradingWorkerId ? (
-                            <span className="wg-status-badge wg-status-washed">Washed</span>
-                          ) : (
-                            <span className="wg-status-badge wg-status-unwashed">Unwashed</span>
-                          )}
-                        </div>
-                        <div className="wg-warehouse">{r.warehouseName || "---"}</div>
-                      </td>
-                      <td className="wg-td-weight wg-green">{r.weight.toFixed(3)}</td>
-                      <td className="wg-td-lost">{r.lostWeight.toFixed(3)}</td>
-                      <td>
-                        <div className="wg-worker-cell">
-                          <User size={13} />
-                          {r.washGradingWorkerName || "Skipped (Unwashed)"}
-                        </div>
-                      </td>
-                      <td>
-                        {r.workerFees?.toLocaleString(undefined, {
-                          minimumFractionDigits: 2,
-                          maximumFractionDigits: 2,
-                        }) || "0.00"}
-                      </td>
-                      <td>
-                        <div className="wg-actions">
-                          {hasPermission("WashGrading.Delete") && (
-                            <button
-                              className="wg-action-btn wg-delete-btn"
-                              onClick={() => handleDeleteRecord(r.id)}
-                              disabled={!!r.isUsedInMessLabour}
-                              title={r.isUsedInMessLabour ? "Cannot delete — this record has been used in Mess Labour processing" : "Delete record"}
-                              style={r.isUsedInMessLabour ? { opacity: 0.35, cursor: "not-allowed" } : undefined}
-                            >
-                              <Trash2 size={14} />
-                            </button>
-                          )}
-                        </div>
-                      </td>
-                    </tr>
-                  ))
-                )}
-              </tbody>
-            </table>
+                  )}
+                </tbody>
+              </table>
+            </div>
           </div>
-        </div>
-      </main>
-    </div>
+        </main>
+      </div>
 
       {/* ── FORM POPUP MODAL (COMPLETE / EDIT) ── */}
       {showModal && (
         <div className="wg-modal-backdrop" onClick={() => setShowModal(false)}>
-          <div className="wg-modal-content" onClick={(e) => e.stopPropagation()}>
-            <button className="wg-modal-close" onClick={() => setShowModal(false)}>
+          <div
+            className="wg-modal-content"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <button
+              className="wg-modal-close"
+              onClick={() => setShowModal(false)}
+            >
               <X size={20} />
             </button>
             <div className="wg-modal-header">
@@ -586,8 +650,8 @@ const WashGrading: React.FC = () => {
                 {editingRecord
                   ? "Edit Wash/Grading Record"
                   : editingProcess
-                  ? "Complete Wash/Grading Process"
-                  : "Assign Wash/Grading"}
+                    ? "Complete Wash/Grading Process"
+                    : "Assign Wash/Grading"}
               </h3>
               <p>
                 Product Marker:{" "}
@@ -615,7 +679,10 @@ const WashGrading: React.FC = () => {
                 {/* Original Weight */}
                 <div className="wg-form-group" style={{ marginBottom: "4px" }}>
                   <span className="wg-field-label" style={{ color: "#475569" }}>
-                    Original Weight: <strong style={{ color: "#0f172a" }}>{originalWeight.toFixed(3)} viss</strong>
+                    Original Weight:{" "}
+                    <strong style={{ color: "#0f172a" }}>
+                      {originalWeight.toFixed(3)} viss
+                    </strong>
                   </span>
                 </div>
 
@@ -634,9 +701,16 @@ const WashGrading: React.FC = () => {
                       const outputVal = parseFloat(val);
                       let lostWeightVal = "";
                       if (!isNaN(outputVal)) {
-                        lostWeightVal = Math.max(0, originalWeight - outputVal).toFixed(3);
+                        lostWeightVal = Math.max(
+                          0,
+                          originalWeight - outputVal,
+                        ).toFixed(3);
                       }
-                      setForm({ ...form, weight: val, lostWeight: lostWeightVal });
+                      setForm({
+                        ...form,
+                        weight: val,
+                        lostWeight: lostWeightVal,
+                      });
                     }}
                   />
                 </div>
@@ -651,7 +725,9 @@ const WashGrading: React.FC = () => {
                     placeholder="0"
                     className="wg-input"
                     value={form.lostWeight}
-                    onChange={(e) => setForm({ ...form, lostWeight: e.target.value })}
+                    onChange={(e) =>
+                      setForm({ ...form, lostWeight: e.target.value })
+                    }
                   />
                 </div>
 
@@ -674,8 +750,8 @@ const WashGrading: React.FC = () => {
                         (w) =>
                           w.warehouseId ===
                             (editingProcess?.warehouseId ||
-                             editingRecord?.warehouseId ||
-                             selectedProduct?.warehouseId) && w.isActive,
+                              editingRecord?.warehouseId ||
+                              selectedProduct?.warehouseId) && w.isActive,
                       )
                       .map((w) => (
                         <option key={w.id} value={w.id}>
@@ -695,7 +771,9 @@ const WashGrading: React.FC = () => {
                     placeholder="0"
                     className="wg-input"
                     value={form.workerFees}
-                    onChange={(e) => setForm({ ...form, workerFees: e.target.value })}
+                    onChange={(e) =>
+                      setForm({ ...form, workerFees: e.target.value })
+                    }
                   />
                 </div>
               </div>

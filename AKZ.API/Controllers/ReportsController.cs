@@ -356,7 +356,7 @@ public class ReportsController : ControllerBase
                 r.Category,
                 r.Count,
                 r.Weight,
-                r.RefinementWorker != null ? r.RefinementWorker.Name : "",
+                r.Worker != null ? r.Worker.Name : "",
                 r.LostWeight,
                 r.SpoilageWeight,
                 r.ReturnWeight,

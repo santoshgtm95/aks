@@ -99,7 +99,7 @@ public class RefinementController : ControllerBase
                 .ThenInclude(p => p.ProcessingRecord)
                     .ThenInclude(pr => pr.Product)
                         .ThenInclude(prod => prod.Warehouse)
-            .Include(r => r.RefinementWorker)
+            .Include(r => r.Worker)
             .Include(r => r.RefinementRecords)
             .Where(r => r.DeleteFlg == 0)
             .Where(r => warehouseId == null || r.PurifiedRecord.ProcessingRecord.Product.WarehouseId == warehouseId)
@@ -138,7 +138,7 @@ public class RefinementController : ControllerBase
                 RemainingWeightAfter = r.RemainingWeightAfter,
                 WarehouseName = warehouseName,
                 RefinementWorkerId = r.RefinementWorkerId,
-                RefinementWorkerName = r.RefinementWorker?.Name ?? "",
+                RefinementWorkerName = r.Worker?.Name ?? "",
                 WorkerFees = r.WorkerFees,
             });
         }
@@ -158,7 +158,7 @@ public class RefinementController : ControllerBase
                 .ThenInclude(p => p.ProcessingRecord)
                     .ThenInclude(pr => pr.Product)
                         .ThenInclude(prod => prod.Warehouse)
-            .Include(r => r.RefinementWorker)
+            .Include(r => r.Worker)
             .Where(r => r.DeleteFlg == 0)
             .Where(r => warehouseId == null || r.PurifiedRecord.ProcessingRecord.Product.WarehouseId == warehouseId)
             .OrderByDescending(r => r.Date)
@@ -188,7 +188,7 @@ public class RefinementController : ControllerBase
                 Weight = r.Weight,
                 WarehouseName = warehouseName,
                 RefinementWorkerId = r.RefinementWorkerId,
-                RefinementWorkerName = r.RefinementWorker?.Name ?? "",
+                RefinementWorkerName = r.Worker?.Name ?? "",
                 LostWeight = r.LostWeight,
                 SpoilageWeight = r.SpoilageWeight,
                 ReturnWeight = r.ReturnWeight,

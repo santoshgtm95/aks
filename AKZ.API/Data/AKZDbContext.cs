@@ -406,7 +406,7 @@ public class AKZDbContext : DbContext
             .OnDelete(DeleteBehavior.SetNull);
 
         modelBuilder.Entity<RefinementProcess>()
-            .HasOne(r => r.RefinementWorker)
+            .HasOne(r => r.Worker)
             .WithMany()
             .HasForeignKey(r => r.RefinementWorkerId)
             .OnDelete(DeleteBehavior.Restrict);
@@ -418,7 +418,7 @@ public class AKZDbContext : DbContext
             .OnDelete(DeleteBehavior.Restrict);
 
         modelBuilder.Entity<RefinementRecord>()
-            .HasOne(r => r.RefinementWorker)
+            .HasOne(r => r.Worker)
             .WithMany()
             .HasForeignKey(r => r.RefinementWorkerId)
             .OnDelete(DeleteBehavior.Restrict);

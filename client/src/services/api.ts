@@ -196,6 +196,14 @@ export const workersAPI = {
     const response = await api.get<MessLabourWorker[]>("/workers/messlabour");
     return response.data;
   },
+  getGirdleBushWorkers: async (): Promise<RefinementWorker[]> => {
+    const response = await api.get<RefinementWorker[]>("/workers/girdlebush");
+    return response.data;
+  },
+  getSingleDoubleDrawnWorkers: async (): Promise<SingleDoubleDrawnWorker[]> => {
+    const response = await api.get<SingleDoubleDrawnWorker[]>("/workers/singledoubledrawn");
+    return response.data;
+  },
   create: async (data: Partial<Worker>): Promise<Worker> => {
     const response = await api.post<Worker>("/workers", data);
     return response.data;

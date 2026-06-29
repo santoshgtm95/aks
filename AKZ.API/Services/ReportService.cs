@@ -385,12 +385,12 @@ public class ReportService
                     : 0;
                 report.TotalRefinementFees = refinement.WorkerFees;
 
-                if (refinement.RefinementWorker != null)
+                if (refinement.Worker != null)
                 {
                     report.Workers.Add(new WorkerFeeDetailDto
                     {
-                        WorkerId = refinement.RefinementWorker.Id,
-                        WorkerName = refinement.RefinementWorker.Name,
+                        WorkerId = refinement.Worker.Id,
+                        WorkerName = refinement.Worker.Name,
                         FeeAmount = refinement.WorkerFees
                     });
                 }
@@ -421,7 +421,7 @@ public class ReportService
             // Fetch all refinement records with worker information
             var refinementRecords = await _context.RefinementRecords
                 .Where(r => r.PurifiedRecord.ProcessingRecord.ProductId == productId && r.DeleteFlg == 0)
-                .Include(r => r.RefinementWorker)
+                .Include(r => r.Worker)
                 .ToListAsync();
 
             if (refinementRecords.Any())
@@ -435,7 +435,7 @@ public class ReportService
 
                 foreach (var record in refinementRecords)
                 {
-                    var workerName = record.RefinementWorker?.Name ?? "Unknown";
+                    var workerName = record.Worker?.Name ?? "Unknown";
                     // InputWeight = RemainingWeight + LostWeight + ReturnWeight + SpoilageWeight
                     var inputWeight = record.RemainingWeight + record.LostWeight + record.ReturnWeight + record.SpoilageWeight;
                     // OutputWeight = RemainingWeight

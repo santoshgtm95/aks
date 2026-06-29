@@ -128,4 +128,41 @@ public class WorkersController : ControllerBase
 
         return Ok(workers);
     }
+
+    [HttpGet("girdlebush")]
+    public async Task<IActionResult> GetGirdleBushWorkers()
+    {
+        var workers = await _context.Workers
+            .Where(w => w.IsActive && w.AssignGirdleBush)
+            .OrderBy(w => w.Name)
+            .Select(w => new RefinementWorkerDto
+            {
+                Id = w.Id,
+                Name = w.Name,
+                WarehouseId = w.WarehouseId ?? 0,
+                WarehouseName = w.WarehouseName ?? "",
+                IsActive = w.IsActive
+            })
+            .ToListAsync();
+
+        return Ok(workers);
+    }
+
+    [HttpGet("singledoubledrawn")]
+    public async Task<IActionResult> GetSingleDoubleDrawnWorkers()
+    {
+        var workers = await _context.Workers
+            .Where(w => w.IsActive && w.AssignSingleDoubleDrawn)
+            .OrderBy(w => w.Name)
+            .Select(w => new SingleDoubleDrawnWorkerReturnDto
+            {
+                Id = w.Id,
+                Name = w.Name,
+                WarehouseId = w.WarehouseId ?? 0,
+                WarehouseName = w.WarehouseName ?? ""
+            })
+            .ToListAsync();
+
+        return Ok(workers);
+    }
 }

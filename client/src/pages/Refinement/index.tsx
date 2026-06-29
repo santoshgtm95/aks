@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from "react";
-import { refinementAPI, refinementWorkersAPI } from "../../services/api";
+import { refinementAPI, workersAPI } from "../../services/api";
 import { useAuth } from "../../context/AuthContext";
 import { useNotification } from "../../context/NotificationContext";
 import type {
@@ -19,9 +19,7 @@ import {
   Trash2,
   X,
   Sparkles,
-  Settings,
 } from "lucide-react";
-import RefinementWorkerManagement from "../RefinementWorkerManagement";
 import {
   formatDateTime,
   getMyanmarNow,
@@ -51,8 +49,6 @@ const Refinement: React.FC = () => {
   const [inputCounts, setInputCounts] = useState<Record<string, string>>({});
   const [searchTerm, setSearchTerm] = useState("");
   const [showModal, setShowModal] = useState(false);
-  const [showRefinementWorkerManagement, setShowRefinementWorkerManagement] =
-    useState(false);
   const [selectedCategory, setSelectedCategory] =
     useState<AvailablePurifiedCategory | null>(null);
   const [editingProcess, setEditingProcess] =
@@ -80,7 +76,7 @@ const Refinement: React.FC = () => {
         refinementAPI.getAvailableCategories(),
         refinementAPI.getAll(),
         refinementAPI.getRefinementRecords(),
-        refinementWorkersAPI.getAll(),
+        workersAPI.getGirdleBushWorkers(),
       ]);
       setAvailableCategories(avail);
       setProcesses(procs);
@@ -93,10 +89,6 @@ const Refinement: React.FC = () => {
     }
   };
 
-  const handleCloseRefinementWorkerManagement = () => {
-    setShowRefinementWorkerManagement(false);
-    loadData();
-  };
 
   const handleInputChance = (
     recordId: number,
@@ -538,13 +530,6 @@ const Refinement: React.FC = () => {
             </div>
 
             <div className="rf-header-right">
-              <button
-                className="btn-manage-refinement-workers"
-                onClick={() => setShowRefinementWorkerManagement(true)}
-              >
-                <Settings size={16} />
-                Manage Refinement Workers
-              </button>
             </div>
           </div>
 
@@ -718,68 +703,6 @@ const Refinement: React.FC = () => {
         </div>
       </main>
     </div>
-
-      {/* Refinement Worker Management Modal */}
-      {showRefinementWorkerManagement && (
-        <div
-          className="modal-overlay"
-          style={{ zIndex: 1200 }}
-          onClick={handleCloseRefinementWorkerManagement}
-        >
-          <div
-            className="worker-manager-modal"
-            onClick={(e) => e.stopPropagation()}
-            style={{
-              background: "#f8fafc",
-              borderRadius: "16px",
-              boxShadow: "0 25px 50px -12px rgba(0, 0, 0, 0.25)",
-              width: "90%",
-              maxWidth: "1100px",
-              maxHeight: "90vh",
-              display: "flex",
-              flexDirection: "column",
-              position: "relative",
-            }}
-          >
-            <div
-              style={{
-                display: "flex",
-                justifyContent: "flex-end",
-                padding: "16px 16px 0 16px",
-              }}
-            >
-              <button
-                className="pm-close-btn"
-                style={{
-                  background: "#e2e8f0",
-                  border: "none",
-                  borderRadius: "50%",
-                  width: "36px",
-                  height: "36px",
-                  display: "flex",
-                  alignItems: "center",
-                  justifyContent: "center",
-                  cursor: "pointer",
-                  transition: "all 0.2s",
-                }}
-                onClick={handleCloseRefinementWorkerManagement}
-              >
-                <X size={20} color="#475569" />
-              </button>
-            </div>
-            <div
-              style={{
-                overflowY: "auto",
-                flex: 1,
-                marginTop: "-20px",
-                paddingBottom: "16px",
-              }}
-            >
-              <RefinementWorkerManagement />
-            </div>
-          </div>
-        </div>
-      )}
 
       {/* ── EDIT / CREATE MODAL ── */}
       {showModal && (editingProcess || editingRecord || selectedCategory) && (
