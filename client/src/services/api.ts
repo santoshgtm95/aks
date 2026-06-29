@@ -754,6 +754,10 @@ export const cashFlowAPI = {
     const response = await api.get<any[]>("/cashFlow", { params: { placeId } });
     return response.data;
   },
+  getBreakdown: async (workerId: number | null, purifierId: number | null, workerName: string): Promise<any[]> => {
+    const response = await api.get<any[]>("/cashFlow/breakdown", { params: { workerId, purifierId, workerName } });
+    return response.data;
+  },
   makePayment: async (data: {
     workerName: string;
     amount: number;

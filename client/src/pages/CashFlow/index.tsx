@@ -4,8 +4,17 @@ import { DollarSign, Search, CreditCard, MapPin } from "lucide-react";
 import Modal from "../../components/Modal";
 import "./index.css";
 
+interface WorkerFeeBreakdownItem {
+  process: string;
+  reference: string;
+  date: string | null;
+  fees: number;
+}
+
 interface WorkerCashFlow {
   workerName: string;
+  workerId: number | null;
+  purifierId: number | null;
   placeNames?: string;
   messLabourFees: number;
   purificationFees: number;
@@ -34,6 +43,8 @@ const CashFlow: React.FC = () => {
   const [paymentAmount, setPaymentAmount] = useState("");
   const [paymentNote, setPaymentNote] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [breakdown, setBreakdown] = useState<WorkerFeeBreakdownItem[]>([]);
+  const [breakdownLoading, setBreakdownLoading] = useState(false);
 
   const fetchData = async (placeId?: number) => {
     try {
@@ -67,11 +78,25 @@ const CashFlow: React.FC = () => {
     fetchData(placeId === "" ? undefined : placeId);
   };
 
-  const handleRowClick = (worker: WorkerCashFlow) => {
+  const handleRowClick = async (worker: WorkerCashFlow) => {
     setSelectedWorker(worker);
     setPaymentAmount("");
     setPaymentNote("");
+    setBreakdown([]);
     setIsModalOpen(true);
+    try {
+      setBreakdownLoading(true);
+      const items = await cashFlowAPI.getBreakdown(
+        worker.workerId,
+        worker.purifierId,
+        worker.workerName,
+      );
+      setBreakdown(items);
+    } catch (err) {
+      console.error("Failed to load breakdown", err);
+    } finally {
+      setBreakdownLoading(false);
+    }
   };
 
   const handlePaymentSubmit = async (e: React.FormEvent) => {
@@ -151,7 +176,9 @@ const CashFlow: React.FC = () => {
         <div className="cf-hero-right">
           <div className="cf-stat-pill">
             <span className="stat-num">{data.length}</span>
-            <span className="stat-label">{data.length === 1 ? 'Worker' : 'Workers'}</span>
+            <span className="stat-label">
+              {data.length === 1 ? "Worker" : "Workers"}
+            </span>
           </div>
         </div>
       </div>
@@ -261,7 +288,9 @@ const CashFlow: React.FC = () => {
                   {formatCurrency(totalAllWashGrading)}
                 </td>
                 <td className="footer-val">{formatCurrency(totalAllSdd)}</td>
-                <td className="footer-val">{formatCurrency(totalAllSemiExport)}</td>
+                <td className="footer-val">
+                  {formatCurrency(totalAllSemiExport)}
+                </td>
                 <td className="total-col footer-val grand-total">
                   {formatCurrency(grandTotal)}
                 </td>
@@ -286,31 +315,32 @@ const CashFlow: React.FC = () => {
         isOpen={isModalOpen}
         onClose={() => setIsModalOpen(false)}
         title={`Process Payment: ${selectedWorker?.workerName}`}
-        maxWidth="500px"
+        maxWidth="760px"
       >
         {selectedWorker && (
           <div className="payment-modal-content">
-            <div className="payment-summary">
-              <div className="summary-item">
-                <span className="summary-label">Total Fees</span>
-                <span className="summary-value">
-                  {formatCurrency(selectedWorker.totalFees)} MMK
-                </span>
-              </div>
-              <div className="summary-item text-green">
-                <span className="summary-label">Paid Amount</span>
-                <span className="summary-value">
-                  {formatCurrency(selectedWorker.paidAmount)} MMK
-                </span>
-              </div>
-              <div className="summary-item text-red">
-                <span className="summary-label">Remaining Amount to Pay</span>
-                <span className="summary-value">
-                  {formatCurrency(selectedWorker.unpaidAmount)} MMK
-                </span>
+            {/* Fee Breakdown */}
+
+            <div className="summary">
+              <div className="summary-grid">
+                <div>
+                  <span>Total Fees</span>
+                  <strong>{formatCurrency(selectedWorker.totalFees)}</strong>
+                </div>
+                <div>
+                  <span>Paid Amount</span>
+                  <strong style={{ color: "green" }}>
+                    {formatCurrency(selectedWorker.paidAmount)}
+                  </strong>
+                </div>
+                <div>
+                  <span>Remaining Amount to Pay</span>
+                  <strong style={{ color: "red" }}>
+                    {formatCurrency(selectedWorker.unpaidAmount)}
+                  </strong>
+                </div>
               </div>
             </div>
-
             <form onSubmit={handlePaymentSubmit} className="payment-form">
               <div className="form-group">
                 <label>Amount to Pay (MMK)</label>
@@ -355,6 +385,70 @@ const CashFlow: React.FC = () => {
                 </button>
               </div>
             </form>
+            <div className="breakdown-section">
+              <h4 className="breakdown-title">Fee Breakdown</h4>
+              {breakdownLoading ? (
+                <div className="breakdown-loading">Loading breakdown...</div>
+              ) : breakdown.length === 0 ? (
+                <div className="breakdown-empty">
+                  No breakdown records found.
+                </div>
+              ) : (
+                <div className="breakdown-table-wrap">
+                  <table className="breakdown-table">
+                    <thead>
+                      <tr>
+                        <th>Process</th>
+                        <th>Marker / Reference</th>
+                        <th>Date</th>
+                        <th>Fees (MMK)</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {breakdown.map((item, i) => (
+                        <tr key={i}>
+                          <td>
+                            <span
+                              className={`process-badge process-${item.process.toLowerCase().replace(/[\s&/]+/g, "-")}`}
+                            >
+                              {item.process}
+                            </span>
+                          </td>
+                          <td>{item.reference || "-"}</td>
+                          <td>
+                            {item.date
+                              ? new Date(item.date).toLocaleDateString(
+                                  "en-GB",
+                                  {
+                                    day: "2-digit",
+                                    month: "short",
+                                    year: "numeric",
+                                  },
+                                )
+                              : "-"}
+                          </td>
+                          <td className="breakdown-fees">
+                            {formatCurrency(item.fees)}
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                    <tfoot>
+                      <tr>
+                        <td colSpan={3} className="breakdown-total-label">
+                          Total
+                        </td>
+                        <td className="breakdown-fees breakdown-total-val">
+                          {formatCurrency(
+                            breakdown.reduce((s, i) => s + i.fees, 0),
+                          )}
+                        </td>
+                      </tr>
+                    </tfoot>
+                  </table>
+                </div>
+              )}
+            </div>
           </div>
         )}
       </Modal>
