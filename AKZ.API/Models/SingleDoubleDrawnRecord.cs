@@ -83,7 +83,7 @@ public class SingleDoubleDrawnRecord : BaseEntity
     public int? WorkerId { get; set; }
 
     [ForeignKey("WorkerId")]
-    public SingleDoubleDrawnWorker? Worker { get; set; }
+    public Worker? Worker { get; set; }
 
     [MaxLength(500)]
     public string? Note { get; set; }

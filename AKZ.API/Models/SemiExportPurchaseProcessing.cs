@@ -19,7 +19,7 @@ public class SemiExportPurchaseProcessing : BaseEntity
     public int WorkerId { get; set; }
 
     [ForeignKey("WorkerId")]
-    public SingleDoubleDrawnWorker? Worker { get; set; }
+    public Worker? Worker { get; set; }
 
     [Column(TypeName = "decimal(18,4)")]
     public decimal AssignWeight { get; set; }

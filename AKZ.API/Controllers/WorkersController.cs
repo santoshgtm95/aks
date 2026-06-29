@@ -2,6 +2,7 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using AKZ.API.Data;
+using AKZ.API.DTOs;
 using AKZ.API.Models;
 
 namespace AKZ.API.Controllers;
@@ -30,8 +31,156 @@ public class WorkersController : ControllerBase
     [HttpPost]
     public async Task<ActionResult<Worker>> CreateWorker([FromBody] Worker worker)
     {
+        if (worker.WarehouseId.HasValue)
+        {
+            var warehouse = await _context.Warehouses.FindAsync(worker.WarehouseId.Value);
+            if (warehouse != null)
+            {
+                worker.WarehouseName = warehouse.Name;
+            }
+        }
         _context.Workers.Add(worker);
         await _context.SaveChangesAsync();
         return Ok(worker);
+    }
+
+    [HttpPut("{id}")]
+    public async Task<ActionResult> UpdateWorker(int id, [FromBody] Worker worker)
+    {
+        var existing = await _context.Workers.FindAsync(id);
+        if (existing == null)
+            return NotFound();
+
+        existing.Name = worker.Name;
+        existing.PhoneNumber = worker.PhoneNumber;
+        existing.IsActive = worker.IsActive;
+        existing.AssignWashGrading = worker.AssignWashGrading;
+        existing.AssignMessLabour = worker.AssignMessLabour;
+        existing.AssignGirdleBush = worker.AssignGirdleBush;
+        existing.AssignSingleDoubleDrawn = worker.AssignSingleDoubleDrawn;
+        existing.AssignSemiExportPurchase = worker.AssignSemiExportPurchase;
+        existing.WarehouseId = worker.WarehouseId;
+        
+        if (worker.WarehouseId.HasValue)
+        {
+            var warehouse = await _context.Warehouses.FindAsync(worker.WarehouseId.Value);
+            existing.WarehouseName = warehouse?.Name;
+        }
+        else
+        {
+            existing.WarehouseName = null;
+        }
+
+        existing.UpdateDate = DateTime.UtcNow;
+
+        await _context.SaveChangesAsync();
+        return NoContent();
+    }
+
+    [HttpDelete("{id}")]
+    public async Task<ActionResult> DeleteWorker(int id)
+    {
+        var existing = await _context.Workers.FindAsync(id);
+        if (existing == null)
+            return NotFound();
+
+        existing.IsActive = false;
+        existing.DeleteFlg = 1;
+        existing.DeleteDate = DateTime.UtcNow;
+        await _context.SaveChangesAsync();
+        return NoContent();
+    }
+
+    [HttpGet("washgrading")]
+    public async Task<IActionResult> GetWashGradingWorkers()
+    {
+        var workers = await _context.Workers
+            .Where(w => w.IsActive && w.AssignWashGrading)
+            .OrderBy(w => w.Name)
+            .Select(w => new WashGradingWorkerDto
+            {
+                Id = w.Id,
+                Name = w.Name,
+                WarehouseId = w.WarehouseId ?? 0,
+                WarehouseName = w.WarehouseName ?? "",
+                IsActive = w.IsActive
+            })
+            .ToListAsync();
+
+        return Ok(workers);
+    }
+
+    [HttpGet("messlabour")]
+    public async Task<IActionResult> GetMessLabourWorkers()
+    {
+        var workers = await _context.Workers
+            .Where(w => w.IsActive && w.AssignMessLabour)
+            .OrderBy(w => w.Name)
+            .Select(w => new MessLabourWorkerDto
+            {
+                Id = w.Id,
+                Name = w.Name,
+                WarehouseId = w.WarehouseId ?? 0,
+                WarehouseName = w.WarehouseName ?? "",
+                IsActive = w.IsActive
+            })
+            .ToListAsync();
+
+        return Ok(workers);
+    }
+
+    [HttpGet("girdlebush")]
+    public async Task<IActionResult> GetGirdleBushWorkers()
+    {
+        var workers = await _context.Workers
+            .Where(w => w.IsActive && w.AssignGirdleBush)
+            .OrderBy(w => w.Name)
+            .Select(w => new RefinementWorkerDto
+            {
+                Id = w.Id,
+                Name = w.Name,
+                WarehouseId = w.WarehouseId ?? 0,
+                WarehouseName = w.WarehouseName ?? "",
+                IsActive = w.IsActive
+            })
+            .ToListAsync();
+
+        return Ok(workers);
+    }
+
+    [HttpGet("singledoubledrawn")]
+    public async Task<IActionResult> GetSingleDoubleDrawnWorkers()
+    {
+        var workers = await _context.Workers
+            .Where(w => w.IsActive && w.AssignSingleDoubleDrawn)
+            .OrderBy(w => w.Name)
+            .Select(w => new SingleDoubleDrawnWorkerReturnDto
+            {
+                Id = w.Id,
+                Name = w.Name,
+                WarehouseId = w.WarehouseId ?? 0,
+                WarehouseName = w.WarehouseName ?? ""
+            })
+            .ToListAsync();
+
+        return Ok(workers);
+    }
+
+    [HttpGet("semiexportpurchase")]
+    public async Task<IActionResult> GetSemiExportPurchaseWorkers()
+    {
+        var workers = await _context.Workers
+            .Where(w => w.IsActive && w.AssignSemiExportPurchase)
+            .OrderBy(w => w.Name)
+            .Select(w => new SingleDoubleDrawnWorkerReturnDto
+            {
+                Id = w.Id,
+                Name = w.Name,
+                WarehouseId = w.WarehouseId ?? 0,
+                WarehouseName = w.WarehouseName ?? ""
+            })
+            .ToListAsync();
+
+        return Ok(workers);
     }
 }

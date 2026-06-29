@@ -14,6 +14,7 @@ import Inventory from "./pages/Inventory/index";
 import WarehouseManagement from "./pages/WarehouseManagement/index";
 import Sales from "./pages/Sales/index";
 import Staff from "./pages/Staff/index";
+import WorkerPage from "./pages/Worker/index";
 import PermissionManagement from "./pages/PermissionManagement/index";
 
 import MessLabour from "./pages/MessLabour/index";
@@ -226,6 +227,14 @@ const App: React.FC = () => {
                 element={
                   <ProtectedRoute permission="Staff.View">
                     <Staff />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="workers"
+                element={
+                  <ProtectedRoute permission="Staff.View">
+                    <WorkerPage />
                   </ProtectedRoute>
                 }
               />

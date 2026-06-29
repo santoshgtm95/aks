@@ -2,7 +2,7 @@ import React, { useEffect, useState, useMemo } from "react";
 import { useAuth } from "../../context/AuthContext";
 import {
   washGradingAPI,
-  messLabourWorkersAPI,
+  workersAPI,
   processingAPI,
 } from "../../services/api";
 import type {
@@ -23,9 +23,7 @@ import {
   Save,
   Search,
   AlertCircle,
-  Settings,
 } from "lucide-react";
-import MessLabourWorkerManagement from "../MessLabourWorkerManagement";
 import { combineDateWithMyanmarTime, formatDateTime } from "../../utils/format";
 import { useNotification } from "../../context/NotificationContext";
 import "./index.css";
@@ -47,14 +45,7 @@ const MessLabour: React.FC = () => {
   const [activeTab, setActiveTab] = useState<"processing" | "history">(
     "processing",
   );
-  const [showMessLabourWorkerManagement, setShowMessLabourWorkerManagement] =
-    useState(false);
   const [searchTerm, setSearchTerm] = useState("");
-
-  const handleCloseMessLabourWorkerManagement = () => {
-    setShowMessLabourWorkerManagement(false);
-    loadData();
-  };
 
   const filteredWashRecords = useMemo(() => {
     return washRecords.filter((record) => {
@@ -169,7 +160,7 @@ const MessLabour: React.FC = () => {
     try {
       const [washData, workersData, recordsData] = await Promise.all([
         washGradingAPI.getAvailableForMessLabour(),
-        messLabourWorkersAPI.getAll(),
+        workersAPI.getMessLabourWorkers(),
         processingAPI.getAll(),
       ]);
       setWashRecords(washData);
@@ -198,10 +189,10 @@ const MessLabour: React.FC = () => {
     ];
 
     if (categoryFields.includes(name)) {
-      const numValue = value === "" ? 0 : parseInt(value);
+      const numValue = value === "" ? 0 : parseFloat(value);
       const maxValStr = getFieldMax(name as any);
       if (maxValStr) {
-        const maxVal = parseInt(maxValStr);
+        const maxVal = parseFloat(maxValStr);
         if (!isNaN(numValue) && numValue > maxVal) {
           setFormData((prev) => ({ ...prev, [name]: maxVal.toString() }));
           return;
@@ -213,6 +204,35 @@ const MessLabour: React.FC = () => {
       ...prev,
       [name]: value,
     }));
+  };
+
+  const handleWeightInputChange = (name: string, weightVal: string) => {
+    const uw = Number(formData.unitWeight) || 0;
+    if (uw <= 0) return;
+
+    if (weightVal === "") {
+      setFormData((prev) => ({
+        ...prev,
+        [name]: "",
+      }));
+      return;
+    }
+
+    const weight = parseFloat(weightVal);
+    if (!isNaN(weight)) {
+      let calculatedCount = weight / uw;
+      const maxValStr = getFieldMax(name as any);
+      if (maxValStr) {
+        const maxVal = parseFloat(maxValStr);
+        if (calculatedCount > maxVal) {
+          calculatedCount = maxVal;
+        }
+      }
+      setFormData((prev) => ({
+        ...prev,
+        [name]: calculatedCount.toString(),
+      }));
+    }
   };
 
   const getFieldMax = (fieldName: keyof typeof formData) => {
@@ -433,7 +453,7 @@ const MessLabour: React.FC = () => {
     if (categoryFields.includes(name)) {
       const maxValStr = getEditFieldMax(name as any);
       if (maxValStr) {
-        const maxVal = parseInt(maxValStr);
+        const maxVal = parseFloat(maxValStr);
         if (!isNaN(numValue) && numValue > maxVal) {
           numValue = maxVal;
         }
@@ -441,6 +461,36 @@ const MessLabour: React.FC = () => {
     }
 
     setEditFormData((prev) => ({ ...prev, [name]: numValue }));
+  };
+
+  const handleEditWeightInputChange = (name: string, weightVal: string) => {
+    if (!editingRecord) return;
+    const uw = editingRecord.unitWeight || 0;
+    if (uw <= 0) return;
+
+    if (weightVal === "") {
+      setEditFormData((prev) => ({
+        ...prev,
+        [name]: 0,
+      }));
+      return;
+    }
+
+    const weight = parseFloat(weightVal);
+    if (!isNaN(weight)) {
+      let calculatedCount = weight / uw;
+      const maxValStr = getEditFieldMax(name as any);
+      if (maxValStr) {
+        const maxVal = parseFloat(maxValStr);
+        if (calculatedCount > maxVal) {
+          calculatedCount = maxVal;
+        }
+      }
+      setEditFormData((prev) => ({
+        ...prev,
+        [name]: calculatedCount,
+      }));
+    }
   };
 
   const handleEditSave = async () => {
@@ -651,7 +701,7 @@ const MessLabour: React.FC = () => {
         </div>
       </div>
 
-      <div className="mess-labour-layout">
+      <div className="mess-labour-layout" style={{ padding: "0" }}>
         {/* Left Sidebar: Product List */}
         <aside className="rf-sidebar">
         <div className="rf-sidebar-header">
@@ -761,13 +811,6 @@ const MessLabour: React.FC = () => {
             </div>
 
             <div className="rf-header-right">
-              <button
-                className="btn-manage-messlabour-workers"
-                onClick={() => setShowMessLabourWorkerManagement(true)}
-              >
-                <Settings size={16} />
-                Manage Mess-Labour Workers
-              </button>
             </div>
           </div>
 
@@ -779,7 +822,10 @@ const MessLabour: React.FC = () => {
                 style={{
                   display: "flex",
                   flexDirection: "column",
-                  gap: "24px",
+                  gap: "16px",
+                  overflowY: "auto",
+                  flex: 1,
+                  paddingRight: "4px",
                 }}
               >
                 <div
@@ -873,7 +919,7 @@ const MessLabour: React.FC = () => {
                   style={{
                     display: "flex",
                     flexDirection: "column",
-                    gap: "20px",
+                    gap: "16px",
                   }}
                 >
                   {/* 2. Count & Unit Weight */}
@@ -967,149 +1013,51 @@ const MessLabour: React.FC = () => {
                       2. Short / Deduction Categories
                     </h3>
                     <div className="category-grid">
-                      <div className="category-input-box box-red">
-                        <span className="box-label label-red">red</span>
-                        <input
-                          type="number"
-                          name="red"
-                          className="box-input"
-                          max={getFieldMax("red")}
-                          value={formData.red || ""}
-                          onChange={handleInputChange}
-                          placeholder="0"
-                        />
-                        <span className="box-weight-hint hint-red">
-                          {totals.redWeight.toFixed(3)} viss
-                        </span>
-                      </div>
-                      <div className="category-input-box box-white">
-                        <span className="box-label label-white">white</span>
-                        <input
-                          type="number"
-                          name="white"
-                          className="box-input"
-                          max={getFieldMax("white")}
-                          value={formData.white || ""}
-                          onChange={handleInputChange}
-                          placeholder="0"
-                        />
-                        <span className="box-weight-hint hint-white">
-                          {totals.whiteWeight.toFixed(3)} viss
-                        </span>
-                      </div>
-                      <div className="category-input-box box-special">
-                        <span className="box-label label-special">simple</span>
-                        <input
-                          type="number"
-                          name="special"
-                          className="box-input"
-                          max={getFieldMax("special")}
-                          value={formData.special || ""}
-                          onChange={handleInputChange}
-                          placeholder="0"
-                        />
-                        <span className="box-weight-hint hint-special">
-                          {totals.specialWeight.toFixed(3)} viss
-                        </span>
-                      </div>
-                      <div className="category-input-box box-natural">
-                        <span className="box-label label-natural">natural</span>
-                        <input
-                          type="number"
-                          name="natural"
-                          className="box-input"
-                          max={getFieldMax("natural")}
-                          value={formData.natural || ""}
-                          onChange={handleInputChange}
-                          placeholder="0"
-                        />
-                        <span className="box-weight-hint hint-natural">
-                          {totals.naturalWeight.toFixed(3)} viss
-                        </span>
-                      </div>
-                      <div className="category-input-box box-natural-white">
-                        <span className="box-label label-natural-white">
-                          natural white
-                        </span>
-                        <input
-                          type="number"
-                          name="naturalWhite"
-                          className="box-input"
-                          max={getFieldMax("naturalWhite")}
-                          value={formData.naturalWhite || ""}
-                          onChange={handleInputChange}
-                          placeholder="0"
-                        />
-                        <span className="box-weight-hint hint-natural-white">
-                          {totals.naturalWhiteWeight.toFixed(3)} viss
-                        </span>
-                      </div>
-                      <div className="category-input-box box-natural-red">
-                        <span className="box-label label-natural-red">
-                          natural red
-                        </span>
-                        <input
-                          type="number"
-                          name="naturalRed"
-                          className="box-input"
-                          max={getFieldMax("naturalRed")}
-                          value={formData.naturalRed || ""}
-                          onChange={handleInputChange}
-                          placeholder="0"
-                        />
-                        <span className="box-weight-hint hint-natural-red">
-                          {totals.naturalRedWeight.toFixed(3)} viss
-                        </span>
-                      </div>
-                      <div className="category-input-box box-shortcut">
-                        <span className="box-label label-shortcut">
-                          short cut
-                        </span>
-                        <input
-                          type="number"
-                          name="shortCut"
-                          className="box-input"
-                          max={getFieldMax("shortCut")}
-                          value={formData.shortCut || ""}
-                          onChange={handleInputChange}
-                          placeholder="0"
-                        />
-                        <span className="box-weight-hint hint-shortcut">
-                          {totals.shortCutWeight.toFixed(3)} viss
-                        </span>
-                      </div>
-                      <div className="category-input-box box-artificial">
-                        <span className="box-label label-artificial">
-                          artificial
-                        </span>
-                        <input
-                          type="number"
-                          name="artificial"
-                          className="box-input"
-                          max={getFieldMax("artificial")}
-                          value={formData.artificial || ""}
-                          onChange={handleInputChange}
-                          placeholder="0"
-                        />
-                        <span className="box-weight-hint hint-artificial">
-                          {totals.artificialWeight.toFixed(3)} viss
-                        </span>
-                      </div>
-                      <div className="category-input-box box-short">
-                        <span className="box-label label-short">short</span>
-                        <input
-                          type="number"
-                          name="short"
-                          className="box-input"
-                          max={getFieldMax("short")}
-                          value={formData.short || ""}
-                          onChange={handleInputChange}
-                          placeholder="0"
-                        />
-                        <span className="box-weight-hint hint-short">
-                          {totals.shortWeight.toFixed(3)} viss
-                        </span>
-                      </div>
+                      {[
+                        { name: "red", label: "red", cls: "box-red" },
+                        { name: "white", label: "white", cls: "box-white" },
+                        { name: "special", label: "simple", cls: "box-special" },
+                        { name: "natural", label: "natural", cls: "box-natural" },
+                        { name: "naturalWhite", label: "natural white", cls: "box-natural-white" },
+                        { name: "naturalRed", label: "natural red", cls: "box-natural-red" },
+                        { name: "shortCut", label: "short cut", cls: "box-shortcut" },
+                        { name: "artificial", label: "artificial", cls: "box-artificial" },
+                        { name: "short", label: "short", cls: "box-short" },
+                      ].map(({ name, label, cls }) => {
+                        const countVal = formData[name as keyof typeof formData] || "";
+                        const weightVal = countVal ? Number((Number(countVal) * Number(formData.unitWeight)).toFixed(6)).toString() : "";
+                        return (
+                          <div key={name} className={`category-input-box ${cls}`}>
+                            <span className="box-label">{label}</span>
+                            <div className="box-inputs-row">
+                              <div className="box-input-group">
+                                <label className="box-input-sublabel">Count</label>
+                                <input
+                                  type="number"
+                                  name={name}
+                                  className="box-input-small"
+                                  max={getFieldMax(name as any)}
+                                  value={countVal}
+                                  onChange={handleInputChange}
+                                  placeholder="0"
+                                />
+                              </div>
+                              <div className="box-input-group">
+                                <label className="box-input-sublabel">Viss</label>
+                                <input
+                                  type="number"
+                                  name={`${name}_weight`}
+                                  className="box-input-small"
+                                  value={weightVal}
+                                  onChange={(e) => handleWeightInputChange(name, e.target.value)}
+                                  placeholder="0.0000"
+                                  step="0.0001"
+                                />
+                              </div>
+                            </div>
+                          </div>
+                        );
+                      })}
                     </div>
                   </section>
 
@@ -1648,27 +1596,42 @@ const MessLabour: React.FC = () => {
                       },
                       { name: "short", label: "Short", cls: "em-cat-short" },
                     ] as const
-                  ).map(({ name, label, cls }) => (
-                    <div key={name} className={`em-cat-card ${cls}`}>
-                      <span className="em-cat-label">{label}</span>
-                      <input
-                        type="number"
-                        name={name}
-                        className="em-cat-input"
-                        value={(editFormData as any)[name] || ""}
-                        onChange={handleEditInputChange}
-                        placeholder="0"
-                        min="0"
-                        max={getEditFieldMax(name as any)}
-                      />
-                      <span className="em-cat-weight">
-                        {(
-                          (editFormData as any)[name] * editingRecord.unitWeight
-                        ).toFixed(3)}{" "}
-                        v
-                      </span>
-                    </div>
-                  ))}
+                  ).map(({ name, label, cls }) => {
+                    const countVal = (editFormData as any)[name] || "";
+                    const weightVal = countVal ? Number((Number(countVal) * editingRecord.unitWeight).toFixed(6)).toString() : "";
+                    return (
+                      <div key={name} className={`em-cat-card ${cls}`}>
+                        <span className="em-cat-label">{label}</span>
+                        <div className="em-inputs-row">
+                          <div className="em-input-group">
+                            <span className="em-input-sublabel">Count</span>
+                            <input
+                              type="number"
+                              name={name}
+                              className="em-input-small"
+                              value={countVal}
+                              onChange={handleEditInputChange}
+                              placeholder="0"
+                              min="0"
+                              max={getEditFieldMax(name as any)}
+                            />
+                          </div>
+                          <div className="em-input-group">
+                            <span className="em-input-sublabel">Viss</span>
+                            <input
+                              type="number"
+                              name={`${name}_weight`}
+                              className="em-input-small"
+                              value={weightVal}
+                              onChange={(e) => handleEditWeightInputChange(name, e.target.value)}
+                              placeholder="0.0000"
+                              step="0.0001"
+                            />
+                          </div>
+                        </div>
+                      </div>
+                    );
+                  })}
                 </div>
               </div>
 
@@ -2124,66 +2087,6 @@ const MessLabour: React.FC = () => {
               >
                 Close Details
               </button>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* Worker Management Modal */}
-      {showMessLabourWorkerManagement && (
-        <div
-          className="modal-overlay"
-          style={{ zIndex: 1200 }}
-          onClick={handleCloseMessLabourWorkerManagement}
-        >
-          <div
-            className="worker-manager-modal"
-            onClick={(e) => e.stopPropagation()}
-            style={{
-              background: "#f8fafc",
-              borderRadius: "16px",
-              boxShadow: "0 25px 50px -12px rgba(0, 0, 0, 0.25)",
-              width: "90%",
-              maxWidth: "1100px",
-              maxHeight: "90vh",
-              display: "flex",
-              flexDirection: "column",
-              position: "relative",
-            }}
-          >
-            <div
-              style={{
-                display: "flex",
-                justifyContent: "flex-end",
-                padding: "16px 16px 0 16px",
-              }}
-            >
-              <button
-                className="pm-close-btn"
-                style={{
-                  background: "#e2e8f0",
-                  border: "none",
-                  borderRadius: "50%",
-                  width: "36px",
-                  height: "36px",
-                  display: "flex",
-                  alignItems: "center",
-                  justifyContent: "center",
-                  cursor: "pointer",
-                  transition: "all 0.2s",
-                }}
-                onClick={handleCloseMessLabourWorkerManagement}
-              >
-                <X size={20} color="#475569" />
-              </button>
-            </div>
-            <div
-              style={{
-                overflowY: "auto",
-                paddingBottom: "16px",
-              }}
-            >
-              <MessLabourWorkerManagement />
             </div>
           </div>
         </div>

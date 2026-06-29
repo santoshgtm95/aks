@@ -28,7 +28,7 @@ public class RefinementRecord : BaseEntity
     public int? RefinementWorkerId { get; set; }
 
     [ForeignKey("RefinementWorkerId")]
-    public RefinementWorker? RefinementWorker { get; set; }
+    public Worker? Worker { get; set; }
 
     [Column(TypeName = "decimal(18,4)")]
     public decimal LostWeight { get; set; }

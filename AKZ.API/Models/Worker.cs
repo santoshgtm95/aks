@@ -17,4 +17,17 @@ public class Worker : BaseEntity
     public string? PhoneNumber { get; set; }
 
     public bool IsActive { get; set; } = true;
+
+    public bool AssignWashGrading { get; set; } = false;
+    public bool AssignMessLabour { get; set; } = false;
+    public bool AssignGirdleBush { get; set; } = false;
+    public bool AssignSingleDoubleDrawn { get; set; } = false;
+    public bool AssignSemiExportPurchase { get; set; } = false;
+
+    public int? WarehouseId { get; set; }
+
+    [ForeignKey("WarehouseId")]
+    public Warehouse? Warehouse { get; set; }
+
+    public string? WarehouseName { get; set; }
 }

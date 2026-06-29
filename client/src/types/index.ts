@@ -251,6 +251,13 @@ export interface Worker {
   name: string;
   phoneNumber?: string;
   isActive: boolean;
+  assignWashGrading?: boolean;
+  assignMessLabour?: boolean;
+  assignGirdleBush?: boolean;
+  assignSingleDoubleDrawn?: boolean;
+  assignSemiExportPurchase?: boolean;
+  warehouseId?: number;
+  warehouseName?: string;
 }
 
 export interface PurificationProcess {

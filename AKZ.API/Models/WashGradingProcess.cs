@@ -26,7 +26,7 @@ public class WashGradingProcess : BaseEntity
     public int? WashGradingWorkerId { get; set; }
 
     [ForeignKey("WashGradingWorkerId")]
-    public WashGradingWorker? WashGradingWorker { get; set; }
+    public Worker? Worker { get; set; }
 
     public ICollection<WashGradingRecord> WashGradingRecords { get; set; } = new List<WashGradingRecord>();
 

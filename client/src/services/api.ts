@@ -51,6 +51,7 @@ import type {
   WashGradingWorker,
   CreateWashGradingWorkerDto,
   UpdateWashGradingWorkerDto,
+  MessLabourWorker,
   AvailableProductDto,
   WashGradingProcess,
   WashGradingRecord,
@@ -187,9 +188,35 @@ export const workersAPI = {
     const response = await api.get<Worker[]>("/workers");
     return response.data;
   },
+  getWashGradingWorkers: async (): Promise<WashGradingWorker[]> => {
+    const response = await api.get<WashGradingWorker[]>("/workers/washgrading");
+    return response.data;
+  },
+  getMessLabourWorkers: async (): Promise<MessLabourWorker[]> => {
+    const response = await api.get<MessLabourWorker[]>("/workers/messlabour");
+    return response.data;
+  },
+  getGirdleBushWorkers: async (): Promise<RefinementWorker[]> => {
+    const response = await api.get<RefinementWorker[]>("/workers/girdlebush");
+    return response.data;
+  },
+  getSingleDoubleDrawnWorkers: async (): Promise<SingleDoubleDrawnWorker[]> => {
+    const response = await api.get<SingleDoubleDrawnWorker[]>("/workers/singledoubledrawn");
+    return response.data;
+  },
+  getSemiExportPurchaseWorkers: async (): Promise<SingleDoubleDrawnWorker[]> => {
+    const response = await api.get<SingleDoubleDrawnWorker[]>("/workers/semiexportpurchase");
+    return response.data;
+  },
   create: async (data: Partial<Worker>): Promise<Worker> => {
     const response = await api.post<Worker>("/workers", data);
     return response.data;
+  },
+  update: async (id: number, data: Partial<Worker>): Promise<void> => {
+    await api.put(`/workers/${id}`, data);
+  },
+  delete: async (id: number): Promise<void> => {
+    await api.delete(`/workers/${id}`);
   },
 };
 
@@ -725,6 +752,10 @@ export default api;
 export const cashFlowAPI = {
   getAll: async (placeId?: number): Promise<any[]> => {
     const response = await api.get<any[]>("/cashFlow", { params: { placeId } });
+    return response.data;
+  },
+  getBreakdown: async (workerId: number | null, purifierId: number | null, workerName: string): Promise<any[]> => {
+    const response = await api.get<any[]>("/cashFlow/breakdown", { params: { workerId, purifierId, workerName } });
     return response.data;
   },
   makePayment: async (data: {

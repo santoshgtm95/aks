@@ -33,7 +33,7 @@ public class RefinementProcess : BaseEntity
     public int? RefinementWorkerId { get; set; }
 
     [ForeignKey("RefinementWorkerId")]
-    public RefinementWorker? RefinementWorker { get; set; }
+    public Worker? Worker { get; set; }
 
     public ICollection<RefinementRecord> RefinementRecords { get; set; } = new List<RefinementRecord>();
 

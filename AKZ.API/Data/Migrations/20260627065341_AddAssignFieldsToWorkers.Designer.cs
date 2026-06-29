@@ -4,16 +4,19 @@ using AKZ.API.Data;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 #nullable disable
 
-namespace AKZ.API.Migrations
+namespace AKZ.API.Data.Migrations
 {
     [DbContext(typeof(AKZDbContext))]
-    partial class AKZDbContextModelSnapshot : ModelSnapshot
+    [Migration("20260627065341_AddAssignFieldsToWorkers")]
+    partial class AddAssignFieldsToWorkers
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -2592,15 +2595,7 @@ namespace AKZ.API.Migrations
                     b.Property<DateTime>("UpdateDate")
                         .HasColumnType("datetime2");
 
-                    b.Property<int?>("WarehouseId")
-                        .HasColumnType("int");
-
-                    b.Property<string>("WarehouseName")
-                        .HasColumnType("nvarchar(max)");
-
                     b.HasKey("Id");
-
-                    b.HasIndex("WarehouseId");
 
                     b.ToTable("Workers");
                 });
@@ -2752,7 +2747,7 @@ namespace AKZ.API.Migrations
 
             modelBuilder.Entity("AKZ.API.Models.ProcessingRecordWorker", b =>
                 {
-                    b.HasOne("AKZ.API.Models.Worker", "Worker")
+                    b.HasOne("AKZ.API.Models.MessLabourWorker", "MessLabourWorker")
                         .WithMany()
                         .HasForeignKey("MessLabourWorkerId")
                         .OnDelete(DeleteBehavior.Cascade)
@@ -2764,9 +2759,9 @@ namespace AKZ.API.Migrations
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
-                    b.Navigation("ProcessingRecord");
+                    b.Navigation("MessLabourWorker");
 
-                    b.Navigation("Worker");
+                    b.Navigation("ProcessingRecord");
                 });
 
             modelBuilder.Entity("AKZ.API.Models.Product", b =>
@@ -2878,14 +2873,14 @@ namespace AKZ.API.Migrations
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
 
-                    b.HasOne("AKZ.API.Models.Worker", "Worker")
+                    b.HasOne("AKZ.API.Models.RefinementWorker", "RefinementWorker")
                         .WithMany()
                         .HasForeignKey("RefinementWorkerId")
                         .OnDelete(DeleteBehavior.Restrict);
 
                     b.Navigation("PurifiedRecord");
 
-                    b.Navigation("Worker");
+                    b.Navigation("RefinementWorker");
                 });
 
             modelBuilder.Entity("AKZ.API.Models.RefinementRecord", b =>
@@ -2901,7 +2896,7 @@ namespace AKZ.API.Migrations
                         .HasForeignKey("RefinementProcessId")
                         .OnDelete(DeleteBehavior.Restrict);
 
-                    b.HasOne("AKZ.API.Models.Worker", "Worker")
+                    b.HasOne("AKZ.API.Models.RefinementWorker", "RefinementWorker")
                         .WithMany()
                         .HasForeignKey("RefinementWorkerId")
                         .OnDelete(DeleteBehavior.Restrict);
@@ -2910,7 +2905,7 @@ namespace AKZ.API.Migrations
 
                     b.Navigation("RefinementProcess");
 
-                    b.Navigation("Worker");
+                    b.Navigation("RefinementWorker");
                 });
 
             modelBuilder.Entity("AKZ.API.Models.RefinementWorker", b =>
@@ -2970,7 +2965,7 @@ namespace AKZ.API.Migrations
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
-                    b.HasOne("AKZ.API.Models.Worker", "Worker")
+                    b.HasOne("AKZ.API.Models.SingleDoubleDrawnWorker", "Worker")
                         .WithMany()
                         .HasForeignKey("WorkerId")
                         .OnDelete(DeleteBehavior.Cascade)
@@ -3038,7 +3033,7 @@ namespace AKZ.API.Migrations
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
 
-                    b.HasOne("AKZ.API.Models.Worker", "Worker")
+                    b.HasOne("AKZ.API.Models.SingleDoubleDrawnWorker", "Worker")
                         .WithMany()
                         .HasForeignKey("WorkerId");
 
@@ -3102,14 +3097,14 @@ namespace AKZ.API.Migrations
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
 
-                    b.HasOne("AKZ.API.Models.Worker", "Worker")
+                    b.HasOne("AKZ.API.Models.WashGradingWorker", "WashGradingWorker")
                         .WithMany()
                         .HasForeignKey("WashGradingWorkerId")
                         .OnDelete(DeleteBehavior.Restrict);
 
                     b.Navigation("Product");
 
-                    b.Navigation("Worker");
+                    b.Navigation("WashGradingWorker");
                 });
 
             modelBuilder.Entity("AKZ.API.Models.WashGradingRecord", b =>
@@ -3125,7 +3120,7 @@ namespace AKZ.API.Migrations
                         .HasForeignKey("WashGradingProcessId")
                         .OnDelete(DeleteBehavior.Restrict);
 
-                    b.HasOne("AKZ.API.Models.Worker", "Worker")
+                    b.HasOne("AKZ.API.Models.WashGradingWorker", "WashGradingWorker")
                         .WithMany()
                         .HasForeignKey("WashGradingWorkerId")
                         .OnDelete(DeleteBehavior.Restrict);
@@ -3134,7 +3129,7 @@ namespace AKZ.API.Migrations
 
                     b.Navigation("WashGradingProcess");
 
-                    b.Navigation("Worker");
+                    b.Navigation("WashGradingWorker");
                 });
 
             modelBuilder.Entity("AKZ.API.Models.WashGradingWorker", b =>
@@ -3144,15 +3139,6 @@ namespace AKZ.API.Migrations
                         .HasForeignKey("WarehouseId")
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
-
-                    b.Navigation("Warehouse");
-                });
-
-            modelBuilder.Entity("AKZ.API.Models.Worker", b =>
-                {
-                    b.HasOne("AKZ.API.Models.Warehouse", "Warehouse")
-                        .WithMany()
-                        .HasForeignKey("WarehouseId");
 
                     b.Navigation("Warehouse");
                 });

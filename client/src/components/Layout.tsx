@@ -15,6 +15,7 @@ import {
   DollarSign,
   TrendingUp,
   Layers,
+  Briefcase,
 } from "lucide-react";
 import "./Layout.css";
 
@@ -243,6 +244,17 @@ const Layout: React.FC = () => {
             >
               <Users className="nav-icon" size={24} />
               Staff
+            </Link>
+          )}
+
+          {(hasPermission("Staff.View") || hasPermission("Staff.Create")) && (
+            <Link
+              to="/workers"
+              className={`nav-item ${isActive("/workers") ? "active" : ""}`}
+              onClick={closeMobileMenu}
+            >
+              <Briefcase className="nav-icon" size={24} />
+              Worker
             </Link>
           )}
 
