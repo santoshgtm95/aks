@@ -13,6 +13,7 @@ interface WorkerCashFlow {
   refinementFees: number;
   washGradingFees: number;
   singleDoubleDrawnFees: number;
+  semiExportPurchaseFees: number;
   totalFees: number;
   paidAmount: number;
   unpaidAmount: number;
@@ -100,8 +101,8 @@ const CashFlow: React.FC = () => {
     )
     .sort((a, b) => b.unpaidAmount - a.unpaidAmount);
 
-  const formatCurrency = (value: number) => {
-    return value.toLocaleString(undefined, {
+  const formatCurrency = (value: number | undefined | null) => {
+    return (value ?? 0).toLocaleString(undefined, {
       minimumFractionDigits: 0,
       maximumFractionDigits: 2,
     });
@@ -126,6 +127,10 @@ const CashFlow: React.FC = () => {
   );
   const totalAllSdd = data.reduce(
     (sum, item) => sum + item.singleDoubleDrawnFees,
+    0,
+  );
+  const totalAllSemiExport = data.reduce(
+    (sum, item) => sum + (item.semiExportPurchaseFees ?? 0),
     0,
   );
   const grandTotal = data.reduce((sum, item) => sum + item.totalFees, 0);
@@ -190,6 +195,7 @@ const CashFlow: React.FC = () => {
                 <th>Refinement</th>
                 <th>Wash/Grading</th>
                 <th>Single & Double Drawn</th>
+                <th>Semi Export Purchase</th>
                 <th className="total-col">Total Fees</th>
                 <th>Paid</th>
                 <th>Unpaid</th>
@@ -216,6 +222,7 @@ const CashFlow: React.FC = () => {
                     <td>{formatCurrency(item.refinementFees)}</td>
                     <td>{formatCurrency(item.washGradingFees)}</td>
                     <td>{formatCurrency(item.singleDoubleDrawnFees)}</td>
+                    <td>{formatCurrency(item.semiExportPurchaseFees)}</td>
                     <td className="total-col">
                       {formatCurrency(item.totalFees)}
                     </td>
@@ -230,7 +237,7 @@ const CashFlow: React.FC = () => {
               ) : (
                 <tr>
                   <td
-                    colSpan={11}
+                    colSpan={12}
                     style={{ textAlign: "center", padding: "2rem" }}
                   >
                     No workers found matching your search.
@@ -254,6 +261,7 @@ const CashFlow: React.FC = () => {
                   {formatCurrency(totalAllWashGrading)}
                 </td>
                 <td className="footer-val">{formatCurrency(totalAllSdd)}</td>
+                <td className="footer-val">{formatCurrency(totalAllSemiExport)}</td>
                 <td className="total-col footer-val grand-total">
                   {formatCurrency(grandTotal)}
                 </td>

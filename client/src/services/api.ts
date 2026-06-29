@@ -204,6 +204,10 @@ export const workersAPI = {
     const response = await api.get<SingleDoubleDrawnWorker[]>("/workers/singledoubledrawn");
     return response.data;
   },
+  getSemiExportPurchaseWorkers: async (): Promise<SingleDoubleDrawnWorker[]> => {
+    const response = await api.get<SingleDoubleDrawnWorker[]>("/workers/semiexportpurchase");
+    return response.data;
+  },
   create: async (data: Partial<Worker>): Promise<Worker> => {
     const response = await api.post<Worker>("/workers", data);
     return response.data;

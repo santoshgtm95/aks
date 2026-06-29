@@ -5,7 +5,7 @@ import {
   semiExportPurchaseAPI,
   semiExportPurchaseProcessingAPI,
   semiExportPurchaseRecordsAPI,
-  singleDoubleDrawnWorkersAPI,
+  workersAPI,
 } from "../../services/api";
 import {
   Package,
@@ -203,7 +203,7 @@ const SemiExportPurchase: React.FC = () => {
 
   const loadWorkers = async () => {
     try {
-      const data = await singleDoubleDrawnWorkersAPI.getAll();
+      const data = await workersAPI.getSemiExportPurchaseWorkers();
       setWorkers(data);
     } catch (error) {
       console.error("Failed to load workers:", error);

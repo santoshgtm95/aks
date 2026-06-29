@@ -17,7 +17,8 @@ public class WorkerCashFlowDto
     public decimal RefinementFees { get; set; }
     public decimal WashGradingFees { get; set; }
     public decimal SingleDoubleDrawnFees { get; set; }
-    public decimal TotalFees => MessLabourFees + PurificationFees + PurificationSupervisorFees + RefinementFees + WashGradingFees + SingleDoubleDrawnFees;
+    public decimal SemiExportPurchaseFees { get; set; }
+    public decimal TotalFees => MessLabourFees + PurificationFees + PurificationSupervisorFees + RefinementFees + WashGradingFees + SingleDoubleDrawnFees + SemiExportPurchaseFees;
     
     public decimal PaidAmount { get; set; }
     public decimal UnpaidAmount => TotalFees - PaidAmount;
@@ -177,6 +178,20 @@ public class CashFlowController : ControllerBase
             {
                 var cf = EnsureWorker(r.Worker!.Name);
                 cf.SingleDoubleDrawnFees += r.WorkerFees;
+            }
+
+            // 5. Semi Export Purchase
+            var semiExportPurchaseRecords = await _context.SemiExportPurchaseRecords
+                .Include(r => r.SemiExportPurchaseProcessing)
+                    .ThenInclude(p => p!.Worker)
+                .Where(r => r.WorkerFees > 0)
+                .ToListAsync();
+            foreach (var r in semiExportPurchaseRecords)
+            {
+                var workerName = r.SemiExportPurchaseProcessing?.Worker?.Name
+                    ?? (string.IsNullOrWhiteSpace(r.WorkerName) ? null : r.WorkerName);
+                var cf = EnsureWorker(workerName ?? "Unknown");
+                cf.SemiExportPurchaseFees += r.WorkerFees;
             }
         }
 

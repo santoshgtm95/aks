@@ -165,4 +165,22 @@ public class WorkersController : ControllerBase
 
         return Ok(workers);
     }
+
+    [HttpGet("semiexportpurchase")]
+    public async Task<IActionResult> GetSemiExportPurchaseWorkers()
+    {
+        var workers = await _context.Workers
+            .Where(w => w.IsActive && w.AssignSemiExportPurchase)
+            .OrderBy(w => w.Name)
+            .Select(w => new SingleDoubleDrawnWorkerReturnDto
+            {
+                Id = w.Id,
+                Name = w.Name,
+                WarehouseId = w.WarehouseId ?? 0,
+                WarehouseName = w.WarehouseName ?? ""
+            })
+            .ToListAsync();
+
+        return Ok(workers);
+    }
 }

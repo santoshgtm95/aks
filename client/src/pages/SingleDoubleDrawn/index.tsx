@@ -20,7 +20,6 @@ import {
   LayoutGrid,
   Weight,
   CheckCircle2,
-  X,
 } from "lucide-react";
 
 import { formatDateTime } from "../../utils/format";
