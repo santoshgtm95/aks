@@ -702,18 +702,12 @@ const SingleDoubleDrawn: React.FC = () => {
                   }}
                 >
                   <div className="card-header">
-                    <div style={{ display: "flex", flexDirection: "column" }}>
+                    <div className="card-title-group">
                       <span className="card-marker">
                         {record.productMarker}
                       </span>
-                      <span
-                        style={{
-                          fontSize: "11px",
-                          color: "#64748b",
-                          fontWeight: 500,
-                          marginTop: "2px",
-                        }}
-                      >
+                      <span className="card-warehouse">
+                        <Package size={11} strokeWidth={2} />
                         {record.warehouseName || "---"}
                       </span>
                     </div>
@@ -724,20 +718,20 @@ const SingleDoubleDrawn: React.FC = () => {
                     </span>
                   </div>
                   <div className="card-details">
-                    <span>
-                      Output:{" "}
-                      <strong style={{ color: "#059669" }}>
+                    <div className="card-stat card-stat-output">
+                      <span className="card-stat-label">Output</span>
+                      <span className="card-stat-value">
                         {record.weight.toFixed(3)}
-                      </strong>{" "}
-                      viss
-                    </span>
-                    <span>
-                      Return:{" "}
-                      <strong style={{ color: "#2563eb" }}>
+                        <em>viss</em>
+                      </span>
+                    </div>
+                    <div className="card-stat card-stat-return">
+                      <span className="card-stat-label">Return</span>
+                      <span className="card-stat-value">
                         {record.returnWeight.toFixed(3)}
-                      </strong>{" "}
-                      viss
-                    </span>
+                        <em>viss</em>
+                      </span>
+                    </div>
                   </div>
                 </div>
               ))
