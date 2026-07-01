@@ -14,6 +14,7 @@ import {
 } from "../../services/api";
 import type { DashboardStats, MarkerSortingStats } from "../../types";
 import Modal from "../../components/Modal";
+import { useLongPoll } from "../../hooks/useLongPoll";
 import {
   ArrowUpRight,
   ArrowDownRight,
@@ -308,6 +309,8 @@ const Dashboard: React.FC = () => {
   useEffect(() => {
     loadAll();
   }, [loadAll]);
+
+  useLongPoll(loadAll);
 
   /* ─── Sort / filter markers ─── */
   const handleSort = (field: SortField) => {

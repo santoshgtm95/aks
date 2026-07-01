@@ -1,7 +1,8 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useCallback } from "react";
 import { useAuth } from "../../context/AuthContext";
 import { salesAPI, productsAPI } from "../../services/api";
 import { useNotification } from "../../context/NotificationContext";
+import { useLongPoll } from "../../hooks/useLongPoll";
 import type { Sale, Product, CreateSaleDto } from "../../types";
 import {
   Trash2,
@@ -49,7 +50,7 @@ const Sales: React.FC = () => {
     loadData();
   }, []);
 
-  const loadData = async () => {
+  const loadData = useCallback(async () => {
     try {
       const [salesData, productsData] = await Promise.all([
         salesAPI.getAll(PAGE_CATEGORY),
@@ -62,7 +63,9 @@ const Sales: React.FC = () => {
     } finally {
       setLoading(false);
     }
-  };
+  }, []);
+
+  useLongPoll(loadData);
 
   const handleInputChange = (
     e: React.ChangeEvent<

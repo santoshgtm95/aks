@@ -4,6 +4,7 @@ using Microsoft.EntityFrameworkCore;
 using AKZ.API.Data;
 using AKZ.API.DTOs;
 using AKZ.API.Models;
+using AKZ.API.Services;
 
 namespace AKZ.API.Controllers;
 
@@ -13,10 +14,12 @@ namespace AKZ.API.Controllers;
 public class ProcessingController : ControllerBase
 {
     private readonly AKZDbContext _context;
+    private readonly ChangeNotifierService _notifier;
 
-    public ProcessingController(AKZDbContext context)
+    public ProcessingController(AKZDbContext context, ChangeNotifierService notifier)
     {
         _context = context;
+        _notifier = notifier;
     }
 
     private int? GetCurrentUserWarehouseId()
@@ -204,6 +207,7 @@ public class ProcessingController : ControllerBase
 
         _context.ProcessingRecords.Add(record);
         await _context.SaveChangesAsync();
+        _notifier.NotifyChange();
 
         await _context.Entry(record).Reference(r => r.Product).LoadAsync();
         await _context.Entry(record.Product).Reference(p => p.Warehouse).LoadAsync();
@@ -342,6 +346,7 @@ public class ProcessingController : ControllerBase
         }).ToList();
 
         await _context.SaveChangesAsync();
+        _notifier.NotifyChange();
 
         var resultDto = new ProcessingRecordDto
         {
@@ -423,6 +428,7 @@ public class ProcessingController : ControllerBase
 
         _context.ProcessingRecords.Remove(record);
         await _context.SaveChangesAsync();
+        _notifier.NotifyChange();
 
         return NoContent();
     }

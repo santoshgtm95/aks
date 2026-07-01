@@ -61,6 +61,9 @@ builder.Services.AddScoped<ICurrentUserService, CurrentUserService>();
 builder.Services.AddScoped<IAuditLogService, AuditLogService>();
 builder.Services.AddScoped<ReportService>();
 
+// Long-polling change notifier (singleton so all requests share state)
+builder.Services.AddSingleton<ChangeNotifierService>();
+
 var app = builder.Build();
 
 // Seed database

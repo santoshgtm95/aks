@@ -1,5 +1,6 @@
-import React, { useEffect, useState, useMemo } from "react";
+import React, { useEffect, useState, useMemo, useCallback } from "react";
 import { useAuth } from "../../context/AuthContext";
+import { useLongPoll } from "../../hooks/useLongPoll";
 import {
   ledgerAPI,
   singleDoubleDrawnAPI,
@@ -204,7 +205,7 @@ const Sales6: React.FC = () => {
     loadData();
   }, []);
 
-  const loadData = async () => {
+  const loadData = useCallback(async () => {
     try {
       setLoading(true);
       const [
@@ -236,7 +237,8 @@ const Sales6: React.FC = () => {
     } finally {
       setLoading(false);
     }
-  };
+  }, []);
+  useLongPoll(loadData);
 
   const selectedLedger = useMemo(() => {
     return ledgers.find((l) => l.id === selectedLedgerId) || null;
@@ -1039,791 +1041,814 @@ const Sales6: React.FC = () => {
         <div className="export-list-hero-right">
           <div className="export-list-stat-pill">
             <span className="stat-num">{exports.length}</span>
-            <span className="stat-label">{exports.length === 1 ? 'Record' : 'Records'}</span>
+            <span className="stat-label">
+              {exports.length === 1 ? "Record" : "Records"}
+            </span>
           </div>
         </div>
       </div>
 
       <div className="export-list-layout">
         <aside className="rf-sidebar">
-        <div className="rf-sidebar-header">
-          <ClipboardList size={18} />
-          <span>Export Ledger</span>
-        </div>
-
-        <div className="rf-search-box">
-          <Search size={16} className="rf-search-icon" />
-          <input
-            type="text"
-            className="rf-search-input"
-            placeholder="Search ledger or marker..."
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-          />
-        </div>
-
-        <div className="rf-card-list">
-          {activeLedgers.length === 0 ? (
-            <div className="rf-empty-sidebar">No ledgers found</div>
-          ) : (
-            <div className="sidebar-section">
-              <div className="sidebar-section-header">Active Ledgers</div>
-              {activeLedgers.map((ledger) => (
-                <div
-                  key={ledger.id}
-                  className={`product-card ${selectedLedgerId === ledger.id ? "selected" : ""}`}
-                  onClick={() => {
-                    setSelectedLedgerId(ledger.id);
-                    setActiveTab("processing");
-                  }}
-                >
-                  <div className="card-header">
-                    <span className="card-marker">{ledger.ledgerName}</span>
-                    <ChevronRight size={16} color="#cbd5e1" />
-                  </div>
-                  <div className="card-date">
-                    {new Date(ledger.date).toLocaleDateString()}
-                  </div>
-                  <span className="card-markers-list">
-                    {ledger.markers.map((m) => m.markerName).join(", ")}
-                  </span>
-                </div>
-              ))}
-            </div>
-          )}
-        </div>
-      </aside>
-
-      <main className="rf-main">
-        <div className="rf-main-card">
-          <div className="rf-main-header">
-            <div className="rf-header-left">
-              <div className="rf-tab-group" style={{ marginLeft: "24px" }}>
-                <button
-                  className={`rf-tab ${activeTab === "processing" ? "rf-tab-active" : ""}`}
-                  onClick={() => setActiveTab("processing")}
-                >
-                  <span className="rf-tab-title">Processing</span>
-                  <span className="rf-tab-sub">Sell &amp; Export Colors</span>
-                </button>
-                <button
-                  className={`rf-tab ${activeTab === "history" ? "rf-tab-active" : ""}`}
-                  onClick={() => setActiveTab("history")}
-                >
-                  <span className="rf-tab-title">History</span>
-                  <span className="rf-tab-sub">
-                    {selectedLedger ? "Ledger History" : "Global History"}
-                  </span>
-                </button>
-              </div>
-            </div>
-
-            <div className="rf-header-right">
-              {selectedLedger && hasPermission("Ledger.Delete") && (
-                <button
-                  onClick={() => handleDeleteLedger(selectedLedger.id)}
-                  className="btn btn-danger"
-                  style={{ display: "flex", alignItems: "center", gap: "8px" }}
-                >
-                  <Trash2 size={16} /> Delete Ledger
-                </button>
-              )}
-            </div>
+          <div className="rf-sidebar-header">
+            <ClipboardList size={18} />
+            <span>Export Ledger</span>
           </div>
 
-          {activeTab === "processing" ? (
-            selectedLedger ? (
-              <>
-                <div className="ledger-header">
-                  <h2>{selectedLedger.ledgerName}</h2>
-                  <div className="ledger-meta">
-                    <div className="meta-item">
-                      <Calendar size={16} />
-                      <span>
-                        {new Date(selectedLedger.date).toLocaleDateString()}
+          <div className="rf-search-box">
+            <Search size={16} className="rf-search-icon" />
+            <input
+              type="text"
+              className="rf-search-input"
+              placeholder="Search ledger or marker..."
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+            />
+          </div>
+
+          <div className="rf-card-list">
+            {activeLedgers.length === 0 ? (
+              <div className="rf-empty-sidebar">No ledgers found</div>
+            ) : (
+              <div className="sidebar-section">
+                <div className="sidebar-section-header">Active Ledgers</div>
+                {activeLedgers.map((ledger) => (
+                  <div
+                    key={ledger.id}
+                    className={`product-card ${selectedLedgerId === ledger.id ? "selected" : ""}`}
+                    onClick={() => {
+                      setSelectedLedgerId(ledger.id);
+                      setActiveTab("processing");
+                    }}
+                  >
+                    <div className="card-header">
+                      <span className="card-marker">{ledger.ledgerName}</span>
+                      <ChevronRight size={16} color="#cbd5e1" />
+                    </div>
+                    <div className="card-date">
+                      {new Date(ledger.date).toLocaleDateString()}
+                    </div>
+                    <span className="card-markers-list">
+                      {ledger.markers.map((m) => m.markerName).join(", ")}
+                    </span>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        </aside>
+
+        <main className="rf-main">
+          <div className="rf-main-card">
+            <div className="rf-main-header">
+              <div className="rf-header-left">
+                <div className="rf-tab-group" style={{ marginLeft: "24px" }}>
+                  <button
+                    className={`rf-tab ${activeTab === "processing" ? "rf-tab-active" : ""}`}
+                    onClick={() => setActiveTab("processing")}
+                  >
+                    <span className="rf-tab-title">Processing</span>
+                    <span className="rf-tab-sub">Sell &amp; Export Colors</span>
+                  </button>
+                  <button
+                    className={`rf-tab ${activeTab === "history" ? "rf-tab-active" : ""}`}
+                    onClick={() => setActiveTab("history")}
+                  >
+                    <span className="rf-tab-title">History</span>
+                    <span className="rf-tab-sub">
+                      {selectedLedger ? "Ledger History" : "Global History"}
+                    </span>
+                  </button>
+                </div>
+              </div>
+
+              <div className="rf-header-right">
+                {selectedLedger && hasPermission("Ledger.Delete") && (
+                  <button
+                    onClick={() => handleDeleteLedger(selectedLedger.id)}
+                    className="btn btn-danger"
+                    style={{
+                      display: "flex",
+                      alignItems: "center",
+                      gap: "8px",
+                    }}
+                  >
+                    <Trash2 size={16} /> Delete Ledger
+                  </button>
+                )}
+              </div>
+            </div>
+
+            {activeTab === "processing" ? (
+              selectedLedger ? (
+                <>
+                  <div className="ledger-header">
+                    <h2>{selectedLedger.ledgerName}</h2>
+                    <div className="ledger-meta">
+                      <div className="meta-item">
+                        <Calendar size={16} />
+                        <span>
+                          {new Date(selectedLedger.date).toLocaleDateString()}
+                        </span>
+                      </div>
+                      {selectedLedger.description && (
+                        <div className="meta-item">
+                          <FileText size={16} />
+                          <span>{selectedLedger.description}</span>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                  <div className="grand-total-bar">
+                    <div className="grand-total-item">
+                      <span className="grand-total-label">
+                        Total Export Weight
+                      </span>
+                      <span className="grand-total-value">
+                        {grandTotal.totalWeight.toFixed(3)}{" "}
+                        <span className="grand-total-unit">viss</span> /{" "}
+                        {(grandTotal.totalWeight * 1.633).toFixed(3)}{" "}
+                        <span className="grand-total-unit">kg</span>
                       </span>
                     </div>
-                    {selectedLedger.description && (
-                      <div className="meta-item">
-                        <FileText size={16} />
-                        <span>{selectedLedger.description}</span>
+                    <div className="grand-total-divider" />
+                    <div className="grand-total-item">
+                      <span className="grand-total-label">Product Amount</span>
+                      <span className="grand-total-value">
+                        {Math.round(grandTotal.totalAmountMMK).toLocaleString()}{" "}
+                        <span className="grand-total-unit">MMK</span>
+                      </span>
+                    </div>
+                    <div className="grand-total-divider" />
+                    <div className="grand-total-item">
+                      <span className="grand-total-label">Worker Fees</span>
+                      <span className="grand-total-value">
+                        {grandTotal.totalWorkerFees.toLocaleString()}{" "}
+                        <span className="grand-total-unit">MMK</span>
+                      </span>
+                    </div>
+                    <div className="grand-total-divider" />
+                    <div className="grand-total-item highlight">
+                      <span className="grand-total-label">GRAND TOTAL</span>
+                      <span className="grand-total-value grand">
+                        {Math.round(
+                          grandTotal.totalAmountMMK +
+                            grandTotal.totalWorkerFees,
+                        ).toLocaleString()}{" "}
+                        <span className="grand-total-unit">MMK</span>
+                      </span>
+                    </div>
+                  </div>
+
+                  <div>
+                    <div className="section-title-wrapper">
+                      <h3>Available Colors</h3>
+                      {unsoldColors.length > 0 && (
+                        <button
+                          onClick={handleSelectAll}
+                          className="btn-select-all"
+                        >
+                          {unsoldColors.every((c) =>
+                            selectedColors.has(c.colorName),
+                          )
+                            ? "Deselect All"
+                            : "Select All"}
+                        </button>
+                      )}
+                    </div>
+
+                    {unsoldColors.length === 0 ? (
+                      <div className="all-sold-message">
+                        All colors in this ledger have been sold.
                       </div>
-                    )}
-                  </div>
-                </div>
-                <div className="grand-total-bar">
-                  <div className="grand-total-item">
-                    <span className="grand-total-label">
-                      Total Export Weight
-                    </span>
-                    <span className="grand-total-value">
-                      {grandTotal.totalWeight.toFixed(3)}{" "}
-                      <span className="grand-total-unit">viss</span> /{" "}
-                      {(grandTotal.totalWeight * 1.633).toFixed(3)}{" "}
-                      <span className="grand-total-unit">kg</span>
-                    </span>
-                  </div>
-                  <div className="grand-total-divider" />
-                  <div className="grand-total-item">
-                    <span className="grand-total-label">Product Amount</span>
-                    <span className="grand-total-value">
-                      {Math.round(grandTotal.totalAmountMMK).toLocaleString()}{" "}
-                      <span className="grand-total-unit">MMK</span>
-                    </span>
-                  </div>
-                  <div className="grand-total-divider" />
-                  <div className="grand-total-item">
-                    <span className="grand-total-label">Worker Fees</span>
-                    <span className="grand-total-value">
-                      {grandTotal.totalWorkerFees.toLocaleString()}{" "}
-                      <span className="grand-total-unit">MMK</span>
-                    </span>
-                  </div>
-                  <div className="grand-total-divider" />
-                  <div className="grand-total-item highlight">
-                    <span className="grand-total-label">GRAND TOTAL</span>
-                    <span className="grand-total-value grand">
-                      {Math.round(
-                        grandTotal.totalAmountMMK + grandTotal.totalWorkerFees,
-                      ).toLocaleString()}{" "}
-                      <span className="grand-total-unit">MMK</span>
-                    </span>
-                  </div>
-                </div>
-
-                <div>
-                  <div className="section-title-wrapper">
-                    <h3>Available Colors</h3>
-                    {unsoldColors.length > 0 && (
-                      <button
-                        onClick={handleSelectAll}
-                        className="btn-select-all"
-                      >
-                        {unsoldColors.every((c) =>
-                          selectedColors.has(c.colorName),
-                        )
-                          ? "Deselect All"
-                          : "Select All"}
-                      </button>
-                    )}
-                  </div>
-
-                  {unsoldColors.length === 0 ? (
-                    <div className="all-sold-message">
-                      All colors in this ledger have been sold.
-                    </div>
-                  ) : (
-                    <div className="colors-grid">
-                      {unsoldColors.map((color) => {
-                        const isSelected = selectedColors.has(color.colorName);
-                        return (
-                          <div
-                            key={color.colorName}
-                            className={`color-detail-card selectable-card ${isSelected ? "selected" : ""}`}
-                            onClick={() => toggleSelectColor(color.colorName)}
-                          >
-                            <div className="color-header">
-                              <div className="color-title-wrap">
-                                <div className="checkbox-wrapper">
-                                  {isSelected ? (
-                                    <CheckSquare
-                                      size={18}
-                                      className="checkbox-icon checked"
-                                    />
-                                  ) : (
-                                    <Square
-                                      size={18}
-                                      className="checkbox-icon"
-                                    />
-                                  )}
-                                </div>
-                                <span
-                                  className={`color-badge-dot ${color.colorName.toLowerCase().replace(/\s+/g, "-")}`}
-                                ></span>
-                                <span className="color-name">
-                                  {color.colorName}
-                                </span>
-                                <span className="color-header-markers">
-                                  ({color.markers.join(", ") || "None"})
-                                </span>
-                              </div>
-                              <span className="color-badge weight-badge">
-                                {color.totalWeight.toFixed(4)} viss /{" "}
-                                {(color.totalWeight * 1.633).toFixed(4)} kg
-                              </span>
-                            </div>
-
-                            <div
-                              className="sizes-section"
-                              onClick={(e) => e.stopPropagation()}
-                            >
-                              <button
-                                className="sizes-toggle-btn"
-                                onClick={() =>
-                                  toggleColorExpanded(color.colorName)
-                                }
-                              >
-                                <span className="sizes-toggle-label">
-                                  Size Breakdown{" "}
-                                  <span className="active-sizes-badge">
-                                    (
-                                    {
-                                      Object.values(color.sizes).filter(
-                                        (sz: any) => sz.weight > 0,
-                                      ).length
-                                    }{" "}
-                                    Active)
-                                  </span>
-                                </span>
-                                {expandedColors[color.colorName] ? (
-                                  <ChevronUp size={16} />
-                                ) : (
-                                  <ChevronDown size={16} />
-                                )}
-                              </button>
-
-                              {expandedColors[color.colorName] && (
-                                <div className="sizes-grid fade-in">
-                                  {Object.entries(color.sizes).map(
-                                    ([sizeKey, sizeData]: [string, any]) => {
-                                      if (sizeData.weight === 0) return null;
-                                      return (
-                                        <div
-                                          key={sizeKey}
-                                          className="size-badge"
-                                          style={{ flexWrap: "wrap" }}
-                                        >
-                                          <span className="size-name">
-                                            {sizeKey}
-                                          </span>
-                                          <span className="size-val">
-                                            {(sizeData.weight * 1.633).toFixed(
-                                              4,
-                                            )}{" "}
-                                            kg
-                                          </span>
-                                          <span
-                                            className="size-price"
-                                            style={{
-                                              marginLeft: "4px",
-                                              fontSize: "11px",
-                                              color: "#64748b",
-                                            }}
-                                          >
-                                            (
-                                            {sizeData.price > 0
-                                              ? `¥${sizeData.price.toLocaleString()}`
-                                              : "No Price"}
-                                            )
-                                          </span>
-                                          <div
-                                            className="size-price-input"
-                                            onClick={(e) => e.stopPropagation()}
-                                            style={{
-                                              display: "flex",
-                                              gap: "12px",
-                                              width: "100%",
-                                              marginTop:
-                                                "8px" /* Push inputs below the headers */,
-                                              marginLeft:
-                                                "0" /* override flex auto margin for wrap */,
-                                              paddingLeft: "0",
-                                              borderLeft: "none",
-                                            }}
-                                          >
-                                            <div
-                                              style={{
-                                                display: "flex",
-                                                alignItems: "center",
-                                                gap: "6px",
-                                                flex: 1,
-                                              }}
-                                            >
-                                              <span
-                                                className="currency-symbol"
-                                                style={{
-                                                  fontSize: "11px",
-                                                  fontWeight: "700",
-                                                }}
-                                              >
-                                                Wgt (kg):
-                                              </span>
-                                              <input
-                                                type="number"
-                                                placeholder="0.00"
-                                                value={
-                                                  (sizeSellingPrices[
-                                                    color.colorName
-                                                  ]?.[sizeKey]
-                                                    ?.weight as any) || ""
-                                                }
-                                                style={{
-                                                  width: "100%",
-                                                  flex: 1,
-                                                }}
-                                                onChange={(e) => {
-                                                  const val = e.target.value;
-                                                  setSizeSellingPrices(
-                                                    (prev: any) => ({
-                                                      ...prev,
-                                                      [color.colorName]: {
-                                                        ...(prev[
-                                                          color.colorName
-                                                        ] || {}),
-                                                        [sizeKey]: {
-                                                          ...(prev[
-                                                            color.colorName
-                                                          ]?.[sizeKey] || {}),
-                                                          weight: val,
-                                                        },
-                                                      },
-                                                    }),
-                                                  );
-                                                }}
-                                              />
-                                            </div>
-
-                                            <div
-                                              style={{
-                                                display: "flex",
-                                                alignItems: "center",
-                                                gap: "6px",
-                                                flex: 1,
-                                              }}
-                                            >
-                                              <span
-                                                className="currency-symbol"
-                                                style={{
-                                                  fontSize: "11px",
-                                                  fontWeight: "700",
-                                                }}
-                                              >
-                                                Price: ¥
-                                              </span>
-                                              <input
-                                                type="number"
-                                                placeholder="0.00"
-                                                value={
-                                                  (sizeSellingPrices[
-                                                    color.colorName
-                                                  ]?.[sizeKey]?.price as any) ||
-                                                  ""
-                                                }
-                                                style={{
-                                                  width: "100%",
-                                                  flex: 1,
-                                                }}
-                                                onChange={(e) => {
-                                                  const val = e.target.value;
-                                                  setSizeSellingPrices(
-                                                    (prev: any) => ({
-                                                      ...prev,
-                                                      [color.colorName]: {
-                                                        ...(prev[
-                                                          color.colorName
-                                                        ] || {}),
-                                                        [sizeKey]: {
-                                                          ...(prev[
-                                                            color.colorName
-                                                          ]?.[sizeKey] || {}),
-                                                          price: val,
-                                                        },
-                                                      },
-                                                    }),
-                                                  );
-                                                }}
-                                              />
-                                            </div>
-                                          </div>
-                                        </div>
-                                      );
-                                    },
-                                  )}
-                                </div>
-                              )}
-                            </div>
-                          </div>
-                        );
-                      })}
-                    </div>
-                  )}
-
-                  {unsoldColors.length > 0 && (
-                    <div className="sell-panel-container">
-                      <div className="sell-panel-header">
-                        <Coins size={18} className="sell-header-icon" />
-                        <span>Sell Selected Colors</span>
-                      </div>
-                      <div className="sell-panel-body">
-                        <div className="sell-panel-inputs">
-                          <div className="price-input-group">
-                            <label>Total Inputted Weight</label>
-                            <div className="price-input-wrapper readonly-wrapper">
-                              <span className="currency-prefix">
-                                <Scale size={14} />
-                              </span>
-                              <input
-                                type="text"
-                                disabled
-                                value={`${(calculatedInputtedWeight / 1.633).toFixed(3)} viss / ${calculatedInputtedWeight.toFixed(3)} kg`}
-                              />
-                            </div>
-                          </div>
-                          <div className="price-input-group">
-                            <label>Calculated Selling Price</label>
-                            <div className="price-input-wrapper readonly-wrapper">
-                              <span className="currency-prefix">¥</span>
-                              <input
-                                type="text"
-                                disabled
-                                value={calculatedSellingPriceCNY.toLocaleString(
-                                  undefined,
-                                  {
-                                    minimumFractionDigits: 2,
-                                    maximumFractionDigits: 2,
-                                  },
-                                )}
-                              />
-                            </div>
-                            <div
-                              className="price-input-wrapper readonly-wrapper"
-                              style={{ marginTop: "8px" }}
-                            >
-                              <span className="currency-prefix">MMK</span>
-                              <input
-                                type="text"
-                                disabled
-                                value={Math.round(
-                                  calculatedSellingPriceMMK,
-                                ).toLocaleString()}
-                              />
-                            </div>
-                          </div>
-                          {hasPermission("Sales6.Create") && (
-                            <button
-                              onClick={handleSellSelected}
-                              className="btn-sell"
-                              disabled={
-                                sellingInProgress ||
-                                selectedColors.size === 0 ||
-                                calculatedSellingPriceMMK <= 0
-                              }
-                            >
-                              {sellingInProgress
-                                ? "Saving..."
-                                : "Sell Selected"}
-                            </button>
-                          )}
-                        </div>
-
-                        {selectedColors.size === 0 ? (
-                          <div className="sell-panel-placeholder">
-                            <Info size={20} className="placeholder-icon" />
-                            <span>
-                              Select colors from the list above to view selling
-                              price calculations and potential P&amp;L.
-                            </span>
-                          </div>
-                        ) : (
-                          <div className="sell-summary-grid">
-                            <div className="summary-box colors-pill-box">
-                              <div className="summary-hdr">
-                                <Tag size={13} className="summary-icon" />
-                                <span className="summary-lbl">
-                                  Selected Colors
-                                </span>
-                              </div>
-                              <div className="summary-colors-pills">
-                                {Array.from(selectedColors).map((col) => (
-                                  <span key={col} className="color-pill-tag">
-                                    {col}
-                                  </span>
-                                ))}
-                              </div>
-                            </div>
-                            <div className="summary-box">
-                              <div className="summary-hdr">
-                                <Scale size={13} className="summary-icon" />
-                                <span className="summary-lbl">
-                                  Selected Weight
-                                </span>
-                              </div>
-                              <span className="summary-val">
-                                {selectedTotals.weight.toFixed(3)}{" "}
-                                <span className="val-unit">viss</span>
-                              </span>
-                            </div>
-                            <div className="summary-box">
-                              <div className="summary-hdr">
-                                <Scale size={13} className="summary-icon" />
-                                <span className="summary-lbl">
-                                  Total Export Weight
-                                </span>
-                              </div>
-                              <span className="summary-val">
-                                {selectedTotals.weight.toFixed(3)}{" "}
-                                <span className="val-unit">viss</span> /{" "}
-                                {(selectedTotals.weight * 1.633).toFixed(3)}{" "}
-                                <span className="val-unit">kg</span>
-                              </span>
-                            </div>
-                            <div className="summary-box">
-                              <div className="summary-hdr">
-                                <Coins size={13} className="summary-icon" />
-                                <span className="summary-lbl">
-                                  Product Amount (CNY)
-                                </span>
-                              </div>
-                              <span className="summary-val">
-                                ¥{selectedTotals.amountCNY.toLocaleString()}
-                              </span>
-                            </div>
-                            <div className="summary-box">
-                              <div className="summary-hdr">
-                                <Coins size={13} className="summary-icon" />
-                                <span className="summary-lbl">
-                                  Product Amount (MMK)
-                                </span>
-                              </div>
-                              <span className="summary-val">
-                                {Math.round(
-                                  selectedTotals.amountMMK,
-                                ).toLocaleString()}{" "}
-                                <span className="val-unit">MMK</span>
-                              </span>
-                            </div>
-                            <div className="summary-box">
-                              <div className="summary-hdr">
-                                <Coins size={13} className="summary-icon" />
-                                <span className="summary-lbl">Worker Fees</span>
-                              </div>
-                              <span className="summary-val">
-                                {selectedTotals.workerFees.toLocaleString()}{" "}
-                                <span className="val-unit">MMK</span>
-                              </span>
-                            </div>
-                            <div className="summary-box highlight">
-                              <div className="summary-hdr">
-                                <Coins size={13} className="summary-icon" />
-                                <span className="summary-lbl">Grand Total</span>
-                              </div>
-                              <span className="summary-val">
-                                {Math.round(
-                                  selectedTotals.amountMMK +
-                                    selectedTotals.workerFees,
-                                ).toLocaleString()}{" "}
-                                <span className="val-unit">MMK</span>
-                              </span>
-                            </div>
-                            {(() => {
-                              const sp = calculatedSellingPriceMMK;
-                              const gt =
-                                selectedTotals.amountMMK +
-                                selectedTotals.workerFees;
-                              if (isNaN(sp) || sp <= 0) return null;
-                              const pnl = sp - gt;
-                              const isProfit = pnl >= 0;
-                              return (
-                                <div
-                                  className={`summary-box pnl-box ${isProfit ? "pnl-profit" : "pnl-loss"}`}
-                                >
-                                  <div className="summary-hdr">
-                                    {isProfit ? (
-                                      <TrendingUp
-                                        size={13}
-                                        className="summary-icon"
-                                      />
-                                    ) : (
-                                      <TrendingDown
-                                        size={13}
-                                        className="summary-icon"
-                                      />
-                                    )}
-                                    <span className="summary-lbl">P&amp;L</span>
-                                  </div>
-                                  <span className="summary-val">
-                                    {isProfit ? "+" : ""}
-                                    {Math.round(pnl).toLocaleString()}{" "}
-                                    <span className="val-unit">MMK</span>
-                                  </span>
-                                </div>
-                              );
-                            })()}
-                          </div>
-                        )}
-                      </div>
-                    </div>
-                  )}
-                </div>
-              </>
-            ) : (
-              <div className="empty-state">
-                <ClipboardList size={64} color="#cbd5e1" />
-                <h3>Select a Ledger</h3>
-                <p>
-                  Choose an export ledger from the sidebar to view detailed
-                  marker reports and sell colors.
-                </p>
-              </div>
-            )
-          ) : (
-            /* History Tab */
-            <div className="ledger-history-tab">
-              {(() => {
-                const filteredExports = selectedLedger
-                  ? exports.filter((e) => e.ledgerId === selectedLedger.id)
-                  : exports;
-
-                if (filteredExports.length === 0) {
-                  return (
-                    <div
-                      className="rf-empty-row"
-                      style={{ padding: "64px 20px" }}
-                    >
-                      <ClipboardList
-                        size={44}
-                        className="rf-empty-icon"
-                        style={{
-                          opacity: 0.2,
-                          margin: "0 auto 12px",
-                          display: "block",
-                        }}
-                      />
-                      <span>No sold colors history found</span>
-                    </div>
-                  );
-                }
-
-                return (
-                  <div className="rf-table-wrap">
-                    <table className="rf-table">
-                      <thead>
-                        <tr>
-                          <th>Date</th>
-                          {!selectedLedger && <th>Ledger</th>}
-                          <th>Colors Sold</th>
-                          <th>Markers</th>
-                          <th>Selling Price</th>
-                          <th>Weight (viss)</th>
-                          <th>Weight (kg)</th>
-                          <th>Product Amt (CNY)</th>
-                          <th>Product Amt (MMK)</th>
-                          <th>Worker Fees</th>
-                          <th>Grand Total</th>
-                          <th>P&amp;L</th>
-                        </tr>
-                      </thead>
-                      <tbody>
-                        {filteredExports.map((sale) => {
-                          const saleLedger = ledgers.find(
-                            (l) => l.id === sale.ledgerId,
+                    ) : (
+                      <div className="colors-grid">
+                        {unsoldColors.map((color) => {
+                          const isSelected = selectedColors.has(
+                            color.colorName,
                           );
                           return (
-                            <tr
-                              key={sale.id}
-                              style={{ cursor: "pointer" }}
-                              onClick={() => {
-                                setSelectedHistory(sale);
-                                setIsHistoryModalOpen(true);
-                              }}
+                            <div
+                              key={color.colorName}
+                              className={`color-detail-card selectable-card ${isSelected ? "selected" : ""}`}
+                              onClick={() => toggleSelectColor(color.colorName)}
                             >
-                              <td className="rf-td-date">
-                                {new Date(sale.date).toLocaleDateString()}
-                              </td>
-                              {!selectedLedger && (
-                                <td
-                                  style={{ fontWeight: 700, color: "#2563eb" }}
-                                >
-                                  {saleLedger
-                                    ? saleLedger.ledgerName
-                                    : `Ledger #${sale.ledgerId}`}
-                                </td>
-                              )}
-                              <td>
-                                <div className="history-colors-list">
-                                  {sale.selectedColors
-                                    .split(", ")
-                                    .map((col) => (
-                                      <span
-                                        key={col}
-                                        className="history-color-tag"
-                                      >
-                                        {col}
-                                      </span>
-                                    ))}
+                              <div className="color-header">
+                                <div className="color-title-wrap">
+                                  <div className="checkbox-wrapper">
+                                    {isSelected ? (
+                                      <CheckSquare
+                                        size={18}
+                                        className="checkbox-icon checked"
+                                      />
+                                    ) : (
+                                      <Square
+                                        size={18}
+                                        className="checkbox-icon"
+                                      />
+                                    )}
+                                  </div>
+                                  <span
+                                    className={`color-badge-dot ${color.colorName.toLowerCase().replace(/\s+/g, "-")}`}
+                                  ></span>
+                                  <span className="color-name">
+                                    {color.colorName}
+                                  </span>
+                                  <span className="color-header-markers">
+                                    ({color.markers.join(", ") || "None"})
+                                  </span>
                                 </div>
-                              </td>
-                              <td>
-                                <div className="history-colors-list">
-                                  {saleLedger ? (
-                                    saleLedger.markers.map((m) => (
-                                      <span
-                                        key={m.markerName}
-                                        className="history-color-tag"
-                                        style={{
-                                          background: "rgba(99,102,241,0.15)",
-                                          color: "#a5b4fc",
-                                        }}
-                                      >
-                                        {m.markerName}
-                                      </span>
-                                    ))
-                                  ) : (
-                                    <span className="history-color-tag">—</span>
-                                  )}
-                                </div>
-                              </td>
-                              <td className="font-numeric">
-                                {sale.sellingPrice.toLocaleString()} MMK
-                              </td>
-                              <td className="font-numeric">
-                                {sale.selectedWeight.toFixed(3)}
-                              </td>
-                              <td className="font-numeric">
-                                {sale.totalExportWeightKg.toFixed(3)}
-                              </td>
-                              <td className="font-numeric">
-                                ¥{sale.productAmountCNY.toLocaleString()}
-                              </td>
-                              <td className="font-numeric">
-                                {Math.round(
-                                  sale.productAmountMMK,
-                                ).toLocaleString()}{" "}
-                                MMK
-                              </td>
-                              <td className="font-numeric">
-                                {sale.workerFees.toLocaleString()} MMK
-                              </td>
-                              <td className="font-numeric highlight-td">
-                                {Math.round(
-                                  sale.grandTotalMMK,
-                                ).toLocaleString()}{" "}
-                                MMK
-                              </td>
-                              <td
-                                className={`font-numeric ${sale.sellingPrice - sale.grandTotalMMK >= 0 ? "pnl-profit-td" : "pnl-loss-td"}`}
+                                <span className="color-badge weight-badge">
+                                  {color.totalWeight.toFixed(4)} viss /{" "}
+                                  {(color.totalWeight * 1.633).toFixed(4)} kg
+                                </span>
+                              </div>
+
+                              <div
+                                className="sizes-section"
+                                onClick={(e) => e.stopPropagation()}
                               >
-                                {sale.sellingPrice - sale.grandTotalMMK >= 0
-                                  ? "+"
-                                  : ""}
-                                {Math.round(
-                                  sale.sellingPrice - sale.grandTotalMMK,
-                                ).toLocaleString()}{" "}
-                                MMK
-                              </td>
-                            </tr>
+                                <button
+                                  className="sizes-toggle-btn"
+                                  onClick={() =>
+                                    toggleColorExpanded(color.colorName)
+                                  }
+                                >
+                                  <span className="sizes-toggle-label">
+                                    Size Breakdown{" "}
+                                    <span className="active-sizes-badge">
+                                      (
+                                      {
+                                        Object.values(color.sizes).filter(
+                                          (sz: any) => sz.weight > 0,
+                                        ).length
+                                      }{" "}
+                                      Active)
+                                    </span>
+                                  </span>
+                                  {expandedColors[color.colorName] ? (
+                                    <ChevronUp size={16} />
+                                  ) : (
+                                    <ChevronDown size={16} />
+                                  )}
+                                </button>
+
+                                {expandedColors[color.colorName] && (
+                                  <div className="sizes-grid fade-in">
+                                    {Object.entries(color.sizes).map(
+                                      ([sizeKey, sizeData]: [string, any]) => {
+                                        if (sizeData.weight === 0) return null;
+                                        return (
+                                          <div
+                                            key={sizeKey}
+                                            className="size-badge"
+                                            style={{ flexWrap: "wrap" }}
+                                          >
+                                            <span className="size-name">
+                                              {sizeKey}
+                                            </span>
+                                            <span className="size-val">
+                                              {(
+                                                sizeData.weight * 1.633
+                                              ).toFixed(4)}{" "}
+                                              kg
+                                            </span>
+                                            <span
+                                              className="size-price"
+                                              style={{
+                                                marginLeft: "4px",
+                                                fontSize: "11px",
+                                                color: "#64748b",
+                                              }}
+                                            >
+                                              (
+                                              {sizeData.price > 0
+                                                ? `¥${sizeData.price.toLocaleString()}`
+                                                : "No Price"}
+                                              )
+                                            </span>
+                                            <div
+                                              className="size-price-input"
+                                              onClick={(e) =>
+                                                e.stopPropagation()
+                                              }
+                                              style={{
+                                                display: "flex",
+                                                gap: "12px",
+                                                width: "100%",
+                                                marginTop:
+                                                  "8px" /* Push inputs below the headers */,
+                                                marginLeft:
+                                                  "0" /* override flex auto margin for wrap */,
+                                                paddingLeft: "0",
+                                                borderLeft: "none",
+                                              }}
+                                            >
+                                              <div
+                                                style={{
+                                                  display: "flex",
+                                                  alignItems: "center",
+                                                  gap: "6px",
+                                                  flex: 1,
+                                                }}
+                                              >
+                                                <span
+                                                  className="currency-symbol"
+                                                  style={{
+                                                    fontSize: "11px",
+                                                    fontWeight: "700",
+                                                  }}
+                                                >
+                                                  Wgt (kg):
+                                                </span>
+                                                <input
+                                                  type="number"
+                                                  placeholder="0.00"
+                                                  value={
+                                                    (sizeSellingPrices[
+                                                      color.colorName
+                                                    ]?.[sizeKey]
+                                                      ?.weight as any) || ""
+                                                  }
+                                                  style={{
+                                                    width: "100%",
+                                                    flex: 1,
+                                                  }}
+                                                  onChange={(e) => {
+                                                    const val = e.target.value;
+                                                    setSizeSellingPrices(
+                                                      (prev: any) => ({
+                                                        ...prev,
+                                                        [color.colorName]: {
+                                                          ...(prev[
+                                                            color.colorName
+                                                          ] || {}),
+                                                          [sizeKey]: {
+                                                            ...(prev[
+                                                              color.colorName
+                                                            ]?.[sizeKey] || {}),
+                                                            weight: val,
+                                                          },
+                                                        },
+                                                      }),
+                                                    );
+                                                  }}
+                                                />
+                                              </div>
+
+                                              <div
+                                                style={{
+                                                  display: "flex",
+                                                  alignItems: "center",
+                                                  gap: "6px",
+                                                  flex: 1,
+                                                }}
+                                              >
+                                                <span
+                                                  className="currency-symbol"
+                                                  style={{
+                                                    fontSize: "11px",
+                                                    fontWeight: "700",
+                                                  }}
+                                                >
+                                                  Price: ¥
+                                                </span>
+                                                <input
+                                                  type="number"
+                                                  placeholder="0.00"
+                                                  value={
+                                                    (sizeSellingPrices[
+                                                      color.colorName
+                                                    ]?.[sizeKey]
+                                                      ?.price as any) || ""
+                                                  }
+                                                  style={{
+                                                    width: "100%",
+                                                    flex: 1,
+                                                  }}
+                                                  onChange={(e) => {
+                                                    const val = e.target.value;
+                                                    setSizeSellingPrices(
+                                                      (prev: any) => ({
+                                                        ...prev,
+                                                        [color.colorName]: {
+                                                          ...(prev[
+                                                            color.colorName
+                                                          ] || {}),
+                                                          [sizeKey]: {
+                                                            ...(prev[
+                                                              color.colorName
+                                                            ]?.[sizeKey] || {}),
+                                                            price: val,
+                                                          },
+                                                        },
+                                                      }),
+                                                    );
+                                                  }}
+                                                />
+                                              </div>
+                                            </div>
+                                          </div>
+                                        );
+                                      },
+                                    )}
+                                  </div>
+                                )}
+                              </div>
+                            </div>
                           );
                         })}
-                      </tbody>
-                    </table>
+                      </div>
+                    )}
+
+                    {unsoldColors.length > 0 && (
+                      <div className="sell-panel-container">
+                        <div className="sell-panel-header">
+                          <Coins size={18} className="sell-header-icon" />
+                          <span>Sell Selected Colors</span>
+                        </div>
+                        <div className="sell-panel-body">
+                          <div className="sell-panel-inputs">
+                            <div className="price-input-group">
+                              <label>Total Inputted Weight</label>
+                              <div className="price-input-wrapper readonly-wrapper">
+                                <span className="currency-prefix">
+                                  <Scale size={14} />
+                                </span>
+                                <input
+                                  type="text"
+                                  disabled
+                                  value={`${(calculatedInputtedWeight / 1.633).toFixed(3)} viss / ${calculatedInputtedWeight.toFixed(3)} kg`}
+                                />
+                              </div>
+                            </div>
+                            <div className="price-input-group">
+                              <label>Calculated Selling Price</label>
+                              <div className="price-input-wrapper readonly-wrapper">
+                                <span className="currency-prefix">¥</span>
+                                <input
+                                  type="text"
+                                  disabled
+                                  value={calculatedSellingPriceCNY.toLocaleString(
+                                    undefined,
+                                    {
+                                      minimumFractionDigits: 2,
+                                      maximumFractionDigits: 2,
+                                    },
+                                  )}
+                                />
+                              </div>
+                              <div
+                                className="price-input-wrapper readonly-wrapper"
+                                style={{ marginTop: "8px" }}
+                              >
+                                <span className="currency-prefix">MMK</span>
+                                <input
+                                  type="text"
+                                  disabled
+                                  value={Math.round(
+                                    calculatedSellingPriceMMK,
+                                  ).toLocaleString()}
+                                />
+                              </div>
+                            </div>
+                            {hasPermission("Sales6.Create") && (
+                              <button
+                                onClick={handleSellSelected}
+                                className="btn-sell"
+                                disabled={
+                                  sellingInProgress ||
+                                  selectedColors.size === 0 ||
+                                  calculatedSellingPriceMMK <= 0
+                                }
+                              >
+                                {sellingInProgress
+                                  ? "Saving..."
+                                  : "Sell Selected"}
+                              </button>
+                            )}
+                          </div>
+
+                          {selectedColors.size === 0 ? (
+                            <div className="sell-panel-placeholder">
+                              <Info size={20} className="placeholder-icon" />
+                              <span>
+                                Select colors from the list above to view
+                                selling price calculations and potential
+                                P&amp;L.
+                              </span>
+                            </div>
+                          ) : (
+                            <div className="sell-summary-grid">
+                              <div className="summary-box colors-pill-box">
+                                <div className="summary-hdr">
+                                  <Tag size={13} className="summary-icon" />
+                                  <span className="summary-lbl">
+                                    Selected Colors
+                                  </span>
+                                </div>
+                                <div className="summary-colors-pills">
+                                  {Array.from(selectedColors).map((col) => (
+                                    <span key={col} className="color-pill-tag">
+                                      {col}
+                                    </span>
+                                  ))}
+                                </div>
+                              </div>
+                              <div className="summary-box">
+                                <div className="summary-hdr">
+                                  <Scale size={13} className="summary-icon" />
+                                  <span className="summary-lbl">
+                                    Selected Weight
+                                  </span>
+                                </div>
+                                <span className="summary-val">
+                                  {selectedTotals.weight.toFixed(3)}{" "}
+                                  <span className="val-unit">viss</span>
+                                </span>
+                              </div>
+                              <div className="summary-box">
+                                <div className="summary-hdr">
+                                  <Scale size={13} className="summary-icon" />
+                                  <span className="summary-lbl">
+                                    Total Export Weight
+                                  </span>
+                                </div>
+                                <span className="summary-val">
+                                  {selectedTotals.weight.toFixed(3)}{" "}
+                                  <span className="val-unit">viss</span> /{" "}
+                                  {(selectedTotals.weight * 1.633).toFixed(3)}{" "}
+                                  <span className="val-unit">kg</span>
+                                </span>
+                              </div>
+                              <div className="summary-box">
+                                <div className="summary-hdr">
+                                  <Coins size={13} className="summary-icon" />
+                                  <span className="summary-lbl">
+                                    Product Amount (CNY)
+                                  </span>
+                                </div>
+                                <span className="summary-val">
+                                  ¥{selectedTotals.amountCNY.toLocaleString()}
+                                </span>
+                              </div>
+                              <div className="summary-box">
+                                <div className="summary-hdr">
+                                  <Coins size={13} className="summary-icon" />
+                                  <span className="summary-lbl">
+                                    Product Amount (MMK)
+                                  </span>
+                                </div>
+                                <span className="summary-val">
+                                  {Math.round(
+                                    selectedTotals.amountMMK,
+                                  ).toLocaleString()}{" "}
+                                  <span className="val-unit">MMK</span>
+                                </span>
+                              </div>
+                              <div className="summary-box">
+                                <div className="summary-hdr">
+                                  <Coins size={13} className="summary-icon" />
+                                  <span className="summary-lbl">
+                                    Worker Fees
+                                  </span>
+                                </div>
+                                <span className="summary-val">
+                                  {selectedTotals.workerFees.toLocaleString()}{" "}
+                                  <span className="val-unit">MMK</span>
+                                </span>
+                              </div>
+                              <div className="summary-box highlight">
+                                <div className="summary-hdr">
+                                  <Coins size={13} className="summary-icon" />
+                                  <span className="summary-lbl">
+                                    Grand Total
+                                  </span>
+                                </div>
+                                <span className="summary-val">
+                                  {Math.round(
+                                    selectedTotals.amountMMK +
+                                      selectedTotals.workerFees,
+                                  ).toLocaleString()}{" "}
+                                  <span className="val-unit">MMK</span>
+                                </span>
+                              </div>
+                              {(() => {
+                                const sp = calculatedSellingPriceMMK;
+                                const gt =
+                                  selectedTotals.amountMMK +
+                                  selectedTotals.workerFees;
+                                if (isNaN(sp) || sp <= 0) return null;
+                                const pnl = sp - gt;
+                                const isProfit = pnl >= 0;
+                                return (
+                                  <div
+                                    className={`summary-box pnl-box ${isProfit ? "pnl-profit" : "pnl-loss"}`}
+                                  >
+                                    <div className="summary-hdr">
+                                      {isProfit ? (
+                                        <TrendingUp
+                                          size={13}
+                                          className="summary-icon"
+                                        />
+                                      ) : (
+                                        <TrendingDown
+                                          size={13}
+                                          className="summary-icon"
+                                        />
+                                      )}
+                                      <span className="summary-lbl">
+                                        P&amp;L
+                                      </span>
+                                    </div>
+                                    <span className="summary-val">
+                                      {isProfit ? "+" : ""}
+                                      {Math.round(pnl).toLocaleString()}{" "}
+                                      <span className="val-unit">MMK</span>
+                                    </span>
+                                  </div>
+                                );
+                              })()}
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                    )}
                   </div>
-                );
-              })()}
-            </div>
-          )}
-        </div>
-      </main>
-    </div>
+                </>
+              ) : (
+                <div className="empty-state">
+                  <ClipboardList size={64} color="#cbd5e1" />
+                  <h3>Select a Ledger</h3>
+                  <p>
+                    Choose an export ledger from the sidebar to view detailed
+                    marker reports and sell colors.
+                  </p>
+                </div>
+              )
+            ) : (
+              /* History Tab */
+              <div className="ledger-history-tab">
+                {(() => {
+                  const filteredExports = selectedLedger
+                    ? exports.filter((e) => e.ledgerId === selectedLedger.id)
+                    : exports;
+
+                  if (filteredExports.length === 0) {
+                    return (
+                      <div
+                        className="rf-empty-row"
+                        style={{ padding: "64px 20px" }}
+                      >
+                        <ClipboardList
+                          size={44}
+                          className="rf-empty-icon"
+                          style={{
+                            opacity: 0.2,
+                            margin: "0 auto 12px",
+                            display: "block",
+                          }}
+                        />
+                        <span>No sold colors history found</span>
+                      </div>
+                    );
+                  }
+
+                  return (
+                    <div className="rf-table-wrap">
+                      <table className="rf-table">
+                        <thead>
+                          <tr>
+                            <th>Date</th>
+                            {!selectedLedger && <th>Ledger</th>}
+                            <th>Colors Sold</th>
+                            <th>Markers</th>
+                            <th>Selling Price</th>
+                            <th>Weight (viss)</th>
+                            <th>Weight (kg)</th>
+                            <th>Product Amt (CNY)</th>
+                            <th>Product Amt (MMK)</th>
+                            <th>Worker Fees</th>
+                            <th>Grand Total</th>
+                            <th>P&amp;L</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {filteredExports.map((sale) => {
+                            const saleLedger = ledgers.find(
+                              (l) => l.id === sale.ledgerId,
+                            );
+                            return (
+                              <tr
+                                key={sale.id}
+                                style={{ cursor: "pointer" }}
+                                onClick={() => {
+                                  setSelectedHistory(sale);
+                                  setIsHistoryModalOpen(true);
+                                }}
+                              >
+                                <td className="rf-td-date">
+                                  {new Date(sale.date).toLocaleDateString()}
+                                </td>
+                                {!selectedLedger && (
+                                  <td
+                                    style={{
+                                      fontWeight: 700,
+                                      color: "#2563eb",
+                                    }}
+                                  >
+                                    {saleLedger
+                                      ? saleLedger.ledgerName
+                                      : `Ledger #${sale.ledgerId}`}
+                                  </td>
+                                )}
+                                <td>
+                                  <div className="history-colors-list">
+                                    {sale.selectedColors
+                                      .split(", ")
+                                      .map((col) => (
+                                        <span
+                                          key={col}
+                                          className="history-color-tag"
+                                        >
+                                          {col}
+                                        </span>
+                                      ))}
+                                  </div>
+                                </td>
+                                <td>
+                                  <div className="history-colors-list">
+                                    {saleLedger ? (
+                                      saleLedger.markers.map((m) => (
+                                        <span
+                                          key={m.markerName}
+                                          className="history-color-tag"
+                                          style={{
+                                            background: "rgba(99,102,241,0.15)",
+                                            color: "#a5b4fc",
+                                          }}
+                                        >
+                                          {m.markerName}
+                                        </span>
+                                      ))
+                                    ) : (
+                                      <span className="history-color-tag">
+                                        —
+                                      </span>
+                                    )}
+                                  </div>
+                                </td>
+                                <td className="font-numeric">
+                                  {sale.sellingPrice.toLocaleString()} MMK
+                                </td>
+                                <td className="font-numeric">
+                                  {sale.selectedWeight.toFixed(3)}
+                                </td>
+                                <td className="font-numeric">
+                                  {sale.totalExportWeightKg.toFixed(3)}
+                                </td>
+                                <td className="font-numeric">
+                                  ¥{sale.productAmountCNY.toLocaleString()}
+                                </td>
+                                <td className="font-numeric">
+                                  {Math.round(
+                                    sale.productAmountMMK,
+                                  ).toLocaleString()}{" "}
+                                  MMK
+                                </td>
+                                <td className="font-numeric">
+                                  {sale.workerFees.toLocaleString()} MMK
+                                </td>
+                                <td className="font-numeric highlight-td">
+                                  {Math.round(
+                                    sale.grandTotalMMK,
+                                  ).toLocaleString()}{" "}
+                                  MMK
+                                </td>
+                                <td
+                                  className={`font-numeric ${sale.sellingPrice - sale.grandTotalMMK >= 0 ? "pnl-profit-td" : "pnl-loss-td"}`}
+                                >
+                                  {sale.sellingPrice - sale.grandTotalMMK >= 0
+                                    ? "+"
+                                    : ""}
+                                  {Math.round(
+                                    sale.sellingPrice - sale.grandTotalMMK,
+                                  ).toLocaleString()}{" "}
+                                  MMK
+                                </td>
+                              </tr>
+                            );
+                          })}
+                        </tbody>
+                      </table>
+                    </div>
+                  );
+                })()}
+              </div>
+            )}
+          </div>
+        </main>
+      </div>
 
       {/* History Detail Modal */}
       {isHistoryModalOpen &&

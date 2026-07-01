@@ -4,6 +4,7 @@ using Microsoft.EntityFrameworkCore;
 using AKZ.API.Data;
 using AKZ.API.DTOs;
 using AKZ.API.Models;
+using AKZ.API.Services;
 
 namespace AKZ.API.Controllers;
 
@@ -13,10 +14,12 @@ namespace AKZ.API.Controllers;
 public class WashGradingController : ControllerBase
 {
     private readonly AKZDbContext _context;
+    private readonly ChangeNotifierService _notifier;
 
-    public WashGradingController(AKZDbContext context)
+    public WashGradingController(AKZDbContext context, ChangeNotifierService notifier)
     {
         _context = context;
+        _notifier = notifier;
     }
 
     private int? GetCurrentUserWarehouseId()
@@ -223,6 +226,7 @@ public class WashGradingController : ControllerBase
 
         _context.WashGradingProcesses.Add(process);
         await _context.SaveChangesAsync();
+        _notifier.NotifyChange();
 
         string warehouseName = product.Warehouse?.Name ?? "";
 
@@ -287,6 +291,7 @@ public class WashGradingController : ControllerBase
         }
 
         await _context.SaveChangesAsync();
+        _notifier.NotifyChange();
         return Ok();
     }
 
@@ -330,6 +335,7 @@ public class WashGradingController : ControllerBase
 
         _context.WashGradingProcesses.Remove(process);
         await _context.SaveChangesAsync();
+        _notifier.NotifyChange();
         return NoContent();
     }
 
@@ -383,6 +389,7 @@ public class WashGradingController : ControllerBase
         }
 
         await _context.SaveChangesAsync();
+        _notifier.NotifyChange();
         return Ok();
     }
 
@@ -443,6 +450,7 @@ public class WashGradingController : ControllerBase
 
         _context.WashGradingRecords.Remove(record);
         await _context.SaveChangesAsync();
+        _notifier.NotifyChange();
         return NoContent();
     }
 
@@ -484,6 +492,7 @@ public class WashGradingController : ControllerBase
 
         _context.WashGradingRecords.Add(record);
         await _context.SaveChangesAsync();
+        _notifier.NotifyChange();
 
         string warehouseName = product.Warehouse?.Name ?? "";
 

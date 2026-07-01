@@ -4,6 +4,7 @@ using Microsoft.EntityFrameworkCore;
 using AKZ.API.Data;
 using AKZ.API.DTOs;
 using AKZ.API.Models;
+using AKZ.API.Services;
 
 namespace AKZ.API.Controllers;
 
@@ -13,10 +14,12 @@ namespace AKZ.API.Controllers;
 public class ProductsController : ControllerBase
 {
     private readonly AKZDbContext _context;
+    private readonly ChangeNotifierService _notifier;
 
-    public ProductsController(AKZDbContext context)
+    public ProductsController(AKZDbContext context, ChangeNotifierService notifier)
     {
         _context = context;
+        _notifier = notifier;
     }
 
     private int? GetCurrentUserWarehouseId()
@@ -113,6 +116,7 @@ public class ProductsController : ControllerBase
 
         _context.Products.Add(product);
         await _context.SaveChangesAsync();
+        _notifier.NotifyChange();
 
         var productDto = new ProductDto
         {
@@ -157,6 +161,7 @@ public class ProductsController : ControllerBase
         }
 
         await _context.SaveChangesAsync();
+        _notifier.NotifyChange();
 
         return NoContent();
     }
@@ -190,6 +195,7 @@ public class ProductsController : ControllerBase
 
             _context.Products.Remove(product);
             await _context.SaveChangesAsync();
+            _notifier.NotifyChange();
 
             return NoContent();
         }

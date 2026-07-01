@@ -1,6 +1,7 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useCallback } from "react";
 import { useAuth } from "../../context/AuthContext";
 import { productsAPI, warehousesAPI } from "../../services/api";
+import { useLongPoll } from "../../hooks/useLongPoll";
 import type {
   Product,
   CreateProductDto,
@@ -63,7 +64,7 @@ const Inventory: React.FC = () => {
     loadData();
   }, []);
 
-  const loadData = async () => {
+  const loadData = useCallback(async () => {
     setLoading(true);
     try {
       const [productsData, warehousesData] = await Promise.all([
@@ -77,7 +78,9 @@ const Inventory: React.FC = () => {
     } finally {
       setLoading(false);
     }
-  };
+  }, []);
+
+  useLongPoll(loadData);
 
   const handleInputChange = (
     e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>,

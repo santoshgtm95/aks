@@ -4,6 +4,7 @@ using Microsoft.EntityFrameworkCore;
 using AKZ.API.Data;
 using AKZ.API.DTOs;
 using AKZ.API.Models;
+using AKZ.API.Services;
 
 namespace AKZ.API.Controllers;
 
@@ -13,10 +14,12 @@ namespace AKZ.API.Controllers;
 public class SalesController : ControllerBase
 {
     private readonly AKZDbContext _context;
+    private readonly ChangeNotifierService _notifier;
 
-    public SalesController(AKZDbContext context)
+    public SalesController(AKZDbContext context, ChangeNotifierService notifier)
     {
         _context = context;
+        _notifier = notifier;
     }
 
     private int? GetCurrentUserWarehouseId()
@@ -153,6 +156,7 @@ public class SalesController : ControllerBase
 
         _context.Sales.Add(sale);
         await _context.SaveChangesAsync();
+        _notifier.NotifyChange();
 
         // Reload to get navigation properties
         await _context.Entry(sale).Reference(s => s.Product).LoadAsync();
@@ -208,6 +212,7 @@ public class SalesController : ControllerBase
             // AKZDbContext handles soft delete in SaveChangesAsync when state is Deleted
             _context.Sales.Remove(sale);
             await _context.SaveChangesAsync();
+            _notifier.NotifyChange();
 
             return NoContent();
         }

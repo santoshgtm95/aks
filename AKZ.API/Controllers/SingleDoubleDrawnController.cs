@@ -4,6 +4,7 @@ using Microsoft.EntityFrameworkCore;
 using AKZ.API.Data;
 using AKZ.API.DTOs;
 using AKZ.API.Models;
+using AKZ.API.Services;
 
 namespace AKZ.API.Controllers;
 
@@ -13,10 +14,12 @@ namespace AKZ.API.Controllers;
 public class SingleDoubleDrawnController : ControllerBase
 {
     private readonly AKZDbContext _context;
+    private readonly ChangeNotifierService _notifier;
 
-    public SingleDoubleDrawnController(AKZDbContext context)
+    public SingleDoubleDrawnController(AKZDbContext context, ChangeNotifierService notifier)
     {
         _context = context;
+        _notifier = notifier;
     }
 
     [HttpGet]
@@ -295,6 +298,7 @@ public class SingleDoubleDrawnController : ControllerBase
 
         _context.SingleDoubleDrawnRecords.Add(record);
         await _context.SaveChangesAsync();
+        _notifier.NotifyChange();
 
         // Build response DTO with resolved navigation properties
         string marker = "";
@@ -407,6 +411,7 @@ public class SingleDoubleDrawnController : ControllerBase
 
         _context.SingleDoubleDrawnRecords.Remove(record);
         await _context.SaveChangesAsync();
+        _notifier.NotifyChange();
 
         return NoContent();
     }
