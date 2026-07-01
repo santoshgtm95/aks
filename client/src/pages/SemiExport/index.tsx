@@ -3809,79 +3809,47 @@ const SemiExport: React.FC = () => {
                       }}
                     >
                       <div className="card-header">
-                        <div
-                          style={{ display: "flex", flexDirection: "column" }}
-                        >
+                        <div className="card-title-group">
                           <span className="card-marker">
                             {group.markerName}
                           </span>
                         </div>
-                        <span
-                          style={{
-                            background: "#eff6ff",
-                            color: "#1d4ed8",
-                            fontSize: "10px",
-                            padding: "2px 6px",
-                            borderRadius: "4px",
-                            fontWeight: "bold",
-                          }}
-                        >
+                        <span className="card-source-badge source-purchase">
                           Purchase
                         </span>
                       </div>
 
-                      <div
-                        className="card-details"
-                        style={{ flexDirection: "column", gap: "4px" }}
-                      >
-                        <div
-                          style={{
-                            display: "flex",
-                            justifyContent: "space-between",
-                          }}
-                        >
-                          <span>
-                            Total Sorted:{" "}
-                            <strong style={{ color: "#059669" }}>
-                              {group.combinedWeight.toFixed(3)}
-                            </strong>{" "}
-                            viss
+                      <div className="card-stats">
+                        <div className="card-stat card-stat-output">
+                          <span className="card-stat-label">
+                            <Scale size={11} strokeWidth={2.2} />
+                            Sorted
                           </span>
-                          <span>
-                            Date:{" "}
-                            <span style={{ color: "#475569", fontWeight: 500 }}>
-                              {new Date(group.date).toLocaleDateString()}
-                            </span>
+                          <span className="card-stat-value">
+                            {group.combinedWeight.toFixed(3)}
+                            <em>viss</em>
                           </span>
                         </div>
-                        <div
-                          style={{
-                            display: "flex",
-                            justifyContent: "space-between",
-                          }}
-                        >
-                          <span>
-                            Lost:{" "}
-                            <strong style={{ color: "#ef4444" }}>
-                              {(group.lostWeight || 0).toFixed(3)}
-                            </strong>{" "}
-                            viss
+                        <div className="card-stat card-stat-lost">
+                          <span className="card-stat-label">
+                            <AlertTriangle size={11} strokeWidth={2.2} />
+                            Lost
+                          </span>
+                          <span className="card-stat-value">
+                            {(group.lostWeight || 0).toFixed(3)}
+                            <em>viss</em>
                           </span>
                         </div>
-                        <div
-                          style={{
-                            display: "flex",
-                            gap: "4px",
-                            flexWrap: "wrap",
-                            marginTop: "4px",
-                          }}
-                        >
+                      </div>
+
+                      <div className="card-footer">
+                        <span className="card-date">
+                          <Clock size={11} strokeWidth={2.2} />
+                          {new Date(group.date).toLocaleDateString()}
+                        </span>
+                        <div className="card-tags">
                           {(group.colors || []).map((color) => (
-                            <span
-                              key={color}
-                              className="rf-badge"
-                              style={{ fontSize: "9px", padding: "1px 4px" }}
-                            >
+                            <span key={color} className="rf-badge">
                               {color}
                             </span>
                           ))}
@@ -3911,99 +3879,57 @@ const SemiExport: React.FC = () => {
                     }}
                   >
                     <div className="card-header">
-                      <div style={{ display: "flex", flexDirection: "column" }}>
+                      <div className="card-title-group">
                         <span className="card-marker">{group.markerName}</span>
-                        <span
-                          style={{
-                            fontSize: "11px",
-                            color: "#64748b",
-                            fontWeight: 500,
-                            marginTop: "2px",
-                          }}
-                        >
+                        <span className="card-warehouse">
+                          <Package size={11} strokeWidth={2} />
                           {group.warehouseNames.join(", ") || "---"}
                         </span>
                       </div>
-                      <div
-                        style={{
-                          display: "flex",
-                          gap: "6px",
-                          alignItems: "center",
-                        }}
-                      >
-                        {isFullySaved && (
-                          <span
-                            style={{
-                              background: "#d1fae5",
-                              color: "#065f46",
-                              fontSize: "10.0px",
-                              padding: "2px 6px",
-                              borderRadius: "4px",
-                              fontWeight: "bold",
-                              display: "inline-flex",
-                              alignItems: "center",
-                              gap: "3px",
-                            }}
-                          >
-                            <CheckCircle size={10} /> Saved
-                          </span>
-                        )}
-                        {isPartiallySaved && (
-                          <span
-                            style={{
-                              background: "#fef3c7",
-                              color: "#92400e",
-                              fontSize: "10.0px",
-                              padding: "2px 6px",
-                              borderRadius: "4px",
-                              fontWeight: "bold",
-                              display: "inline-flex",
-                              alignItems: "center",
-                              gap: "3px",
-                            }}
-                          >
-                            Saved ({savedCount}/{group.records.length})
-                          </span>
-                        )}
+                      {isFullySaved && (
+                        <span className="card-status-badge status-saved">
+                          <CheckCircle size={11} /> Saved
+                        </span>
+                      )}
+                      {isPartiallySaved && (
+                        <span className="card-status-badge status-partial">
+                          {savedCount}/{group.records.length} Saved
+                        </span>
+                      )}
+                    </div>
+
+                    <div className="card-stats">
+                      <div className="card-stat card-stat-output">
+                        <span className="card-stat-label">
+                          <Scale size={11} strokeWidth={2.2} />
+                          Total Sorted
+                        </span>
+                        <span className="card-stat-value">
+                          {group.combinedWeight.toFixed(3)}
+                          <em>viss</em>
+                        </span>
+                      </div>
+                      <div className="card-stat card-stat-count">
+                        <span className="card-stat-label">
+                          <Layers size={11} strokeWidth={2.2} />
+                          Items
+                        </span>
+                        <span className="card-stat-value">
+                          {group.records.length}
+                        </span>
                       </div>
                     </div>
-                    <div
-                      className="card-details"
-                      style={{ flexDirection: "column", gap: "4px" }}
-                    >
-                      <div
-                        style={{
-                          display: "flex",
-                          justifyContent: "space-between",
-                        }}
-                      >
-                        <span>
-                          Total Sorted:{" "}
-                          <strong style={{ color: "#059669" }}>
-                            {group.combinedWeight.toFixed(3)}
-                          </strong>{" "}
-                          viss
-                        </span>
-                        <span>
-                          Date:{" "}
-                          <span style={{ color: "#475569", fontWeight: 500 }}>
-                            {new Date(group.date).toLocaleDateString()}
-                          </span>
-                        </span>
-                      </div>
-                      <div
-                        style={{
-                          display: "flex",
-                          gap: "4px",
-                          flexWrap: "wrap",
-                          marginTop: "4px",
-                        }}
-                      >
+
+                    <div className="card-footer">
+                      <span className="card-date">
+                        <Clock size={11} strokeWidth={2.2} />
+                        {new Date(group.date).toLocaleDateString()}
+                      </span>
+                      <div className="card-tags">
                         {group.records.map((r) => (
                           <span
                             key={r.id}
                             className={`rf-badge category-${(r.refinementRecordCategory || "").toLowerCase().replace(".", "")}`}
-                            style={{ fontSize: "9px", padding: "1px 4px" }}
                           >
                             {r.refinementRecordCategory}
                           </span>
