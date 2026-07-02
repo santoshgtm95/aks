@@ -1355,7 +1355,7 @@ const SemiExportPurchase: React.FC = () => {
                   name="totalReceiveWeight"
                   value={formData.totalReceiveWeight}
                   onChange={handleInputChange}
-                  placeholder="0.000"
+                  placeholder="0"
                   step="0.001"
                   style={{
                     width: "100%",
@@ -1563,13 +1563,14 @@ const SemiExportPurchase: React.FC = () => {
                   value={selectedSortingRecord.workerName || ""}
                   readOnly
                 />
-                <label htmlFor="sep-worker-fees">Worker Fees:</label>
+                <label htmlFor="sep-worker-fees">Worker Fees: <span style={{ color: '#ef4444' }}>*</span></label>
                 <input
                   id="sep-worker-fees"
                   type="number"
                   value={sortingWorkerFees}
                   placeholder="0"
                   onChange={(e) => setSortingWorkerFees(e.target.value)}
+                  required
                 />
                 <label htmlFor="sep-sorting-rate">CNY to MMK Rate:</label>
                 <input
@@ -1620,7 +1621,7 @@ const SemiExportPurchase: React.FC = () => {
                                 <input
                                   type="number"
                                   step="0.001"
-                                  placeholder="0.000"
+                                  placeholder="0"
                                   value={
                                     row.size === "Lost"
                                       ? getCalculatedSortingLostWeight().toFixed(
@@ -1642,7 +1643,7 @@ const SemiExportPurchase: React.FC = () => {
                                 <input
                                   type="number"
                                   step="0.001"
-                                  placeholder="0.000"
+                                  placeholder="0"
                                   value={
                                     row.size === "Lost"
                                       ? (
@@ -1661,7 +1662,7 @@ const SemiExportPurchase: React.FC = () => {
                                   <input
                                     type="number"
                                     value={row.price}
-                                    placeholder="0.000"
+                                    placeholder="0"
                                     onChange={(e) =>
                                       updateSortingSize(
                                         row.size,

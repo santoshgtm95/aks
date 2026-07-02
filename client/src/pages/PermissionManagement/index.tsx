@@ -85,6 +85,9 @@ const PermissionManagement: React.FC = () => {
         { title: 'Semi Export', prefix: 'SemiExport.' },
         { title: 'Export List', prefix: 'Sales6.' },
         { title: 'Warehouse', prefix: 'Warehouse.' },
+        { title: 'Cash Flow', prefix: 'CashFlow.' },
+        { title: 'Workers', prefix: 'Workers.' },
+        { title: 'Semi Export Purchase', prefix: 'SemiExportPurchase.' },
         { title: 'Staff', prefix: 'Staff.' },
         { title: 'Permissions', prefix: 'Permissions.' },
     ];

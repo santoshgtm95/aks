@@ -1017,7 +1017,7 @@ const SingleDoubleDrawn: React.FC = () => {
                                             type="number"
                                             step="0.001"
                                             name={`size${size}`}
-                                            placeholder="0.000"
+                                            placeholder="0"
                                             value={
                                               twoInchesForm[
                                                 `size${size}` as keyof typeof twoInchesForm
@@ -1107,7 +1107,7 @@ const SingleDoubleDrawn: React.FC = () => {
                                           <input
                                             type="number"
                                             step="0.001"
-                                            placeholder="0.000"
+                                            placeholder="0"
                                             value={spoilageSizeWeight}
                                             onChange={(e) =>
                                               setSpoilageSizeWeight(
@@ -1206,7 +1206,7 @@ const SingleDoubleDrawn: React.FC = () => {
                                           <input
                                             type="number"
                                             step="0.001"
-                                            placeholder="0.000"
+                                            placeholder="0"
                                             value={returnSizeWeight}
                                             onChange={(e) =>
                                               setReturnSizeWeight(
@@ -1421,7 +1421,7 @@ const SingleDoubleDrawn: React.FC = () => {
                                             type="number"
                                             step="0.001"
                                             name={fieldName}
-                                            placeholder="0.000"
+                                            placeholder="0"
                                             value={
                                               bToTenForm[
                                                 fieldName as keyof typeof bToTenForm
@@ -1501,7 +1501,7 @@ const SingleDoubleDrawn: React.FC = () => {
                             <input
                               type="number"
                               step="0.001"
-                              placeholder="Lost Weight"
+                              placeholder="0"
                               value={singleDoubleLostWeight}
                               onChange={(e) =>
                                 setSingleDoubleLostWeight(e.target.value)
@@ -1539,12 +1539,12 @@ const SingleDoubleDrawn: React.FC = () => {
                             </select>
                           </div>
                           <div className="form-group">
-                            <label>Worker Fees (MMK)</label>
+                            <label>Worker Fees (MMK) <span style={{ color: '#ef4444' }}>*</span></label>
                             <input
                               type="number"
                               min="0"
                               step="0.01"
-                              placeholder="Enter worker fees amount..."
+                              placeholder="0"
                               value={workerFees}
                               onChange={(e) => setWorkerFees(e.target.value)}
                               className="form-input"
@@ -1555,6 +1555,7 @@ const SingleDoubleDrawn: React.FC = () => {
                                 borderRadius: "8px",
                                 boxSizing: "border-box",
                               }}
+                              required
                             />
                           </div>
                           <div className="form-group">

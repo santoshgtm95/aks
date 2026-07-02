@@ -83,7 +83,7 @@ const ExchangeRates: React.FC = () => {
               className="currency-input"
               value={usdRate}
               onChange={(e) => setUsdRate(e.target.value)}
-              placeholder="Amount"
+              placeholder="0"
             />
             <span className="currency-unit">MMK</span>
             <button
@@ -107,7 +107,7 @@ const ExchangeRates: React.FC = () => {
               className="currency-input"
               value={cnyRate}
               onChange={(e) => setCnyRate(e.target.value)}
-              placeholder="Amount"
+              placeholder="0"
             />
             <span className="currency-unit">MMK</span>
             <button
@@ -131,7 +131,7 @@ const ExchangeRates: React.FC = () => {
               className="currency-input"
               value={inrRate}
               onChange={(e) => setInrRate(e.target.value)}
-              placeholder="Amount"
+              placeholder="0"
             />
             <span className="currency-unit">MMK</span>
             <button

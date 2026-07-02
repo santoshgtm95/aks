@@ -1750,7 +1750,7 @@ const SemiExport: React.FC = () => {
                 type="number"
                 value={purchaseWorkerFees}
                 onChange={(e) => setPurchaseWorkerFees(e.target.value)}
-                placeholder="0.00"
+                placeholder="0"
                 style={{
                   padding: "8px 12px",
                   borderRadius: "8px",
@@ -2712,7 +2712,7 @@ const SemiExport: React.FC = () => {
                 type="number"
                 value={markerWorkerFees}
                 onChange={(e) => setMarkerWorkerFees(e.target.value)}
-                placeholder="0.00"
+                placeholder="0"
                 disabled={isModal}
                 style={{
                   padding: "8px 12px",

@@ -1,8 +1,10 @@
+using AKZ.API.Data;
+using AKZ.API.Models;
+using AKZ.API.Services;
+using ClosedXML.Excel;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
-using AKZ.API.Data;
-using AKZ.API.Models;
 using System.Linq;
 
 namespace AKZ.API.Controllers;
@@ -47,14 +49,18 @@ public class WorkerFeeBreakdownItemDto
 public class CashFlowController : ControllerBase
 {
     private readonly AKZDbContext _context;
+    private readonly ChangeNotifierService _notifier;
+    private readonly IWebHostEnvironment _environment;
 
-    public CashFlowController(AKZDbContext context)
+    public CashFlowController(AKZDbContext context, ChangeNotifierService notifier, IWebHostEnvironment environment)
     {
         _context = context;
+        _notifier = notifier;
+        _environment = environment;
     }
 
     [HttpGet]
-    public async Task<ActionResult<IEnumerable<WorkerCashFlowDto>>> GetCashFlow([FromQuery] int? placeId = null)
+    public async Task<ActionResult<IEnumerable<WorkerCashFlowDto>>> GetCashFlow([FromQuery] int? placeId = null, [FromQuery] DateTime? fromDate = null, [FromQuery] DateTime? toDate = null)
     {
         var cashFlows = new Dictionary<string, WorkerCashFlowDto>();
         var workerPlaces = new Dictionary<string, HashSet<string>>();
@@ -81,10 +87,14 @@ public class CashFlowController : ControllerBase
         // 1. Mess-Labour
         if (!placeId.HasValue)
         {
-            var messLabourEntries = await _context.ProcessingRecordWorkers.Include(w => w.Worker)
+            var messLabourQuery = _context.ProcessingRecordWorkers.Include(w => w.Worker)
                                                   .Include(w => w.ProcessingRecord).ThenInclude(r => r.Product)
-                                                  .Where(w => w.ProcessingRecord.DeleteFlg == 0 && w.Worker.DeleteFlg == 0)
-                                                  .ToListAsync();
+                                                  .Where(w => w.ProcessingRecord.DeleteFlg == 0 && w.Worker.DeleteFlg == 0);
+            if (fromDate.HasValue)
+                messLabourQuery = messLabourQuery.Where(w => w.ProcessingRecord.Date >= fromDate.Value);
+            if (toDate.HasValue)
+                messLabourQuery = messLabourQuery.Where(w => w.ProcessingRecord.Date <= toDate.Value.AddDays(1).AddSeconds(-1));
+            var messLabourEntries = await messLabourQuery.ToListAsync();
 
             foreach (var w in messLabourEntries)
             {
@@ -98,12 +108,15 @@ public class CashFlowController : ControllerBase
         var purificationWorkersQuery = _context.PurificationWorkers
             .Include(pw => pw.Purifier)
             .Include(pw => pw.Place)
+            .Include(pw => pw.PurifiedRecord)
             .Where(pw => pw.Purifier != null && pw.DeleteFlg == 0 && pw.Purifier.DeleteFlg == 0);
 
         if (placeId.HasValue)
-        {
             purificationWorkersQuery = purificationWorkersQuery.Where(pw => pw.PlaceId == placeId.Value);
-        }
+        if (fromDate.HasValue)
+            purificationWorkersQuery = purificationWorkersQuery.Where(pw => pw.PurifiedRecord != null && pw.PurifiedRecord.Date >= fromDate.Value);
+        if (toDate.HasValue)
+            purificationWorkersQuery = purificationWorkersQuery.Where(pw => pw.PurifiedRecord != null && pw.PurifiedRecord.Date <= toDate.Value.AddDays(1).AddSeconds(-1));
 
         var purificationWorkers = await purificationWorkersQuery.ToListAsync();
         foreach (var pw in purificationWorkers)
@@ -120,9 +133,11 @@ public class CashFlowController : ControllerBase
             .Where(pr => pr.Place != null && pr.DeleteFlg == 0);
 
         if (placeId.HasValue)
-        {
             purifiedRecordsQuery = purifiedRecordsQuery.Where(pr => pr.PlaceId == placeId.Value);
-        }
+        if (fromDate.HasValue)
+            purifiedRecordsQuery = purifiedRecordsQuery.Where(pr => pr.Date >= fromDate.Value);
+        if (toDate.HasValue)
+            purifiedRecordsQuery = purifiedRecordsQuery.Where(pr => pr.Date <= toDate.Value.AddDays(1).AddSeconds(-1));
 
         var purifiedRecords = await purifiedRecordsQuery.ToListAsync();
         foreach (var pr in purifiedRecords)
@@ -138,10 +153,12 @@ public class CashFlowController : ControllerBase
         if (!placeId.HasValue)
         {
             // 3. Refinement
-            var refinementRecords = await _context.RefinementRecords
+            var refinementQuery = _context.RefinementRecords
                 .Include(r => r.Worker)
-                .Where(r => r.Worker != null && r.DeleteFlg == 0 && r.Worker.DeleteFlg == 0)
-                .ToListAsync();
+                .Where(r => r.Worker != null && r.DeleteFlg == 0 && r.Worker.DeleteFlg == 0);
+            if (fromDate.HasValue) refinementQuery = refinementQuery.Where(r => r.Date >= fromDate.Value);
+            if (toDate.HasValue) refinementQuery = refinementQuery.Where(r => r.Date <= toDate.Value.AddDays(1).AddSeconds(-1));
+            var refinementRecords = await refinementQuery.ToListAsync();
             foreach (var r in refinementRecords)
             {
                 var cf = EnsureWorker(r.Worker!.Name);
@@ -150,10 +167,12 @@ public class CashFlowController : ControllerBase
             }
 
             // 3.5 Wash & Grading
-            var washGradingRecords = await _context.WashGradingRecords
+            var washGradingQuery = _context.WashGradingRecords
                 .Include(r => r.Worker)
-                .Where(r => r.Worker != null && r.DeleteFlg == 0 && r.Worker.DeleteFlg == 0)
-                .ToListAsync();
+                .Where(r => r.Worker != null && r.DeleteFlg == 0 && r.Worker.DeleteFlg == 0);
+            if (fromDate.HasValue) washGradingQuery = washGradingQuery.Where(r => r.Date >= fromDate.Value);
+            if (toDate.HasValue) washGradingQuery = washGradingQuery.Where(r => r.Date <= toDate.Value.AddDays(1).AddSeconds(-1));
+            var washGradingRecords = await washGradingQuery.ToListAsync();
             foreach (var r in washGradingRecords)
             {
                 var cf = EnsureWorker(r.Worker!.Name);
@@ -162,10 +181,12 @@ public class CashFlowController : ControllerBase
             }
 
             // 4. Single & Double Drawn
-            var sddRecords = await _context.SingleDoubleDrawnRecords
+            var sddQuery = _context.SingleDoubleDrawnRecords
                 .Include(s => s.Worker)
-                .Where(s => s.Worker != null && s.DeleteFlg == 0 && s.Worker.DeleteFlg == 0)
-                .ToListAsync();
+                .Where(s => s.Worker != null && s.DeleteFlg == 0 && s.Worker.DeleteFlg == 0);
+            if (fromDate.HasValue) sddQuery = sddQuery.Where(s => s.Date >= fromDate.Value);
+            if (toDate.HasValue) sddQuery = sddQuery.Where(s => s.Date <= toDate.Value.AddDays(1).AddSeconds(-1));
+            var sddRecords = await sddQuery.ToListAsync();
             foreach (var r in sddRecords)
             {
                 var cf = EnsureWorker(r.Worker!.Name);
@@ -174,11 +195,13 @@ public class CashFlowController : ControllerBase
             }
 
             // 5. Semi Export Purchase
-            var semiExportPurchaseRecords = await _context.SemiExportPurchaseRecords
+            var semiExportPurchaseQuery = _context.SemiExportPurchaseRecords
                 .Include(r => r.SemiExportPurchaseProcessing)
                     .ThenInclude(p => p!.Worker)
-                .Where(r => r.WorkerFees > 0)
-                .ToListAsync();
+                .Where(r => r.WorkerFees > 0);
+            if (fromDate.HasValue) semiExportPurchaseQuery = semiExportPurchaseQuery.Where(r => r.CreatedAt >= fromDate.Value);
+            if (toDate.HasValue) semiExportPurchaseQuery = semiExportPurchaseQuery.Where(r => r.CreatedAt <= toDate.Value.AddDays(1).AddSeconds(-1));
+            var semiExportPurchaseRecords = await semiExportPurchaseQuery.ToListAsync();
             foreach (var r in semiExportPurchaseRecords)
             {
                 var worker = r.SemiExportPurchaseProcessing?.Worker;
@@ -364,6 +387,148 @@ public class CashFlowController : ControllerBase
         return Ok(items.OrderByDescending(i => i.Date));
     }
 
+    [HttpGet("download-excel")]
+    public async Task<IActionResult> DownloadCashFlowExcel(
+        [FromQuery] int? placeId = null,
+        [FromQuery] DateTime? fromDate = null,
+        [FromQuery] DateTime? toDate = null)
+    {
+        var reportPath = Path.Combine(_environment.ContentRootPath, "Report", "Report.xlsx");
+        if (!System.IO.File.Exists(reportPath))
+            return NotFound(new { message = "Report.xlsx file was not found" });
+
+        // ── Collect all breakdown items (same queries as GetCashFlow + GetBreakdown) ──
+        var rows = new List<object?[]>();
+
+        // 1. Mess-Labour
+        var messQ = _context.ProcessingRecordWorkers
+            .Include(w => w.Worker)
+            .Include(w => w.ProcessingRecord).ThenInclude(r => r.Product)
+            .Where(w => w.ProcessingRecord.DeleteFlg == 0 && w.Worker.DeleteFlg == 0 && w.WorkerFee > 0);
+        if (!placeId.HasValue)
+        {
+            if (fromDate.HasValue) messQ = messQ.Where(w => w.ProcessingRecord.Date >= fromDate.Value);
+            if (toDate.HasValue)   messQ = messQ.Where(w => w.ProcessingRecord.Date <= toDate.Value.AddDays(1).AddSeconds(-1));
+            foreach (var w in await messQ.ToListAsync())
+                rows.Add(new object?[] { w.Worker.Name, "Mess-Labour", w.ProcessingRecord?.Product?.Marker ?? "-", w.ProcessingRecord?.Date, w.WorkerFee });
+        }
+
+        // 2. Purification Worker Fees
+        var purWQ = _context.PurificationWorkers
+            .Include(pw => pw.Purifier).Include(pw => pw.Place).Include(pw => pw.PurifiedRecord)
+            .Where(pw => pw.Purifier != null && pw.DeleteFlg == 0 && pw.Purifier.DeleteFlg == 0 && pw.WorkerFees > 0);
+        if (placeId.HasValue) purWQ = purWQ.Where(pw => pw.PlaceId == placeId.Value);
+        if (fromDate.HasValue) purWQ = purWQ.Where(pw => pw.PurifiedRecord != null && pw.PurifiedRecord.Date >= fromDate.Value);
+        if (toDate.HasValue)   purWQ = purWQ.Where(pw => pw.PurifiedRecord != null && pw.PurifiedRecord.Date <= toDate.Value.AddDays(1).AddSeconds(-1));
+        foreach (var pw in await purWQ.ToListAsync())
+            rows.Add(new object?[] { pw.Purifier!.Name, "Purification", pw.Place?.Name ?? "-", pw.PurifiedRecord?.Date, pw.WorkerFees });
+
+        // 3. Purification Supervisor Fees
+        var purRQ = _context.PurifiedRecords
+            .Include(pr => pr.Place)
+            .Where(pr => pr.Place != null && pr.DeleteFlg == 0 && pr.SupervisorFees > 0);
+        if (placeId.HasValue) purRQ = purRQ.Where(pr => pr.PlaceId == placeId.Value);
+        if (fromDate.HasValue) purRQ = purRQ.Where(pr => pr.Date >= fromDate.Value);
+        if (toDate.HasValue)   purRQ = purRQ.Where(pr => pr.Date <= toDate.Value.AddDays(1).AddSeconds(-1));
+        foreach (var pr in await purRQ.ToListAsync())
+            if (!string.IsNullOrEmpty(pr.Place!.SupervisorName))
+                rows.Add(new object?[] { pr.Place.SupervisorName, "Purification Supervisor", pr.Place.Name, pr.Date, pr.SupervisorFees });
+
+        if (!placeId.HasValue)
+        {
+            // 4. Refinement
+            var refQ = _context.RefinementRecords
+                .Include(r => r.Worker).Include(r => r.PurifiedRecord).ThenInclude(pr => pr!.ProcessingRecord).ThenInclude(pr2 => pr2!.Product)
+                .Where(r => r.Worker != null && r.DeleteFlg == 0 && r.Worker.DeleteFlg == 0 && r.WorkerFees > 0);
+            if (fromDate.HasValue) refQ = refQ.Where(r => r.Date >= fromDate.Value);
+            if (toDate.HasValue)   refQ = refQ.Where(r => r.Date <= toDate.Value.AddDays(1).AddSeconds(-1));
+            foreach (var r in await refQ.ToListAsync())
+                rows.Add(new object?[] { r.Worker!.Name, "Refinement", r.PurifiedRecord?.ProcessingRecord?.Product?.Marker ?? "-", r.Date, r.WorkerFees });
+
+            // 5. Wash & Grading
+            var washQ = _context.WashGradingRecords
+                .Include(r => r.Worker).Include(r => r.Product)
+                .Where(r => r.Worker != null && r.DeleteFlg == 0 && r.Worker.DeleteFlg == 0 && r.WorkerFees > 0);
+            if (fromDate.HasValue) washQ = washQ.Where(r => r.Date >= fromDate.Value);
+            if (toDate.HasValue)   washQ = washQ.Where(r => r.Date <= toDate.Value.AddDays(1).AddSeconds(-1));
+            foreach (var r in await washQ.ToListAsync())
+                rows.Add(new object?[] { r.Worker!.Name, "Wash & Grading", r.Product?.Marker ?? "-", r.Date, r.WorkerFees });
+
+            // 6. Single & Double Drawn
+            var sddQ = _context.SingleDoubleDrawnRecords
+                .Include(s => s.Worker)
+                .Include(s => s.RefinementRecord).ThenInclude(rr => rr!.PurifiedRecord).ThenInclude(pr => pr!.ProcessingRecord).ThenInclude(pr2 => pr2!.Product)
+                .Where(s => s.Worker != null && s.DeleteFlg == 0 && s.Worker.DeleteFlg == 0 && s.WorkerFees > 0);
+            if (fromDate.HasValue) sddQ = sddQ.Where(s => s.Date >= fromDate.Value);
+            if (toDate.HasValue)   sddQ = sddQ.Where(s => s.Date <= toDate.Value.AddDays(1).AddSeconds(-1));
+            foreach (var r in await sddQ.ToListAsync())
+                rows.Add(new object?[] { r.Worker!.Name, "Single & Double Drawn", r.RefinementRecord?.PurifiedRecord?.ProcessingRecord?.Product?.Marker ?? "-", r.Date, r.WorkerFees });
+
+            // 7. Semi Export Purchase
+            var sepQ = _context.SemiExportPurchaseRecords
+                .Include(r => r.SemiExportPurchaseProcessing).ThenInclude(p => p!.Worker)
+                .Where(r => r.WorkerFees > 0);
+            if (fromDate.HasValue) sepQ = sepQ.Where(r => r.CreatedAt >= fromDate.Value);
+            if (toDate.HasValue)   sepQ = sepQ.Where(r => r.CreatedAt <= toDate.Value.AddDays(1).AddSeconds(-1));
+            foreach (var r in await sepQ.ToListAsync())
+            {
+                var wName = r.SemiExportPurchaseProcessing?.Worker?.Name ?? r.WorkerName ?? "Unknown";
+                rows.Add(new object?[] { wName, "Semi Export Purchase", r.CustomerName ?? "-", r.CreatedAt, r.WorkerFees });
+            }
+        }
+
+        rows = rows.OrderBy(r => r[3]).ToList(); // sort by date
+
+        using var workbook = new XLWorkbook(reportPath);
+        var ws = workbook.Worksheets.Add("Cash Flow Fee Breakdown");
+
+        // Header
+        var headers = new[] { "Worker Name", "Process", "Marker / Reference", "Date", "Fees (MMK)" };
+        for (var c = 0; c < headers.Length; c++)
+        {
+            var cell = ws.Cell(1, c + 1);
+            cell.Value = headers[c];
+            cell.Style.Font.Bold = true;
+            cell.Style.Fill.BackgroundColor = XLColor.FromHtml("#EAF2FF");
+        }
+
+        // Rows
+        for (var r = 0; r < rows.Count; r++)
+        {
+            var vals = rows[r];
+            for (var c = 0; c < headers.Length; c++)
+            {
+                var cell = ws.Cell(r + 2, c + 1);
+                var val = c < vals.Length ? vals[c] : null;
+                if (val is DateTime dt) { cell.Value = dt; cell.Style.DateFormat.Format = "yyyy-mm-dd hh:mm"; }
+                else if (val is decimal dec) cell.Value = dec;
+                else if (val != null) cell.Value = val.ToString();
+            }
+        }
+
+        foreach (var col in ws.Columns(1, headers.Length))
+        {
+            col.AdjustToContents();
+            col.Width = Math.Max(col.Width + 4, 14);
+        }
+
+        // Remove all other sheets (keep only Cash Flow sheet)
+        var toDelete = workbook.Worksheets.Where(s => s.Name != "Cash Flow Fee Breakdown").Select(s => s.Name).ToList();
+        foreach (var name in toDelete)
+            if (workbook.Worksheets.TryGetWorksheet(name, out var s)) s.Delete();
+
+        using var stream = new MemoryStream();
+        workbook.SaveAs(stream);
+
+        var label = fromDate.HasValue && toDate.HasValue
+            ? $"CashFlow_{fromDate:yyyy_MM_dd}_To_{toDate:yyyy_MM_dd}.xlsx"
+            : "CashFlow_All.xlsx";
+
+        return File(stream.ToArray(),
+            "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+            label);
+    }
+
     [HttpPost("pay")]
     public async Task<ActionResult> MakePayment([FromBody] MakePaymentDto dto)
     {
@@ -386,6 +551,7 @@ public class CashFlowController : ControllerBase
 
         _context.WorkerPayments.Add(payment);
         await _context.SaveChangesAsync();
+        _notifier.NotifyChange();
 
         return Ok(new { message = "Payment recorded successfully.", paymentId = payment.Id });
     }

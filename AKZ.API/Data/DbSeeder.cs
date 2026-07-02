@@ -194,6 +194,24 @@ public static class DbSeeder
             new Permission { Name = "Sales6.Create", Description = "Create Sales6 records" },
             new Permission { Name = "Sales6.Edit", Description = "Edit Sales6 records" },
             new Permission { Name = "Sales6.Delete", Description = "Delete Sales6 records" },
+
+            // Cash Flow
+            new Permission { Name = "CashFlow.View", Description = "View Cash Flow records" },
+            new Permission { Name = "CashFlow.Create", Description = "Create Cash Flow records" },
+            new Permission { Name = "CashFlow.Edit", Description = "Edit Cash Flow records" },
+            new Permission { Name = "CashFlow.Delete", Description = "Delete Cash Flow records" },
+
+            // Workers
+            new Permission { Name = "Workers.View", Description = "View Workers" },
+            new Permission { Name = "Workers.Create", Description = "Create Workers" },
+            new Permission { Name = "Workers.Edit", Description = "Edit Workers" },
+            new Permission { Name = "Workers.Delete", Description = "Delete Workers" },
+
+            // Semi Export Purchase
+            new Permission { Name = "SemiExportPurchase.View", Description = "View Semi Export Purchase records" },
+            new Permission { Name = "SemiExportPurchase.Create", Description = "Create Semi Export Purchase records" },
+            new Permission { Name = "SemiExportPurchase.Edit", Description = "Edit Semi Export Purchase records" },
+            new Permission { Name = "SemiExportPurchase.Delete", Description = "Delete Semi Export Purchase records" },
         };
 
         var existingPerms = context.Permissions.Select(p => p.Name).ToList();

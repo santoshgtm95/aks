@@ -953,6 +953,7 @@ const Purification: React.FC = () => {
                             supervisorFees: e.target.value,
                           }))
                         }
+                        required
                       />
                     </div>
                   </div>
@@ -1050,6 +1051,7 @@ const Purification: React.FC = () => {
                                   workers: newWorkers,
                                 }));
                               }}
+                              required
                             />
                             <button
                               type="button"

@@ -30,6 +30,8 @@ const Sales: React.FC = () => {
   const [products, setProducts] = useState<Product[]>([]);
   const [loading, setLoading] = useState(true);
   const [weightAdjustment, setWeightAdjustment] = useState<number>(0);
+  const [weightStr, setWeightStr] = useState<string>("");
+  const [weightAdjustmentStr, setWeightAdjustmentStr] = useState<string>("");
   const [searchTerm, setSearchTerm] = useState("");
   const [formData, setFormData] = useState<CreateSaleDto>({
     date: getMyanmarNow(),
@@ -87,15 +89,23 @@ const Sales: React.FC = () => {
         }));
       }
     } else {
-      setFormData((prev) => ({
-        ...prev,
-        [name]:
-          name === "weight" || name === "price"
-            ? value === ""
-              ? 0
-              : parseFloat(value)
-            : value,
-      }));
+      if (name === "weight") {
+        setWeightStr(value);
+        setFormData((prev) => ({
+          ...prev,
+          weight: value === "" ? 0 : parseFloat(value) || 0,
+        }));
+      } else {
+        setFormData((prev) => ({
+          ...prev,
+          [name]:
+            name === "price"
+              ? value === ""
+                ? 0
+                : parseFloat(value)
+              : value,
+        }));
+      }
     }
   };
 
@@ -122,6 +132,8 @@ const Sales: React.FC = () => {
         remark: "",
       });
       setWeightAdjustment(0);
+      setWeightStr("");
+      setWeightAdjustmentStr("");
       loadData();
     } catch (error: any) {
       showAlert(
@@ -237,16 +249,13 @@ const Sales: React.FC = () => {
                       <input
                         type="number"
                         name="weight"
-                        step="0.01"
+                        step="any"
                         className="sales-control sales-control-with-suffix"
-                        value={formData.weight || ""}
+                        value={weightStr}
                         onChange={handleInputChange}
                         required
-                        min="0.01"
-                        placeholder="0.00"
-                        onFocus={(e) =>
-                          e.target.value === "0" && (e.target.value = "")
-                        }
+                        min="0"
+                        placeholder="0"
                       />
                       <span className="sales-input-suffix">{formData.unit}</span>
                     </div>
@@ -257,15 +266,16 @@ const Sales: React.FC = () => {
                     <div className="sales-input-field-wrapper">
                       <input
                         type="number"
-                        step="0.01"
+                        step="any"
                         className="sales-control"
-                        value={weightAdjustment === 0 ? "" : weightAdjustment}
-                        onChange={(e) =>
+                        value={weightAdjustmentStr}
+                        onChange={(e) => {
+                          setWeightAdjustmentStr(e.target.value);
                           setWeightAdjustment(
-                            e.target.value === "" ? 0 : parseFloat(e.target.value),
-                          )
-                        }
-                        placeholder="0.00"
+                            e.target.value === "" ? 0 : parseFloat(e.target.value) || 0,
+                          );
+                        }}
+                        placeholder="0"
                         style={{
                           borderColor:
                             weightAdjustment > 0
@@ -302,7 +312,7 @@ const Sales: React.FC = () => {
                         value={formData.price || ""}
                         readOnly
                         required
-                        placeholder="0.00"
+                        placeholder="0"
                       />
                       <span className="sales-input-suffix">
                         {formData.currency}

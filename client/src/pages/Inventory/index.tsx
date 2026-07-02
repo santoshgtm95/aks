@@ -326,7 +326,7 @@ const Inventory: React.FC = () => {
                         onChange={handleInputChange}
                         required
                         min="0"
-                        placeholder="0.00"
+                        placeholder="0"
                         onFocus={(e) =>
                           e.target.value === "0" && (e.target.value = "")
                         }
@@ -348,7 +348,7 @@ const Inventory: React.FC = () => {
                           onChange={handleInputChange}
                           required
                           min="0"
-                          placeholder="0.00"
+                          placeholder="0"
                           onFocus={(e) =>
                             e.target.value === "0" && (e.target.value = "")
                           }

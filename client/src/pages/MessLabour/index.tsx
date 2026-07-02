@@ -972,7 +972,7 @@ const MessLabour: React.FC = () => {
                                 className="cu-input"
                                 value={formData.unitWeight || ""}
                                 onChange={handleInputChange}
-                                placeholder="0.0000"
+                                placeholder="0"
                               />
                               <span className="cu-unit">viss</span>
                             </div>
@@ -1096,7 +1096,7 @@ const MessLabour: React.FC = () => {
                                         e.target.value,
                                       )
                                     }
-                                    placeholder="0.0000"
+                                    placeholder="0"
                                     step="0.0001"
                                   />
                                 </div>
@@ -1251,6 +1251,7 @@ const MessLabour: React.FC = () => {
                                 fontSize: "1.1rem",
                                 width: "150px",
                               }}
+                              required
                             />
                             <button
                               type="button"
@@ -1796,7 +1797,7 @@ const MessLabour: React.FC = () => {
                             workers: newWorkers,
                           }));
                         }}
-                        placeholder="Fee (MMK)"
+                        placeholder="0"
                         style={{
                           padding: "0.75rem 1rem",
                           fontSize: "1.1rem",

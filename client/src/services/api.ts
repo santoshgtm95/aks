@@ -750,9 +750,25 @@ export const reportsAPI = {
 
 export default api;
 export const cashFlowAPI = {
-  getAll: async (placeId?: number): Promise<any[]> => {
-    const response = await api.get<any[]>("/cashFlow", { params: { placeId } });
+  getAll: async (placeId?: number, fromDate?: string, toDate?: string): Promise<any[]> => {
+    const response = await api.get<any[]>("/cashFlow", { params: { placeId, fromDate, toDate } });
     return response.data;
+  },
+  downloadExcel: async (placeId?: number, fromDate?: string, toDate?: string): Promise<void> => {
+    const response = await api.get("/cashFlow/download-excel", {
+      params: { placeId, fromDate, toDate },
+      responseType: "blob",
+    });
+    const url = window.URL.createObjectURL(new Blob([response.data]));
+    const link = document.createElement("a");
+    link.href = url;
+    const cd = response.headers["content-disposition"] || "";
+    const match = cd.match(/filename[^;=\n]*=((['"]).*?\2|[^;\n]*)/);
+    link.download = match ? match[1].replace(/['"]/g, "") : "CashFlow.xlsx";
+    document.body.appendChild(link);
+    link.click();
+    link.remove();
+    window.URL.revokeObjectURL(url);
   },
   getBreakdown: async (workerId: number | null, purifierId: number | null, workerName: string): Promise<any[]> => {
     const response = await api.get<any[]>("/cashFlow/breakdown", { params: { workerId, purifierId, workerName } });

@@ -113,10 +113,138 @@
 
 .cf-toolbar {
   display: flex;
+  flex-wrap: wrap;
   justify-content: flex-start;
   align-items: center;
   gap: 1rem;
   margin-bottom: 1.5rem;
+}
+
+.cf-date-filter {
+  display: flex;
+  align-items: center;
+  gap: 0;
+  background: #fff;
+  border: 1.5px solid #e2e8f0;
+  border-radius: 12px;
+  padding: 0;
+  overflow: hidden;
+  box-shadow: 0 1px 4px rgba(102,126,234,0.07);
+  height: 42px;
+}
+
+.cf-date-field {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  padding: 0 0.85rem;
+  height: 100%;
+  position: relative;
+}
+
+.cf-date-field:first-of-type {
+  border-right: 1px solid #e2e8f0;
+}
+
+.cf-date-field svg {
+  color: #667eea;
+  flex-shrink: 0;
+}
+
+.cf-date-field label {
+  font-size: 0.72rem;
+  font-weight: 700;
+  color: #667eea;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  white-space: nowrap;
+  margin: 0;
+  line-height: 1;
+}
+
+.cf-date-field input[type="date"] {
+  border: none;
+  outline: none;
+  font-size: 0.875rem;
+  color: #2d3748;
+  background: transparent;
+  padding: 0;
+  cursor: pointer;
+  font-family: "Inter", sans-serif;
+  min-width: 120px;
+}
+
+.cf-date-separator {
+  padding: 0 0.5rem;
+  color: #cbd5e0;
+  font-size: 1rem;
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+}
+
+.cf-filter-btn {
+  height: 42px;
+  padding: 0 1.1rem;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: #fff;
+  border: none;
+  font-size: 0.85rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: opacity 0.2s;
+  white-space: nowrap;
+  letter-spacing: 0.2px;
+}
+
+.cf-filter-btn:hover {
+  opacity: 0.88;
+}
+
+.cf-clear-btn {
+  height: 42px;
+  padding: 0 0.85rem;
+  background: transparent;
+  color: #94a3b8;
+  border: none;
+  border-left: 1.5px solid #e2e8f0;
+  font-size: 0.82rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: color 0.2s;
+  white-space: nowrap;
+}
+
+.cf-clear-btn:hover {
+  color: #e53e3e;
+}
+
+.cf-download-btn {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  height: 42px;
+  padding: 0 1.1rem;
+  background: #16a34a;
+  color: #fff;
+  border: none;
+  border-radius: 12px;
+  font-size: 0.85rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: background 0.2s, opacity 0.2s;
+  white-space: nowrap;
+  letter-spacing: 0.2px;
+  box-shadow: 0 1px 4px rgba(22,163,74,0.18);
+}
+
+.cf-download-btn:hover:not(:disabled) {
+  background: #15803d;
+}
+
+.cf-download-btn:disabled {
+  opacity: 0.65;
+  cursor: not-allowed;
 }
 
 .place-filter {

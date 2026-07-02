@@ -1,8 +1,9 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import { cashFlowAPI, placesAPI } from "../../services/api";
-import { DollarSign, Search, CreditCard, MapPin } from "lucide-react";
+import { DollarSign, Search, CreditCard, MapPin, Calendar, ArrowRight, Download } from "lucide-react";
 import Modal from "../../components/Modal";
 import "./index.css";
+import { useLongPoll } from "../../hooks/useLongPoll";
 
 interface WorkerFeeBreakdownItem {
   process: string;
@@ -34,6 +35,8 @@ const CashFlow: React.FC = () => {
   const [searchTerm, setSearchTerm] = useState("");
   const [places, setPlaces] = useState<any[]>([]);
   const [selectedPlaceId, setSelectedPlaceId] = useState<number | "">("");
+  const [fromDate, setFromDate] = useState("");
+  const [toDate, setToDate] = useState("");
 
   // Payment Modal State
   const [selectedWorker, setSelectedWorker] = useState<WorkerCashFlow | null>(
@@ -45,18 +48,25 @@ const CashFlow: React.FC = () => {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [breakdown, setBreakdown] = useState<WorkerFeeBreakdownItem[]>([]);
   const [breakdownLoading, setBreakdownLoading] = useState(false);
+  const [isDownloading, setIsDownloading] = useState(false);
 
-  const fetchData = async (placeId?: number) => {
+  const fetchData = useCallback(async (placeId?: number, from?: string, to?: string) => {
     try {
       setLoading(true);
-      const result = await cashFlowAPI.getAll(placeId);
+      const result = await cashFlowAPI.getAll(
+        placeId,
+        from || undefined,
+        to || undefined,
+      );
       setData(result);
     } catch (error) {
       console.error("Error fetching cash flow data:", error);
     } finally {
       setLoading(false);
     }
-  };
+  }, []);
+
+  useLongPoll(fetchData);
 
   useEffect(() => {
     const loadInitialData = async () => {
@@ -75,7 +85,33 @@ const CashFlow: React.FC = () => {
     const val = e.target.value;
     const placeId = val === "" ? "" : Number(val);
     setSelectedPlaceId(placeId);
-    fetchData(placeId === "" ? undefined : placeId);
+    fetchData(placeId === "" ? undefined : placeId, fromDate, toDate);
+  };
+
+  const handleDateFilter = () => {
+    fetchData(selectedPlaceId === "" ? undefined : selectedPlaceId, fromDate, toDate);
+  };
+
+  const handleClearDates = () => {
+    setFromDate("");
+    setToDate("");
+    fetchData(selectedPlaceId === "" ? undefined : selectedPlaceId, "", "");
+  };
+
+  const handleDownload = async () => {
+    try {
+      setIsDownloading(true);
+      await cashFlowAPI.downloadExcel(
+        selectedPlaceId === "" ? undefined : selectedPlaceId,
+        fromDate || undefined,
+        toDate || undefined,
+      );
+    } catch (err) {
+      console.error("Download failed", err);
+      alert("Failed to download Excel. Please try again.");
+    } finally {
+      setIsDownloading(false);
+    }
   };
 
   const handleRowClick = async (worker: WorkerCashFlow) => {
@@ -205,6 +241,48 @@ const CashFlow: React.FC = () => {
             ))}
           </select>
         </div>
+
+        <div className="cf-date-filter">
+          <div className="cf-date-field">
+            <Calendar size={14} />
+            <label>From</label>
+            <input
+              type="date"
+              value={fromDate}
+              onChange={(e) => setFromDate(e.target.value)}
+            />
+          </div>
+          <div className="cf-date-separator">
+            <ArrowRight size={14} />
+          </div>
+          <div className="cf-date-field">
+            <Calendar size={14} />
+            <label>To</label>
+            <input
+              type="date"
+              value={toDate}
+              onChange={(e) => setToDate(e.target.value)}
+            />
+          </div>
+          <button className="cf-filter-btn" onClick={handleDateFilter}>
+            Apply
+          </button>
+          {(fromDate || toDate) && (
+            <button className="cf-clear-btn" onClick={handleClearDates}>
+              ✕ Clear
+            </button>
+          )}
+        </div>
+
+        <button
+          className="cf-download-btn"
+          onClick={handleDownload}
+          disabled={isDownloading}
+          title="Download Fee Breakdown as Excel"
+        >
+          <Download size={15} />
+          {isDownloading ? "Downloading..." : "Export Excel"}
+        </button>
       </div>
 
       <div className="table-responsive">

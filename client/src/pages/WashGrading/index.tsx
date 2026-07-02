@@ -767,7 +767,7 @@ const WashGrading: React.FC = () => {
 
                 {/* Worker Fee */}
                 <div className="wg-form-group">
-                  <label>Worker Fees (MMK)</label>
+                  <label>Worker Fees (MMK) <span style={{ color: '#ef4444' }}>*</span></label>
                   <input
                     type="number"
                     step="0.01"
@@ -778,6 +778,7 @@ const WashGrading: React.FC = () => {
                     onChange={(e) =>
                       setForm({ ...form, workerFees: e.target.value })
                     }
+                    required
                   />
                 </div>
               </div>

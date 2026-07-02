@@ -1,9 +1,10 @@
-using Microsoft.AspNetCore.Authorization;
-using Microsoft.AspNetCore.Mvc;
-using Microsoft.EntityFrameworkCore;
 using AKZ.API.Data;
 using AKZ.API.DTOs;
 using AKZ.API.Models;
+using AKZ.API.Services;
+using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
 
 namespace AKZ.API.Controllers;
 
@@ -13,10 +14,11 @@ namespace AKZ.API.Controllers;
 public class SemiExportController : ControllerBase
 {
     private readonly AKZDbContext _context;
-
-    public SemiExportController(AKZDbContext context)
+    private readonly ChangeNotifierService _notifier;
+    public SemiExportController(AKZDbContext context, ChangeNotifierService notifier)
     {
         _context = context;
+        _notifier = notifier;
     }
 
     [HttpGet]
@@ -197,6 +199,7 @@ public class SemiExportController : ControllerBase
         }
 
         await _context.SaveChangesAsync();
+        _notifier.NotifyChange();
 
         return Ok(savedRecords.Select(ToDto).ToList());
     }

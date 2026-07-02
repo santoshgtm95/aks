@@ -193,7 +193,7 @@ const App: React.FC = () => {
               <Route
                 path="semi-export-purchase"
                 element={
-                  <ProtectedRoute permission="SemiExport.View">
+                  <ProtectedRoute permission="SemiExportPurchase.View">
                     <SemiExportPurchase />
                   </ProtectedRoute>
                 }
@@ -217,7 +217,7 @@ const App: React.FC = () => {
               <Route
                 path="cash-flow"
                 element={
-                  <ProtectedRoute permission="Staff.View">
+                  <ProtectedRoute permission="CashFlow.View">
                     <CashFlow />
                   </ProtectedRoute>
                 }
@@ -233,7 +233,7 @@ const App: React.FC = () => {
               <Route
                 path="workers"
                 element={
-                  <ProtectedRoute permission="Staff.View">
+                  <ProtectedRoute permission="Workers.View">
                     <WorkerPage />
                   </ProtectedRoute>
                 }

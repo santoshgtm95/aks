@@ -204,7 +204,7 @@ const Refinement: React.FC = () => {
       returnWeight: "",
       date: dateStr,
       refinementWorkerId: p.refinementWorkerId || 0,
-      workerFees: p.workerFees !== undefined ? p.workerFees.toString() : "",
+      workerFees: p.workerFees ? p.workerFees.toString() : "",
     });
     setValidationError(null);
     setShowModal(true);
@@ -439,7 +439,7 @@ const Refinement: React.FC = () => {
                     >
                       <input
                         type="number"
-                        placeholder="Bundle count"
+                        placeholder="0"
                         className="rf-select"
                         style={{ flex: 1, minWidth: 0, cursor: "text" }}
                         value={inputCounts[key] || ""}
@@ -829,7 +829,7 @@ const Refinement: React.FC = () => {
                       type="number"
                       step="0.001"
                       className="rf-form-control"
-                      placeholder="0.000"
+                      placeholder="0"
                       value={form.weight}
                       onChange={(e) => {
                         setValidationError(null);
@@ -850,7 +850,7 @@ const Refinement: React.FC = () => {
                       type="number"
                       step="0.001"
                       className="rf-form-control"
-                      placeholder="0.000"
+                      placeholder="0"
                       value={form.spoilageWeight}
                       onChange={(e) => {
                         setValidationError(null);
@@ -888,7 +888,7 @@ const Refinement: React.FC = () => {
                           type="number"
                           step="0.001"
                           className="rf-form-control"
-                          placeholder="0.000"
+                          placeholder="0"
                           value={form.returnWeight}
                           onChange={(e) => {
                             setValidationError(null);
@@ -941,7 +941,7 @@ const Refinement: React.FC = () => {
 
               {/* Worker Fees */}
               <div className="rf-form-group">
-                <label className="rf-form-label">Worker Fees (MMK)</label>
+                <label className="rf-form-label">Worker Fees (MMK) <span style={{ color: '#ef4444' }}>*</span></label>
                 <input
                   type="number"
                   min="0"
@@ -954,7 +954,8 @@ const Refinement: React.FC = () => {
                       workerFees: e.target.value,
                     }))
                   }
-                  placeholder="Enter worker fees amount..."
+                  placeholder="0"
+                  required
                 />
               </div>
 

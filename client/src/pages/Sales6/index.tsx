@@ -1363,7 +1363,7 @@ const Sales6: React.FC = () => {
                                                 </span>
                                                 <input
                                                   type="number"
-                                                  placeholder="0.00"
+                                                  placeholder="0"
                                                   value={
                                                     (sizeSellingPrices[
                                                       color.colorName
@@ -1415,7 +1415,7 @@ const Sales6: React.FC = () => {
                                                 </span>
                                                 <input
                                                   type="number"
-                                                  placeholder="0.00"
+                                                  placeholder="0"
                                                   value={
                                                     (sizeSellingPrices[
                                                       color.colorName

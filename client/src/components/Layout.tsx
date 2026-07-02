@@ -179,8 +179,8 @@ const Layout: React.FC = () => {
             </Link>
           )}
 
-          {(hasPermission("SemiExport.View") ||
-            hasPermission("SemiExport.Create")) && (
+          {(hasPermission("SemiExportPurchase.View") ||
+            hasPermission("SemiExportPurchase.Create")) && (
             <Link
               to="/semi-export-purchase"
               className={`nav-item ${isActive("/semi-export-purchase") ? "active" : ""}`}
@@ -225,7 +225,7 @@ const Layout: React.FC = () => {
             </Link>
           )}
 
-          {(hasPermission("Staff.View") || hasPermission("Staff.Create")) && (
+          {(hasPermission("CashFlow.View") || hasPermission("CashFlow.Create")) && (
             <Link
               to="/cash-flow"
               className={`nav-item ${isActive("/cash-flow") ? "active" : ""}`}
@@ -247,7 +247,7 @@ const Layout: React.FC = () => {
             </Link>
           )}
 
-          {(hasPermission("Staff.View") || hasPermission("Staff.Create")) && (
+          {(hasPermission("Workers.View") || hasPermission("Workers.Create")) && (
             <Link
               to="/workers"
               className={`nav-item ${isActive("/workers") ? "active" : ""}`}
