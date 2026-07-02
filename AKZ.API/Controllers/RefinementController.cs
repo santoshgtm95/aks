@@ -4,6 +4,7 @@ using Microsoft.EntityFrameworkCore;
 using AKZ.API.Data;
 using AKZ.API.DTOs;
 using AKZ.API.Models;
+using AKZ.API.Services;
 
 namespace AKZ.API.Controllers;
 
@@ -13,10 +14,12 @@ namespace AKZ.API.Controllers;
 public class RefinementController : ControllerBase
 {
     private readonly AKZDbContext _context;
+    private readonly ChangeNotifierService _notifier;
 
-    public RefinementController(AKZDbContext context)
+    public RefinementController(AKZDbContext context, ChangeNotifierService notifier)
     {
         _context = context;
+        _notifier = notifier;
     }
 
     private int? GetCurrentUserWarehouseId()
@@ -242,6 +245,7 @@ public class RefinementController : ControllerBase
 
         _context.RefinementProcesses.Add(process);
         await _context.SaveChangesAsync();
+        _notifier.NotifyChange();
 
         string warehouseName = purifiedRecord.ProcessingRecord?.Product?.Warehouse?.Name ?? "";
 
@@ -299,6 +303,7 @@ public class RefinementController : ControllerBase
         process.WorkerFees = dto.WorkerFees;
 
         await _context.SaveChangesAsync();
+        _notifier.NotifyChange();
         return Ok();
     }
 
@@ -320,6 +325,7 @@ public class RefinementController : ControllerBase
 
         _context.RefinementProcesses.Remove(process);
         await _context.SaveChangesAsync();
+        _notifier.NotifyChange();
         return NoContent();
     }
 
@@ -364,6 +370,7 @@ public class RefinementController : ControllerBase
         }
 
         await _context.SaveChangesAsync();
+        _notifier.NotifyChange();
         return Ok();
     }
 
@@ -379,6 +386,7 @@ public class RefinementController : ControllerBase
 
         _context.RefinementRecords.Remove(record);
         await _context.SaveChangesAsync();
+        _notifier.NotifyChange();
         return NoContent();
     }
 }

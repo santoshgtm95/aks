@@ -1,5 +1,6 @@
-import React, { useEffect, useState, useMemo } from "react";
+import React, { useEffect, useState, useMemo, useCallback } from "react";
 import { useAuth } from "../../context/AuthContext";
+import { useLongPoll } from "../../hooks/useLongPoll";
 import {
   singleDoubleDrawnAPI,
   semiExportAPI,
@@ -719,7 +720,7 @@ const SemiExport: React.FC = () => {
     }
   };
 
-  const loadData = async () => {
+  const loadData = useCallback(async () => {
     try {
       const [
         sddData,
@@ -753,7 +754,8 @@ const SemiExport: React.FC = () => {
     } finally {
       setLoading(false);
     }
-  };
+  }, []);
+  useLongPoll(loadData);
 
   // Compute metrics for selected marker
   const selectedMarkerStats = useMemo(() => {
@@ -2232,7 +2234,13 @@ const SemiExport: React.FC = () => {
               Colors Breakdown
             </h3>
           </div>
-          <div style={{ padding: "20px", overflowX: "auto", WebkitOverflowScrolling: "touch" }}>
+          <div
+            style={{
+              padding: "20px",
+              overflowX: "auto",
+              WebkitOverflowScrolling: "touch",
+            }}
+          >
             <table
               className="table"
               style={{
@@ -3754,7 +3762,9 @@ const SemiExport: React.FC = () => {
         <div className="semiexport-hero-right">
           <div className="semiexport-stat-pill">
             <span className="stat-num">{savedExports.length}</span>
-            <span className="stat-label">{savedExports.length === 1 ? 'Record' : 'Records'}</span>
+            <span className="stat-label">
+              {savedExports.length === 1 ? "Record" : "Records"}
+            </span>
           </div>
         </div>
       </div>
@@ -3762,508 +3772,440 @@ const SemiExport: React.FC = () => {
       <div className="semiexport-layout">
         {/* Left Sidebar: Single Double Drawn Sorting List */}
         <aside className="rf-sidebar">
-        <div className="rf-sidebar-header">
-          <Package size={18} />
-          <span>Sorted Batches</span>
-        </div>
+          <div className="rf-sidebar-header">
+            <Package size={18} />
+            <span>Sorted Batches</span>
+          </div>
 
-        <div className="rf-search-box">
-          <Search size={16} className="rf-search-icon" />
-          <input
-            type="text"
-            className="rf-search-input"
-            placeholder="Search marker, warehouse..."
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-          />
-        </div>
+          <div className="rf-search-box">
+            <Search size={16} className="rf-search-icon" />
+            <input
+              type="text"
+              className="rf-search-input"
+              placeholder="Search marker, warehouse..."
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+            />
+          </div>
 
-        <div className="rf-card-list">
-          {filteredGroupedRecords.length === 0 ? (
-            <div className="rf-empty-sidebar">No sorted batches found</div>
-          ) : (
-            filteredGroupedRecords.map((group) => {
-              if (group.source === "purchase") {
+          <div className="rf-card-list">
+            {filteredGroupedRecords.length === 0 ? (
+              <div className="rf-empty-sidebar">No sorted batches found</div>
+            ) : (
+              filteredGroupedRecords.map((group) => {
+                if (group.source === "purchase") {
+                  return (
+                    <div
+                      key={`purchase-${group.markerName}-${group.date}`}
+                      className={`product-card ${
+                        selectedPurchaseGroupKey === getPurchaseGroupKey(group)
+                          ? "selected"
+                          : ""
+                      }`}
+                      onClick={() => {
+                        setSelectedPurchaseGroupKey(getPurchaseGroupKey(group));
+                        setSelectedMarker(null);
+                        setActiveTab("processing");
+                      }}
+                    >
+                      <div className="card-header">
+                        <div className="card-title-group">
+                          <span className="card-marker">
+                            {group.markerName}
+                          </span>
+                        </div>
+                        <span className="card-source-badge source-purchase">
+                          Purchase
+                        </span>
+                      </div>
+
+                      <div className="card-stats">
+                        <div className="card-stat card-stat-output">
+                          <span className="card-stat-label">
+                            <Scale size={11} strokeWidth={2.2} />
+                            Sorted
+                          </span>
+                          <span className="card-stat-value">
+                            {group.combinedWeight.toFixed(3)}
+                            <em>viss</em>
+                          </span>
+                        </div>
+                        <div className="card-stat card-stat-lost">
+                          <span className="card-stat-label">
+                            <AlertTriangle size={11} strokeWidth={2.2} />
+                            Lost
+                          </span>
+                          <span className="card-stat-value">
+                            {(group.lostWeight || 0).toFixed(3)}
+                            <em>viss</em>
+                          </span>
+                        </div>
+                      </div>
+
+                      <div className="card-footer">
+                        <span className="card-date">
+                          <Clock size={11} strokeWidth={2.2} />
+                          {new Date(group.date).toLocaleDateString()}
+                        </span>
+                        <div className="card-tags">
+                          {(group.colors || []).map((color) => (
+                            <span key={color} className="rf-badge">
+                              {color}
+                            </span>
+                          ))}
+                        </div>
+                      </div>
+                    </div>
+                  );
+                }
+
+                const savedCount = group.records.filter((r) =>
+                  savedExports.some(
+                    (x) => x.singleDoubleDrawnRecordId === r.id,
+                  ),
+                ).length;
+                const isFullySaved = savedCount === group.records.length;
+                const isPartiallySaved =
+                  savedCount > 0 && savedCount < group.records.length;
+
                 return (
                   <div
-                    key={`purchase-${group.markerName}-${group.date}`}
-                    className={`product-card ${
-                      selectedPurchaseGroupKey === getPurchaseGroupKey(group)
-                        ? "selected"
-                        : ""
-                    }`}
+                    key={group.markerName}
+                    className={`product-card ${selectedMarker === group.markerName ? "selected" : ""}`}
                     onClick={() => {
-                      setSelectedPurchaseGroupKey(getPurchaseGroupKey(group));
-                      setSelectedMarker(null);
+                      setSelectedPurchaseGroupKey(null);
+                      setSelectedMarker(group.markerName);
                       setActiveTab("processing");
                     }}
                   >
                     <div className="card-header">
-                      <div style={{ display: "flex", flexDirection: "column" }}>
+                      <div className="card-title-group">
                         <span className="card-marker">{group.markerName}</span>
+                        <span className="card-warehouse">
+                          <Package size={11} strokeWidth={2} />
+                          {group.warehouseNames.join(", ") || "---"}
+                        </span>
                       </div>
-                      <span
-                        style={{
-                          background: "#eff6ff",
-                          color: "#1d4ed8",
-                          fontSize: "10px",
-                          padding: "2px 6px",
-                          borderRadius: "4px",
-                          fontWeight: "bold",
-                        }}
-                      >
-                        Purchase
-                      </span>
+                      {isFullySaved && (
+                        <span className="card-status-badge status-saved">
+                          <CheckCircle size={11} /> Saved
+                        </span>
+                      )}
+                      {isPartiallySaved && (
+                        <span className="card-status-badge status-partial">
+                          {savedCount}/{group.records.length} Saved
+                        </span>
+                      )}
                     </div>
 
-                    <div
-                      className="card-details"
-                      style={{ flexDirection: "column", gap: "4px" }}
-                    >
-                      <div
-                        style={{
-                          display: "flex",
-                          justifyContent: "space-between",
-                        }}
-                      >
-                        <span>
-                          Total Sorted:{" "}
-                          <strong style={{ color: "#059669" }}>
-                            {group.combinedWeight.toFixed(3)}
-                          </strong>{" "}
-                          viss
+                    <div className="card-stats">
+                      <div className="card-stat card-stat-output">
+                        <span className="card-stat-label">
+                          <Scale size={11} strokeWidth={2.2} />
+                          Total Sorted
                         </span>
-                        <span>
-                          Date:{" "}
-                          <span style={{ color: "#475569", fontWeight: 500 }}>
-                            {new Date(group.date).toLocaleDateString()}
-                          </span>
+                        <span className="card-stat-value">
+                          {group.combinedWeight.toFixed(3)}
+                          <em>viss</em>
                         </span>
                       </div>
-                      <div
-                        style={{
-                          display: "flex",
-                          justifyContent: "space-between",
-                        }}
-                      >
-                        <span>
-                          Lost:{" "}
-                          <strong style={{ color: "#ef4444" }}>
-                            {(group.lostWeight || 0).toFixed(3)}
-                          </strong>{" "}
-                          viss
+                      <div className="card-stat card-stat-count">
+                        <span className="card-stat-label">
+                          <Layers size={11} strokeWidth={2.2} />
+                          Items
+                        </span>
+                        <span className="card-stat-value">
+                          {group.records.length}
                         </span>
                       </div>
-                      <div
-                        style={{
-                          display: "flex",
-                          gap: "4px",
-                          flexWrap: "wrap",
-                          marginTop: "4px",
-                        }}
-                      >
-                        {(group.colors || []).map((color) => (
+                    </div>
+
+                    <div className="card-footer">
+                      <span className="card-date">
+                        <Clock size={11} strokeWidth={2.2} />
+                        {new Date(group.date).toLocaleDateString()}
+                      </span>
+                      <div className="card-tags">
+                        {group.records.map((r) => (
                           <span
-                            key={color}
-                            className="rf-badge"
-                            style={{ fontSize: "9px", padding: "1px 4px" }}
+                            key={r.id}
+                            className={`rf-badge category-${(r.refinementRecordCategory || "").toLowerCase().replace(".", "")}`}
                           >
-                            {color}
+                            {r.refinementRecordCategory}
                           </span>
                         ))}
                       </div>
                     </div>
                   </div>
                 );
-              }
+              })
+            )}
+          </div>
+        </aside>
 
-              const savedCount = group.records.filter((r) =>
-                savedExports.some((x) => x.singleDoubleDrawnRecordId === r.id),
-              ).length;
-              const isFullySaved = savedCount === group.records.length;
-              const isPartiallySaved =
-                savedCount > 0 && savedCount < group.records.length;
-
-              return (
-                <div
-                  key={group.markerName}
-                  className={`product-card ${selectedMarker === group.markerName ? "selected" : ""}`}
-                  onClick={() => {
-                    setSelectedPurchaseGroupKey(null);
-                    setSelectedMarker(group.markerName);
-                    setActiveTab("processing");
-                  }}
-                >
-                  <div className="card-header">
-                    <div style={{ display: "flex", flexDirection: "column" }}>
-                      <span className="card-marker">{group.markerName}</span>
-                      <span
-                        style={{
-                          fontSize: "11px",
-                          color: "#64748b",
-                          fontWeight: 500,
-                          marginTop: "2px",
-                        }}
-                      >
-                        {group.warehouseNames.join(", ") || "---"}
-                      </span>
-                    </div>
-                    <div
-                      style={{
-                        display: "flex",
-                        gap: "6px",
-                        alignItems: "center",
-                      }}
-                    >
-                      {isFullySaved && (
-                        <span
-                          style={{
-                            background: "#d1fae5",
-                            color: "#065f46",
-                            fontSize: "10.0px",
-                            padding: "2px 6px",
-                            borderRadius: "4px",
-                            fontWeight: "bold",
-                            display: "inline-flex",
-                            alignItems: "center",
-                            gap: "3px",
-                          }}
-                        >
-                          <CheckCircle size={10} /> Saved
-                        </span>
-                      )}
-                      {isPartiallySaved && (
-                        <span
-                          style={{
-                            background: "#fef3c7",
-                            color: "#92400e",
-                            fontSize: "10.0px",
-                            padding: "2px 6px",
-                            borderRadius: "4px",
-                            fontWeight: "bold",
-                            display: "inline-flex",
-                            alignItems: "center",
-                            gap: "3px",
-                          }}
-                        >
-                          Saved ({savedCount}/{group.records.length})
-                        </span>
-                      )}
-                    </div>
-                  </div>
-                  <div
-                    className="card-details"
-                    style={{ flexDirection: "column", gap: "4px" }}
+        {/* Right Main Content */}
+        <main className="rf-main">
+          <div className="rf-main-card">
+            <div className="rf-main-header">
+              <div className="rf-header-left">
+                <div className="rf-tab-group" style={{ marginLeft: "24px" }}>
+                  <button
+                    className={`rf-tab ${activeTab === "processing" ? "rf-tab-active" : ""}`}
+                    onClick={() => setActiveTab("processing")}
                   >
-                    <div
-                      style={{
-                        display: "flex",
-                        justifyContent: "space-between",
-                      }}
-                    >
-                      <span>
-                        Total Sorted:{" "}
-                        <strong style={{ color: "#059669" }}>
-                          {group.combinedWeight.toFixed(3)}
-                        </strong>{" "}
-                        viss
-                      </span>
-                      <span>
-                        Date:{" "}
-                        <span style={{ color: "#475569", fontWeight: 500 }}>
-                          {new Date(group.date).toLocaleDateString()}
-                        </span>
-                      </span>
-                    </div>
-                    <div
-                      style={{
-                        display: "flex",
-                        gap: "4px",
-                        flexWrap: "wrap",
-                        marginTop: "4px",
-                      }}
-                    >
-                      {group.records.map((r) => (
-                        <span
-                          key={r.id}
-                          className={`rf-badge category-${(r.refinementRecordCategory || "").toLowerCase().replace(".", "")}`}
-                          style={{ fontSize: "9px", padding: "1px 4px" }}
-                        >
-                          {r.refinementRecordCategory}
-                        </span>
-                      ))}
-                    </div>
-                  </div>
+                    <span className="rf-tab-title">Processing</span>
+                    <span className="rf-tab-sub">Sales Calculations</span>
+                  </button>
+                  <button
+                    className={`rf-tab ${activeTab === "history" ? "rf-tab-active" : ""}`}
+                    onClick={() => setActiveTab("history")}
+                  >
+                    <span className="rf-tab-title">History</span>
+                    <span className="rf-tab-sub">
+                      {selectedMarker ? "Batch History" : "Global History"}
+                    </span>
+                  </button>
                 </div>
-              );
-            })
-          )}
-        </div>
-      </aside>
-
-      {/* Right Main Content */}
-      <main className="rf-main">
-        <div className="rf-main-card">
-          <div className="rf-main-header">
-            <div className="rf-header-left">
-              <div className="rf-tab-group" style={{ marginLeft: "24px" }}>
-                <button
-                  className={`rf-tab ${activeTab === "processing" ? "rf-tab-active" : ""}`}
-                  onClick={() => setActiveTab("processing")}
-                >
-                  <span className="rf-tab-title">Processing</span>
-                  <span className="rf-tab-sub">Sales Calculations</span>
-                </button>
-                <button
-                  className={`rf-tab ${activeTab === "history" ? "rf-tab-active" : ""}`}
-                  onClick={() => setActiveTab("history")}
-                >
-                  <span className="rf-tab-title">History</span>
-                  <span className="rf-tab-sub">
-                    {selectedMarker ? "Batch History" : "Global History"}
-                  </span>
-                </button>
+              </div>
+              <div
+                className="rf-header-right"
+                style={{ display: "flex", gap: "12px" }}
+              >
+                {hasPermission("SemiExport.Create") && (
+                  <button
+                    onClick={() => setShowLedgerModal(true)}
+                    className="btn btn-primary"
+                    style={{
+                      display: "flex",
+                      alignItems: "center",
+                      gap: "10px",
+                      padding: "11px 22px",
+                      borderRadius: "10px",
+                      fontSize: "15px",
+                      fontWeight: "700",
+                      cursor: "pointer",
+                    }}
+                  >
+                    <FilePlus size={20} />
+                    Create Ledger
+                  </button>
+                )}
               </div>
             </div>
-            <div
-              className="rf-header-right"
-              style={{ display: "flex", gap: "12px" }}
-            >
-              {hasPermission("SemiExport.Create") && (
-                <button
-                  onClick={() => setShowLedgerModal(true)}
-                  className="btn btn-primary"
+
+            {activeTab === "processing" ? (
+              selectedPurchaseGroup ? (
+                renderPurchaseGroupDetails()
+              ) : selectedMarker && selectedRecords.length > 0 ? (
+                renderMarkerDetails(false)
+              ) : (
+                // Placeholder when no selection
+                <div
                   style={{
                     display: "flex",
+                    flexDirection: "column",
                     alignItems: "center",
-                    gap: "10px",
-                    padding: "11px 22px",
-                    borderRadius: "10px",
-                    fontSize: "15px",
-                    fontWeight: "700",
-                    cursor: "pointer",
+                    justifyContent: "center",
+                    color: "#94a3b8",
+                    padding: "40px 20px",
+                    background: "#f8fafc",
+                    borderRadius: "16px",
+                    border: "2px dashed #e2e8f0",
                   }}
                 >
-                  <FilePlus size={20} />
-                  Create Ledger
-                </button>
-              )}
-            </div>
-          </div>
-
-          {activeTab === "processing" ? (
-            selectedPurchaseGroup ? (
-              renderPurchaseGroupDetails()
-            ) : selectedMarker && selectedRecords.length > 0 ? (
-              renderMarkerDetails(false)
+                  <Sparkles
+                    size={40}
+                    style={{ color: "#cbd5e1", marginBottom: "12px" }}
+                  />
+                  <h3
+                    style={{
+                      fontSize: "16px",
+                      fontWeight: "700",
+                      color: "#64748b",
+                      margin: "0 0 4px 0",
+                    }}
+                  >
+                    No Selection
+                  </h3>
+                  <p style={{ fontSize: "13.0px", margin: 0 }}>
+                    Select a sorted batch from the sidebar to calculate pricing
+                    and amounts.
+                  </p>
+                </div>
+              )
             ) : (
-              // Placeholder when no selection
-              <div
-                style={{
-                  display: "flex",
-                  flexDirection: "column",
-                  alignItems: "center",
-                  justifyContent: "center",
-                  color: "#94a3b8",
-                  padding: "40px 20px",
-                  background: "#f8fafc",
-                  borderRadius: "16px",
-                  border: "2px dashed #e2e8f0",
-                }}
-              >
-                <Sparkles
-                  size={40}
-                  style={{ color: "#cbd5e1", marginBottom: "12px" }}
-                />
-                <h3
-                  style={{
-                    fontSize: "16px",
-                    fontWeight: "700",
-                    color: "#64748b",
-                    margin: "0 0 4px 0",
-                  }}
-                >
-                  No Selection
-                </h3>
-                <p style={{ fontSize: "13.0px", margin: 0 }}>
-                  Select a sorted batch from the sidebar to calculate pricing
-                  and amounts.
-                </p>
-              </div>
-            )
-          ) : (
-            <div className="ledger-history-tab">
-              <div className="rf-table-wrap">
-                <table className="rf-table">
-                  <thead>
-                    <tr>
-                      <th>Sorted Batch</th>
-                      <th>Export Date</th>
-                      <th className="rf-th-right">Worker Fees</th>
-                      <th className="rf-th-right">Total Amount</th>
-                      <th>Remark</th>
-                      <th style={{ textAlign: "center" }}>Actions</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {filteredHistory.length === 0 ? (
+              <div className="ledger-history-tab">
+                <div className="rf-table-wrap">
+                  <table className="rf-table">
+                    <thead>
                       <tr>
-                        <td colSpan={6} className="rf-empty-row">
-                          <Package
-                            size={44}
-                            className="rf-empty-icon"
-                            style={{
-                              opacity: 0.2,
-                              margin: "0 auto 12px",
-                              display: "block",
-                            }}
-                          />
-                          <span>No export history recorded</span>
-                        </td>
+                        <th>Sorted Batch</th>
+                        <th>Export Date</th>
+                        <th className="rf-th-right">Worker Fees</th>
+                        <th className="rf-th-right">Total Amount</th>
+                        <th>Remark</th>
+                        <th style={{ textAlign: "center" }}>Actions</th>
                       </tr>
-                    ) : (
-                      filteredHistory.map((group: any) => {
-                        return (
-                          <tr
-                            key={group.marker}
-                            style={{
-                              borderBottom: "1px solid #f1f5f9",
-                              cursor: "pointer",
-                            }}
-                            onClick={() => {
-                              setPrevSelectedMarker(selectedMarker);
-                              setSelectedMarker(group.marker);
-                              setShowHistoryModal(true);
-                            }}
-                          >
-                            <td
+                    </thead>
+                    <tbody>
+                      {filteredHistory.length === 0 ? (
+                        <tr>
+                          <td colSpan={6} className="rf-empty-row">
+                            <Package
+                              size={44}
+                              className="rf-empty-icon"
                               style={{
-                                padding: "12px 16px",
-                                fontWeight: "600",
-                                color: "#334155",
+                                opacity: 0.2,
+                                margin: "0 auto 12px",
+                                display: "block",
+                              }}
+                            />
+                            <span>No export history recorded</span>
+                          </td>
+                        </tr>
+                      ) : (
+                        filteredHistory.map((group: any) => {
+                          return (
+                            <tr
+                              key={group.marker}
+                              style={{
+                                borderBottom: "1px solid #f1f5f9",
+                                cursor: "pointer",
+                              }}
+                              onClick={() => {
+                                setPrevSelectedMarker(selectedMarker);
+                                setSelectedMarker(group.marker);
+                                setShowHistoryModal(true);
                               }}
                             >
-                              <div
+                              <td
                                 style={{
-                                  display: "flex",
-                                  flexDirection: "column",
+                                  padding: "12px 16px",
+                                  fontWeight: "600",
+                                  color: "#334155",
                                 }}
                               >
-                                <span
+                                <div
                                   style={{
-                                    fontSize: "13.5px",
-                                    color: "#0f172a",
-                                    fontWeight: "700",
+                                    display: "flex",
+                                    flexDirection: "column",
                                   }}
                                 >
-                                  {group.marker}
-                                </span>
-                                <span
-                                  style={{
-                                    fontSize: "11px",
-                                    color: "#64748b",
-                                    fontWeight: 500,
-                                    marginTop: "2px",
-                                  }}
-                                >
-                                  {Array.from(group.warehouseNames).join(
-                                    ", ",
-                                  ) || "---"}{" "}
-                                  •{" "}
-                                  {Array.from(group.categories).join(", ") ||
-                                    "---"}
-                                </span>
-                              </div>
-                            </td>
-                            <td
-                              style={{
-                                padding: "12px 16px",
-                                whiteSpace: "nowrap",
-                                fontWeight: "500",
-                                color: "#0f172a",
-                              }}
-                            >
-                              {formatDateTime(group.latestDate)}
-                            </td>
-                            <td
-                              className="rf-th-right"
-                              style={{
-                                padding: "12px 16px",
-                                fontWeight: "600",
-                                color: "#6366f1",
-                              }}
-                            >
-                              {(group.totalWorkerFees || 0).toLocaleString()}{" "}
-                              MMK
-                            </td>
-                            <td
-                              className="rf-th-right"
-                              style={{
-                                padding: "12px 16px",
-                                fontWeight: "700",
-                                color: "#10b981",
-                              }}
-                            >
-                              {(
-                                group.totalAmountMMK + group.totalWorkerFees
-                              ).toLocaleString(undefined, {
-                                minimumFractionDigits: 2,
-                                maximumFractionDigits: 2,
-                              })}{" "}
-                              MMK
-                            </td>
-                            <td
-                              style={{
-                                padding: "12px 16px",
-                                color: "#475569",
-                                fontSize: "13px",
-                                maxWidth: "200px",
-                                overflow: "hidden",
-                                textOverflow: "ellipsis",
-                                whiteSpace: "nowrap",
-                              }}
-                              title={group.remark}
-                            >
-                              {group.remark || "—"}
-                            </td>
-                            <td
-                              style={{
-                                padding: "12px 16px",
-                                textAlign: "center",
-                              }}
-                            >
-                              {hasPermission("SemiExport.Delete") && (
-                                <button
-                                  onClick={(e) => {
-                                    e.stopPropagation();
-                                    handleDeleteExport(group.ids);
-                                  }}
-                                  className="btn btn-danger"
-                                  style={{
-                                    padding: "6px 10px",
-                                    borderRadius: "6px",
-                                    cursor: "pointer",
-                                    display: "inline-flex",
-                                    alignItems: "center",
-                                    justifyContent: "center",
-                                  }}
-                                >
-                                  <Trash2 size={13} />
-                                </button>
-                              )}
-                            </td>
-                          </tr>
-                        );
-                      })
-                    )}
-                  </tbody>
-                </table>
+                                  <span
+                                    style={{
+                                      fontSize: "13.5px",
+                                      color: "#0f172a",
+                                      fontWeight: "700",
+                                    }}
+                                  >
+                                    {group.marker}
+                                  </span>
+                                  <span
+                                    style={{
+                                      fontSize: "11px",
+                                      color: "#64748b",
+                                      fontWeight: 500,
+                                      marginTop: "2px",
+                                    }}
+                                  >
+                                    {Array.from(group.warehouseNames).join(
+                                      ", ",
+                                    ) || "---"}{" "}
+                                    •{" "}
+                                    {Array.from(group.categories).join(", ") ||
+                                      "---"}
+                                  </span>
+                                </div>
+                              </td>
+                              <td
+                                style={{
+                                  padding: "12px 16px",
+                                  whiteSpace: "nowrap",
+                                  fontWeight: "500",
+                                  color: "#0f172a",
+                                }}
+                              >
+                                {formatDateTime(group.latestDate)}
+                              </td>
+                              <td
+                                className="rf-th-right"
+                                style={{
+                                  padding: "12px 16px",
+                                  fontWeight: "600",
+                                  color: "#6366f1",
+                                }}
+                              >
+                                {(group.totalWorkerFees || 0).toLocaleString()}{" "}
+                                MMK
+                              </td>
+                              <td
+                                className="rf-th-right"
+                                style={{
+                                  padding: "12px 16px",
+                                  fontWeight: "700",
+                                  color: "#10b981",
+                                }}
+                              >
+                                {(
+                                  group.totalAmountMMK + group.totalWorkerFees
+                                ).toLocaleString(undefined, {
+                                  minimumFractionDigits: 2,
+                                  maximumFractionDigits: 2,
+                                })}{" "}
+                                MMK
+                              </td>
+                              <td
+                                style={{
+                                  padding: "12px 16px",
+                                  color: "#475569",
+                                  fontSize: "13px",
+                                  maxWidth: "200px",
+                                  overflow: "hidden",
+                                  textOverflow: "ellipsis",
+                                  whiteSpace: "nowrap",
+                                }}
+                                title={group.remark}
+                              >
+                                {group.remark || "—"}
+                              </td>
+                              <td
+                                style={{
+                                  padding: "12px 16px",
+                                  textAlign: "center",
+                                }}
+                              >
+                                {hasPermission("SemiExport.Delete") && (
+                                  <button
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      handleDeleteExport(group.ids);
+                                    }}
+                                    className="btn btn-danger"
+                                    style={{
+                                      padding: "6px 10px",
+                                      borderRadius: "6px",
+                                      cursor: "pointer",
+                                      display: "inline-flex",
+                                      alignItems: "center",
+                                      justifyContent: "center",
+                                    }}
+                                  >
+                                    <Trash2 size={13} />
+                                  </button>
+                                )}
+                              </td>
+                            </tr>
+                          );
+                        })
+                      )}
+                    </tbody>
+                  </table>
+                </div>
               </div>
-            </div>
-          )}
-        </div>
-      </main>
-    </div>
+            )}
+          </div>
+        </main>
+      </div>
 
       {/* History Detail Modal */}
       {showHistoryModal && selectedMarker && (

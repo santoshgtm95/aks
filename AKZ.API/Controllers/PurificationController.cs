@@ -4,6 +4,7 @@ using Microsoft.EntityFrameworkCore;
 using AKZ.API.Data;
 using AKZ.API.DTOs;
 using AKZ.API.Models;
+using AKZ.API.Services;
 
 namespace AKZ.API.Controllers;
 
@@ -13,10 +14,12 @@ namespace AKZ.API.Controllers;
 public class PurificationController : ControllerBase
 {
     private readonly AKZDbContext _context;
+    private readonly ChangeNotifierService _notifier;
 
-    public PurificationController(AKZDbContext context)
+    public PurificationController(AKZDbContext context, ChangeNotifierService notifier)
     {
         _context = context;
+        _notifier = notifier;
     }
 
     private int? GetCurrentUserWarehouseId()
@@ -267,6 +270,7 @@ public class PurificationController : ControllerBase
 
         _context.PurificationProcesses.Add(process);
         await _context.SaveChangesAsync();
+        _notifier.NotifyChange();
 
         string warehouseName = record.Product.Warehouse?.Name ?? "";
         if (string.IsNullOrEmpty(warehouseName) && record.Product.WarehouseId.HasValue)
@@ -396,6 +400,7 @@ public class PurificationController : ControllerBase
         process.SupervisorFees = dto.SupervisorFees;
         
         await _context.SaveChangesAsync();
+        _notifier.NotifyChange();
         return Ok();
     }
 
@@ -432,6 +437,7 @@ public class PurificationController : ControllerBase
         }
         
         await _context.SaveChangesAsync();
+        _notifier.NotifyChange();
         return NoContent();
     }
 
@@ -507,6 +513,7 @@ public class PurificationController : ControllerBase
         }
 
         await _context.SaveChangesAsync();
+        _notifier.NotifyChange();
         return Ok();
     }
 
@@ -537,6 +544,7 @@ public class PurificationController : ControllerBase
         if (process != null) _context.PurificationProcesses.Remove(process);
 
         await _context.SaveChangesAsync();
+        _notifier.NotifyChange();
         return NoContent();
     }
 

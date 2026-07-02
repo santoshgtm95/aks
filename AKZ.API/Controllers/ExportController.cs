@@ -5,6 +5,7 @@ using AKZ.API.Data;
 using AKZ.API.DTOs;
 using AKZ.API.Models;
 using System.Text.Json;
+using AKZ.API.Services;
 
 namespace AKZ.API.Controllers;
 
@@ -14,10 +15,12 @@ namespace AKZ.API.Controllers;
 public class ExportController : ControllerBase
 {
     private readonly AKZDbContext _context;
+    private readonly ChangeNotifierService _notifier;
 
-    public ExportController(AKZDbContext context)
+    public ExportController(AKZDbContext context, ChangeNotifierService notifier)
     {
         _context = context;
+        _notifier = notifier;
     }
 
     [HttpGet]
@@ -172,6 +175,8 @@ public class ExportController : ControllerBase
                 // Ignored - SizeSellingPrices is invalid JSON
             }
         }
+
+        _notifier.NotifyChange();
 
         // Load reference
         await _context.Entry(export).Reference(e => e.ExchangeRate).LoadAsync();

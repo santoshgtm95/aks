@@ -790,3 +790,23 @@ export const messLabourWorkersAPI = {
     await api.delete(`/messlabourworkers/${id}`);
   },
 };
+
+export const pollAPI = {
+  getVersion: async (): Promise<{ version: number }> => {
+    const response = await api.get<{ version: number }>("/poll/version");
+    return response.data;
+  },
+  getChanges: async (
+    lastVersion: number,
+    signal?: AbortSignal
+  ): Promise<{ version: number; changed: boolean }> => {
+    const response = await api.get<{ version: number; changed: boolean }>(
+      "/poll/changes",
+      {
+        params: { lastVersion },
+        signal,
+      }
+    );
+    return response.data;
+  },
+};

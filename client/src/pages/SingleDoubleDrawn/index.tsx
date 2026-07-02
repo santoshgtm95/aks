@@ -1,5 +1,6 @@
-import React, { useEffect, useState, useMemo } from "react";
+import React, { useEffect, useState, useMemo, useCallback } from "react";
 import { useAuth } from "../../context/AuthContext";
+import { useLongPoll } from "../../hooks/useLongPoll";
 import {
   refinementAPI,
   singleDoubleDrawnAPI,
@@ -237,7 +238,7 @@ const SingleDoubleDrawn: React.FC = () => {
     loadData();
   }, []);
 
-  const loadData = async () => {
+  const loadData = useCallback(async () => {
     try {
       const [recordsData, savedData, workersData] = await Promise.all([
         refinementAPI.getRefinementRecords(),
@@ -253,7 +254,9 @@ const SingleDoubleDrawn: React.FC = () => {
     } finally {
       setLoading(false);
     }
-  };
+  }, []);
+
+  useLongPoll(loadData);
 
   const selectedRecord = useMemo(
     () => refinedRecords.find((r) => r.id === selectedRecordId),

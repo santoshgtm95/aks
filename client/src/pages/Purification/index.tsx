@@ -1,7 +1,8 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useCallback } from "react";
 import { purificationAPI, placesAPI, purifiersAPI } from "../../services/api";
 import { useAuth } from "../../context/AuthContext";
 import { useNotification } from "../../context/NotificationContext";
+import { useLongPoll } from "../../hooks/useLongPoll";
 import type {
   AvailableCategory,
   PurificationProcess,
@@ -81,7 +82,7 @@ const Purification: React.FC = () => {
     loadData();
   }, []);
 
-  const loadData = async () => {
+  const loadData = useCallback(async () => {
     try {
       const [availData, processData, purifiedData, placeData, purifierData] =
         await Promise.all([
@@ -101,7 +102,9 @@ const Purification: React.FC = () => {
     } finally {
       setLoading(false);
     }
-  };
+  }, []);
+
+  useLongPoll(loadData);
 
   const filteredAvailable = availableCategories.filter(
     (a) =>
@@ -336,264 +339,356 @@ const Purification: React.FC = () => {
         <div className="purification-hero-right">
           <div className="purification-stat-pill">
             <span className="stat-num">{purifiedRecords.length}</span>
-            <span className="stat-label">{purifiedRecords.length === 1 ? 'Record' : 'Records'}</span>
+            <span className="stat-label">
+              {purifiedRecords.length === 1 ? "Record" : "Records"}
+            </span>
           </div>
         </div>
       </div>
 
       <div className="purification-layout">
         <aside className="rf-sidebar">
-        <div className="rf-sidebar-header">
-          <Package size={18} />
-          <span>Select Category to Purify</span>
-        </div>
-
-        <div className="rf-search-box">
-          <Search size={16} className="rf-search-icon" />
-          <input
-            type="text"
-            placeholder="Search bag marker..."
-            className="rf-search-input"
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-          />
-        </div>
-
-        <div className="rf-card-list">
-          {filteredAvailable.length === 0 ? (
-            <div className="rf-empty-sidebar">
-              {searchTerm
-                ? "No matching bags found"
-                : "No available bags for purification"}
-            </div>
-          ) : (
-            filteredAvailable.map((avail) => {
-              const key = `${avail.processingRecordId}-${avail.category}`;
-              return (
-                <div key={key} className="rf-bag-card">
-                  <div className="rf-card-top">
-                    <div className="rf-card-info">
-                      <span className="rf-card-marker">
-                        {avail.productMarker}
-                      </span>
-                      <span className="rf-card-warehouse">
-                        {avail.warehouseName || "---"}
-                      </span>
-                    </div>
-                    <span
-                      className={`rf-badge category-${avail.category.toLowerCase().replace(".", "")}`}
-                    >
-                      {avail.category}
-                    </span>
-                  </div>
-
-                  <div className="rf-stats-row">
-                    <div className="rf-stat">
-                      <span className="rf-stat-label">Remaining</span>
-                      <span className="rf-stat-value">
-                        {avail.remainingCount}{" "}
-                        <span className="rf-stat-unit">bundles</span>
-                      </span>
-                    </div>
-                    <div className="rf-stat rf-stat-right">
-                      <span className="rf-stat-label">Weight</span>
-                      <span className="rf-stat-value rf-stat-blue">
-                        {avail.remainingWeight.toFixed(3)}{" "}
-                        <span className="rf-stat-unit">viss</span>
-                      </span>
-                    </div>
-                    <div className="rf-stat rf-stat-right">
-                      <span className="rf-stat-label">Unit Wt</span>
-                      <span className="rf-stat-value rf-stat-purple">
-                        {avail.unitWeight.toFixed(4)}
-                      </span>
-                    </div>
-                  </div>
-
-                  <div className="rf-worker-select-wrap">
-                    <label className="rf-field-label">Place</label>
-                    <select
-                      className="rf-select"
-                      value={selectedPlaces[key] || ""}
-                      onChange={(e) =>
-                        setSelectedPlaces((prev) => ({
-                          ...prev,
-                          [key]: parseInt(e.target.value),
-                        }))
-                      }
-                    >
-                      <option value="">-- Select place --</option>
-                      {places
-                        .filter((p) => p.warehouseId === avail.warehouseId)
-                        .map((p) => (
-                          <option key={p.id} value={p.id}>
-                            {p.name}
-                          </option>
-                        ))}
-                    </select>
-                  </div>
-
-                  <div
-                    className="rf-input-group"
-                    style={{
-                      display: "flex",
-                      gap: "8px",
-                      marginBottom: "12px",
-                      alignItems: "center",
-                    }}
-                  >
-                    <input
-                      type="number"
-                      placeholder="Bundles"
-                      className="rf-select"
-                      style={{ flex: 1, minWidth: 0, cursor: "text" }}
-                      value={inputCounts[key] || ""}
-                      onChange={(e) =>
-                        handleInputChance(
-                          avail.processingRecordId,
-                          avail.category,
-                          e.target.value,
-                        )
-                      }
-                      min="0"
-                      step="any"
-                      max={avail.remainingCount}
-                    />
-                    <button
-                      type="button"
-                      onClick={() =>
-                        handleInputChance(
-                          avail.processingRecordId,
-                          avail.category,
-                          avail.remainingCount.toString(),
-                        )
-                      }
-                      className="rf-max-btn"
-                      style={{
-                        padding: "6px 8px",
-                        fontSize: "12px",
-                        backgroundColor: "#f1f5f9",
-                        border: "1px solid #cbd5e1",
-                        borderRadius: "4px",
-                        cursor: "pointer",
-                        color: "#475569",
-                        fontWeight: 600,
-                        flexShrink: 0,
-                      }}
-                    >
-                      Max
-                    </button>
-                  </div>
-
-                  <button
-                    className="rf-assign-btn"
-                    style={{
-                      background: "linear-gradient(135deg, #2563eb, #3b82f6)",
-                      boxShadow: "0 3px 10px rgba(59, 130, 246, 0.3)",
-                      borderLeft: "none",
-                    }}
-                    onClick={() => handlePurify(avail)}
-                    disabled={submitting === key}
-                  >
-                    {submitting === key ? (
-                      <>
-                        <Loader2 className="rf-spin" size={16} /> Processing...
-                      </>
-                    ) : (
-                      <>
-                        <Send size={16} /> Purify
-                      </>
-                    )}
-                  </button>
-                </div>
-              );
-            })
-          )}
-        </div>
-      </aside>
-
-      <main className="rf-main">
-        <div className="rf-main-card">
-          <div className="rf-main-header">
-            <div className="rf-header-left">
-              <div
-                className="rf-header-icon"
-                style={{
-                  background: "linear-gradient(135deg, #eff6ff, #dbeafe)",
-                  color: "#2563eb",
-                }}
-              >
-                <History size={28} />
-              </div>
-
-              <div className="rf-tab-group">
-                <button
-                  className={`rf-tab ${activeTab === "history" ? "rf-tab-active" : ""}`}
-                  onClick={() => setActiveTab("history")}
-                >
-                  <span className="rf-tab-title">Purification History</span>
-                  <span className="rf-tab-sub">
-                    Process log of raw hair bundles
-                  </span>
-                </button>
-                <button
-                  className={`rf-tab ${activeTab === "stock" ? "rf-tab-active rf-tab-blue" : ""}`}
-                  onClick={() => setActiveTab("stock")}
-                >
-                  <span className="rf-tab-title">Purified Stock</span>
-                  <span className="rf-tab-sub">
-                    Inventory of purified bundles
-                  </span>
-                </button>
-              </div>
-            </div>
-
-            <div className="rf-header-right">
-              <button
-                className="btn-manage-purifiers"
-                onClick={() => setshowPlaceManagement(true)}
-              >
-                <Settings size={16} />
-                Manage Purifiers
-              </button>
-            </div>
+          <div className="rf-sidebar-header">
+            <Package size={18} />
+            <span>Select Category to Purify</span>
           </div>
 
-          <div className="rf-table-wrap">
-            <table className="rf-table">
-              <thead>
-                {activeTab === "history" ? (
-                  <tr>
-                    <th>Date</th>
-                    <th>Bag Marker</th>
-                    <th>Category</th>
-                    <th>Bundle Count</th>
-                    <th>Weight (viss)</th>
-                    <th>Worker Fees</th>
-                    <th>Place</th>
-                    <th className="rf-th-right">Actions</th>
-                  </tr>
-                ) : (
-                  <tr>
-                    <th>Date</th>
-                    <th>Bag Marker</th>
-                    <th>Category</th>
-                    <th>Purified Count</th>
-                    <th>Weight (Output)</th>
-                    <th>Worker Fees</th>
-                    <th>Supervisor Fees</th>
-                    <th>Supervisor Name</th>
-                    <th>Place</th>
-                    <th>Weight Status</th>
-                    <th className="rf-th-right">Actions</th>
-                  </tr>
-                )}
-              </thead>
-              <tbody>
-                {activeTab === "history" ? (
-                  processes.length === 0 ? (
+          <div className="rf-search-box">
+            <Search size={16} className="rf-search-icon" />
+            <input
+              type="text"
+              placeholder="Search bag marker..."
+              className="rf-search-input"
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+            />
+          </div>
+
+          <div className="rf-card-list">
+            {filteredAvailable.length === 0 ? (
+              <div className="rf-empty-sidebar">
+                {searchTerm
+                  ? "No matching bags found"
+                  : "No available bags for purification"}
+              </div>
+            ) : (
+              filteredAvailable.map((avail) => {
+                const key = `${avail.processingRecordId}-${avail.category}`;
+                return (
+                  <div key={key} className="rf-bag-card">
+                    <div className="rf-card-top">
+                      <div className="rf-card-info">
+                        <span className="rf-card-marker">
+                          {avail.productMarker}
+                        </span>
+                        <span className="rf-card-warehouse">
+                          {avail.warehouseName || "---"}
+                        </span>
+                      </div>
+                      <span
+                        className={`rf-badge category-${avail.category.toLowerCase().replace(".", "")}`}
+                      >
+                        {avail.category}
+                      </span>
+                    </div>
+
+                    <div className="rf-stats-row">
+                      <div className="rf-stat">
+                        <span className="rf-stat-label">Remaining</span>
+                        <span className="rf-stat-value">
+                          {avail.remainingCount}{" "}
+                          <span className="rf-stat-unit">bundles</span>
+                        </span>
+                      </div>
+                      <div className="rf-stat rf-stat-right">
+                        <span className="rf-stat-label">Weight</span>
+                        <span className="rf-stat-value rf-stat-blue">
+                          {avail.remainingWeight.toFixed(3)}{" "}
+                          <span className="rf-stat-unit">viss</span>
+                        </span>
+                      </div>
+                      <div className="rf-stat rf-stat-right">
+                        <span className="rf-stat-label">Unit Wt</span>
+                        <span className="rf-stat-value rf-stat-purple">
+                          {avail.unitWeight.toFixed(4)}
+                        </span>
+                      </div>
+                    </div>
+
+                    <div className="rf-worker-select-wrap">
+                      <label className="rf-field-label">Place</label>
+                      <select
+                        className="rf-select"
+                        value={selectedPlaces[key] || ""}
+                        onChange={(e) =>
+                          setSelectedPlaces((prev) => ({
+                            ...prev,
+                            [key]: parseInt(e.target.value),
+                          }))
+                        }
+                      >
+                        <option value="">-- Select place --</option>
+                        {places
+                          .filter((p) => p.warehouseId === avail.warehouseId)
+                          .map((p) => (
+                            <option key={p.id} value={p.id}>
+                              {p.name}
+                            </option>
+                          ))}
+                      </select>
+                    </div>
+
+                    <div
+                      className="rf-input-group"
+                      style={{
+                        display: "flex",
+                        gap: "8px",
+                        marginBottom: "12px",
+                        alignItems: "center",
+                      }}
+                    >
+                      <input
+                        type="number"
+                        placeholder="Bundles"
+                        className="rf-select"
+                        style={{ flex: 1, minWidth: 0, cursor: "text" }}
+                        value={inputCounts[key] || ""}
+                        onChange={(e) =>
+                          handleInputChance(
+                            avail.processingRecordId,
+                            avail.category,
+                            e.target.value,
+                          )
+                        }
+                        min="0"
+                        step="any"
+                        max={avail.remainingCount}
+                      />
+                      <button
+                        type="button"
+                        onClick={() =>
+                          handleInputChance(
+                            avail.processingRecordId,
+                            avail.category,
+                            avail.remainingCount.toString(),
+                          )
+                        }
+                        className="rf-max-btn"
+                        style={{
+                          padding: "6px 8px",
+                          fontSize: "12px",
+                          backgroundColor: "#f1f5f9",
+                          border: "1px solid #cbd5e1",
+                          borderRadius: "4px",
+                          cursor: "pointer",
+                          color: "#475569",
+                          fontWeight: 600,
+                          flexShrink: 0,
+                        }}
+                      >
+                        Max
+                      </button>
+                    </div>
+
+                    <button
+                      className="rf-assign-btn"
+                      style={{
+                        background: "linear-gradient(135deg, #2563eb, #3b82f6)",
+                        boxShadow: "0 3px 10px rgba(59, 130, 246, 0.3)",
+                        borderLeft: "none",
+                      }}
+                      onClick={() => handlePurify(avail)}
+                      disabled={submitting === key}
+                    >
+                      {submitting === key ? (
+                        <>
+                          <Loader2 className="rf-spin" size={16} />{" "}
+                          Processing...
+                        </>
+                      ) : (
+                        <>
+                          <Send size={16} /> Purify
+                        </>
+                      )}
+                    </button>
+                  </div>
+                );
+              })
+            )}
+          </div>
+        </aside>
+
+        <main className="rf-main">
+          <div className="rf-main-card">
+            <div className="rf-main-header">
+              <div className="rf-header-left">
+                <div
+                  className="rf-header-icon"
+                  style={{
+                    background: "linear-gradient(135deg, #eff6ff, #dbeafe)",
+                    color: "#2563eb",
+                  }}
+                >
+                  <History size={28} />
+                </div>
+
+                <div className="rf-tab-group">
+                  <button
+                    className={`rf-tab ${activeTab === "history" ? "rf-tab-active" : ""}`}
+                    onClick={() => setActiveTab("history")}
+                  >
+                    <span className="rf-tab-title">Purification History</span>
+                    <span className="rf-tab-sub">
+                      Process log of raw hair bundles
+                    </span>
+                  </button>
+                  <button
+                    className={`rf-tab ${activeTab === "stock" ? "rf-tab-active rf-tab-blue" : ""}`}
+                    onClick={() => setActiveTab("stock")}
+                  >
+                    <span className="rf-tab-title">Purified Stock</span>
+                    <span className="rf-tab-sub">
+                      Inventory of purified bundles
+                    </span>
+                  </button>
+                </div>
+              </div>
+
+              <div className="rf-header-right">
+                <button
+                  className="btn-manage-purifiers"
+                  onClick={() => setshowPlaceManagement(true)}
+                >
+                  <Settings size={16} />
+                  Manage Purifiers
+                </button>
+              </div>
+            </div>
+
+            <div className="rf-table-wrap">
+              <table className="rf-table">
+                <thead>
+                  {activeTab === "history" ? (
                     <tr>
-                      <td colSpan={8} className="rf-empty-row">
+                      <th>Date</th>
+                      <th>Bag Marker</th>
+                      <th>Category</th>
+                      <th>Bundle Count</th>
+                      <th>Weight (viss)</th>
+                      <th>Worker Fees</th>
+                      <th>Place</th>
+                      <th className="rf-th-right">Actions</th>
+                    </tr>
+                  ) : (
+                    <tr>
+                      <th>Date</th>
+                      <th>Bag Marker</th>
+                      <th>Category</th>
+                      <th>Purified Count</th>
+                      <th>Weight (Output)</th>
+                      <th>Worker Fees</th>
+                      <th>Supervisor Fees</th>
+                      <th>Supervisor Name</th>
+                      <th>Place</th>
+                      <th>Weight Status</th>
+                      <th className="rf-th-right">Actions</th>
+                    </tr>
+                  )}
+                </thead>
+                <tbody>
+                  {activeTab === "history" ? (
+                    processes.length === 0 ? (
+                      <tr>
+                        <td colSpan={8} className="rf-empty-row">
+                          <div
+                            style={{
+                              display: "flex",
+                              flexDirection: "column",
+                              alignItems: "center",
+                              gap: "12px",
+                              padding: "40px",
+                            }}
+                          >
+                            <History size={48} style={{ opacity: 0.2 }} />
+                            <span>
+                              No purification processes registered yet
+                            </span>
+                          </div>
+                        </td>
+                      </tr>
+                    ) : (
+                      processes.map((p) => (
+                        <tr
+                          key={p.id}
+                          className="rf-clickable-row"
+                          onClick={() => handleEditClick(p)}
+                        >
+                          <td className="rf-td-date">
+                            {formatDateTime(p.date)}
+                          </td>
+                          <td>
+                            <div className="rf-marker">{p.productMarker}</div>
+                            <div
+                              className="rf-warehouse"
+                              style={{ color: "#3b82f6" }}
+                            >
+                              {p.warehouseName || "---"}
+                            </div>
+                          </td>
+                          <td>
+                            <span
+                              className={`rf-badge category-${p.category.toLowerCase().replace(".", "")}`}
+                            >
+                              {p.category}
+                            </span>
+                          </td>
+                          <td style={{ fontWeight: 800 }}>{p.purifyCount}</td>
+                          <td className="rf-td-weight">
+                            {p.purifyWeight.toFixed(3)}
+                          </td>
+                          <td>
+                            {(
+                              p.workers?.reduce(
+                                (sum, w) => sum + (w.workerFees || 0),
+                                0,
+                              ) || 0
+                            ).toLocaleString(undefined, {
+                              minimumFractionDigits: 2,
+                              maximumFractionDigits: 2,
+                            })}
+                          </td>
+                          <td>
+                            <div className="rf-worker-cell">
+                              <User size={13} />
+                              {p.placeName || "---"}
+                            </div>
+                          </td>
+                          <td onClick={(e) => e.stopPropagation()}>
+                            <div className="rf-actions">
+                              {hasPermission("Sales2.Edit") && (
+                                <button
+                                  className="rf-action-btn rf-edit-btn"
+                                  onClick={() => handleEditClick(p)}
+                                >
+                                  <Pencil size={14} />
+                                </button>
+                              )}
+                              {hasPermission("Sales2.Delete") && (
+                                <button
+                                  className="rf-action-btn rf-delete-btn"
+                                  onClick={() => handleDelete(p.id)}
+                                >
+                                  <Trash2 size={14} />
+                                </button>
+                              )}
+                            </div>
+                          </td>
+                        </tr>
+                      ))
+                    )
+                  ) : purifiedRecords.length === 0 ? (
+                    <tr>
+                      <td colSpan={11} className="rf-empty-row">
                         <div
                           style={{
                             display: "flex",
@@ -603,18 +698,14 @@ const Purification: React.FC = () => {
                             padding: "40px",
                           }}
                         >
-                          <History size={48} style={{ opacity: 0.2 }} />
-                          <span>No purification processes registered yet</span>
+                          <Package size={48} style={{ opacity: 0.2 }} />
+                          <span>No purified stock records yet</span>
                         </div>
                       </td>
                     </tr>
                   ) : (
-                    processes.map((p) => (
-                      <tr
-                        key={p.id}
-                        className="rf-clickable-row"
-                        onClick={() => handleEditClick(p)}
-                      >
+                    purifiedRecords.map((p) => (
+                      <tr key={p.id}>
                         <td className="rf-td-date">{formatDateTime(p.date)}</td>
                         <td>
                           <div className="rf-marker">{p.productMarker}</div>
@@ -632,41 +723,55 @@ const Purification: React.FC = () => {
                             {p.category}
                           </span>
                         </td>
-                        <td style={{ fontWeight: 800 }}>{p.purifyCount}</td>
-                        <td className="rf-td-weight">
-                          {p.purifyWeight.toFixed(3)}
+                        <td style={{ fontWeight: 800 }}>{p.count}</td>
+                        <td className="rf-td-weight rf-green">
+                          {p.weight.toFixed(3)}
                         </td>
                         <td>
-                          {(
-                            p.workers?.reduce(
-                              (sum, w) => sum + (w.workerFees || 0),
-                              0,
-                            ) || 0
-                          ).toLocaleString(undefined, {
+                          {p.workerFees?.toLocaleString(undefined, {
                             minimumFractionDigits: 2,
                             maximumFractionDigits: 2,
-                          })}
+                          }) || "0.00"}
                         </td>
+                        <td>
+                          {p.supervisorFees?.toLocaleString(undefined, {
+                            minimumFractionDigits: 2,
+                            maximumFractionDigits: 2,
+                          }) || "0.00"}
+                        </td>
+                        <td>{p.supervisorName || "---"}</td>
                         <td>
                           <div className="rf-worker-cell">
                             <User size={13} />
                             {p.placeName || "---"}
                           </div>
                         </td>
-                        <td onClick={(e) => e.stopPropagation()}>
+                        <td>
+                          <span
+                            className={`rf-badge ${p.isWeightFull ? "category-full" : "category-partial"}`}
+                            style={{
+                              background: p.isWeightFull
+                                ? "#f0fdf4"
+                                : "#fff7ed",
+                              color: p.isWeightFull ? "#15803d" : "#c2410c",
+                              border: `1px solid ${p.isWeightFull ? "#bbf7d0" : "#ffedd5"}`,
+                            }}
+                          >
+                            {p.isWeightFull ? "Weight Full" : "Weight Partial"}
+                          </span>
+                        </td>
+                        <td>
                           <div className="rf-actions">
-                            {hasPermission("Sales2.Edit") && (
-                              <button
-                                className="rf-action-btn rf-edit-btn"
-                                onClick={() => handleEditClick(p)}
-                              >
-                                <Pencil size={14} />
-                              </button>
-                            )}
                             {hasPermission("Sales2.Delete") && (
                               <button
                                 className="rf-action-btn rf-delete-btn"
-                                onClick={() => handleDelete(p.id)}
+                                onClick={() => handleDeleteRecord(p.id)}
+                                disabled={p.isLocked}
+                                style={{
+                                  cursor: p.isLocked
+                                    ? "not-allowed"
+                                    : "pointer",
+                                }}
                               >
                                 <Trash2 size={14} />
                               </button>
@@ -675,104 +780,13 @@ const Purification: React.FC = () => {
                         </td>
                       </tr>
                     ))
-                  )
-                ) : purifiedRecords.length === 0 ? (
-                  <tr>
-                    <td colSpan={11} className="rf-empty-row">
-                      <div
-                        style={{
-                          display: "flex",
-                          flexDirection: "column",
-                          alignItems: "center",
-                          gap: "12px",
-                          padding: "40px",
-                        }}
-                      >
-                        <Package size={48} style={{ opacity: 0.2 }} />
-                        <span>No purified stock records yet</span>
-                      </div>
-                    </td>
-                  </tr>
-                ) : (
-                  purifiedRecords.map((p) => (
-                    <tr key={p.id}>
-                      <td className="rf-td-date">{formatDateTime(p.date)}</td>
-                      <td>
-                        <div className="rf-marker">{p.productMarker}</div>
-                        <div
-                          className="rf-warehouse"
-                          style={{ color: "#3b82f6" }}
-                        >
-                          {p.warehouseName || "---"}
-                        </div>
-                      </td>
-                      <td>
-                        <span
-                          className={`rf-badge category-${p.category.toLowerCase().replace(".", "")}`}
-                        >
-                          {p.category}
-                        </span>
-                      </td>
-                      <td style={{ fontWeight: 800 }}>{p.count}</td>
-                      <td className="rf-td-weight rf-green">
-                        {p.weight.toFixed(3)}
-                      </td>
-                      <td>
-                        {p.workerFees?.toLocaleString(undefined, {
-                          minimumFractionDigits: 2,
-                          maximumFractionDigits: 2,
-                        }) || "0.00"}
-                      </td>
-                      <td>
-                        {p.supervisorFees?.toLocaleString(undefined, {
-                          minimumFractionDigits: 2,
-                          maximumFractionDigits: 2,
-                        }) || "0.00"}
-                      </td>
-                      <td>{p.supervisorName || "---"}</td>
-                      <td>
-                        <div className="rf-worker-cell">
-                          <User size={13} />
-                          {p.placeName || "---"}
-                        </div>
-                      </td>
-                      <td>
-                        <span
-                          className={`rf-badge ${p.isWeightFull ? "category-full" : "category-partial"}`}
-                          style={{
-                            background: p.isWeightFull ? "#f0fdf4" : "#fff7ed",
-                            color: p.isWeightFull ? "#15803d" : "#c2410c",
-                            border: `1px solid ${p.isWeightFull ? "#bbf7d0" : "#ffedd5"}`,
-                          }}
-                        >
-                          {p.isWeightFull ? "Weight Full" : "Weight Partial"}
-                        </span>
-                      </td>
-                      <td>
-                        <div className="rf-actions">
-                          {hasPermission("Sales2.Delete") && (
-                            <button
-                              className="rf-action-btn rf-delete-btn"
-                              onClick={() => handleDeleteRecord(p.id)}
-                              disabled={p.isLocked}
-                              style={{
-                                cursor: p.isLocked ? "not-allowed" : "pointer",
-                              }}
-                            >
-                              <Trash2 size={14} />
-                            </button>
-                          )}
-                        </div>
-                      </td>
-                    </tr>
-                  ))
-                )}
-              </tbody>
-            </table>
+                  )}
+                </tbody>
+              </table>
+            </div>
           </div>
-        </div>
-      </main>
-    </div>
+        </main>
+      </div>
 
       {showPlaceManagement && (
         <div

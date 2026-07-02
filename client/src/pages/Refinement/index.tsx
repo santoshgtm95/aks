@@ -1,7 +1,8 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useCallback } from "react";
 import { refinementAPI, workersAPI } from "../../services/api";
 import { useAuth } from "../../context/AuthContext";
 import { useNotification } from "../../context/NotificationContext";
+import { useLongPoll } from "../../hooks/useLongPoll";
 import type {
   AvailablePurifiedCategory,
   RefinementProcess,
@@ -70,7 +71,7 @@ const Refinement: React.FC = () => {
     loadData();
   }, []);
 
-  const loadData = async () => {
+  const loadData = useCallback(async () => {
     try {
       const [avail, procs, recs, workers] = await Promise.all([
         refinementAPI.getAvailableCategories(),
@@ -87,8 +88,9 @@ const Refinement: React.FC = () => {
     } finally {
       setLoading(false);
     }
-  };
+  }, []);
 
+  useLongPoll(loadData);
 
   const handleInputChance = (
     recordId: number,
@@ -315,271 +317,340 @@ const Refinement: React.FC = () => {
         <div className="ref-hero-right">
           <div className="ref-stat-pill">
             <span className="stat-num">{refinementRecords.length}</span>
-            <span className="stat-label">{refinementRecords.length === 1 ? 'Record' : 'Records'}</span>
+            <span className="stat-label">
+              {refinementRecords.length === 1 ? "Record" : "Records"}
+            </span>
           </div>
         </div>
       </div>
 
       <div className="ref-layout">
-      {/* ── LEFT SIDEBAR ── */}
-      <aside className="rf-sidebar">
-        <div className="rf-sidebar-header">
-          <Sparkles size={18} />
-          <span>Select Bag to Refine</span>
-        </div>
-
-        <div className="rf-search-box">
-          <Search size={16} className="rf-search-icon" />
-          <input
-            type="text"
-            placeholder="Search bag marker or warehouse..."
-            className="rf-search-input"
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-          />
-        </div>
-
-        <div className="rf-card-list">
-          {filtered.length === 0 ? (
-            <div className="rf-empty-sidebar">
-              {searchTerm
-                ? "No matching bags found"
-                : "No bags available for refinement"}
-            </div>
-          ) : (
-            filtered.map((avail) => {
-              const key = `${avail.purifiedRecordId}-${avail.category}`;
-              return (
-                <div key={key} className="rf-bag-card">
-                  {/* Card Top */}
-                  <div className="rf-card-top">
-                    <div className="rf-card-info">
-                      <span className="rf-card-marker">
-                        {avail.productMarker}
-                      </span>
-                      <span className="rf-card-warehouse">
-                        {avail.warehouseName || "---"}
-                      </span>
-                    </div>
-                    <span
-                      className={`rf-badge category-${avail.category.toLowerCase().replace(".", "")}`}
-                    >
-                      {avail.category}
-                    </span>
-                  </div>
-
-                  {/* Stats Row */}
-                  <div className="rf-stats-row">
-                    <div className="rf-stat">
-                      <span className="rf-stat-label">Remaining</span>
-                      <span className="rf-stat-value">
-                        {avail.remainingCount % 1 === 0
-                          ? avail.remainingCount
-                          : avail.remainingCount.toFixed(4)}{" "}
-                        <span className="rf-stat-unit">bundles</span>
-                      </span>
-                    </div>
-                    <div className="rf-stat rf-stat-right">
-                      <span className="rf-stat-label">Weight</span>
-                      <span className="rf-stat-value rf-stat-blue">
-                        {avail.remainingWeight.toFixed(4)}{" "}
-                        <span className="rf-stat-unit">viss</span>
-                      </span>
-                    </div>
-                    <div className="rf-stat rf-stat-right">
-                      <span className="rf-stat-label">Unit Wt</span>
-                      <span className="rf-stat-value rf-stat-purple">
-                        {avail.unitWeight.toFixed(4)}
-                      </span>
-                    </div>
-                  </div>
-
-                  {/* Worker Select */}
-                  <div className="rf-worker-select-wrap">
-                    <label className="rf-field-label">Refinement Worker</label>
-                    <select
-                      className="rf-select"
-                      value={selectedWorkers[key] || ""}
-                      onChange={(e) =>
-                        setSelectedWorkers((prev) => ({
-                          ...prev,
-                          [key]: parseInt(e.target.value),
-                        }))
-                      }
-                    >
-                      <option value="">-- Select Worker --</option>
-                      {refinementWorkers
-                        .filter(
-                          (p) =>
-                            p.warehouseId === avail.warehouseId && p.isActive,
-                        )
-                        .map((p) => (
-                          <option key={p.id} value={p.id}>
-                            {p.name}
-                          </option>
-                        ))}
-                    </select>
-                  </div>
-
-                  {/* Bundle Count Input */}
-                  <div
-                    className="rf-input-group"
-                    style={{
-                      display: "flex",
-                      gap: "8px",
-                      marginBottom: "12px",
-                      alignItems: "center",
-                    }}
-                  >
-                    <input
-                      type="number"
-                      placeholder="Bundle count"
-                      className="rf-select"
-                      style={{ flex: 1, minWidth: 0, cursor: "text" }}
-                      value={inputCounts[key] || ""}
-                      onChange={(e) =>
-                        handleInputChance(
-                          avail.purifiedRecordId,
-                          avail.category,
-                          e.target.value,
-                        )
-                      }
-                      min="0"
-                      step="any"
-                      max={avail.remainingCount}
-                    />
-                    <button
-                      type="button"
-                      onClick={() =>
-                        handleInputChance(
-                          avail.purifiedRecordId,
-                          avail.category,
-                          avail.remainingCount.toString(),
-                        )
-                      }
-                      className="rf-max-btn"
-                      style={{
-                        padding: "6px 8px",
-                        fontSize: "12px",
-                        backgroundColor: "#f1f5f9",
-                        border: "1px solid #cbd5e1",
-                        borderRadius: "4px",
-                        cursor: "pointer",
-                        color: "#475569",
-                        fontWeight: 600,
-                        flexShrink: 0,
-                      }}
-                    >
-                      Max
-                    </button>
-                  </div>
-
-                  {/* Assign Button */}
-                  <button
-                    className="rf-assign-btn"
-                    onClick={() => handleInlineSubmit(avail)}
-                    disabled={submitting === key}
-                  >
-                    {submitting === key ? (
-                      <>
-                        <Loader2 className="rf-spin" size={16} /> Processing...
-                      </>
-                    ) : (
-                      <>
-                        <Send size={16} /> Assign to Refine
-                      </>
-                    )}
-                  </button>
-                </div>
-              );
-            })
-          )}
-        </div>
-      </aside>
-
-      {/* ── MAIN CONTENT ── */}
-      <main className="rf-main">
-        <div className="rf-main-card">
-          {/* Header */}
-          <div className="rf-main-header">
-            <div className="rf-header-left">
-              <div className="rf-header-icon">
-                <History size={28} />
-              </div>
-
-              <div className="rf-tab-group">
-                <button
-                  className={`rf-tab ${activeTab === "history" ? "rf-tab-active" : ""}`}
-                  onClick={() => setActiveTab("history")}
-                >
-                  <span className="rf-tab-title">Refinement History</span>
-                  <span className="rf-tab-sub">
-                    Process log of purified bundles
-                  </span>
-                </button>
-                <button
-                  className={`rf-tab ${activeTab === "stock" ? "rf-tab-active rf-tab-green" : ""}`}
-                  onClick={() => setActiveTab("stock")}
-                >
-                  <span className="rf-tab-title">Refined Stock</span>
-                  <span className="rf-tab-sub">
-                    Completed refinement records
-                  </span>
-                </button>
-              </div>
-            </div>
-
-            <div className="rf-header-right">
-            </div>
+        {/* ── LEFT SIDEBAR ── */}
+        <aside className="rf-sidebar">
+          <div className="rf-sidebar-header">
+            <Sparkles size={18} />
+            <span>Select Bag to Refine</span>
           </div>
 
-          {/* Table */}
-          <div className="rf-table-wrap">
-            <table className="rf-table">
-              <thead>
-                {activeTab === "history" ? (
-                  <tr>
-                    <th>Date</th>
-                    <th>Bag Marker</th>
-                    <th>Category</th>
-                    <th>Bundle Count</th>
-                    <th>Weight (viss)</th>
-                    <th>Refinement Worker</th>
-                    <th>Worker Fees</th>
-                    <th className="rf-th-right">Actions</th>
-                  </tr>
-                ) : (
-                  <tr>
-                    <th>Date</th>
-                    <th>Bag Marker</th>
-                    <th>Category</th>
-                    <th>Bundle Count</th>
-                    <th>Output Weight</th>
-                    <th>Lost Weight</th>
-                    <th>Spoilage Weight</th>
-                    <th>Return Weight</th>
-                    <th>Refinement Worker</th>
-                    <th>Worker Fees</th>
-                    <th className="rf-th-right">Actions</th>
-                  </tr>
-                )}
-              </thead>
-              <tbody>
-                {activeTab === "history" ? (
-                  processes.length === 0 ? (
+          <div className="rf-search-box">
+            <Search size={16} className="rf-search-icon" />
+            <input
+              type="text"
+              placeholder="Search bag marker or warehouse..."
+              className="rf-search-input"
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+            />
+          </div>
+
+          <div className="rf-card-list">
+            {filtered.length === 0 ? (
+              <div className="rf-empty-sidebar">
+                {searchTerm
+                  ? "No matching bags found"
+                  : "No bags available for refinement"}
+              </div>
+            ) : (
+              filtered.map((avail) => {
+                const key = `${avail.purifiedRecordId}-${avail.category}`;
+                return (
+                  <div key={key} className="rf-bag-card">
+                    {/* Card Top */}
+                    <div className="rf-card-top">
+                      <div className="rf-card-info">
+                        <span className="rf-card-marker">
+                          {avail.productMarker}
+                        </span>
+                        <span className="rf-card-warehouse">
+                          {avail.warehouseName || "---"}
+                        </span>
+                      </div>
+                      <span
+                        className={`rf-badge category-${avail.category.toLowerCase().replace(".", "")}`}
+                      >
+                        {avail.category}
+                      </span>
+                    </div>
+
+                    {/* Stats Row */}
+                    <div className="rf-stats-row">
+                      <div className="rf-stat">
+                        <span className="rf-stat-label">Remaining</span>
+                        <span className="rf-stat-value">
+                          {avail.remainingCount % 1 === 0
+                            ? avail.remainingCount
+                            : avail.remainingCount.toFixed(4)}{" "}
+                          <span className="rf-stat-unit">bundles</span>
+                        </span>
+                      </div>
+                      <div className="rf-stat rf-stat-right">
+                        <span className="rf-stat-label">Weight</span>
+                        <span className="rf-stat-value rf-stat-blue">
+                          {avail.remainingWeight.toFixed(4)}{" "}
+                          <span className="rf-stat-unit">viss</span>
+                        </span>
+                      </div>
+                      <div className="rf-stat rf-stat-right">
+                        <span className="rf-stat-label">Unit Wt</span>
+                        <span className="rf-stat-value rf-stat-purple">
+                          {avail.unitWeight.toFixed(4)}
+                        </span>
+                      </div>
+                    </div>
+
+                    {/* Worker Select */}
+                    <div className="rf-worker-select-wrap">
+                      <label className="rf-field-label">
+                        Refinement Worker
+                      </label>
+                      <select
+                        className="rf-select"
+                        value={selectedWorkers[key] || ""}
+                        onChange={(e) =>
+                          setSelectedWorkers((prev) => ({
+                            ...prev,
+                            [key]: parseInt(e.target.value),
+                          }))
+                        }
+                      >
+                        <option value="">-- Select Worker --</option>
+                        {refinementWorkers
+                          .filter(
+                            (p) =>
+                              p.warehouseId === avail.warehouseId && p.isActive,
+                          )
+                          .map((p) => (
+                            <option key={p.id} value={p.id}>
+                              {p.name}
+                            </option>
+                          ))}
+                      </select>
+                    </div>
+
+                    {/* Bundle Count Input */}
+                    <div
+                      className="rf-input-group"
+                      style={{
+                        display: "flex",
+                        gap: "8px",
+                        marginBottom: "12px",
+                        alignItems: "center",
+                      }}
+                    >
+                      <input
+                        type="number"
+                        placeholder="Bundle count"
+                        className="rf-select"
+                        style={{ flex: 1, minWidth: 0, cursor: "text" }}
+                        value={inputCounts[key] || ""}
+                        onChange={(e) =>
+                          handleInputChance(
+                            avail.purifiedRecordId,
+                            avail.category,
+                            e.target.value,
+                          )
+                        }
+                        min="0"
+                        step="any"
+                        max={avail.remainingCount}
+                      />
+                      <button
+                        type="button"
+                        onClick={() =>
+                          handleInputChance(
+                            avail.purifiedRecordId,
+                            avail.category,
+                            avail.remainingCount.toString(),
+                          )
+                        }
+                        className="rf-max-btn"
+                        style={{
+                          padding: "6px 8px",
+                          fontSize: "12px",
+                          backgroundColor: "#f1f5f9",
+                          border: "1px solid #cbd5e1",
+                          borderRadius: "4px",
+                          cursor: "pointer",
+                          color: "#475569",
+                          fontWeight: 600,
+                          flexShrink: 0,
+                        }}
+                      >
+                        Max
+                      </button>
+                    </div>
+
+                    {/* Assign Button */}
+                    <button
+                      className="rf-assign-btn"
+                      onClick={() => handleInlineSubmit(avail)}
+                      disabled={submitting === key}
+                    >
+                      {submitting === key ? (
+                        <>
+                          <Loader2 className="rf-spin" size={16} />{" "}
+                          Processing...
+                        </>
+                      ) : (
+                        <>
+                          <Send size={16} /> Assign to Refine
+                        </>
+                      )}
+                    </button>
+                  </div>
+                );
+              })
+            )}
+          </div>
+        </aside>
+
+        {/* ── MAIN CONTENT ── */}
+        <main className="rf-main">
+          <div className="rf-main-card">
+            {/* Header */}
+            <div className="rf-main-header">
+              <div className="rf-header-left">
+                <div className="rf-header-icon">
+                  <History size={28} />
+                </div>
+
+                <div className="rf-tab-group">
+                  <button
+                    className={`rf-tab ${activeTab === "history" ? "rf-tab-active" : ""}`}
+                    onClick={() => setActiveTab("history")}
+                  >
+                    <span className="rf-tab-title">Refinement History</span>
+                    <span className="rf-tab-sub">
+                      Process log of purified bundles
+                    </span>
+                  </button>
+                  <button
+                    className={`rf-tab ${activeTab === "stock" ? "rf-tab-active rf-tab-green" : ""}`}
+                    onClick={() => setActiveTab("stock")}
+                  >
+                    <span className="rf-tab-title">Refined Stock</span>
+                    <span className="rf-tab-sub">
+                      Completed refinement records
+                    </span>
+                  </button>
+                </div>
+              </div>
+
+              <div className="rf-header-right"></div>
+            </div>
+
+            {/* Table */}
+            <div className="rf-table-wrap">
+              <table className="rf-table">
+                <thead>
+                  {activeTab === "history" ? (
                     <tr>
-                      <td colSpan={8} className="rf-empty-row">
-                        <History size={44} className="rf-empty-icon" />
-                        <span>No refinement processes registered yet</span>
+                      <th>Date</th>
+                      <th>Bag Marker</th>
+                      <th>Category</th>
+                      <th>Bundle Count</th>
+                      <th>Weight (viss)</th>
+                      <th>Refinement Worker</th>
+                      <th>Worker Fees</th>
+                      <th className="rf-th-right">Actions</th>
+                    </tr>
+                  ) : (
+                    <tr>
+                      <th>Date</th>
+                      <th>Bag Marker</th>
+                      <th>Category</th>
+                      <th>Bundle Count</th>
+                      <th>Output Weight</th>
+                      <th>Lost Weight</th>
+                      <th>Spoilage Weight</th>
+                      <th>Return Weight</th>
+                      <th>Refinement Worker</th>
+                      <th>Worker Fees</th>
+                      <th className="rf-th-right">Actions</th>
+                    </tr>
+                  )}
+                </thead>
+                <tbody>
+                  {activeTab === "history" ? (
+                    processes.length === 0 ? (
+                      <tr>
+                        <td colSpan={8} className="rf-empty-row">
+                          <History size={44} className="rf-empty-icon" />
+                          <span>No refinement processes registered yet</span>
+                        </td>
+                      </tr>
+                    ) : (
+                      processes.map((p) => (
+                        <tr
+                          key={p.id}
+                          className="rf-clickable-row"
+                          onClick={() => handleEditProcess(p)}
+                        >
+                          <td className="rf-td-date">
+                            {formatDateTime(p.date)}
+                          </td>
+                          <td>
+                            <div className="rf-marker">{p.productMarker}</div>
+                            <div className="rf-warehouse">
+                              {p.warehouseName || "---"}
+                            </div>
+                          </td>
+                          <td>
+                            <span
+                              className={`rf-badge category-${p.category.toLowerCase().replace(".", "")}`}
+                            >
+                              {p.category}
+                            </span>
+                          </td>
+                          <td>{p.count}</td>
+                          <td className="rf-td-weight">
+                            {p.weight.toFixed(3)}
+                          </td>
+                          <td>
+                            <div className="rf-worker-cell">
+                              <User size={13} />
+                              {p.refinementWorkerName || "---"}
+                            </div>
+                          </td>
+                          <td>
+                            {p.workerFees?.toLocaleString(undefined, {
+                              minimumFractionDigits: 2,
+                              maximumFractionDigits: 2,
+                            }) || "0.00"}
+                          </td>
+                          <td onClick={(e) => e.stopPropagation()}>
+                            <div className="rf-actions">
+                              {hasPermission("Refinement.Edit") && (
+                                <button
+                                  className="rf-action-btn rf-edit-btn"
+                                  onClick={() => handleEditProcess(p)}
+                                >
+                                  <Pencil size={14} />
+                                </button>
+                              )}
+                              {hasPermission("Refinement.Delete") && (
+                                <button
+                                  className="rf-action-btn rf-delete-btn"
+                                  onClick={() => handleDelete(p.id)}
+                                >
+                                  <Trash2 size={14} />
+                                </button>
+                              )}
+                            </div>
+                          </td>
+                        </tr>
+                      ))
+                    )
+                  ) : refinementRecords.length === 0 ? (
+                    <tr>
+                      <td colSpan={11} className="rf-empty-row">
+                        <Package size={44} className="rf-empty-icon" />
+                        <span>No refined stock records yet</span>
                       </td>
                     </tr>
                   ) : (
-                    processes.map((p) => (
-                      <tr
-                        key={p.id}
-                        className="rf-clickable-row"
-                        onClick={() => handleEditProcess(p)}
-                      >
+                    refinementRecords.map((p) => (
+                      <tr key={p.id}>
                         <td className="rf-td-date">{formatDateTime(p.date)}</td>
                         <td>
                           <div className="rf-marker">{p.productMarker}</div>
@@ -595,7 +666,21 @@ const Refinement: React.FC = () => {
                           </span>
                         </td>
                         <td>{p.count}</td>
-                        <td className="rf-td-weight">{p.weight.toFixed(3)}</td>
+                        <td className="rf-td-weight rf-green">
+                          {p.weight.toFixed(3)}
+                        </td>
+                        <td className="rf-td-lost">
+                          {p.lostWeight.toFixed(3)}
+                        </td>
+                        <td className="rf-td-lost" style={{ color: "#ea580c" }}>
+                          {p.spoilageWeight.toFixed(3)}
+                        </td>
+                        <td
+                          className="rf-td-weight"
+                          style={{ color: "#3b82f6" }}
+                        >
+                          {p.returnWeight.toFixed(3)}
+                        </td>
                         <td>
                           <div className="rf-worker-cell">
                             <User size={13} />
@@ -608,20 +693,18 @@ const Refinement: React.FC = () => {
                             maximumFractionDigits: 2,
                           }) || "0.00"}
                         </td>
-                        <td onClick={(e) => e.stopPropagation()}>
+                        <td>
                           <div className="rf-actions">
-                            {hasPermission("Refinement.Edit") && (
-                              <button
-                                className="rf-action-btn rf-edit-btn"
-                                onClick={() => handleEditProcess(p)}
-                              >
-                                <Pencil size={14} />
-                              </button>
-                            )}
                             {hasPermission("Refinement.Delete") && (
                               <button
                                 className="rf-action-btn rf-delete-btn"
-                                onClick={() => handleDelete(p.id)}
+                                onClick={() => handleDeleteRecord(p.id)}
+                                disabled={p.isLocked}
+                                style={{
+                                  cursor: p.isLocked
+                                    ? "not-allowed"
+                                    : "pointer",
+                                }}
                               >
                                 <Trash2 size={14} />
                               </button>
@@ -630,79 +713,13 @@ const Refinement: React.FC = () => {
                         </td>
                       </tr>
                     ))
-                  )
-                ) : refinementRecords.length === 0 ? (
-                  <tr>
-                    <td colSpan={11} className="rf-empty-row">
-                      <Package size={44} className="rf-empty-icon" />
-                      <span>No refined stock records yet</span>
-                    </td>
-                  </tr>
-                ) : (
-                  refinementRecords.map((p) => (
-                    <tr key={p.id}>
-                      <td className="rf-td-date">{formatDateTime(p.date)}</td>
-                      <td>
-                        <div className="rf-marker">{p.productMarker}</div>
-                        <div className="rf-warehouse">
-                          {p.warehouseName || "---"}
-                        </div>
-                      </td>
-                      <td>
-                        <span
-                          className={`rf-badge category-${p.category.toLowerCase().replace(".", "")}`}
-                        >
-                          {p.category}
-                        </span>
-                      </td>
-                      <td>{p.count}</td>
-                      <td className="rf-td-weight rf-green">
-                        {p.weight.toFixed(3)}
-                      </td>
-                      <td className="rf-td-lost">{p.lostWeight.toFixed(3)}</td>
-                      <td className="rf-td-lost" style={{ color: "#ea580c" }}>
-                        {p.spoilageWeight.toFixed(3)}
-                      </td>
-                      <td className="rf-td-weight" style={{ color: "#3b82f6" }}>
-                        {p.returnWeight.toFixed(3)}
-                      </td>
-                      <td>
-                        <div className="rf-worker-cell">
-                          <User size={13} />
-                          {p.refinementWorkerName || "---"}
-                        </div>
-                      </td>
-                      <td>
-                        {p.workerFees?.toLocaleString(undefined, {
-                          minimumFractionDigits: 2,
-                          maximumFractionDigits: 2,
-                        }) || "0.00"}
-                      </td>
-                      <td>
-                        <div className="rf-actions">
-                          {hasPermission("Refinement.Delete") && (
-                            <button
-                              className="rf-action-btn rf-delete-btn"
-                              onClick={() => handleDeleteRecord(p.id)}
-                              disabled={p.isLocked}
-                              style={{
-                                cursor: p.isLocked ? "not-allowed" : "pointer",
-                              }}
-                            >
-                              <Trash2 size={14} />
-                            </button>
-                          )}
-                        </div>
-                      </td>
-                    </tr>
-                  ))
-                )}
-              </tbody>
-            </table>
+                  )}
+                </tbody>
+              </table>
+            </div>
           </div>
-        </div>
-      </main>
-    </div>
+        </main>
+      </div>
 
       {/* ── EDIT / CREATE MODAL ── */}
       {showModal && (editingProcess || editingRecord || selectedCategory) && (

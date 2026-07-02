@@ -1,7 +1,8 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useCallback } from "react";
 import { washGradingAPI, workersAPI } from "../../services/api";
 import { useAuth } from "../../context/AuthContext";
 import { useNotification } from "../../context/NotificationContext";
+import { useLongPoll } from "../../hooks/useLongPoll";
 import type {
   AvailableProductDto,
   WashGradingProcess,
@@ -71,7 +72,8 @@ const WashGrading: React.FC = () => {
     loadData();
   }, []);
 
-  const loadData = async () => {
+  const loadData = useCallback(async () => {
+    setLoading(true);
     try {
       const [avail, procs, recs, workersData] = await Promise.all([
         washGradingAPI.getAvailableProducts(),
@@ -88,7 +90,9 @@ const WashGrading: React.FC = () => {
     } finally {
       setLoading(false);
     }
-  };
+  }, []);
+
+  useLongPoll(loadData);
 
   const getVissWeight = (avail: AvailableProductDto): number => {
     const isKg =

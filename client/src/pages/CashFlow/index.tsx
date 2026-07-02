@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import { cashFlowAPI, placesAPI } from "../../services/api";
 import { DollarSign, Search, CreditCard, MapPin } from "lucide-react";
 import Modal from "../../components/Modal";
