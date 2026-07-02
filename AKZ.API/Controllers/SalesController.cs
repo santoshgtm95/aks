@@ -201,7 +201,7 @@ public class SalesController : ControllerBase
             if (sale.Product != null)
             {
                 // Restore product remaining weight
-                sale.Product.RemainingWeight += sale.Weight;
+                sale.Product.RemainingWeight += sale.Weight - sale.PlusMinusWeight;
                 sale.Product.UpdateDate = DateTime.Now;
             }
 
