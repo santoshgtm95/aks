@@ -291,13 +291,18 @@ public class ReportsController : ControllerBase
                 p.UnitWeight,
                 p.RedWeight,
                 p.WhiteWeight,
-                p.SpecialWeight,
                 p.NaturalWeight,
                 p.NaturalWhiteWeight,
-                p.NaturalRedWeight,
-                p.ShortCutWeight,
                 p.ArtificialWeight,
-                p.ShortWeight,
+                p.RegularWeight,
+                p.BlackWeight,
+                p.RegularExtraWeight,
+                p.BlackExtraWeight,
+                p.WhiteExtraWeight,
+                p.NaturalWhiteExtraWeight,
+                p.OffCutsWeight,
+                p.ReclaimedWeight,
+                p.FluffWeight,
                 p.LossWeight,
                 p.TotalWeight,
                 p.RemainingWeight,
@@ -308,7 +313,7 @@ public class ReportsController : ControllerBase
 
         WriteSheet(workbook, 3, "Mess Labour Report", new[]
         {
-              "Date", "Marker", "Packages", "Workers", "Count", "Unit Weight", "Red Weight", "White Weight", "Special Weight", "Natural Weight", "Natural White Weight", "Natural Red Weight", "Short Cut Weight", "Artificial Weight", "Short Weight", "Loss Weight", "Total Weight", "Remaining Weight", "Worker Fees", "Create Date"
+              "Date", "Marker", "Packages", "Workers", "Count", "Unit Weight", "Red Weight", "White Weight", "Natural Weight", "Natural White Weight", "Artificial Weight", "Regular Weight", "Black Weight", "Regular Extra Weight", "Black Extra Weight", "White Extra Weight", "Natural White Extra Weight", "OffCuts Weight", "Reclaimed Weight", "Fluff Weight", "Loss Weight", "Total Weight", "Remaining Weight", "Worker Fees", "Create Date"
         }, records);
     }
 

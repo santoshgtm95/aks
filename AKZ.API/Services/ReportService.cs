@@ -255,13 +255,18 @@ public class ReportService
                 // Categorized Distribution
                 report.RedWeight = processing.RedWeight;
                 report.WhiteWeight = processing.WhiteWeight;
-                report.SpecialWeight = processing.SpecialWeight;
                 report.NaturalWeight = processing.NaturalWeight;
                 report.NaturalWhiteWeight = processing.NaturalWhiteWeight;
-                report.NaturalRedWeight = processing.NaturalRedWeight;
-                report.ShortCutWeight = processing.ShortCutWeight;
                 report.ArtificialWeight = processing.ArtificialWeight;
-                report.ShortWeight = processing.ShortWeight;
+                report.RegularWeight = processing.RegularWeight;
+                report.BlackWeight = processing.BlackWeight;
+                report.RegularExtraWeight = processing.RegularExtraWeight;
+                report.BlackExtraWeight = processing.BlackExtraWeight;
+                report.WhiteExtraWeight = processing.WhiteExtraWeight;
+                report.NaturalWhiteExtraWeight = processing.NaturalWhiteExtraWeight;
+                report.OffCutsWeight = processing.OffCutsWeight;
+                report.ReclaimedWeight = processing.ReclaimedWeight;
+                report.FluffWeight = processing.FluffWeight;
                 report.LossWeight = processing.LossWeight;
             }
         }

@@ -386,7 +386,7 @@ const Purification: React.FC = () => {
                         </span>
                       </div>
                       <span
-                        className={`rf-badge category-${avail.category.toLowerCase().replace(".", "")}`}
+                        className={`rf-badge category-${avail.category.toLowerCase().replace(/ /g, "-")}`}
                       >
                         {avail.category}
                       </span>
@@ -637,7 +637,7 @@ const Purification: React.FC = () => {
                           </td>
                           <td>
                             <span
-                              className={`rf-badge category-${p.category.toLowerCase().replace(".", "")}`}
+                              className={`rf-badge category-${p.category.toLowerCase().replace(/ /g, "-")}`}
                             >
                               {p.category}
                             </span>
@@ -718,7 +718,7 @@ const Purification: React.FC = () => {
                         </td>
                         <td>
                           <span
-                            className={`rf-badge category-${p.category.toLowerCase().replace(".", "")}`}
+                            className={`rf-badge category-${p.category.toLowerCase().replace(/ /g, "-")}`}
                           >
                             {p.category}
                           </span>
@@ -1084,7 +1084,7 @@ const Purification: React.FC = () => {
                   <label className="pm-form-label">Category</label>
                   <div className="pm-readonly-box">
                     <span
-                      className={`card-badge category-${(selectedCategory?.category || editingProcess?.category || editingRecord?.category || "").toLowerCase().replace(".", "")}`}
+                      className={`card-badge category-${(selectedCategory?.category || editingProcess?.category || editingRecord?.category || "").toLowerCase().replace(/ /g, "-")}`}
                       style={{ margin: 0 }}
                     >
                       {selectedCategory?.category ||

@@ -71,13 +71,18 @@ const MessLabour: React.FC = () => {
     workerNames: "",
     red: 0,
     white: 0,
-    special: 0,
     natural: 0,
     naturalWhite: 0,
-    naturalRed: 0,
-    shortCut: 0,
     artificial: 0,
-    short: 0,
+    regular: 0,
+    black: 0,
+    regularExtra: 0,
+    blackExtra: 0,
+    whiteExtra: 0,
+    naturalWhiteExtra: 0,
+    offCuts: 0,
+    reclaimed: 0,
+    fluff: 0,
     lossWeight: 0,
   });
 
@@ -86,13 +91,18 @@ const MessLabour: React.FC = () => {
     unitWeight: "0.05",
     red: "",
     white: "",
-    special: "",
     natural: "",
     naturalWhite: "",
-    naturalRed: "",
-    shortCut: "",
     artificial: "",
-    short: "",
+    regular: "",
+    black: "",
+    regularExtra: "",
+    blackExtra: "",
+    whiteExtra: "",
+    naturalWhiteExtra: "",
+    offCuts: "",
+    reclaimed: "",
+    fluff: "",
     lossWeight: "",
   });
 
@@ -125,13 +135,18 @@ const MessLabour: React.FC = () => {
     const categoryFields: (keyof typeof formData)[] = [
       "red",
       "white",
-      "special",
       "natural",
       "naturalWhite",
-      "naturalRed",
-      "shortCut",
       "artificial",
-      "short",
+      "regular",
+      "black",
+      "regularExtra",
+      "blackExtra",
+      "whiteExtra",
+      "naturalWhiteExtra",
+      "offCuts",
+      "reclaimed",
+      "fluff",
     ];
 
     let currentSum = 0;
@@ -178,13 +193,18 @@ const MessLabour: React.FC = () => {
     const categoryFields = [
       "red",
       "white",
-      "special",
       "natural",
       "naturalWhite",
-      "naturalRed",
-      "shortCut",
       "artificial",
-      "short",
+      "regular",
+      "black",
+      "regularExtra",
+      "blackExtra",
+      "whiteExtra",
+      "naturalWhiteExtra",
+      "offCuts",
+      "reclaimed",
+      "fluff",
     ];
 
     if (categoryFields.includes(name)) {
@@ -243,13 +263,18 @@ const MessLabour: React.FC = () => {
     const categoryFields: (keyof typeof formData)[] = [
       "red",
       "white",
-      "special",
       "natural",
       "naturalWhite",
-      "naturalRed",
-      "shortCut",
       "artificial",
-      "short",
+      "regular",
+      "black",
+      "regularExtra",
+      "blackExtra",
+      "whiteExtra",
+      "naturalWhiteExtra",
+      "offCuts",
+      "reclaimed",
+      "fluff",
     ];
 
     if (categoryFields.includes(fieldName)) {
@@ -277,58 +302,51 @@ const MessLabour: React.FC = () => {
 
     const redWeight = Number(formData.red) * uw;
     const whiteWeight = Number(formData.white) * uw;
-    const specialWeight = Number(formData.special) * uw;
     const naturalWeight = Number(formData.natural) * uw;
     const naturalWhiteWeight = Number(formData.naturalWhite) * uw;
-    const naturalRedWeight = Number(formData.naturalRed) * uw;
-    const shortCutWeight = Number(formData.shortCut) * uw;
     const artificialWeight = Number(formData.artificial) * uw;
-    const shortWeight = Number(formData.short) * uw;
+    const regularWeight = Number(formData.regular) * uw;
+    const blackWeight = Number(formData.black) * uw;
+    const regularExtraWeight = Number(formData.regularExtra) * uw;
+    const blackExtraWeight = Number(formData.blackExtra) * uw;
+    const whiteExtraWeight = Number(formData.whiteExtra) * uw;
+    const naturalWhiteExtraWeight = Number(formData.naturalWhiteExtra) * uw;
+    const offCutsWeight = Number(formData.offCuts) * uw;
+    const reclaimedWeight = Number(formData.reclaimed) * uw;
+    const fluffWeight = Number(formData.fluff) * uw;
     const lossWeight = Number(formData.lossWeight) || 0;
 
     const categorizedWeight =
-      redWeight +
-      whiteWeight +
-      specialWeight +
-      naturalWeight +
-      naturalWhiteWeight +
-      naturalRedWeight +
-      shortCutWeight +
-      artificialWeight +
-      shortWeight +
-      lossWeight;
+      redWeight + whiteWeight + naturalWeight + naturalWhiteWeight +
+      artificialWeight + regularWeight + blackWeight + regularExtraWeight +
+      blackExtraWeight + whiteExtraWeight + naturalWhiteExtraWeight +
+      offCutsWeight + reclaimedWeight + fluffWeight + lossWeight;
     const remainingWeight = rwViss - categorizedWeight;
 
     const total = totalWeightFromCount;
     const diff = selectedWashRecord ? rwViss - total : 0;
 
+    const catSum =
+      Number(formData.red) + Number(formData.white) +
+      Number(formData.natural) + Number(formData.naturalWhite) +
+      Number(formData.artificial) + Number(formData.regular) +
+      Number(formData.black) + Number(formData.regularExtra) +
+      Number(formData.blackExtra) + Number(formData.whiteExtra) +
+      Number(formData.naturalWhiteExtra) + Number(formData.offCuts) +
+      Number(formData.reclaimed) + Number(formData.fluff);
+
     return {
       rwViss,
       normalWeight: totalWeightFromCount,
-      redWeight,
-      whiteWeight,
-      specialWeight,
-      naturalWeight,
-      naturalWhiteWeight,
-      naturalRedWeight,
-      shortCutWeight,
-      artificialWeight,
-      shortWeight,
-      lossWeight,
+      redWeight, whiteWeight, naturalWeight, naturalWhiteWeight,
+      artificialWeight, regularWeight, blackWeight, regularExtraWeight,
+      blackExtraWeight, whiteExtraWeight, naturalWhiteExtraWeight,
+      offCutsWeight, reclaimedWeight, fluffWeight, lossWeight,
       categorizedWeight,
       remainingWeight,
       total,
       diff,
-      catSum:
-        Number(formData.red) +
-        Number(formData.white) +
-        Number(formData.special) +
-        Number(formData.natural) +
-        Number(formData.naturalWhite) +
-        Number(formData.naturalRed) +
-        Number(formData.shortCut) +
-        Number(formData.artificial) +
-        Number(formData.short),
+      catSum,
       remainingCount: uw > 0 ? Math.max(0, remainingWeight / uw) : 0,
     };
   }, [formData, selectedWashRecord]);
@@ -338,16 +356,6 @@ const MessLabour: React.FC = () => {
   const openEditModal = (record: ProcessingRecord) => {
     setEditingRecord(record);
     const uw = record.unitWeight;
-    const red = uw > 0 ? Math.round(record.redWeight / uw) : 0;
-    const white = uw > 0 ? Math.round(record.whiteWeight / uw) : 0;
-    const special = uw > 0 ? Math.round(record.specialWeight / uw) : 0;
-    const natural = uw > 0 ? Math.round(record.naturalWeight / uw) : 0;
-    const naturalWhite =
-      uw > 0 ? Math.round(record.naturalWhiteWeight / uw) : 0;
-    const naturalRed = uw > 0 ? Math.round(record.naturalRedWeight / uw) : 0;
-    const shortCut = uw > 0 ? Math.round(record.shortCutWeight / uw) : 0;
-    const artificial = uw > 0 ? Math.round(record.artificialWeight / uw) : 0;
-    const short = uw > 0 ? Math.round(record.shortWeight / uw) : 0;
     setEditFormData({
       workers:
         record.workers?.map((w) => ({
@@ -355,15 +363,20 @@ const MessLabour: React.FC = () => {
           workerFee: w.workerFee,
         })) || [],
       workerNames: record.workerNames,
-      red,
-      white,
-      special,
-      natural,
-      naturalWhite,
-      naturalRed,
-      shortCut,
-      artificial,
-      short,
+      red: uw > 0 ? Math.round(record.redWeight / uw) : 0,
+      white: uw > 0 ? Math.round(record.whiteWeight / uw) : 0,
+      natural: uw > 0 ? Math.round(record.naturalWeight / uw) : 0,
+      naturalWhite: uw > 0 ? Math.round(record.naturalWhiteWeight / uw) : 0,
+      artificial: uw > 0 ? Math.round(record.artificialWeight / uw) : 0,
+      regular: uw > 0 ? Math.round(record.regularWeight / uw) : 0,
+      black: uw > 0 ? Math.round(record.blackWeight / uw) : 0,
+      regularExtra: uw > 0 ? Math.round(record.regularExtraWeight / uw) : 0,
+      blackExtra: uw > 0 ? Math.round(record.blackExtraWeight / uw) : 0,
+      whiteExtra: uw > 0 ? Math.round(record.whiteExtraWeight / uw) : 0,
+      naturalWhiteExtra: uw > 0 ? Math.round(record.naturalWhiteExtraWeight / uw) : 0,
+      offCuts: uw > 0 ? Math.round(record.offCutsWeight / uw) : 0,
+      reclaimed: uw > 0 ? Math.round(record.reclaimedWeight / uw) : 0,
+      fluff: uw > 0 ? Math.round(record.fluffWeight / uw) : 0,
       lossWeight: record.lossWeight,
     });
   };
@@ -371,32 +384,25 @@ const MessLabour: React.FC = () => {
   const getOriginalTotalCount = (record: ProcessingRecord) => {
     const uw = record.unitWeight || 1;
     const origCatSum =
-      Math.round(record.redWeight / uw) +
-      Math.round(record.whiteWeight / uw) +
-      Math.round(record.specialWeight / uw) +
-      Math.round(record.naturalWeight / uw) +
-      Math.round(record.naturalWhiteWeight / uw) +
-      Math.round(record.naturalRedWeight / uw) +
-      Math.round(record.shortCutWeight / uw) +
-      Math.round(record.artificialWeight / uw) +
-      Math.round(record.shortWeight / uw);
+      Math.round(record.redWeight / uw) + Math.round(record.whiteWeight / uw) +
+      Math.round(record.naturalWeight / uw) + Math.round(record.naturalWhiteWeight / uw) +
+      Math.round(record.artificialWeight / uw) + Math.round(record.regularWeight / uw) +
+      Math.round(record.blackWeight / uw) + Math.round(record.regularExtraWeight / uw) +
+      Math.round(record.blackExtraWeight / uw) + Math.round(record.whiteExtraWeight / uw) +
+      Math.round(record.naturalWhiteExtraWeight / uw) + Math.round(record.offCutsWeight / uw) +
+      Math.round(record.reclaimedWeight / uw) + Math.round(record.fluffWeight / uw);
 
     const hasCategoryCounts =
-      record.redCount > 0 ||
-      record.whiteCount > 0 ||
-      record.specialCount > 0 ||
-      record.naturalCount > 0 ||
-      record.naturalWhiteCount > 0 ||
-      record.naturalRedCount > 0 ||
-      record.shortCutCount > 0 ||
-      record.artificialCount > 0 ||
-      record.shortCount > 0;
+      record.redCount > 0 || record.whiteCount > 0 || record.naturalCount > 0 ||
+      record.naturalWhiteCount > 0 || record.artificialCount > 0 || record.regularCount > 0 ||
+      record.blackCount > 0 || record.regularExtraCount > 0 || record.blackExtraCount > 0 ||
+      record.whiteExtraCount > 0 || record.naturalWhiteExtraCount > 0 ||
+      record.offCutsCount > 0 || record.reclaimedCount > 0 || record.fluffCount > 0;
 
     const hasCategoryWeights = origCatSum > 0;
     const isNewRecord =
       (record.remainingCount !== undefined && record.remainingCount > 0) ||
-      hasCategoryCounts ||
-      !hasCategoryWeights;
+      hasCategoryCounts || !hasCategoryWeights;
 
     return isNewRecord ? record.count : record.count + origCatSum;
   };
@@ -409,13 +415,18 @@ const MessLabour: React.FC = () => {
     const categoryFields: (keyof typeof editFormData)[] = [
       "red",
       "white",
-      "special",
       "natural",
       "naturalWhite",
-      "naturalRed",
-      "shortCut",
       "artificial",
-      "short",
+      "regular",
+      "black",
+      "regularExtra",
+      "blackExtra",
+      "whiteExtra",
+      "naturalWhiteExtra",
+      "offCuts",
+      "reclaimed",
+      "fluff",
     ];
 
     if (categoryFields.includes(fieldName)) {
@@ -440,13 +451,18 @@ const MessLabour: React.FC = () => {
     const categoryFields = [
       "red",
       "white",
-      "special",
       "natural",
       "naturalWhite",
-      "naturalRed",
-      "shortCut",
       "artificial",
-      "short",
+      "regular",
+      "black",
+      "regularExtra",
+      "blackExtra",
+      "whiteExtra",
+      "naturalWhiteExtra",
+      "offCuts",
+      "reclaimed",
+      "fluff",
     ];
 
     if (categoryFields.includes(name)) {
@@ -497,44 +513,36 @@ const MessLabour: React.FC = () => {
     const uw = editingRecord.unitWeight;
     const redWeight = editFormData.red * uw;
     const whiteWeight = editFormData.white * uw;
-    const specialWeight = editFormData.special * uw;
     const naturalWeight = editFormData.natural * uw;
     const naturalWhiteWeight = editFormData.naturalWhite * uw;
-    const naturalRedWeight = editFormData.naturalRed * uw;
-    const shortCutWeight = editFormData.shortCut * uw;
     const artificialWeight = editFormData.artificial * uw;
-    const shortWeight = editFormData.short * uw;
+    const regularWeight = editFormData.regular * uw;
+    const blackWeight = editFormData.black * uw;
+    const regularExtraWeight = editFormData.regularExtra * uw;
+    const blackExtraWeight = editFormData.blackExtra * uw;
+    const whiteExtraWeight = editFormData.whiteExtra * uw;
+    const naturalWhiteExtraWeight = editFormData.naturalWhiteExtra * uw;
+    const offCutsWeight = editFormData.offCuts * uw;
+    const reclaimedWeight = editFormData.reclaimed * uw;
+    const fluffWeight = editFormData.fluff * uw;
     const lossWeight = Number(editFormData.lossWeight) || 0;
 
     const catSum =
-      editFormData.red +
-      editFormData.white +
-      editFormData.special +
-      editFormData.natural +
-      editFormData.naturalWhite +
-      editFormData.naturalRed +
-      editFormData.shortCut +
-      editFormData.artificial +
-      editFormData.short;
+      editFormData.red + editFormData.white + editFormData.natural +
+      editFormData.naturalWhite + editFormData.artificial + editFormData.regular +
+      editFormData.black + editFormData.regularExtra + editFormData.blackExtra +
+      editFormData.whiteExtra + editFormData.naturalWhiteExtra +
+      editFormData.offCuts + editFormData.reclaimed + editFormData.fluff;
     const originalTotal = getOriginalTotalCount(editingRecord);
 
-    const normalWeight = Math.max(
-      0,
-      (originalTotal - catSum) * uw - lossWeight,
-    );
+    const normalWeight = Math.max(0, (originalTotal - catSum) * uw - lossWeight);
     const normalCount = uw > 0 ? normalWeight / uw : 0;
 
     const categoryWeight =
-      redWeight +
-      whiteWeight +
-      specialWeight +
-      naturalWeight +
-      naturalWhiteWeight +
-      naturalRedWeight +
-      shortCutWeight +
-      artificialWeight +
-      shortWeight +
-      lossWeight;
+      redWeight + whiteWeight + naturalWeight + naturalWhiteWeight +
+      artificialWeight + regularWeight + blackWeight + regularExtraWeight +
+      blackExtraWeight + whiteExtraWeight + naturalWhiteExtraWeight +
+      offCutsWeight + reclaimedWeight + fluffWeight + lossWeight;
     const totalWeight = normalWeight + categoryWeight;
 
     const dto: CreateProcessingRecordDto = {
@@ -545,27 +553,23 @@ const MessLabour: React.FC = () => {
       count: originalTotal,
       remainingCount: normalCount,
       unitWeight: uw,
-      redWeight,
-      redCount: editFormData.red,
-      whiteWeight,
-      whiteCount: editFormData.white,
-      specialWeight,
-      specialCount: editFormData.special,
-      naturalWeight,
-      naturalCount: editFormData.natural,
-      naturalWhiteWeight,
-      naturalWhiteCount: editFormData.naturalWhite,
-      naturalRedWeight,
-      naturalRedCount: editFormData.naturalRed,
-      shortCutWeight,
-      shortCutCount: editFormData.shortCut,
-      artificialWeight,
-      artificialCount: editFormData.artificial,
-      shortWeight: shortWeight,
-      shortCount: editFormData.short,
+      redWeight, redCount: editFormData.red,
+      whiteWeight, whiteCount: editFormData.white,
+      naturalWeight, naturalCount: editFormData.natural,
+      naturalWhiteWeight, naturalWhiteCount: editFormData.naturalWhite,
+      artificialWeight, artificialCount: editFormData.artificial,
+      regularWeight, regularCount: editFormData.regular,
+      blackWeight, blackCount: editFormData.black,
+      regularExtraWeight, regularExtraCount: editFormData.regularExtra,
+      blackExtraWeight, blackExtraCount: editFormData.blackExtra,
+      whiteExtraWeight, whiteExtraCount: editFormData.whiteExtra,
+      naturalWhiteExtraWeight, naturalWhiteExtraCount: editFormData.naturalWhiteExtra,
+      offCutsWeight, offCutsCount: editFormData.offCuts,
+      reclaimedWeight, reclaimedCount: editFormData.reclaimed,
+      fluffWeight, fluffCount: editFormData.fluff,
       lossWeight,
       totalWeight,
-      remainingWeight: normalWeight, // normalWeight is the remaining weight for sale
+      remainingWeight: normalWeight,
       remainingWeightKg: undefined,
       difference: editingRecord.difference,
     };
@@ -614,9 +618,7 @@ const MessLabour: React.FC = () => {
 
     try {
       const dto: CreateProcessingRecordDto = {
-        date: combineDateWithMyanmarTime(
-          new Date().toISOString().split("T")[0],
-        ),
+        date: combineDateWithMyanmarTime(new Date().toISOString().split("T")[0]),
         productId: selectedWashRecord.productId,
         washGradingRecordId: selectedWashRecord.id,
         workerNames: "",
@@ -624,24 +626,20 @@ const MessLabour: React.FC = () => {
         count: Number(formData.count),
         remainingCount: totals.remainingCount,
         unitWeight: Number(formData.unitWeight),
-        redWeight: totals.redWeight,
-        redCount: Number(formData.red) || 0,
-        whiteWeight: totals.whiteWeight,
-        whiteCount: Number(formData.white) || 0,
-        specialWeight: totals.specialWeight,
-        specialCount: Number(formData.special) || 0,
-        naturalWeight: totals.naturalWeight,
-        naturalCount: Number(formData.natural) || 0,
-        naturalWhiteWeight: totals.naturalWhiteWeight,
-        naturalWhiteCount: Number(formData.naturalWhite) || 0,
-        naturalRedWeight: totals.naturalRedWeight,
-        naturalRedCount: Number(formData.naturalRed) || 0,
-        shortCutWeight: totals.shortCutWeight,
-        shortCutCount: Number(formData.shortCut) || 0,
-        artificialWeight: totals.artificialWeight,
-        artificialCount: Number(formData.artificial) || 0,
-        shortWeight: totals.shortWeight,
-        shortCount: Number(formData.short) || 0,
+        redWeight: totals.redWeight, redCount: Number(formData.red) || 0,
+        whiteWeight: totals.whiteWeight, whiteCount: Number(formData.white) || 0,
+        naturalWeight: totals.naturalWeight, naturalCount: Number(formData.natural) || 0,
+        naturalWhiteWeight: totals.naturalWhiteWeight, naturalWhiteCount: Number(formData.naturalWhite) || 0,
+        artificialWeight: totals.artificialWeight, artificialCount: Number(formData.artificial) || 0,
+        regularWeight: totals.regularWeight, regularCount: Number(formData.regular) || 0,
+        blackWeight: totals.blackWeight, blackCount: Number(formData.black) || 0,
+        regularExtraWeight: totals.regularExtraWeight, regularExtraCount: Number(formData.regularExtra) || 0,
+        blackExtraWeight: totals.blackExtraWeight, blackExtraCount: Number(formData.blackExtra) || 0,
+        whiteExtraWeight: totals.whiteExtraWeight, whiteExtraCount: Number(formData.whiteExtra) || 0,
+        naturalWhiteExtraWeight: totals.naturalWhiteExtraWeight, naturalWhiteExtraCount: Number(formData.naturalWhiteExtra) || 0,
+        offCutsWeight: totals.offCutsWeight, offCutsCount: Number(formData.offCuts) || 0,
+        reclaimedWeight: totals.reclaimedWeight, reclaimedCount: Number(formData.reclaimed) || 0,
+        fluffWeight: totals.fluffWeight, fluffCount: Number(formData.fluff) || 0,
         lossWeight: totals.lossWeight,
         totalWeight: totals.total,
         remainingWeight: totals.remainingWeight,
@@ -655,15 +653,9 @@ const MessLabour: React.FC = () => {
       setFormData({
         count: "0",
         unitWeight: "0.05",
-        red: "",
-        white: "",
-        special: "",
-        natural: "",
-        naturalWhite: "",
-        naturalRed: "",
-        shortCut: "",
-        artificial: "",
-        short: "",
+        red: "", white: "", natural: "", naturalWhite: "", artificial: "",
+        regular: "", black: "", regularExtra: "", blackExtra: "",
+        whiteExtra: "", naturalWhiteExtra: "", offCuts: "", reclaimed: "", fluff: "",
         lossWeight: "",
       });
       setSelectedWorkers([]);
@@ -1017,39 +1009,20 @@ const MessLabour: React.FC = () => {
                       </h3>
                       <div className="category-grid">
                         {[
-                          { name: "red", label: "red", cls: "box-red" },
-                          { name: "white", label: "white", cls: "box-white" },
-                          {
-                            name: "special",
-                            label: "simple",
-                            cls: "box-special",
-                          },
-                          {
-                            name: "natural",
-                            label: "natural",
-                            cls: "box-natural",
-                          },
-                          {
-                            name: "naturalWhite",
-                            label: "natural white",
-                            cls: "box-natural-white",
-                          },
-                          {
-                            name: "naturalRed",
-                            label: "natural red",
-                            cls: "box-natural-red",
-                          },
-                          {
-                            name: "shortCut",
-                            label: "short cut",
-                            cls: "box-shortcut",
-                          },
-                          {
-                            name: "artificial",
-                            label: "artificial",
-                            cls: "box-artificial",
-                          },
-                          { name: "short", label: "short", cls: "box-short" },
+                          { name: "red", label: "Red", cls: "box-red" },
+                          { name: "white", label: "White", cls: "box-white" },
+                          { name: "natural", label: "Natural", cls: "box-natural" },
+                          { name: "naturalWhite", label: "Natural White", cls: "box-natural-white" },
+                          { name: "artificial", label: "Artificial", cls: "box-artificial" },
+                          { name: "regular", label: "Regular", cls: "box-regular" },
+                          { name: "black", label: "Black", cls: "box-black" },
+                          { name: "regularExtra", label: "Regular Extra", cls: "box-regular-extra" },
+                          { name: "blackExtra", label: "Black Extra", cls: "box-black-extra" },
+                          { name: "whiteExtra", label: "White Extra", cls: "box-white-extra" },
+                          { name: "naturalWhiteExtra", label: "Natural White Extra", cls: "box-natural-white-extra" },
+                          { name: "offCuts", label: "OffCuts", cls: "box-offcuts" },
+                          { name: "reclaimed", label: "Reclaimed", cls: "box-reclaimed" },
+                          { name: "fluff", label: "Fluff", cls: "box-fluff" },
                         ].map(({ name, label, cls }) => {
                           const countVal =
                             formData[name as keyof typeof formData] || "";
@@ -1441,39 +1414,64 @@ const MessLabour: React.FC = () => {
                                 White: {record.whiteCount}
                               </span>
                             )}
-                            {record.specialCount > 0 && (
-                              <span className="rf-badge category-special">
-                                Simple: {record.specialCount}
-                              </span>
-                            )}
                             {record.naturalCount > 0 && (
                               <span className="rf-badge category-natural">
                                 Natural: {record.naturalCount}
                               </span>
                             )}
                             {record.naturalWhiteCount > 0 && (
-                              <span className="rf-badge category-9r">
-                                N.White: {record.naturalWhiteCount}
-                              </span>
-                            )}
-                            {record.naturalRedCount > 0 && (
-                              <span className="rf-badge category-red">
-                                N.Red: {record.naturalRedCount}
-                              </span>
-                            )}
-                            {record.shortCutCount > 0 && (
-                              <span className="rf-badge category-special">
-                                S.Cut: {record.shortCutCount}
+                              <span className="rf-badge category-natural-white">
+                                Nat.White: {record.naturalWhiteCount}
                               </span>
                             )}
                             {record.artificialCount > 0 && (
-                              <span className="rf-badge category-white">
+                              <span className="rf-badge category-artificial">
                                 Artif: {record.artificialCount}
                               </span>
                             )}
-                            {record.shortCount > 0 && (
-                              <span className="rf-badge category-9r">
-                                Short: {record.shortCount}
+                            {record.regularCount > 0 && (
+                              <span className="rf-badge category-regular">
+                                Regular: {record.regularCount}
+                              </span>
+                            )}
+                            {record.blackCount > 0 && (
+                              <span className="rf-badge category-black">
+                                Black: {record.blackCount}
+                              </span>
+                            )}
+                            {record.regularExtraCount > 0 && (
+                              <span className="rf-badge category-regular-extra">
+                                Reg.Extra: {record.regularExtraCount}
+                              </span>
+                            )}
+                            {record.blackExtraCount > 0 && (
+                              <span className="rf-badge category-black-extra">
+                                Blk.Extra: {record.blackExtraCount}
+                              </span>
+                            )}
+                            {record.whiteExtraCount > 0 && (
+                              <span className="rf-badge category-white-extra">
+                                Wht.Extra: {record.whiteExtraCount}
+                              </span>
+                            )}
+                            {record.naturalWhiteExtraCount > 0 && (
+                              <span className="rf-badge category-natural-white-extra">
+                                NW.Extra: {record.naturalWhiteExtraCount}
+                              </span>
+                            )}
+                            {record.offCutsCount > 0 && (
+                              <span className="rf-badge category-offcuts">
+                                OffCuts: {record.offCutsCount}
+                              </span>
+                            )}
+                            {record.reclaimedCount > 0 && (
+                              <span className="rf-badge category-reclaimed">
+                                Reclaimed: {record.reclaimedCount}
+                              </span>
+                            )}
+                            {record.fluffCount > 0 && (
+                              <span className="rf-badge category-fluff">
+                                Fluff: {record.fluffCount}
                               </span>
                             )}
                           </div>
@@ -1615,37 +1613,18 @@ const MessLabour: React.FC = () => {
                     [
                       { name: "red", label: "Red", cls: "em-cat-red" },
                       { name: "white", label: "White", cls: "em-cat-white" },
-                      {
-                        name: "special",
-                        label: "Simple",
-                        cls: "em-cat-special",
-                      },
-                      {
-                        name: "natural",
-                        label: "Natural",
-                        cls: "em-cat-natural",
-                      },
-                      {
-                        name: "naturalWhite",
-                        label: "Nat. White",
-                        cls: "em-cat-nwhite",
-                      },
-                      {
-                        name: "naturalRed",
-                        label: "Nat. Red",
-                        cls: "em-cat-nred",
-                      },
-                      {
-                        name: "shortCut",
-                        label: "Short Cut",
-                        cls: "em-cat-scut",
-                      },
-                      {
-                        name: "artificial",
-                        label: "Artificial",
-                        cls: "em-cat-art",
-                      },
-                      { name: "short", label: "Short", cls: "em-cat-short" },
+                      { name: "natural", label: "Natural", cls: "em-cat-natural" },
+                      { name: "naturalWhite", label: "Nat. White", cls: "em-cat-nwhite" },
+                      { name: "artificial", label: "Artificial", cls: "em-cat-art" },
+                      { name: "regular", label: "Regular", cls: "em-cat-regular" },
+                      { name: "black", label: "Black", cls: "em-cat-black" },
+                      { name: "regularExtra", label: "Reg. Extra", cls: "em-cat-reg-extra" },
+                      { name: "blackExtra", label: "Blk. Extra", cls: "em-cat-blk-extra" },
+                      { name: "whiteExtra", label: "Wht. Extra", cls: "em-cat-wht-extra" },
+                      { name: "naturalWhiteExtra", label: "Nat. Wht. Extra", cls: "em-cat-nwt-extra" },
+                      { name: "offCuts", label: "OffCuts", cls: "em-cat-offcuts" },
+                      { name: "reclaimed", label: "Reclaimed", cls: "em-cat-reclaimed" },
+                      { name: "fluff", label: "Fluff", cls: "em-cat-fluff" },
                     ] as const
                   ).map(({ name, label, cls }) => {
                     const countVal = (editFormData as any)[name] || "";
@@ -1863,13 +1842,18 @@ const MessLabour: React.FC = () => {
                 const catSum =
                   (editFormData.red || 0) +
                   (editFormData.white || 0) +
-                  (editFormData.special || 0) +
                   (editFormData.natural || 0) +
                   (editFormData.naturalWhite || 0) +
-                  (editFormData.naturalRed || 0) +
-                  (editFormData.shortCut || 0) +
                   (editFormData.artificial || 0) +
-                  (editFormData.short || 0) +
+                  (editFormData.regular || 0) +
+                  (editFormData.black || 0) +
+                  (editFormData.regularExtra || 0) +
+                  (editFormData.blackExtra || 0) +
+                  (editFormData.whiteExtra || 0) +
+                  (editFormData.naturalWhiteExtra || 0) +
+                  (editFormData.offCuts || 0) +
+                  (editFormData.reclaimed || 0) +
+                  (editFormData.fluff || 0) +
                   (editFormData.lossWeight || 0);
                 const remainingCount = originalTotal - catSum;
                 const remainingWeight = remainingCount * uw;
@@ -2028,60 +2012,20 @@ const MessLabour: React.FC = () => {
                 <div className="vm-cat-grid">
                   {(
                     [
-                      {
-                        count: viewingRecord.redCount,
-                        weight: viewingRecord.redWeight,
-                        label: "Red",
-                        cls: "vm-cat-red",
-                      },
-                      {
-                        count: viewingRecord.whiteCount,
-                        weight: viewingRecord.whiteWeight,
-                        label: "White",
-                        cls: "vm-cat-white",
-                      },
-                      {
-                        count: viewingRecord.specialCount,
-                        weight: viewingRecord.specialWeight,
-                        label: "Simple",
-                        cls: "vm-cat-special",
-                      },
-                      {
-                        count: viewingRecord.naturalCount,
-                        weight: viewingRecord.naturalWeight,
-                        label: "Natural",
-                        cls: "vm-cat-natural",
-                      },
-                      {
-                        count: viewingRecord.naturalWhiteCount,
-                        weight: viewingRecord.naturalWhiteWeight,
-                        label: "Nat. White",
-                        cls: "vm-cat-nwhite",
-                      },
-                      {
-                        count: viewingRecord.naturalRedCount,
-                        weight: viewingRecord.naturalRedWeight,
-                        label: "Nat. Red",
-                        cls: "vm-cat-nred",
-                      },
-                      {
-                        count: viewingRecord.shortCutCount,
-                        weight: viewingRecord.shortCutWeight,
-                        label: "Short Cut",
-                        cls: "vm-cat-scut",
-                      },
-                      {
-                        count: viewingRecord.artificialCount,
-                        weight: viewingRecord.artificialWeight,
-                        label: "Artificial",
-                        cls: "vm-cat-art",
-                      },
-                      {
-                        count: viewingRecord.shortCount,
-                        weight: viewingRecord.shortWeight,
-                        label: "Short",
-                        cls: "vm-cat-short",
-                      },
+                      { count: viewingRecord.redCount, weight: viewingRecord.redWeight, label: "Red", cls: "vm-cat-red" },
+                      { count: viewingRecord.whiteCount, weight: viewingRecord.whiteWeight, label: "White", cls: "vm-cat-white" },
+                      { count: viewingRecord.naturalCount, weight: viewingRecord.naturalWeight, label: "Natural", cls: "vm-cat-natural" },
+                      { count: viewingRecord.naturalWhiteCount, weight: viewingRecord.naturalWhiteWeight, label: "Nat. White", cls: "vm-cat-nwhite" },
+                      { count: viewingRecord.artificialCount, weight: viewingRecord.artificialWeight, label: "Artificial", cls: "vm-cat-art" },
+                      { count: viewingRecord.regularCount, weight: viewingRecord.regularWeight, label: "Regular", cls: "vm-cat-regular" },
+                      { count: viewingRecord.blackCount, weight: viewingRecord.blackWeight, label: "Black", cls: "vm-cat-black" },
+                      { count: viewingRecord.regularExtraCount, weight: viewingRecord.regularExtraWeight, label: "Reg. Extra", cls: "vm-cat-reg-extra" },
+                      { count: viewingRecord.blackExtraCount, weight: viewingRecord.blackExtraWeight, label: "Blk. Extra", cls: "vm-cat-blk-extra" },
+                      { count: viewingRecord.whiteExtraCount, weight: viewingRecord.whiteExtraWeight, label: "Wht. Extra", cls: "vm-cat-wht-extra" },
+                      { count: viewingRecord.naturalWhiteExtraCount, weight: viewingRecord.naturalWhiteExtraWeight, label: "Nat. Wht. Extra", cls: "vm-cat-nwt-extra" },
+                      { count: viewingRecord.offCutsCount, weight: viewingRecord.offCutsWeight, label: "OffCuts", cls: "vm-cat-offcuts" },
+                      { count: viewingRecord.reclaimedCount, weight: viewingRecord.reclaimedWeight, label: "Reclaimed", cls: "vm-cat-reclaimed" },
+                      { count: viewingRecord.fluffCount, weight: viewingRecord.fluffWeight, label: "Fluff", cls: "vm-cat-fluff" },
                     ] as const
                   )
                     .filter((cat) => cat.count > 0)
@@ -2105,18 +2049,24 @@ const MessLabour: React.FC = () => {
                   )}
                   {viewingRecord.redCount === 0 &&
                     viewingRecord.whiteCount === 0 &&
-                    viewingRecord.specialCount === 0 &&
                     viewingRecord.naturalCount === 0 &&
                     viewingRecord.naturalWhiteCount === 0 &&
-                    viewingRecord.naturalRedCount === 0 &&
-                    viewingRecord.shortCutCount === 0 &&
                     viewingRecord.artificialCount === 0 &&
-                    viewingRecord.shortCount === 0 &&
+                    viewingRecord.regularCount === 0 &&
+                    viewingRecord.blackCount === 0 &&
+                    viewingRecord.regularExtraCount === 0 &&
+                    viewingRecord.blackExtraCount === 0 &&
+                    viewingRecord.whiteExtraCount === 0 &&
+                    viewingRecord.naturalWhiteExtraCount === 0 &&
+                    viewingRecord.offCutsCount === 0 &&
+                    viewingRecord.reclaimedCount === 0 &&
+                    viewingRecord.fluffCount === 0 &&
                     viewingRecord.lossWeight === 0 && (
                       <div className="vm-empty-cats">
                         No bundles were sorted into categories.
                       </div>
                     )}
+
                 </div>
               </div>
             </div>

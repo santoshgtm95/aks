@@ -3338,7 +3338,7 @@ const SemiExport: React.FC = () => {
                     }}
                   >
                     <span
-                      className={`rf-badge category-${(record.refinementRecordCategory || "").toLowerCase().replace(".", "")}`}
+                      className={`rf-badge category-${(record.refinementRecordCategory || "").toLowerCase().replace(/ /g, "-")}`}
                       style={{ fontSize: "12px", padding: "4px 10px" }}
                     >
                       {record.refinementRecordCategory}
@@ -3925,16 +3925,6 @@ const SemiExport: React.FC = () => {
                         <Clock size={11} strokeWidth={2.2} />
                         {new Date(group.date).toLocaleDateString()}
                       </span>
-                      <div className="card-tags">
-                        {group.records.map((r) => (
-                          <span
-                            key={r.id}
-                            className={`rf-badge category-${(r.refinementRecordCategory || "").toLowerCase().replace(".", "")}`}
-                          >
-                            {r.refinementRecordCategory}
-                          </span>
-                        ))}
-                      </div>
                     </div>
                   </div>
                 );

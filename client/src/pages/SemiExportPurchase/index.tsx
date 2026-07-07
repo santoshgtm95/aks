@@ -175,15 +175,20 @@ const SemiExportPurchase: React.FC = () => {
   });
 
   const colorCategories = [
-    "Art",
     "Red",
     "White",
-    "Short",
-    "Simple",
-    "N.White",
-    "S.Cut",
     "Natural",
-    "N.Red",
+    "Natural White",
+    "Artificial",
+    "Regular",
+    "Black",
+    "Regular Extra",
+    "Black Extra",
+    "White Extra",
+    "Natural White Extra",
+    "OffCuts",
+    "Reclaimed",
+    "Fluff",
   ];
 
   // Load purchases on component mount

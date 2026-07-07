@@ -535,10 +535,14 @@ const Dashboard: React.FC = () => {
       const initColor = (name: string) => { if (!mlColors[name]) mlColors[name] = { weight: 0, count: 0 }; };
       filteredProcessing.forEach((p) => {
         mlLost += p.lossWeight || 0; mlFees += p.workerFees || 0;
-        [["Red",p.redWeight,p.redCount],["White",p.whiteWeight,p.whiteCount],["Special",p.specialWeight,p.specialCount],
+        [["Red",p.redWeight,p.redCount],["White",p.whiteWeight,p.whiteCount],
          ["Natural",p.naturalWeight,p.naturalCount],["Natural White",p.naturalWhiteWeight,p.naturalWhiteCount],
-         ["Natural Red",p.naturalRedWeight,p.naturalRedCount],["Short Cut",p.shortCutWeight,p.shortCutCount],
-         ["Artificial",p.artificialWeight,p.artificialCount],["Short",p.shortWeight,p.shortCount]
+         ["Artificial",p.artificialWeight,p.artificialCount],["Regular",p.regularWeight,p.regularCount],
+         ["Black",p.blackWeight,p.blackCount],["Regular Extra",p.regularExtraWeight,p.regularExtraCount],
+         ["Black Extra",p.blackExtraWeight,p.blackExtraCount],["White Extra",p.whiteExtraWeight,p.whiteExtraCount],
+         ["Natural White Extra",p.naturalWhiteExtraWeight,p.naturalWhiteExtraCount],
+         ["OffCuts",p.offCutsWeight,p.offCutsCount],["Reclaimed",p.reclaimedWeight,p.reclaimedCount],
+         ["Fluff",p.fluffWeight,p.fluffCount]
         ].forEach(([name, wt, cnt]) => {
           if (wt || cnt) {
             initColor(name as string);

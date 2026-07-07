@@ -89,13 +89,18 @@ public class PurificationController : ControllerBase
 
             AddIfAvailable("Red", r.RedCount, r.RedWeight);
             AddIfAvailable("White", r.WhiteCount, r.WhiteWeight);
-            AddIfAvailable("Simple", r.SpecialCount, r.SpecialWeight);
             AddIfAvailable("Natural", r.NaturalCount, r.NaturalWeight);
             AddIfAvailable("N.White", r.NaturalWhiteCount, r.NaturalWhiteWeight);
-            AddIfAvailable("N.Red", r.NaturalRedCount, r.NaturalRedWeight);
-            AddIfAvailable("S.Cut", r.ShortCutCount, r.ShortCutWeight);
             AddIfAvailable("Art", r.ArtificialCount, r.ArtificialWeight);
-            AddIfAvailable("Short", r.ShortCount, r.ShortWeight);
+            AddIfAvailable("Regular", r.RegularCount, r.RegularWeight);
+            AddIfAvailable("Black", r.BlackCount, r.BlackWeight);
+            AddIfAvailable("Regular Extra", r.RegularExtraCount, r.RegularExtraWeight);
+            AddIfAvailable("Black Extra", r.BlackExtraCount, r.BlackExtraWeight);
+            AddIfAvailable("White Extra", r.WhiteExtraCount, r.WhiteExtraWeight);
+            AddIfAvailable("N.White Extra", r.NaturalWhiteExtraCount, r.NaturalWhiteExtraWeight);
+            AddIfAvailable("OffCuts", r.OffCutsCount, r.OffCutsWeight);
+            AddIfAvailable("Reclaimed", r.ReclaimedCount, r.ReclaimedWeight);
+            AddIfAvailable("Fluff", r.FluffCount, r.FluffWeight);
         }
 
         return Ok(result);
@@ -555,13 +560,18 @@ public class PurificationController : ControllerBase
         {
             case "red": record.RemRedCount += count; record.RemRedWeight += weight; break;
             case "white": record.RemWhiteCount += count; record.RemWhiteWeight += weight; break;
-            case "simple": record.RemSpecialCount += count; record.RemSpecialWeight += weight; break;
             case "natural": record.RemNaturalCount += count; record.RemNaturalWeight += weight; break;
             case "n.white": record.RemNaturalWhiteCount += count; record.RemNaturalWhiteWeight += weight; break;
-            case "n.red": record.RemNaturalRedCount += count; record.RemNaturalRedWeight += weight; break;
-            case "s.cut": record.RemShortCutCount += count; record.RemShortCutWeight += weight; break;
             case "art": record.RemArtificialCount += count; record.RemArtificialWeight += weight; break;
-            case "short": record.RemShortCount += count; record.RemShortWeight += weight; break;
+            case "regular": record.RemRegularCount += count; record.RemRegularWeight += weight; break;
+            case "black": record.RemBlackCount += count; record.RemBlackWeight += weight; break;
+            case "regular extra": record.RemRegularExtraCount += count; record.RemRegularExtraWeight += weight; break;
+            case "black extra": record.RemBlackExtraCount += count; record.RemBlackExtraWeight += weight; break;
+            case "white extra": record.RemWhiteExtraCount += count; record.RemWhiteExtraWeight += weight; break;
+            case "n.white extra": record.RemNaturalWhiteExtraCount += count; record.RemNaturalWhiteExtraWeight += weight; break;
+            case "offcuts": record.RemOffCutsCount += count; record.RemOffCutsWeight += weight; break;
+            case "reclaimed": record.RemReclaimedCount += count; record.RemReclaimedWeight += weight; break;
+            case "fluff": record.RemFluffCount += count; record.RemFluffWeight += weight; break;
         }
     }
 
@@ -581,11 +591,6 @@ public class PurificationController : ControllerBase
                 record.RemWhiteCount -= count; record.RemWhiteWeight -= weight;
                 remCount = record.RemWhiteCount; remWeight = record.RemWhiteWeight;
                 break;
-            case "simple":
-                if (record.RemSpecialCount < count) return false;
-                record.RemSpecialCount -= count; record.RemSpecialWeight -= weight;
-                remCount = record.RemSpecialCount; remWeight = record.RemSpecialWeight;
-                break;
             case "natural":
                 if (record.RemNaturalCount < count) return false;
                 record.RemNaturalCount -= count; record.RemNaturalWeight -= weight;
@@ -596,25 +601,55 @@ public class PurificationController : ControllerBase
                 record.RemNaturalWhiteCount -= count; record.RemNaturalWhiteWeight -= weight;
                 remCount = record.RemNaturalWhiteCount; remWeight = record.RemNaturalWhiteWeight;
                 break;
-            case "n.red":
-                if (record.RemNaturalRedCount < count) return false;
-                record.RemNaturalRedCount -= count; record.RemNaturalRedWeight -= weight;
-                remCount = record.RemNaturalRedCount; remWeight = record.RemNaturalRedWeight;
-                break;
-            case "s.cut":
-                if (record.RemShortCutCount < count) return false;
-                record.RemShortCutCount -= count; record.RemShortCutWeight -= weight;
-                remCount = record.RemShortCutCount; remWeight = record.RemShortCutWeight;
-                break;
             case "art":
                 if (record.RemArtificialCount < count) return false;
                 record.RemArtificialCount -= count; record.RemArtificialWeight -= weight;
                 remCount = record.RemArtificialCount; remWeight = record.RemArtificialWeight;
                 break;
-            case "short":
-                if (record.RemShortCount < count) return false;
-                record.RemShortCount -= count; record.RemShortWeight -= weight;
-                remCount = record.RemShortCount; remWeight = record.RemShortWeight;
+            case "regular":
+                if (record.RemRegularCount < count) return false;
+                record.RemRegularCount -= count; record.RemRegularWeight -= weight;
+                remCount = record.RemRegularCount; remWeight = record.RemRegularWeight;
+                break;
+            case "black":
+                if (record.RemBlackCount < count) return false;
+                record.RemBlackCount -= count; record.RemBlackWeight -= weight;
+                remCount = record.RemBlackCount; remWeight = record.RemBlackWeight;
+                break;
+            case "regular extra":
+                if (record.RemRegularExtraCount < count) return false;
+                record.RemRegularExtraCount -= count; record.RemRegularExtraWeight -= weight;
+                remCount = record.RemRegularExtraCount; remWeight = record.RemRegularExtraWeight;
+                break;
+            case "black extra":
+                if (record.RemBlackExtraCount < count) return false;
+                record.RemBlackExtraCount -= count; record.RemBlackExtraWeight -= weight;
+                remCount = record.RemBlackExtraCount; remWeight = record.RemBlackExtraWeight;
+                break;
+            case "white extra":
+                if (record.RemWhiteExtraCount < count) return false;
+                record.RemWhiteExtraCount -= count; record.RemWhiteExtraWeight -= weight;
+                remCount = record.RemWhiteExtraCount; remWeight = record.RemWhiteExtraWeight;
+                break;
+            case "n.white extra":
+                if (record.RemNaturalWhiteExtraCount < count) return false;
+                record.RemNaturalWhiteExtraCount -= count; record.RemNaturalWhiteExtraWeight -= weight;
+                remCount = record.RemNaturalWhiteExtraCount; remWeight = record.RemNaturalWhiteExtraWeight;
+                break;
+            case "offcuts":
+                if (record.RemOffCutsCount < count) return false;
+                record.RemOffCutsCount -= count; record.RemOffCutsWeight -= weight;
+                remCount = record.RemOffCutsCount; remWeight = record.RemOffCutsWeight;
+                break;
+            case "reclaimed":
+                if (record.RemReclaimedCount < count) return false;
+                record.RemReclaimedCount -= count; record.RemReclaimedWeight -= weight;
+                remCount = record.RemReclaimedCount; remWeight = record.RemReclaimedWeight;
+                break;
+            case "fluff":
+                if (record.RemFluffCount < count) return false;
+                record.RemFluffCount -= count; record.RemFluffWeight -= weight;
+                remCount = record.RemFluffCount; remWeight = record.RemFluffWeight;
                 break;
             default: return false;
         }

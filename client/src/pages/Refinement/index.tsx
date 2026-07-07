@@ -366,7 +366,7 @@ const Refinement: React.FC = () => {
                         </span>
                       </div>
                       <span
-                        className={`rf-badge category-${avail.category.toLowerCase().replace(".", "")}`}
+                        className={`rf-badge category-${avail.category.toLowerCase().replace(/ /g, "-")}`}
                       >
                         {avail.category}
                       </span>
@@ -597,7 +597,7 @@ const Refinement: React.FC = () => {
                           </td>
                           <td>
                             <span
-                              className={`rf-badge category-${p.category.toLowerCase().replace(".", "")}`}
+                              className={`rf-badge category-${p.category.toLowerCase().replace(/ /g, "-")}`}
                             >
                               {p.category}
                             </span>
@@ -660,7 +660,7 @@ const Refinement: React.FC = () => {
                         </td>
                         <td>
                           <span
-                            className={`rf-badge category-${p.category.toLowerCase().replace(".", "")}`}
+                            className={`rf-badge category-${p.category.toLowerCase().replace(/ /g, "-")}`}
                           >
                             {p.category}
                           </span>
@@ -771,7 +771,7 @@ const Refinement: React.FC = () => {
               <div className="rf-modal-chip">
                 <span className="rf-chip-label">Category</span>
                 <span
-                  className={`rf-badge category-${(editingProcess?.category || editingRecord?.category || selectedCategory?.category || "").toLowerCase().replace(".", "")}`}
+                  className={`rf-badge category-${(editingProcess?.category || editingRecord?.category || selectedCategory?.category || "").toLowerCase().replace(/ /g, "-")}`}
                   style={{ margin: 0 }}
                 >
                   {editingProcess?.category ||

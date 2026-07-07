@@ -242,47 +242,49 @@ const CashFlow: React.FC = () => {
           </select>
         </div>
 
-        <div className="cf-date-filter">
-          <div className="cf-date-field">
-            <Calendar size={14} />
-            <label>From</label>
-            <input
-              type="date"
-              value={fromDate}
-              onChange={(e) => setFromDate(e.target.value)}
-            />
+        <div className="cf-date-range-container">
+          <div className="cf-date-input-box">
+            <span className="cf-date-label">From Date</span>
+            <div className="cf-date-input-wrapper">
+              <Calendar size={16} />
+              <input
+                type="date"
+                value={fromDate}
+                onChange={(e) => setFromDate(e.target.value)}
+              />
+            </div>
           </div>
-          <div className="cf-date-separator">
-            <ArrowRight size={14} />
+          <div className="cf-date-input-box">
+            <span className="cf-date-label">To Date</span>
+            <div className="cf-date-input-wrapper">
+              <Calendar size={16} />
+              <input
+                type="date"
+                value={toDate}
+                onChange={(e) => setToDate(e.target.value)}
+              />
+            </div>
           </div>
-          <div className="cf-date-field">
-            <Calendar size={14} />
-            <label>To</label>
-            <input
-              type="date"
-              value={toDate}
-              onChange={(e) => setToDate(e.target.value)}
-            />
-          </div>
-          <button className="cf-filter-btn" onClick={handleDateFilter}>
-            Apply
-          </button>
-          {(fromDate || toDate) && (
-            <button className="cf-clear-btn" onClick={handleClearDates}>
-              ✕ Clear
+          <div className="cf-date-actions">
+            <button className="cf-apply-btn" onClick={handleDateFilter}>
+              Apply
             </button>
-          )}
+            {(fromDate || toDate) && (
+              <button className="cf-reset-btn" onClick={handleClearDates}>
+                Clear
+              </button>
+            )}
+          </div>
+          <button
+            className="cf-excel-export-btn"
+            onClick={handleDownload}
+            disabled={isDownloading}
+            title="Download Fee Breakdown as Excel"
+          >
+            <Download size={16} />
+            {isDownloading ? "Downloading..." : "Export Excel"}
+          </button>
         </div>
-
-        <button
-          className="cf-download-btn"
-          onClick={handleDownload}
-          disabled={isDownloading}
-          title="Download Fee Breakdown as Excel"
-        >
-          <Download size={15} />
-          {isDownloading ? "Downloading..." : "Export Excel"}
-        </button>
       </div>
 
       <div className="table-responsive">

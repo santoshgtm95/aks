@@ -57,20 +57,30 @@ public class ProcessingController : ControllerBase
                 RedCount = r.RedCount,
                 WhiteWeight = r.WhiteWeight,
                 WhiteCount = r.WhiteCount,
-                SpecialWeight = r.SpecialWeight,
-                SpecialCount = r.SpecialCount,
                 NaturalWeight = r.NaturalWeight,
                 NaturalCount = r.NaturalCount,
                 NaturalWhiteWeight = r.NaturalWhiteWeight,
                 NaturalWhiteCount = r.NaturalWhiteCount,
-                NaturalRedWeight = r.NaturalRedWeight,
-                NaturalRedCount = r.NaturalRedCount,
-                ShortCutWeight = r.ShortCutWeight,
-                ShortCutCount = r.ShortCutCount,
                 ArtificialWeight = r.ArtificialWeight,
                 ArtificialCount = r.ArtificialCount,
-                ShortWeight = r.ShortWeight,
-                ShortCount = r.ShortCount,
+                RegularWeight = r.RegularWeight,
+                RegularCount = r.RegularCount,
+                BlackWeight = r.BlackWeight,
+                BlackCount = r.BlackCount,
+                RegularExtraWeight = r.RegularExtraWeight,
+                RegularExtraCount = r.RegularExtraCount,
+                BlackExtraWeight = r.BlackExtraWeight,
+                BlackExtraCount = r.BlackExtraCount,
+                WhiteExtraWeight = r.WhiteExtraWeight,
+                WhiteExtraCount = r.WhiteExtraCount,
+                NaturalWhiteExtraWeight = r.NaturalWhiteExtraWeight,
+                NaturalWhiteExtraCount = r.NaturalWhiteExtraCount,
+                OffCutsWeight = r.OffCutsWeight,
+                OffCutsCount = r.OffCutsCount,
+                ReclaimedWeight = r.ReclaimedWeight,
+                ReclaimedCount = r.ReclaimedCount,
+                FluffWeight = r.FluffWeight,
+                FluffCount = r.FluffCount,
                 LossWeight = r.LossWeight,
                 TotalWeight = r.TotalWeight,
                 RemainingWeight = r.RemainingWeight,
@@ -85,22 +95,32 @@ public class ProcessingController : ControllerBase
                 }).ToList(),
                 RemRedCount = r.RemRedCount,
                 RemWhiteCount = r.RemWhiteCount,
-                RemSpecialCount = r.RemSpecialCount,
                 RemNaturalCount = r.RemNaturalCount,
                 RemNaturalWhiteCount = r.RemNaturalWhiteCount,
-                RemNaturalRedCount = r.RemNaturalRedCount,
-                RemShortCutCount = r.RemShortCutCount,
                 RemArtificialCount = r.RemArtificialCount,
-                RemShortCount = r.RemShortCount,
+                RemRegularCount = r.RemRegularCount,
+                RemBlackCount = r.RemBlackCount,
+                RemRegularExtraCount = r.RemRegularExtraCount,
+                RemBlackExtraCount = r.RemBlackExtraCount,
+                RemWhiteExtraCount = r.RemWhiteExtraCount,
+                RemNaturalWhiteExtraCount = r.RemNaturalWhiteExtraCount,
+                RemOffCutsCount = r.RemOffCutsCount,
+                RemReclaimedCount = r.RemReclaimedCount,
+                RemFluffCount = r.RemFluffCount,
                 RemRedWeight = r.RemRedWeight,
                 RemWhiteWeight = r.RemWhiteWeight,
-                RemSpecialWeight = r.RemSpecialWeight,
                 RemNaturalWeight = r.RemNaturalWeight,
                 RemNaturalWhiteWeight = r.RemNaturalWhiteWeight,
-                RemNaturalRedWeight = r.RemNaturalRedWeight,
-                RemShortCutWeight = r.RemShortCutWeight,
                 RemArtificialWeight = r.RemArtificialWeight,
-                RemShortWeight = r.RemShortWeight,
+                RemRegularWeight = r.RemRegularWeight,
+                RemBlackWeight = r.RemBlackWeight,
+                RemRegularExtraWeight = r.RemRegularExtraWeight,
+                RemBlackExtraWeight = r.RemBlackExtraWeight,
+                RemWhiteExtraWeight = r.RemWhiteExtraWeight,
+                RemNaturalWhiteExtraWeight = r.RemNaturalWhiteExtraWeight,
+                RemOffCutsWeight = r.RemOffCutsWeight,
+                RemReclaimedWeight = r.RemReclaimedWeight,
+                RemFluffWeight = r.RemFluffWeight,
                 IsLocked = _context.PurificationProcesses.Any(p => p.ProcessingRecordId == r.Id && p.DeleteFlg == 0) ||
                            _context.PurifiedRecords.Any(pr => pr.ProcessingRecordId == r.Id && pr.DeleteFlg == 0)
             })
@@ -118,10 +138,12 @@ public class ProcessingController : ControllerBase
             return BadRequest(new { message = "Product not found" });
         }
 
-        decimal categorizedWeight = dto.RedWeight + dto.WhiteWeight + dto.SpecialWeight +
-                                    dto.NaturalWeight + dto.NaturalWhiteWeight + dto.NaturalRedWeight +
-                                    dto.ShortCutWeight + dto.ArtificialWeight + dto.ShortWeight +
-                                    dto.LossWeight;
+        decimal categorizedWeight = dto.RedWeight + dto.WhiteWeight +
+                                    dto.NaturalWeight + dto.NaturalWhiteWeight +
+                                    dto.ArtificialWeight + dto.RegularWeight + dto.BlackWeight +
+                                    dto.RegularExtraWeight + dto.BlackExtraWeight + dto.WhiteExtraWeight +
+                                    dto.NaturalWhiteExtraWeight + dto.OffCutsWeight + dto.ReclaimedWeight +
+                                    dto.FluffWeight + dto.LossWeight;
 
         // If linked to a WashGradingRecord, deduct from its RemainingWeight (stored in viss)
         // Otherwise fall back to deducting from Product.RemainingWeight directly.
@@ -160,20 +182,30 @@ public class ProcessingController : ControllerBase
             RedCount = dto.RedCount,
             WhiteWeight = dto.WhiteWeight,
             WhiteCount = dto.WhiteCount,
-            SpecialWeight = dto.SpecialWeight,
-            SpecialCount = dto.SpecialCount,
             NaturalWeight = dto.NaturalWeight,
             NaturalCount = dto.NaturalCount,
             NaturalWhiteWeight = dto.NaturalWhiteWeight,
             NaturalWhiteCount = dto.NaturalWhiteCount,
-            NaturalRedWeight = dto.NaturalRedWeight,
-            NaturalRedCount = dto.NaturalRedCount,
-            ShortCutWeight = dto.ShortCutWeight,
-            ShortCutCount = dto.ShortCutCount,
             ArtificialWeight = dto.ArtificialWeight,
             ArtificialCount = dto.ArtificialCount,
-            ShortWeight = dto.ShortWeight,
-            ShortCount = dto.ShortCount,
+            RegularWeight = dto.RegularWeight,
+            RegularCount = dto.RegularCount,
+            BlackWeight = dto.BlackWeight,
+            BlackCount = dto.BlackCount,
+            RegularExtraWeight = dto.RegularExtraWeight,
+            RegularExtraCount = dto.RegularExtraCount,
+            BlackExtraWeight = dto.BlackExtraWeight,
+            BlackExtraCount = dto.BlackExtraCount,
+            WhiteExtraWeight = dto.WhiteExtraWeight,
+            WhiteExtraCount = dto.WhiteExtraCount,
+            NaturalWhiteExtraWeight = dto.NaturalWhiteExtraWeight,
+            NaturalWhiteExtraCount = dto.NaturalWhiteExtraCount,
+            OffCutsWeight = dto.OffCutsWeight,
+            OffCutsCount = dto.OffCutsCount,
+            ReclaimedWeight = dto.ReclaimedWeight,
+            ReclaimedCount = dto.ReclaimedCount,
+            FluffWeight = dto.FluffWeight,
+            FluffCount = dto.FluffCount,
             LossWeight = dto.LossWeight,
             TotalWeight = dto.TotalWeight,
             RemainingWeight = dto.RemainingWeight,
@@ -187,22 +219,32 @@ public class ProcessingController : ControllerBase
             }).ToList(),
             RemRedCount = dto.RedCount,
             RemWhiteCount = dto.WhiteCount,
-            RemSpecialCount = dto.SpecialCount,
             RemNaturalCount = dto.NaturalCount,
             RemNaturalWhiteCount = dto.NaturalWhiteCount,
-            RemNaturalRedCount = dto.NaturalRedCount,
-            RemShortCutCount = dto.ShortCutCount,
             RemArtificialCount = dto.ArtificialCount,
-            RemShortCount = dto.ShortCount,
+            RemRegularCount = dto.RegularCount,
+            RemBlackCount = dto.BlackCount,
+            RemRegularExtraCount = dto.RegularExtraCount,
+            RemBlackExtraCount = dto.BlackExtraCount,
+            RemWhiteExtraCount = dto.WhiteExtraCount,
+            RemNaturalWhiteExtraCount = dto.NaturalWhiteExtraCount,
+            RemOffCutsCount = dto.OffCutsCount,
+            RemReclaimedCount = dto.ReclaimedCount,
+            RemFluffCount = dto.FluffCount,
             RemRedWeight = dto.RedWeight,
             RemWhiteWeight = dto.WhiteWeight,
-            RemSpecialWeight = dto.SpecialWeight,
             RemNaturalWeight = dto.NaturalWeight,
             RemNaturalWhiteWeight = dto.NaturalWhiteWeight,
-            RemNaturalRedWeight = dto.NaturalRedWeight,
-            RemShortCutWeight = dto.ShortCutWeight,
             RemArtificialWeight = dto.ArtificialWeight,
-            RemShortWeight = dto.ShortWeight
+            RemRegularWeight = dto.RegularWeight,
+            RemBlackWeight = dto.BlackWeight,
+            RemRegularExtraWeight = dto.RegularExtraWeight,
+            RemBlackExtraWeight = dto.BlackExtraWeight,
+            RemWhiteExtraWeight = dto.WhiteExtraWeight,
+            RemNaturalWhiteExtraWeight = dto.NaturalWhiteExtraWeight,
+            RemOffCutsWeight = dto.OffCutsWeight,
+            RemReclaimedWeight = dto.ReclaimedWeight,
+            RemFluffWeight = dto.FluffWeight,
         };
 
         _context.ProcessingRecords.Add(record);
@@ -228,20 +270,30 @@ public class ProcessingController : ControllerBase
             RedCount = record.RedCount,
             WhiteWeight = record.WhiteWeight,
             WhiteCount = record.WhiteCount,
-            SpecialWeight = record.SpecialWeight,
-            SpecialCount = record.SpecialCount,
             NaturalWeight = record.NaturalWeight,
             NaturalCount = record.NaturalCount,
             NaturalWhiteWeight = record.NaturalWhiteWeight,
             NaturalWhiteCount = record.NaturalWhiteCount,
-            NaturalRedWeight = record.NaturalRedWeight,
-            NaturalRedCount = record.NaturalRedCount,
-            ShortCutWeight = record.ShortCutWeight,
-            ShortCutCount = record.ShortCutCount,
             ArtificialWeight = record.ArtificialWeight,
             ArtificialCount = record.ArtificialCount,
-            ShortWeight = record.ShortWeight,
-            ShortCount = record.ShortCount,
+            RegularWeight = record.RegularWeight,
+            RegularCount = record.RegularCount,
+            BlackWeight = record.BlackWeight,
+            BlackCount = record.BlackCount,
+            RegularExtraWeight = record.RegularExtraWeight,
+            RegularExtraCount = record.RegularExtraCount,
+            BlackExtraWeight = record.BlackExtraWeight,
+            BlackExtraCount = record.BlackExtraCount,
+            WhiteExtraWeight = record.WhiteExtraWeight,
+            WhiteExtraCount = record.WhiteExtraCount,
+            NaturalWhiteExtraWeight = record.NaturalWhiteExtraWeight,
+            NaturalWhiteExtraCount = record.NaturalWhiteExtraCount,
+            OffCutsWeight = record.OffCutsWeight,
+            OffCutsCount = record.OffCutsCount,
+            ReclaimedWeight = record.ReclaimedWeight,
+            ReclaimedCount = record.ReclaimedCount,
+            FluffWeight = record.FluffWeight,
+            FluffCount = record.FluffCount,
             LossWeight = record.LossWeight,
             TotalWeight = record.TotalWeight,
             RemainingWeight = record.RemainingWeight,
@@ -279,15 +331,19 @@ public class ProcessingController : ControllerBase
         string productUnit = (product.Unit ?? "").ToLower().Trim();
         bool isProductKg = productUnit.Contains("kg") || productUnit.Contains("kilogram");
 
-        decimal oldCategorizedWeight = record.RedWeight + record.WhiteWeight + record.SpecialWeight +
-                                       record.NaturalWeight + record.NaturalWhiteWeight + record.NaturalRedWeight +
-                                       record.ShortCutWeight + record.ArtificialWeight + record.ShortWeight +
-                                       record.LossWeight;
+        decimal oldCategorizedWeight = record.RedWeight + record.WhiteWeight +
+                                       record.NaturalWeight + record.NaturalWhiteWeight +
+                                       record.ArtificialWeight + record.RegularWeight + record.BlackWeight +
+                                       record.RegularExtraWeight + record.BlackExtraWeight + record.WhiteExtraWeight +
+                                       record.NaturalWhiteExtraWeight + record.OffCutsWeight + record.ReclaimedWeight +
+                                       record.FluffWeight + record.LossWeight;
 
-        decimal newCategorizedWeight = dto.RedWeight + dto.WhiteWeight + dto.SpecialWeight +
-                                       dto.NaturalWeight + dto.NaturalWhiteWeight + dto.NaturalRedWeight +
-                                       dto.ShortCutWeight + dto.ArtificialWeight + dto.ShortWeight +
-                                       dto.LossWeight;
+        decimal newCategorizedWeight = dto.RedWeight + dto.WhiteWeight +
+                                       dto.NaturalWeight + dto.NaturalWhiteWeight +
+                                       dto.ArtificialWeight + dto.RegularWeight + dto.BlackWeight +
+                                       dto.RegularExtraWeight + dto.BlackExtraWeight + dto.WhiteExtraWeight +
+                                       dto.NaturalWhiteExtraWeight + dto.OffCutsWeight + dto.ReclaimedWeight +
+                                       dto.FluffWeight + dto.LossWeight;
 
         // Revert & re-apply weight deduction on the correct source
         if (record.WashGradingRecordId.HasValue)
@@ -317,20 +373,30 @@ public class ProcessingController : ControllerBase
         record.RedCount = dto.RedCount;
         record.WhiteWeight = dto.WhiteWeight;
         record.WhiteCount = dto.WhiteCount;
-        record.SpecialWeight = dto.SpecialWeight;
-        record.SpecialCount = dto.SpecialCount;
         record.NaturalWeight = dto.NaturalWeight;
         record.NaturalCount = dto.NaturalCount;
         record.NaturalWhiteWeight = dto.NaturalWhiteWeight;
         record.NaturalWhiteCount = dto.NaturalWhiteCount;
-        record.NaturalRedWeight = dto.NaturalRedWeight;
-        record.NaturalRedCount = dto.NaturalRedCount;
-        record.ShortCutWeight = dto.ShortCutWeight;
-        record.ShortCutCount = dto.ShortCutCount;
         record.ArtificialWeight = dto.ArtificialWeight;
         record.ArtificialCount = dto.ArtificialCount;
-        record.ShortWeight = dto.ShortWeight;
-        record.ShortCount = dto.ShortCount;
+        record.RegularWeight = dto.RegularWeight;
+        record.RegularCount = dto.RegularCount;
+        record.BlackWeight = dto.BlackWeight;
+        record.BlackCount = dto.BlackCount;
+        record.RegularExtraWeight = dto.RegularExtraWeight;
+        record.RegularExtraCount = dto.RegularExtraCount;
+        record.BlackExtraWeight = dto.BlackExtraWeight;
+        record.BlackExtraCount = dto.BlackExtraCount;
+        record.WhiteExtraWeight = dto.WhiteExtraWeight;
+        record.WhiteExtraCount = dto.WhiteExtraCount;
+        record.NaturalWhiteExtraWeight = dto.NaturalWhiteExtraWeight;
+        record.NaturalWhiteExtraCount = dto.NaturalWhiteExtraCount;
+        record.OffCutsWeight = dto.OffCutsWeight;
+        record.OffCutsCount = dto.OffCutsCount;
+        record.ReclaimedWeight = dto.ReclaimedWeight;
+        record.ReclaimedCount = dto.ReclaimedCount;
+        record.FluffWeight = dto.FluffWeight;
+        record.FluffCount = dto.FluffCount;
         record.LossWeight = dto.LossWeight;
         record.TotalWeight = dto.TotalWeight;
         record.RemainingWeight = dto.RemainingWeight;
@@ -362,20 +428,30 @@ public class ProcessingController : ControllerBase
             RedCount = record.RedCount,
             WhiteWeight = record.WhiteWeight,
             WhiteCount = record.WhiteCount,
-            SpecialWeight = record.SpecialWeight,
-            SpecialCount = record.SpecialCount,
             NaturalWeight = record.NaturalWeight,
             NaturalCount = record.NaturalCount,
             NaturalWhiteWeight = record.NaturalWhiteWeight,
             NaturalWhiteCount = record.NaturalWhiteCount,
-            NaturalRedWeight = record.NaturalRedWeight,
-            NaturalRedCount = record.NaturalRedCount,
-            ShortCutWeight = record.ShortCutWeight,
-            ShortCutCount = record.ShortCutCount,
             ArtificialWeight = record.ArtificialWeight,
             ArtificialCount = record.ArtificialCount,
-            ShortWeight = record.ShortWeight,
-            ShortCount = record.ShortCount,
+            RegularWeight = record.RegularWeight,
+            RegularCount = record.RegularCount,
+            BlackWeight = record.BlackWeight,
+            BlackCount = record.BlackCount,
+            RegularExtraWeight = record.RegularExtraWeight,
+            RegularExtraCount = record.RegularExtraCount,
+            BlackExtraWeight = record.BlackExtraWeight,
+            BlackExtraCount = record.BlackExtraCount,
+            WhiteExtraWeight = record.WhiteExtraWeight,
+            WhiteExtraCount = record.WhiteExtraCount,
+            NaturalWhiteExtraWeight = record.NaturalWhiteExtraWeight,
+            NaturalWhiteExtraCount = record.NaturalWhiteExtraCount,
+            OffCutsWeight = record.OffCutsWeight,
+            OffCutsCount = record.OffCutsCount,
+            ReclaimedWeight = record.ReclaimedWeight,
+            ReclaimedCount = record.ReclaimedCount,
+            FluffWeight = record.FluffWeight,
+            FluffCount = record.FluffCount,
             LossWeight = record.LossWeight,
             TotalWeight = record.TotalWeight,
             RemainingWeight = record.RemainingWeight,
@@ -403,10 +479,12 @@ public class ProcessingController : ControllerBase
         if (isLocked)
             return BadRequest(new { message = "ဤမှတ်တမ်းကို purification တွင် အသုံးပြုထားသောကြောင့် ဖျက်၍မရပါ (Record is used in purification and cannot be deleted)" });
 
-        decimal oldCategorizedWeight = record.RedWeight + record.WhiteWeight + record.SpecialWeight +
-                                       record.NaturalWeight + record.NaturalWhiteWeight + record.NaturalRedWeight +
-                                       record.ShortCutWeight + record.ArtificialWeight + record.ShortWeight +
-                                       record.LossWeight;
+        decimal oldCategorizedWeight = record.RedWeight + record.WhiteWeight +
+                                       record.NaturalWeight + record.NaturalWhiteWeight +
+                                       record.ArtificialWeight + record.RegularWeight + record.BlackWeight +
+                                       record.RegularExtraWeight + record.BlackExtraWeight + record.WhiteExtraWeight +
+                                       record.NaturalWhiteExtraWeight + record.OffCutsWeight + record.ReclaimedWeight +
+                                       record.FluffWeight + record.LossWeight;
 
         // Restore weight to the correct source
         if (record.WashGradingRecordId.HasValue)

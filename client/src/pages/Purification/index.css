@@ -1003,33 +1003,62 @@
   background: #f1f5f9;
   color: #334155;
 }
-.category-simple {
-  background: #f3e8ff;
-  color: #6b21a8;
-}
 .category-natural {
   background: #dcfce7;
   color: #166534;
 }
-.category-nwhite {
+.category-natural-white {
   background: #e0f2fe;
   color: #075985;
 }
-.category-nred {
-  background: #ffedd5;
-  color: #9a3412;
-}
-.category-scut {
-  background: #fef9c3;
-  color: #854d0e;
-}
-.category-art {
+.category-artificial {
   background: #fce7f3;
   color: #9d174d;
 }
-.category-short {
-  background: #fef3c7;
-  color: #92400e;
+.category-regular {
+  background: #f0fdf4;
+  color: #15803d;
+  border: 1px solid #86efac;
+}
+.category-black {
+  background: #f8fafc;
+  color: #1e293b;
+  border: 1px solid #94a3b8;
+}
+.category-regular-extra {
+  background: #dcfce7;
+  color: #166534;
+  border: 1px solid #4ade80;
+}
+.category-black-extra {
+  background: #f1f5f9;
+  color: #334155;
+  border: 1px solid #475569;
+}
+.category-white-extra {
+  background: #fafaf9;
+  color: #44403c;
+  border: 1px solid #d6d3d1;
+}
+.category-natural-white-extra {
+  background: #fefce8;
+  color: #854d0e;
+  border: 1px solid #fde047;
+}
+.category-offcuts {
+  background: #fff7ed;
+  color: #c2410c;
+  border: 1px solid #fdba74;
+}
+.category-reclaimed {
+  background: #eff6ff;
+  color: #1d4ed8;
+  border: 1px solid #93c5fd;
+}
+.category-fluff {
+  background: #fdf4ff;
+  color: #7e22ce;
+  border: 1px solid #e879f9;
 }
 
 /* Weight Status Badges */

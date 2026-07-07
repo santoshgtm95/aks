@@ -139,13 +139,18 @@ public class MessLabourReportDto
     // Categorized Distribution
     public decimal RedWeight { get; set; }
     public decimal WhiteWeight { get; set; }
-    public decimal SpecialWeight { get; set; }
     public decimal NaturalWeight { get; set; }
     public decimal NaturalWhiteWeight { get; set; }
-    public decimal NaturalRedWeight { get; set; }
-    public decimal ShortCutWeight { get; set; }
     public decimal ArtificialWeight { get; set; }
-    public decimal ShortWeight { get; set; }
+    public decimal RegularWeight { get; set; }
+    public decimal BlackWeight { get; set; }
+    public decimal RegularExtraWeight { get; set; }
+    public decimal BlackExtraWeight { get; set; }
+    public decimal WhiteExtraWeight { get; set; }
+    public decimal NaturalWhiteExtraWeight { get; set; }
+    public decimal OffCutsWeight { get; set; }
+    public decimal ReclaimedWeight { get; set; }
+    public decimal FluffWeight { get; set; }
     public decimal LossWeight { get; set; }
 }
 
