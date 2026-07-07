@@ -1,6 +1,13 @@
 import React, { useState, useEffect, useCallback } from "react";
 import { cashFlowAPI, placesAPI } from "../../services/api";
-import { DollarSign, Search, CreditCard, MapPin, Calendar, ArrowRight, Download } from "lucide-react";
+import {
+  DollarSign,
+  Search,
+  CreditCard,
+  MapPin,
+  Calendar,
+  Download,
+} from "lucide-react";
 import Modal from "../../components/Modal";
 import "./index.css";
 import { useLongPoll } from "../../hooks/useLongPoll";
@@ -50,21 +57,24 @@ const CashFlow: React.FC = () => {
   const [breakdownLoading, setBreakdownLoading] = useState(false);
   const [isDownloading, setIsDownloading] = useState(false);
 
-  const fetchData = useCallback(async (placeId?: number, from?: string, to?: string) => {
-    try {
-      setLoading(true);
-      const result = await cashFlowAPI.getAll(
-        placeId,
-        from || undefined,
-        to || undefined,
-      );
-      setData(result);
-    } catch (error) {
-      console.error("Error fetching cash flow data:", error);
-    } finally {
-      setLoading(false);
-    }
-  }, []);
+  const fetchData = useCallback(
+    async (placeId?: number, from?: string, to?: string) => {
+      try {
+        setLoading(true);
+        const result = await cashFlowAPI.getAll(
+          placeId,
+          from || undefined,
+          to || undefined,
+        );
+        setData(result);
+      } catch (error) {
+        console.error("Error fetching cash flow data:", error);
+      } finally {
+        setLoading(false);
+      }
+    },
+    [],
+  );
 
   useLongPoll(fetchData);
 
@@ -89,7 +99,11 @@ const CashFlow: React.FC = () => {
   };
 
   const handleDateFilter = () => {
-    fetchData(selectedPlaceId === "" ? undefined : selectedPlaceId, fromDate, toDate);
+    fetchData(
+      selectedPlaceId === "" ? undefined : selectedPlaceId,
+      fromDate,
+      toDate,
+    );
   };
 
   const handleClearDates = () => {
