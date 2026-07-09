@@ -13,7 +13,6 @@ import {
   User,
   Phone,
   AlignLeft,
-  Calendar
 } from "lucide-react";
 import {
   formatDateTime,
@@ -102,11 +101,7 @@ const Sales: React.FC = () => {
         setFormData((prev) => ({
           ...prev,
           [name]:
-            name === "price"
-              ? value === ""
-                ? 0
-                : parseFloat(value)
-              : value,
+            name === "price" ? (value === "" ? 0 : parseFloat(value)) : value,
         }));
       }
     }
@@ -171,7 +166,7 @@ const Sales: React.FC = () => {
     if (!product) return 0;
     return product.remainingWeight + weightAdjustment - formData.weight;
   };
- 
+
   const filteredSales = sales.filter((sale) => {
     const term = searchTerm.toLowerCase();
 
@@ -211,18 +206,22 @@ const Sales: React.FC = () => {
           </div>
           <div className="sales-hero-text">
             <h1>Sales Management</h1>
-            <p>Monitor transactions, adjust product weights, and register new raw material sales</p>
+            <p>
+              Monitor transactions, adjust product weights, and register new raw
+              material sales
+            </p>
           </div>
         </div>
         <div className="sales-hero-right">
           <div className="sales-stat-pill">
             <span className="stat-num">{sales.length}</span>
-            <span className="stat-label">{sales.length === 1 ? 'Transaction' : 'Transactions'}</span>
+            <span className="stat-label">
+              {sales.length === 1 ? "Transaction" : "Transactions"}
+            </span>
           </div>
         </div>
       </div>
 
- 
       {/* Main Split Layout */}
       <div className="sales-main-layout">
         {/* Left Column - New Sale Form */}
@@ -239,7 +238,9 @@ const Sales: React.FC = () => {
                 <div className="sales-form-section-title">Product & Sizing</div>
                 <div className="sales-form-grid">
                   <div className="sales-input-group">
-                    <label className="sales-label">Select Product (Marker)</label>
+                    <label className="sales-label">
+                      Select Product (Marker)
+                    </label>
                     <div className="sales-input-field-wrapper">
                       <select
                         name="productId"
@@ -272,7 +273,9 @@ const Sales: React.FC = () => {
                         min="0"
                         placeholder="0"
                       />
-                      <span className="sales-input-suffix">{formData.unit}</span>
+                      <span className="sales-input-suffix">
+                        {formData.unit}
+                      </span>
                     </div>
                   </div>
 
@@ -287,7 +290,9 @@ const Sales: React.FC = () => {
                         onChange={(e) => {
                           setWeightAdjustmentStr(e.target.value);
                           setWeightAdjustment(
-                            e.target.value === "" ? 0 : parseFloat(e.target.value) || 0,
+                            e.target.value === ""
+                              ? 0
+                              : parseFloat(e.target.value) || 0,
                           );
                         }}
                         placeholder="0"
@@ -455,7 +460,9 @@ const Sales: React.FC = () => {
         {/* Right Column - Sales History list */}
         <div
           className="sales-card"
-          style={{ gridColumn: !hasPermission("Sales.Create") ? "1 / -1" : undefined }}
+          style={{
+            gridColumn: !hasPermission("Sales.Create") ? "1 / -1" : undefined,
+          }}
         >
           <div className="sales-card-header">
             <div className="sales-card-title-wrap">
@@ -545,7 +552,9 @@ const Sales: React.FC = () => {
                           {formatDateTime(sale.date)}
                         </td>
                         <td>
-                          <div className="sales-badge-marker">{sale.marker}</div>
+                          <div className="sales-badge-marker">
+                            {sale.marker}
+                          </div>
                           <div className="sales-badge-warehouse">
                             {sale.warehouseName}
                           </div>
@@ -564,7 +573,8 @@ const Sales: React.FC = () => {
                                 : sale.plusMinusWeight < 0
                                   ? "#b91c1c"
                                   : "#64748b",
-                            fontWeight: sale.plusMinusWeight !== 0 ? 600 : undefined,
+                            fontWeight:
+                              sale.plusMinusWeight !== 0 ? 600 : undefined,
                           }}
                         >
                           {sale.plusMinusWeight > 0
@@ -579,10 +589,16 @@ const Sales: React.FC = () => {
                             {sale.currency}
                           </span>
                         </td>
-                        <td className="sales-row-total" style={{ whiteSpace: "nowrap" }}>
-                          {(sale.weight * sale.price).toLocaleString(undefined, {
-                            minimumFractionDigits: 2,
-                          })}{" "}
+                        <td
+                          className="sales-row-total"
+                          style={{ whiteSpace: "nowrap" }}
+                        >
+                          {(sale.weight * sale.price).toLocaleString(
+                            undefined,
+                            {
+                              minimumFractionDigits: 2,
+                            },
+                          )}{" "}
                           <span style={{ fontSize: "11px", color: "#64748b" }}>
                             {sale.currency}
                           </span>
@@ -604,7 +620,9 @@ const Sales: React.FC = () => {
                             <span style={{ color: "#94a3b8" }}>-</span>
                           )}
                         </td>
-                        <td style={{ maxWidth: "200px", wordBreak: "break-word" }}>
+                        <td
+                          style={{ maxWidth: "200px", wordBreak: "break-word" }}
+                        >
                           {sale.remark || (
                             <span style={{ color: "#94a3b8" }}>-</span>
                           )}
@@ -628,7 +646,8 @@ const Sales: React.FC = () => {
                                 transition: "all 0.2s",
                               }}
                               onMouseOver={(e) =>
-                                (e.currentTarget.style.backgroundColor = "#fee2e2")
+                                (e.currentTarget.style.backgroundColor =
+                                  "#fee2e2")
                               }
                               onMouseOut={(e) =>
                                 (e.currentTarget.style.backgroundColor =

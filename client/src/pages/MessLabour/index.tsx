@@ -67,13 +67,17 @@ const MessLabour: React.FC = () => {
       const term = historySearchTerm.toLowerCase();
       const marker = r.productMarker || "";
       const workerNames = r.workerNames || "";
-      if (!marker.toLowerCase().includes(term) && !workerNames.toLowerCase().includes(term)) return false;
+      if (
+        !marker.toLowerCase().includes(term) &&
+        !workerNames.toLowerCase().includes(term)
+      )
+        return false;
       if (historyFromDate) {
-        const d = new Date((r.date || r.createdAt || "").split("T")[0]);
+        const d = new Date((r.date || "").split("T")[0]);
         if (d < new Date(historyFromDate)) return false;
       }
       if (historyToDate) {
-        const d = new Date((r.date || r.createdAt || "").split("T")[0]);
+        const d = new Date((r.date || "").split("T")[0]);
         if (d > new Date(historyToDate)) return false;
       }
       return true;
@@ -338,31 +342,60 @@ const MessLabour: React.FC = () => {
     const lossWeight = Number(formData.lossWeight) || 0;
 
     const categorizedWeight =
-      redWeight + whiteWeight + naturalWeight + naturalWhiteWeight +
-      artificialWeight + regularWeight + blackWeight + regularExtraWeight +
-      blackExtraWeight + whiteExtraWeight + naturalWhiteExtraWeight +
-      offCutsWeight + reclaimedWeight + fluffWeight + lossWeight;
+      redWeight +
+      whiteWeight +
+      naturalWeight +
+      naturalWhiteWeight +
+      artificialWeight +
+      regularWeight +
+      blackWeight +
+      regularExtraWeight +
+      blackExtraWeight +
+      whiteExtraWeight +
+      naturalWhiteExtraWeight +
+      offCutsWeight +
+      reclaimedWeight +
+      fluffWeight +
+      lossWeight;
     const remainingWeight = rwViss - categorizedWeight;
 
     const total = totalWeightFromCount;
     const diff = selectedWashRecord ? rwViss - total : 0;
 
     const catSum =
-      Number(formData.red) + Number(formData.white) +
-      Number(formData.natural) + Number(formData.naturalWhite) +
-      Number(formData.artificial) + Number(formData.regular) +
-      Number(formData.black) + Number(formData.regularExtra) +
-      Number(formData.blackExtra) + Number(formData.whiteExtra) +
-      Number(formData.naturalWhiteExtra) + Number(formData.offCuts) +
-      Number(formData.reclaimed) + Number(formData.fluff);
+      Number(formData.red) +
+      Number(formData.white) +
+      Number(formData.natural) +
+      Number(formData.naturalWhite) +
+      Number(formData.artificial) +
+      Number(formData.regular) +
+      Number(formData.black) +
+      Number(formData.regularExtra) +
+      Number(formData.blackExtra) +
+      Number(formData.whiteExtra) +
+      Number(formData.naturalWhiteExtra) +
+      Number(formData.offCuts) +
+      Number(formData.reclaimed) +
+      Number(formData.fluff);
 
     return {
       rwViss,
       normalWeight: totalWeightFromCount,
-      redWeight, whiteWeight, naturalWeight, naturalWhiteWeight,
-      artificialWeight, regularWeight, blackWeight, regularExtraWeight,
-      blackExtraWeight, whiteExtraWeight, naturalWhiteExtraWeight,
-      offCutsWeight, reclaimedWeight, fluffWeight, lossWeight,
+      redWeight,
+      whiteWeight,
+      naturalWeight,
+      naturalWhiteWeight,
+      artificialWeight,
+      regularWeight,
+      blackWeight,
+      regularExtraWeight,
+      blackExtraWeight,
+      whiteExtraWeight,
+      naturalWhiteExtraWeight,
+      offCutsWeight,
+      reclaimedWeight,
+      fluffWeight,
+      lossWeight,
       categorizedWeight,
       remainingWeight,
       total,
@@ -394,7 +427,8 @@ const MessLabour: React.FC = () => {
       regularExtra: uw > 0 ? Math.round(record.regularExtraWeight / uw) : 0,
       blackExtra: uw > 0 ? Math.round(record.blackExtraWeight / uw) : 0,
       whiteExtra: uw > 0 ? Math.round(record.whiteExtraWeight / uw) : 0,
-      naturalWhiteExtra: uw > 0 ? Math.round(record.naturalWhiteExtraWeight / uw) : 0,
+      naturalWhiteExtra:
+        uw > 0 ? Math.round(record.naturalWhiteExtraWeight / uw) : 0,
       offCuts: uw > 0 ? Math.round(record.offCutsWeight / uw) : 0,
       reclaimed: uw > 0 ? Math.round(record.reclaimedWeight / uw) : 0,
       fluff: uw > 0 ? Math.round(record.fluffWeight / uw) : 0,
@@ -405,25 +439,42 @@ const MessLabour: React.FC = () => {
   const getOriginalTotalCount = (record: ProcessingRecord) => {
     const uw = record.unitWeight || 1;
     const origCatSum =
-      Math.round(record.redWeight / uw) + Math.round(record.whiteWeight / uw) +
-      Math.round(record.naturalWeight / uw) + Math.round(record.naturalWhiteWeight / uw) +
-      Math.round(record.artificialWeight / uw) + Math.round(record.regularWeight / uw) +
-      Math.round(record.blackWeight / uw) + Math.round(record.regularExtraWeight / uw) +
-      Math.round(record.blackExtraWeight / uw) + Math.round(record.whiteExtraWeight / uw) +
-      Math.round(record.naturalWhiteExtraWeight / uw) + Math.round(record.offCutsWeight / uw) +
-      Math.round(record.reclaimedWeight / uw) + Math.round(record.fluffWeight / uw);
+      Math.round(record.redWeight / uw) +
+      Math.round(record.whiteWeight / uw) +
+      Math.round(record.naturalWeight / uw) +
+      Math.round(record.naturalWhiteWeight / uw) +
+      Math.round(record.artificialWeight / uw) +
+      Math.round(record.regularWeight / uw) +
+      Math.round(record.blackWeight / uw) +
+      Math.round(record.regularExtraWeight / uw) +
+      Math.round(record.blackExtraWeight / uw) +
+      Math.round(record.whiteExtraWeight / uw) +
+      Math.round(record.naturalWhiteExtraWeight / uw) +
+      Math.round(record.offCutsWeight / uw) +
+      Math.round(record.reclaimedWeight / uw) +
+      Math.round(record.fluffWeight / uw);
 
     const hasCategoryCounts =
-      record.redCount > 0 || record.whiteCount > 0 || record.naturalCount > 0 ||
-      record.naturalWhiteCount > 0 || record.artificialCount > 0 || record.regularCount > 0 ||
-      record.blackCount > 0 || record.regularExtraCount > 0 || record.blackExtraCount > 0 ||
-      record.whiteExtraCount > 0 || record.naturalWhiteExtraCount > 0 ||
-      record.offCutsCount > 0 || record.reclaimedCount > 0 || record.fluffCount > 0;
+      record.redCount > 0 ||
+      record.whiteCount > 0 ||
+      record.naturalCount > 0 ||
+      record.naturalWhiteCount > 0 ||
+      record.artificialCount > 0 ||
+      record.regularCount > 0 ||
+      record.blackCount > 0 ||
+      record.regularExtraCount > 0 ||
+      record.blackExtraCount > 0 ||
+      record.whiteExtraCount > 0 ||
+      record.naturalWhiteExtraCount > 0 ||
+      record.offCutsCount > 0 ||
+      record.reclaimedCount > 0 ||
+      record.fluffCount > 0;
 
     const hasCategoryWeights = origCatSum > 0;
     const isNewRecord =
       (record.remainingCount !== undefined && record.remainingCount > 0) ||
-      hasCategoryCounts || !hasCategoryWeights;
+      hasCategoryCounts ||
+      !hasCategoryWeights;
 
     return isNewRecord ? record.count : record.count + origCatSum;
   };
@@ -549,21 +600,44 @@ const MessLabour: React.FC = () => {
     const lossWeight = Number(editFormData.lossWeight) || 0;
 
     const catSum =
-      editFormData.red + editFormData.white + editFormData.natural +
-      editFormData.naturalWhite + editFormData.artificial + editFormData.regular +
-      editFormData.black + editFormData.regularExtra + editFormData.blackExtra +
-      editFormData.whiteExtra + editFormData.naturalWhiteExtra +
-      editFormData.offCuts + editFormData.reclaimed + editFormData.fluff;
+      editFormData.red +
+      editFormData.white +
+      editFormData.natural +
+      editFormData.naturalWhite +
+      editFormData.artificial +
+      editFormData.regular +
+      editFormData.black +
+      editFormData.regularExtra +
+      editFormData.blackExtra +
+      editFormData.whiteExtra +
+      editFormData.naturalWhiteExtra +
+      editFormData.offCuts +
+      editFormData.reclaimed +
+      editFormData.fluff;
     const originalTotal = getOriginalTotalCount(editingRecord);
 
-    const normalWeight = Math.max(0, (originalTotal - catSum) * uw - lossWeight);
+    const normalWeight = Math.max(
+      0,
+      (originalTotal - catSum) * uw - lossWeight,
+    );
     const normalCount = uw > 0 ? normalWeight / uw : 0;
 
     const categoryWeight =
-      redWeight + whiteWeight + naturalWeight + naturalWhiteWeight +
-      artificialWeight + regularWeight + blackWeight + regularExtraWeight +
-      blackExtraWeight + whiteExtraWeight + naturalWhiteExtraWeight +
-      offCutsWeight + reclaimedWeight + fluffWeight + lossWeight;
+      redWeight +
+      whiteWeight +
+      naturalWeight +
+      naturalWhiteWeight +
+      artificialWeight +
+      regularWeight +
+      blackWeight +
+      regularExtraWeight +
+      blackExtraWeight +
+      whiteExtraWeight +
+      naturalWhiteExtraWeight +
+      offCutsWeight +
+      reclaimedWeight +
+      fluffWeight +
+      lossWeight;
     const totalWeight = normalWeight + categoryWeight;
 
     const dto: CreateProcessingRecordDto = {
@@ -574,20 +648,34 @@ const MessLabour: React.FC = () => {
       count: originalTotal,
       remainingCount: normalCount,
       unitWeight: uw,
-      redWeight, redCount: editFormData.red,
-      whiteWeight, whiteCount: editFormData.white,
-      naturalWeight, naturalCount: editFormData.natural,
-      naturalWhiteWeight, naturalWhiteCount: editFormData.naturalWhite,
-      artificialWeight, artificialCount: editFormData.artificial,
-      regularWeight, regularCount: editFormData.regular,
-      blackWeight, blackCount: editFormData.black,
-      regularExtraWeight, regularExtraCount: editFormData.regularExtra,
-      blackExtraWeight, blackExtraCount: editFormData.blackExtra,
-      whiteExtraWeight, whiteExtraCount: editFormData.whiteExtra,
-      naturalWhiteExtraWeight, naturalWhiteExtraCount: editFormData.naturalWhiteExtra,
-      offCutsWeight, offCutsCount: editFormData.offCuts,
-      reclaimedWeight, reclaimedCount: editFormData.reclaimed,
-      fluffWeight, fluffCount: editFormData.fluff,
+      redWeight,
+      redCount: editFormData.red,
+      whiteWeight,
+      whiteCount: editFormData.white,
+      naturalWeight,
+      naturalCount: editFormData.natural,
+      naturalWhiteWeight,
+      naturalWhiteCount: editFormData.naturalWhite,
+      artificialWeight,
+      artificialCount: editFormData.artificial,
+      regularWeight,
+      regularCount: editFormData.regular,
+      blackWeight,
+      blackCount: editFormData.black,
+      regularExtraWeight,
+      regularExtraCount: editFormData.regularExtra,
+      blackExtraWeight,
+      blackExtraCount: editFormData.blackExtra,
+      whiteExtraWeight,
+      whiteExtraCount: editFormData.whiteExtra,
+      naturalWhiteExtraWeight,
+      naturalWhiteExtraCount: editFormData.naturalWhiteExtra,
+      offCutsWeight,
+      offCutsCount: editFormData.offCuts,
+      reclaimedWeight,
+      reclaimedCount: editFormData.reclaimed,
+      fluffWeight,
+      fluffCount: editFormData.fluff,
       lossWeight,
       totalWeight,
       remainingWeight: normalWeight,
@@ -639,7 +727,9 @@ const MessLabour: React.FC = () => {
 
     try {
       const dto: CreateProcessingRecordDto = {
-        date: combineDateWithMyanmarTime(new Date().toISOString().split("T")[0]),
+        date: combineDateWithMyanmarTime(
+          new Date().toISOString().split("T")[0],
+        ),
         productId: selectedWashRecord.productId,
         washGradingRecordId: selectedWashRecord.id,
         workerNames: "",
@@ -647,20 +737,34 @@ const MessLabour: React.FC = () => {
         count: Number(formData.count),
         remainingCount: totals.remainingCount,
         unitWeight: Number(formData.unitWeight),
-        redWeight: totals.redWeight, redCount: Number(formData.red) || 0,
-        whiteWeight: totals.whiteWeight, whiteCount: Number(formData.white) || 0,
-        naturalWeight: totals.naturalWeight, naturalCount: Number(formData.natural) || 0,
-        naturalWhiteWeight: totals.naturalWhiteWeight, naturalWhiteCount: Number(formData.naturalWhite) || 0,
-        artificialWeight: totals.artificialWeight, artificialCount: Number(formData.artificial) || 0,
-        regularWeight: totals.regularWeight, regularCount: Number(formData.regular) || 0,
-        blackWeight: totals.blackWeight, blackCount: Number(formData.black) || 0,
-        regularExtraWeight: totals.regularExtraWeight, regularExtraCount: Number(formData.regularExtra) || 0,
-        blackExtraWeight: totals.blackExtraWeight, blackExtraCount: Number(formData.blackExtra) || 0,
-        whiteExtraWeight: totals.whiteExtraWeight, whiteExtraCount: Number(formData.whiteExtra) || 0,
-        naturalWhiteExtraWeight: totals.naturalWhiteExtraWeight, naturalWhiteExtraCount: Number(formData.naturalWhiteExtra) || 0,
-        offCutsWeight: totals.offCutsWeight, offCutsCount: Number(formData.offCuts) || 0,
-        reclaimedWeight: totals.reclaimedWeight, reclaimedCount: Number(formData.reclaimed) || 0,
-        fluffWeight: totals.fluffWeight, fluffCount: Number(formData.fluff) || 0,
+        redWeight: totals.redWeight,
+        redCount: Number(formData.red) || 0,
+        whiteWeight: totals.whiteWeight,
+        whiteCount: Number(formData.white) || 0,
+        naturalWeight: totals.naturalWeight,
+        naturalCount: Number(formData.natural) || 0,
+        naturalWhiteWeight: totals.naturalWhiteWeight,
+        naturalWhiteCount: Number(formData.naturalWhite) || 0,
+        artificialWeight: totals.artificialWeight,
+        artificialCount: Number(formData.artificial) || 0,
+        regularWeight: totals.regularWeight,
+        regularCount: Number(formData.regular) || 0,
+        blackWeight: totals.blackWeight,
+        blackCount: Number(formData.black) || 0,
+        regularExtraWeight: totals.regularExtraWeight,
+        regularExtraCount: Number(formData.regularExtra) || 0,
+        blackExtraWeight: totals.blackExtraWeight,
+        blackExtraCount: Number(formData.blackExtra) || 0,
+        whiteExtraWeight: totals.whiteExtraWeight,
+        whiteExtraCount: Number(formData.whiteExtra) || 0,
+        naturalWhiteExtraWeight: totals.naturalWhiteExtraWeight,
+        naturalWhiteExtraCount: Number(formData.naturalWhiteExtra) || 0,
+        offCutsWeight: totals.offCutsWeight,
+        offCutsCount: Number(formData.offCuts) || 0,
+        reclaimedWeight: totals.reclaimedWeight,
+        reclaimedCount: Number(formData.reclaimed) || 0,
+        fluffWeight: totals.fluffWeight,
+        fluffCount: Number(formData.fluff) || 0,
         lossWeight: totals.lossWeight,
         totalWeight: totals.total,
         remainingWeight: totals.remainingWeight,
@@ -674,9 +778,20 @@ const MessLabour: React.FC = () => {
       setFormData({
         count: "0",
         unitWeight: "0.05",
-        red: "", white: "", natural: "", naturalWhite: "", artificial: "",
-        regular: "", black: "", regularExtra: "", blackExtra: "",
-        whiteExtra: "", naturalWhiteExtra: "", offCuts: "", reclaimed: "", fluff: "",
+        red: "",
+        white: "",
+        natural: "",
+        naturalWhite: "",
+        artificial: "",
+        regular: "",
+        black: "",
+        regularExtra: "",
+        blackExtra: "",
+        whiteExtra: "",
+        naturalWhiteExtra: "",
+        offCuts: "",
+        reclaimed: "",
+        fluff: "",
         lossWeight: "",
       });
       setSelectedWorkers([]);
@@ -1032,17 +1147,57 @@ const MessLabour: React.FC = () => {
                         {[
                           { name: "red", label: "Red", cls: "box-red" },
                           { name: "white", label: "White", cls: "box-white" },
-                          { name: "natural", label: "Natural", cls: "box-natural" },
-                          { name: "naturalWhite", label: "Natural White", cls: "box-natural-white" },
-                          { name: "artificial", label: "Artificial", cls: "box-artificial" },
-                          { name: "regular", label: "Regular", cls: "box-regular" },
+                          {
+                            name: "natural",
+                            label: "Natural",
+                            cls: "box-natural",
+                          },
+                          {
+                            name: "naturalWhite",
+                            label: "Natural White",
+                            cls: "box-natural-white",
+                          },
+                          {
+                            name: "artificial",
+                            label: "Artificial",
+                            cls: "box-artificial",
+                          },
+                          {
+                            name: "regular",
+                            label: "Regular",
+                            cls: "box-regular",
+                          },
                           { name: "black", label: "Black", cls: "box-black" },
-                          { name: "regularExtra", label: "Regular Extra", cls: "box-regular-extra" },
-                          { name: "blackExtra", label: "Black Extra", cls: "box-black-extra" },
-                          { name: "whiteExtra", label: "White Extra", cls: "box-white-extra" },
-                          { name: "naturalWhiteExtra", label: "Natural White Extra", cls: "box-natural-white-extra" },
-                          { name: "offCuts", label: "OffCuts", cls: "box-offcuts" },
-                          { name: "reclaimed", label: "Reclaimed", cls: "box-reclaimed" },
+                          {
+                            name: "regularExtra",
+                            label: "Regular Extra",
+                            cls: "box-regular-extra",
+                          },
+                          {
+                            name: "blackExtra",
+                            label: "Black Extra",
+                            cls: "box-black-extra",
+                          },
+                          {
+                            name: "whiteExtra",
+                            label: "White Extra",
+                            cls: "box-white-extra",
+                          },
+                          {
+                            name: "naturalWhiteExtra",
+                            label: "Natural White Extra",
+                            cls: "box-natural-white-extra",
+                          },
+                          {
+                            name: "offCuts",
+                            label: "OffCuts",
+                            cls: "box-offcuts",
+                          },
+                          {
+                            name: "reclaimed",
+                            label: "Reclaimed",
+                            cls: "box-reclaimed",
+                          },
                           { name: "fluff", label: "Fluff", cls: "box-fluff" },
                         ].map(({ name, label, cls }) => {
                           const countVal =
@@ -1678,17 +1833,57 @@ const MessLabour: React.FC = () => {
                     [
                       { name: "red", label: "Red", cls: "em-cat-red" },
                       { name: "white", label: "White", cls: "em-cat-white" },
-                      { name: "natural", label: "Natural", cls: "em-cat-natural" },
-                      { name: "naturalWhite", label: "Nat. White", cls: "em-cat-nwhite" },
-                      { name: "artificial", label: "Artificial", cls: "em-cat-art" },
-                      { name: "regular", label: "Regular", cls: "em-cat-regular" },
+                      {
+                        name: "natural",
+                        label: "Natural",
+                        cls: "em-cat-natural",
+                      },
+                      {
+                        name: "naturalWhite",
+                        label: "Nat. White",
+                        cls: "em-cat-nwhite",
+                      },
+                      {
+                        name: "artificial",
+                        label: "Artificial",
+                        cls: "em-cat-art",
+                      },
+                      {
+                        name: "regular",
+                        label: "Regular",
+                        cls: "em-cat-regular",
+                      },
                       { name: "black", label: "Black", cls: "em-cat-black" },
-                      { name: "regularExtra", label: "Reg. Extra", cls: "em-cat-reg-extra" },
-                      { name: "blackExtra", label: "Blk. Extra", cls: "em-cat-blk-extra" },
-                      { name: "whiteExtra", label: "Wht. Extra", cls: "em-cat-wht-extra" },
-                      { name: "naturalWhiteExtra", label: "Nat. Wht. Extra", cls: "em-cat-nwt-extra" },
-                      { name: "offCuts", label: "OffCuts", cls: "em-cat-offcuts" },
-                      { name: "reclaimed", label: "Reclaimed", cls: "em-cat-reclaimed" },
+                      {
+                        name: "regularExtra",
+                        label: "Reg. Extra",
+                        cls: "em-cat-reg-extra",
+                      },
+                      {
+                        name: "blackExtra",
+                        label: "Blk. Extra",
+                        cls: "em-cat-blk-extra",
+                      },
+                      {
+                        name: "whiteExtra",
+                        label: "Wht. Extra",
+                        cls: "em-cat-wht-extra",
+                      },
+                      {
+                        name: "naturalWhiteExtra",
+                        label: "Nat. Wht. Extra",
+                        cls: "em-cat-nwt-extra",
+                      },
+                      {
+                        name: "offCuts",
+                        label: "OffCuts",
+                        cls: "em-cat-offcuts",
+                      },
+                      {
+                        name: "reclaimed",
+                        label: "Reclaimed",
+                        cls: "em-cat-reclaimed",
+                      },
                       { name: "fluff", label: "Fluff", cls: "em-cat-fluff" },
                     ] as const
                   ).map(({ name, label, cls }) => {
@@ -2077,20 +2272,90 @@ const MessLabour: React.FC = () => {
                 <div className="vm-cat-grid">
                   {(
                     [
-                      { count: viewingRecord.redCount, weight: viewingRecord.redWeight, label: "Red", cls: "vm-cat-red" },
-                      { count: viewingRecord.whiteCount, weight: viewingRecord.whiteWeight, label: "White", cls: "vm-cat-white" },
-                      { count: viewingRecord.naturalCount, weight: viewingRecord.naturalWeight, label: "Natural", cls: "vm-cat-natural" },
-                      { count: viewingRecord.naturalWhiteCount, weight: viewingRecord.naturalWhiteWeight, label: "Nat. White", cls: "vm-cat-nwhite" },
-                      { count: viewingRecord.artificialCount, weight: viewingRecord.artificialWeight, label: "Artificial", cls: "vm-cat-art" },
-                      { count: viewingRecord.regularCount, weight: viewingRecord.regularWeight, label: "Regular", cls: "vm-cat-regular" },
-                      { count: viewingRecord.blackCount, weight: viewingRecord.blackWeight, label: "Black", cls: "vm-cat-black" },
-                      { count: viewingRecord.regularExtraCount, weight: viewingRecord.regularExtraWeight, label: "Reg. Extra", cls: "vm-cat-reg-extra" },
-                      { count: viewingRecord.blackExtraCount, weight: viewingRecord.blackExtraWeight, label: "Blk. Extra", cls: "vm-cat-blk-extra" },
-                      { count: viewingRecord.whiteExtraCount, weight: viewingRecord.whiteExtraWeight, label: "Wht. Extra", cls: "vm-cat-wht-extra" },
-                      { count: viewingRecord.naturalWhiteExtraCount, weight: viewingRecord.naturalWhiteExtraWeight, label: "Nat. Wht. Extra", cls: "vm-cat-nwt-extra" },
-                      { count: viewingRecord.offCutsCount, weight: viewingRecord.offCutsWeight, label: "OffCuts", cls: "vm-cat-offcuts" },
-                      { count: viewingRecord.reclaimedCount, weight: viewingRecord.reclaimedWeight, label: "Reclaimed", cls: "vm-cat-reclaimed" },
-                      { count: viewingRecord.fluffCount, weight: viewingRecord.fluffWeight, label: "Fluff", cls: "vm-cat-fluff" },
+                      {
+                        count: viewingRecord.redCount,
+                        weight: viewingRecord.redWeight,
+                        label: "Red",
+                        cls: "vm-cat-red",
+                      },
+                      {
+                        count: viewingRecord.whiteCount,
+                        weight: viewingRecord.whiteWeight,
+                        label: "White",
+                        cls: "vm-cat-white",
+                      },
+                      {
+                        count: viewingRecord.naturalCount,
+                        weight: viewingRecord.naturalWeight,
+                        label: "Natural",
+                        cls: "vm-cat-natural",
+                      },
+                      {
+                        count: viewingRecord.naturalWhiteCount,
+                        weight: viewingRecord.naturalWhiteWeight,
+                        label: "Nat. White",
+                        cls: "vm-cat-nwhite",
+                      },
+                      {
+                        count: viewingRecord.artificialCount,
+                        weight: viewingRecord.artificialWeight,
+                        label: "Artificial",
+                        cls: "vm-cat-art",
+                      },
+                      {
+                        count: viewingRecord.regularCount,
+                        weight: viewingRecord.regularWeight,
+                        label: "Regular",
+                        cls: "vm-cat-regular",
+                      },
+                      {
+                        count: viewingRecord.blackCount,
+                        weight: viewingRecord.blackWeight,
+                        label: "Black",
+                        cls: "vm-cat-black",
+                      },
+                      {
+                        count: viewingRecord.regularExtraCount,
+                        weight: viewingRecord.regularExtraWeight,
+                        label: "Reg. Extra",
+                        cls: "vm-cat-reg-extra",
+                      },
+                      {
+                        count: viewingRecord.blackExtraCount,
+                        weight: viewingRecord.blackExtraWeight,
+                        label: "Blk. Extra",
+                        cls: "vm-cat-blk-extra",
+                      },
+                      {
+                        count: viewingRecord.whiteExtraCount,
+                        weight: viewingRecord.whiteExtraWeight,
+                        label: "Wht. Extra",
+                        cls: "vm-cat-wht-extra",
+                      },
+                      {
+                        count: viewingRecord.naturalWhiteExtraCount,
+                        weight: viewingRecord.naturalWhiteExtraWeight,
+                        label: "Nat. Wht. Extra",
+                        cls: "vm-cat-nwt-extra",
+                      },
+                      {
+                        count: viewingRecord.offCutsCount,
+                        weight: viewingRecord.offCutsWeight,
+                        label: "OffCuts",
+                        cls: "vm-cat-offcuts",
+                      },
+                      {
+                        count: viewingRecord.reclaimedCount,
+                        weight: viewingRecord.reclaimedWeight,
+                        label: "Reclaimed",
+                        cls: "vm-cat-reclaimed",
+                      },
+                      {
+                        count: viewingRecord.fluffCount,
+                        weight: viewingRecord.fluffWeight,
+                        label: "Fluff",
+                        cls: "vm-cat-fluff",
+                      },
                     ] as const
                   )
                     .filter((cat) => cat.count > 0)
@@ -2131,7 +2396,6 @@ const MessLabour: React.FC = () => {
                         No bundles were sorted into categories.
                       </div>
                     )}
-
                 </div>
               </div>
             </div>
