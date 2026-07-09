@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useMemo } from "react";
 import { useAuth } from "../../context/AuthContext";
 import {
   exchangeRatesAPI,
@@ -15,6 +15,7 @@ import {
   Send,
   Loader2,
   Sparkles,
+  Search,
 } from "lucide-react";
 import "./index.css";
 import type { ExchangeRate, SingleDoubleDrawnWorker } from "../../types";
@@ -113,6 +114,9 @@ const SemiExportPurchase: React.FC = () => {
   const [activeTab, setActiveTab] = useState<"processing" | "history">(
     "processing",
   );
+  const [historySearchTerm, setHistorySearchTerm] = useState("");
+  const [historyFromDate, setHistoryFromDate] = useState("");
+  const [historyToDate, setHistoryToDate] = useState("");
   const [showModal, setShowModal] = useState(false);
   const [showSortingRecordsModal, setShowSortingRecordsModal] = useState(false);
   const [selectedSortingRecord, setSelectedSortingRecord] =
@@ -146,6 +150,27 @@ const SemiExportPurchase: React.FC = () => {
   const visibleProcessingList = processingList.filter(
     (item) => !savedProcessingIds.has(item.id),
   );
+
+  const filteredSortingHistory = useMemo(() => {
+    return sortingHistory.filter((r) => {
+      const term = historySearchTerm.toLowerCase();
+      if (
+        term &&
+        !(r.customerName || "").toLowerCase().includes(term) &&
+        !(r.color || "").toLowerCase().includes(term) &&
+        !(r.workerName || "").toLowerCase().includes(term)
+      ) return false;
+      if (historyFromDate) {
+        const d = new Date((r.createdAt || "").split("T")[0]);
+        if (d < new Date(historyFromDate)) return false;
+      }
+      if (historyToDate) {
+        const d = new Date((r.createdAt || "").split("T")[0]);
+        if (d > new Date(historyToDate)) return false;
+      }
+      return true;
+    });
+  }, [sortingHistory, historySearchTerm, historyFromDate, historyToDate]);
   const activeCnyToMmkRate = activeRates.find(
     (rate) =>
       rate.fromCurrency?.toUpperCase() === "CNY" &&
@@ -806,8 +831,36 @@ const SemiExportPurchase: React.FC = () => {
     }
 
     return (
-      <div className="table-responsive sep-table-wrap">
-        <table className="sep-data-table">
+      <>
+        {/* History Filters */}
+        <div className="sep-table-controls">
+          <div className="sep-search-box">
+            <Search className="sep-input-icon" size={16} />
+            <input
+              type="text"
+              className="sep-search-control"
+              placeholder="Search customer, color, worker..."
+              value={historySearchTerm}
+              onChange={(e) => setHistorySearchTerm(e.target.value)}
+            />
+          </div>
+          <div className="sep-date-filter">
+            <div className="sep-date-field">
+              <span className="sep-date-label">From</span>
+              <input type="date" className="sep-date-input" value={historyFromDate} onChange={(e) => setHistoryFromDate(e.target.value)} />
+            </div>
+            <div className="sep-date-field">
+              <span className="sep-date-label">To</span>
+              <input type="date" className="sep-date-input" value={historyToDate} onChange={(e) => setHistoryToDate(e.target.value)} />
+            </div>
+            {(historyFromDate || historyToDate) && (
+              <button className="sep-date-clear-btn" onClick={() => { setHistoryFromDate(""); setHistoryToDate(""); }}>Clear</button>
+            )}
+          </div>
+        </div>
+
+        <div className="table-responsive sep-table-wrap">
+          <table className="sep-data-table">
           <thead>
             <tr>
               <th>Customer</th>
@@ -826,7 +879,7 @@ const SemiExportPurchase: React.FC = () => {
             </tr>
           </thead>
           <tbody>
-            {sortingHistory.map((record) => (
+            {filteredSortingHistory.map((record) => (
               <tr
                 key={record.id}
                 className="sep-sorting-record-row"
@@ -885,9 +938,10 @@ const SemiExportPurchase: React.FC = () => {
                 </td>
               </tr>
             ))}
-          </tbody>
-        </table>
-      </div>
+            </tbody>
+          </table>
+        </div>
+      </>
     );
   };
 

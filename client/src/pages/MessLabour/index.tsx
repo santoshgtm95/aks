@@ -43,6 +43,9 @@ const MessLabour: React.FC = () => {
     "processing",
   );
   const [searchTerm, setSearchTerm] = useState("");
+  const [historySearchTerm, setHistorySearchTerm] = useState("");
+  const [historyFromDate, setHistoryFromDate] = useState("");
+  const [historyToDate, setHistoryToDate] = useState("");
 
   const filteredWashRecords = useMemo(() => {
     return washRecords.filter((record) => {
@@ -58,6 +61,24 @@ const MessLabour: React.FC = () => {
       );
     });
   }, [washRecords, searchTerm]);
+
+  const filteredRecords = useMemo(() => {
+    return records.filter((r) => {
+      const term = historySearchTerm.toLowerCase();
+      const marker = r.productMarker || "";
+      const workerNames = r.workerNames || "";
+      if (!marker.toLowerCase().includes(term) && !workerNames.toLowerCase().includes(term)) return false;
+      if (historyFromDate) {
+        const d = new Date((r.date || r.createdAt || "").split("T")[0]);
+        if (d < new Date(historyFromDate)) return false;
+      }
+      if (historyToDate) {
+        const d = new Date((r.date || r.createdAt || "").split("T")[0]);
+        if (d > new Date(historyToDate)) return false;
+      }
+      return true;
+    });
+  }, [records, historySearchTerm, historyFromDate, historyToDate]);
 
   // Edit/View modal state
   const [editingRecord, setEditingRecord] = useState<ProcessingRecord | null>(
@@ -1349,6 +1370,50 @@ const MessLabour: React.FC = () => {
                     </button>
                   </div>
                 )}
+                {/* Table Filters */}
+                <div className="ml-table-controls">
+                  <div className="ml-search-box">
+                    <Search className="ml-input-icon" size={16} />
+                    <input
+                      type="text"
+                      className="ml-search-control"
+                      placeholder="Search history..."
+                      value={historySearchTerm}
+                      onChange={(e) => setHistorySearchTerm(e.target.value)}
+                    />
+                  </div>
+                  <div className="ml-date-filter">
+                    <div className="ml-date-field">
+                      <span className="ml-date-label">From</span>
+                      <input
+                        type="date"
+                        className="ml-date-input"
+                        value={historyFromDate}
+                        onChange={(e) => setHistoryFromDate(e.target.value)}
+                      />
+                    </div>
+                    <div className="ml-date-field">
+                      <span className="ml-date-label">To</span>
+                      <input
+                        type="date"
+                        className="ml-date-input"
+                        value={historyToDate}
+                        onChange={(e) => setHistoryToDate(e.target.value)}
+                      />
+                    </div>
+                    {(historyFromDate || historyToDate) && (
+                      <button
+                        className="ml-date-clear-btn"
+                        onClick={() => {
+                          setHistoryFromDate("");
+                          setHistoryToDate("");
+                        }}
+                      >
+                        Clear
+                      </button>
+                    )}
+                  </div>
+                </div>
                 <table className="rf-table">
                   <thead>
                     <tr>
@@ -1363,10 +1428,10 @@ const MessLabour: React.FC = () => {
                   </thead>
                   <tbody>
                     {(selectedWashRecordId
-                      ? records.filter(
+                      ? filteredRecords.filter(
                           (r) => r.washGradingRecordId === selectedWashRecordId,
                         )
-                      : records
+                      : filteredRecords
                     ).map((record) => (
                       <tr
                         key={record.id}

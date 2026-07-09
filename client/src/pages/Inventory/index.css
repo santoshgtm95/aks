@@ -612,3 +612,61 @@
   border-color: #bfdbfe;
   color: #1e40af;
 }
+
+/* Date range filter layout styles */
+.inventory-date-filter {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.inventory-date-field {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.inventory-date-label {
+  font-size: 12px;
+  font-weight: 600;
+  color: #64748b;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.inventory-date-input {
+  padding: 6px 10px;
+  border: 1.5px solid #e2e8f0;
+  border-radius: 6px;
+  font-size: 13px;
+  outline: none;
+  background: white;
+  color: #334155;
+  font-family: inherit;
+  height: 34px;
+}
+
+.inventory-date-input:focus {
+  border-color: #6366f1;
+}
+
+.inventory-date-clear-btn {
+  padding: 6px 12px;
+  background: #f1f5f9;
+  border: 1px solid #e2e8f0;
+  border-radius: 6px;
+  font-size: 12px;
+  font-weight: 600;
+  color: #475569;
+  cursor: pointer;
+  transition: all 0.2s;
+  height: 34px;
+  display: flex;
+  align-items: center;
+}
+
+.inventory-date-clear-btn:hover {
+  background: #e2e8f0;
+  color: #0f172a;
+}

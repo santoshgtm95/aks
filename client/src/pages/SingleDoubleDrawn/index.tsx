@@ -172,6 +172,9 @@ const SingleDoubleDrawn: React.FC = () => {
   const [activeTab, setActiveTab] = useState<"processing" | "history">(
     "processing",
   );
+  const [historySearchTerm, setHistorySearchTerm] = useState("");
+  const [historyFromDate, setHistoryFromDate] = useState("");
+  const [historyToDate, setHistoryToDate] = useState("");
 
   // Two Inches Category sizes: 6, 7, 8, 9, 10
 
@@ -391,6 +394,25 @@ const SingleDoubleDrawn: React.FC = () => {
       );
     });
   }, [refinedRecords, searchTerm, savedTotalByRefinement]);
+
+  // Filter history (savedRecords)
+  const filteredSavedRecords = useMemo(() => {
+    return savedRecords.filter((r) => {
+      const term = historySearchTerm.toLowerCase();
+      const marker = (r.refinementRecordMarker || "").toLowerCase();
+      const cat = (r.refinementRecordCategory || "").toLowerCase();
+      if (term && !marker.includes(term) && !cat.includes(term)) return false;
+      if (historyFromDate) {
+        const d = new Date(r.date.split("T")[0]);
+        if (d < new Date(historyFromDate)) return false;
+      }
+      if (historyToDate) {
+        const d = new Date(r.date.split("T")[0]);
+        if (d > new Date(historyToDate)) return false;
+      }
+      return true;
+    });
+  }, [savedRecords, historySearchTerm, historyFromDate, historyToDate]);
 
   const handleTwoInchesChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
@@ -2031,6 +2053,33 @@ const SingleDoubleDrawn: React.FC = () => {
                         </p>
                       </div>
 
+                      {/* History Filters */}
+                      <div className="sdd-table-controls">
+                        <div className="sdd-search-box">
+                          <Search className="sdd-input-icon" size={16} />
+                          <input
+                            type="text"
+                            className="sdd-search-control"
+                            placeholder="Search history..."
+                            value={historySearchTerm}
+                            onChange={(e) => setHistorySearchTerm(e.target.value)}
+                          />
+                        </div>
+                        <div className="sdd-date-filter">
+                          <div className="sdd-date-field">
+                            <span className="sdd-date-label">From</span>
+                            <input type="date" className="sdd-date-input" value={historyFromDate} onChange={(e) => setHistoryFromDate(e.target.value)} />
+                          </div>
+                          <div className="sdd-date-field">
+                            <span className="sdd-date-label">To</span>
+                            <input type="date" className="sdd-date-input" value={historyToDate} onChange={(e) => setHistoryToDate(e.target.value)} />
+                          </div>
+                          {(historyFromDate || historyToDate) && (
+                            <button className="sdd-date-clear-btn" onClick={() => { setHistoryFromDate(""); setHistoryToDate(""); }}>Clear</button>
+                          )}
+                        </div>
+                      </div>
+
                       <div className="rf-table-wrap">
                         <table className="rf-table">
                           <thead>
@@ -2051,7 +2100,7 @@ const SingleDoubleDrawn: React.FC = () => {
                             </tr>
                           </thead>
                           <tbody>
-                            {savedRecords.length === 0 ? (
+                            {filteredSavedRecords.length === 0 ? (
                               <tr>
                                 <td colSpan={13} className="rf-empty-row">
                                   <Package
@@ -2062,7 +2111,7 @@ const SingleDoubleDrawn: React.FC = () => {
                                 </td>
                               </tr>
                             ) : (
-                              savedRecords.map((record) => (
+                              filteredSavedRecords.map((record) => (
                                 <tr key={record.id}>
                                   <td>
                                     <div className="rf-marker">

@@ -44,6 +44,9 @@ const WashGrading: React.FC = () => {
     Record<number, number>
   >({});
   const [searchTerm, setSearchTerm] = useState("");
+  const [historySearchTerm, setHistorySearchTerm] = useState("");
+  const [historyFromDate, setHistoryFromDate] = useState("");
+  const [historyToDate, setHistoryToDate] = useState("");
   const [showModal, setShowModal] = useState(false);
   const [selectedProduct, setSelectedProduct] =
     useState<AvailableProductDto | null>(null);
@@ -285,6 +288,46 @@ const WashGrading: React.FC = () => {
     );
   }
 
+  const filteredProcesses = processes.filter((p) => {
+    const term = historySearchTerm.toLowerCase();
+    const workerName = p.washGradingWorkerName || "";
+    const marker = p.productMarker || "";
+    const warehouse = p.warehouseName || "";
+    if (historyFromDate) {
+      const procDate = new Date(p.date.split("T")[0]);
+      if (procDate < new Date(historyFromDate)) return false;
+    }
+    if (historyToDate) {
+      const procDate = new Date(p.date.split("T")[0]);
+      if (procDate > new Date(historyToDate)) return false;
+    }
+    return (
+      marker.toLowerCase().includes(term) ||
+      workerName.toLowerCase().includes(term) ||
+      warehouse.toLowerCase().includes(term)
+    );
+  });
+
+  const filteredRecords = records.filter((r) => {
+    const term = historySearchTerm.toLowerCase();
+    const workerName = r.washGradingWorkerName || "";
+    const marker = r.productMarker || "";
+    const warehouse = r.warehouseName || "";
+    if (historyFromDate) {
+      const recDate = new Date(r.date.split("T")[0]);
+      if (recDate < new Date(historyFromDate)) return false;
+    }
+    if (historyToDate) {
+      const recDate = new Date(r.date.split("T")[0]);
+      if (recDate > new Date(historyToDate)) return false;
+    }
+    return (
+      marker.toLowerCase().includes(term) ||
+      workerName.toLowerCase().includes(term) ||
+      warehouse.toLowerCase().includes(term)
+    );
+  });
+
   return (
     <div className="wg-container fade-in">
       {/* Hero Header */}
@@ -470,6 +513,51 @@ const WashGrading: React.FC = () => {
               <div className="wg-header-right"></div>
             </div>
 
+            {/* Table Filters */}
+            <div className="wg-table-controls">
+              <div className="wg-search-box">
+                <Search className="wg-input-icon" size={16} />
+                <input
+                  type="text"
+                  className="wg-search-control"
+                  placeholder="Search history..."
+                  value={historySearchTerm}
+                  onChange={(e) => setHistorySearchTerm(e.target.value)}
+                />
+              </div>
+              <div className="wg-date-filter">
+                <div className="wg-date-field">
+                  <span className="wg-date-label">From</span>
+                  <input
+                    type="date"
+                    className="wg-date-input"
+                    value={historyFromDate}
+                    onChange={(e) => setHistoryFromDate(e.target.value)}
+                  />
+                </div>
+                <div className="wg-date-field">
+                  <span className="wg-date-label">To</span>
+                  <input
+                    type="date"
+                    className="wg-date-input"
+                    value={historyToDate}
+                    onChange={(e) => setHistoryToDate(e.target.value)}
+                  />
+                </div>
+                {(historyFromDate || historyToDate) && (
+                  <button
+                    className="wg-date-clear-btn"
+                    onClick={() => {
+                      setHistoryFromDate("");
+                      setHistoryToDate("");
+                    }}
+                  >
+                    Clear
+                  </button>
+                )}
+              </div>
+            </div>
+
             {/* Table */}
             <div className="wg-table-wrap">
               <table className="wg-table">
@@ -496,7 +584,7 @@ const WashGrading: React.FC = () => {
                 </thead>
                 <tbody>
                   {activeTab === "history" ? (
-                    processes.length === 0 ? (
+                    filteredProcesses.length === 0 ? (
                       <tr>
                         <td colSpan={5} className="wg-empty-row">
                           <History size={44} className="wg-empty-icon" />
@@ -504,7 +592,7 @@ const WashGrading: React.FC = () => {
                         </td>
                       </tr>
                     ) : (
-                      processes.map((p) => (
+                      filteredProcesses.map((p) => (
                         <tr
                           key={p.id}
                           className="wg-clickable-row"
@@ -551,7 +639,7 @@ const WashGrading: React.FC = () => {
                         </tr>
                       ))
                     )
-                  ) : records.length === 0 ? (
+                  ) : filteredRecords.length === 0 ? (
                     <tr>
                       <td colSpan={7} className="wg-empty-row">
                         <Package size={44} className="wg-empty-icon" />
@@ -559,7 +647,7 @@ const WashGrading: React.FC = () => {
                       </td>
                     </tr>
                   ) : (
-                    records.map((r) => (
+                    filteredRecords.map((r) => (
                       <tr key={r.id}>
                         <td className="wg-td-date">{formatDateTime(r.date)}</td>
                         <td>

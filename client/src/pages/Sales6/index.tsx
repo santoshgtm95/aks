@@ -121,6 +121,9 @@ const Sales6: React.FC = () => {
   const [activeTab, setActiveTab] = useState<"processing" | "history">(
     "processing",
   );
+  const [historySearchTerm, setHistorySearchTerm] = useState("");
+  const [historyFromDate, setHistoryFromDate] = useState("");
+  const [historyToDate, setHistoryToDate] = useState("");
   const [expandedColors, setExpandedColors] = useState<Record<string, boolean>>(
     {},
   );
@@ -1690,9 +1693,26 @@ const Sales6: React.FC = () => {
               /* History Tab */
               <div className="ledger-history-tab">
                 {(() => {
-                  const filteredExports = selectedLedger
+                  let filteredExports = selectedLedger
                     ? exports.filter((e) => e.ledgerId === selectedLedger.id)
                     : exports;
+                  if (historySearchTerm) {
+                    const term = historySearchTerm.toLowerCase();
+                    filteredExports = filteredExports.filter((e) =>
+                      (e.selectedColors || "").toLowerCase().includes(term) ||
+                      (e.ledgerName || "").toLowerCase().includes(term)
+                    );
+                  }
+                  if (historyFromDate) {
+                    filteredExports = filteredExports.filter((e) =>
+                      new Date(e.date.split("T")[0]) >= new Date(historyFromDate)
+                    );
+                  }
+                  if (historyToDate) {
+                    filteredExports = filteredExports.filter((e) =>
+                      new Date(e.date.split("T")[0]) <= new Date(historyToDate)
+                    );
+                  }
 
                   if (filteredExports.length === 0) {
                     return (
@@ -1715,8 +1735,36 @@ const Sales6: React.FC = () => {
                   }
 
                   return (
-                    <div className="rf-table-wrap">
-                      <table className="rf-table">
+                    <>
+                      {/* History Filters */}
+                      <div className="s6-table-controls">
+                        <div className="s6-search-box">
+                          <Search className="s6-input-icon" size={16} />
+                          <input
+                            type="text"
+                            className="s6-search-control"
+                            placeholder="Search colors, ledger..."
+                            value={historySearchTerm}
+                            onChange={(e) => setHistorySearchTerm(e.target.value)}
+                          />
+                        </div>
+                        <div className="s6-date-filter">
+                          <div className="s6-date-field">
+                            <span className="s6-date-label">From</span>
+                            <input type="date" className="s6-date-input" value={historyFromDate} onChange={(e) => setHistoryFromDate(e.target.value)} />
+                          </div>
+                          <div className="s6-date-field">
+                            <span className="s6-date-label">To</span>
+                            <input type="date" className="s6-date-input" value={historyToDate} onChange={(e) => setHistoryToDate(e.target.value)} />
+                          </div>
+                          {(historyFromDate || historyToDate) && (
+                            <button className="s6-date-clear-btn" onClick={() => { setHistoryFromDate(""); setHistoryToDate(""); }}>Clear</button>
+                          )}
+                        </div>
+                      </div>
+
+                      <div className="rf-table-wrap">
+                        <table className="rf-table">
                         <thead>
                           <tr>
                             <th>Date</th>
@@ -1839,9 +1887,10 @@ const Sales6: React.FC = () => {
                               </tr>
                             );
                           })}
-                        </tbody>
-                      </table>
-                    </div>
+                          </tbody>
+                        </table>
+                      </div>
+                    </>
                   );
                 })()}
               </div>

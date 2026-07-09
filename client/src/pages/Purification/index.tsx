@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useCallback } from "react";
+import React, { useEffect, useState, useCallback, useMemo } from "react";
 import { purificationAPI, placesAPI, purifiersAPI } from "../../services/api";
 import { useAuth } from "../../context/AuthContext";
 import { useNotification } from "../../context/NotificationContext";
@@ -49,6 +49,9 @@ const Purification: React.FC = () => {
     {},
   );
   const [searchTerm, setSearchTerm] = useState("");
+  const [historySearchTerm, setHistorySearchTerm] = useState("");
+  const [historyFromDate, setHistoryFromDate] = useState("");
+  const [historyToDate, setHistoryToDate] = useState("");
   const [showPlaceManagement, setshowPlaceManagement] = useState(false);
   const [showPurifyModal, setShowPurifyModal] = useState(false);
   const [selectedCategory, setSelectedCategory] =
@@ -111,6 +114,20 @@ const Purification: React.FC = () => {
       a.productMarker?.toLowerCase().includes(searchTerm.toLowerCase()) ||
       a.warehouseName?.toLowerCase().includes(searchTerm.toLowerCase()),
   );
+
+  const filteredProcesses = useMemo(() => {
+    return processes.filter((p) => {
+      const term = historySearchTerm.toLowerCase();
+      const matchesSearch =
+        !term ||
+        p.productMarker?.toLowerCase().includes(term) ||
+        p.placeName?.toLowerCase().includes(term);
+      const recordDate = p.date ? p.date.slice(0, 10) : "";
+      const matchesFrom = !historyFromDate || recordDate >= historyFromDate;
+      const matchesTo = !historyToDate || recordDate <= historyToDate;
+      return matchesSearch && matchesFrom && matchesTo;
+    });
+  }, [processes, historySearchTerm, historyFromDate, historyToDate]);
 
   const handleInputChance = (
     recordId: number,
@@ -566,6 +583,50 @@ const Purification: React.FC = () => {
             </div>
 
             <div className="rf-table-wrap">
+              {/* Table Filters */}
+              <div className="pu-table-controls">
+                <div className="pu-search-box">
+                  <Search className="pu-input-icon" size={16} />
+                  <input
+                    type="text"
+                    className="pu-search-control"
+                    placeholder="Search history..."
+                    value={historySearchTerm}
+                    onChange={(e) => setHistorySearchTerm(e.target.value)}
+                  />
+                </div>
+                <div className="pu-date-filter">
+                  <div className="pu-date-field">
+                    <span className="pu-date-label">From</span>
+                    <input
+                      type="date"
+                      className="pu-date-input"
+                      value={historyFromDate}
+                      onChange={(e) => setHistoryFromDate(e.target.value)}
+                    />
+                  </div>
+                  <div className="pu-date-field">
+                    <span className="pu-date-label">To</span>
+                    <input
+                      type="date"
+                      className="pu-date-input"
+                      value={historyToDate}
+                      onChange={(e) => setHistoryToDate(e.target.value)}
+                    />
+                  </div>
+                  {(historyFromDate || historyToDate) && (
+                    <button
+                      className="pu-date-clear-btn"
+                      onClick={() => {
+                        setHistoryFromDate("");
+                        setHistoryToDate("");
+                      }}
+                    >
+                      Clear
+                    </button>
+                  )}
+                </div>
+              </div>
               <table className="rf-table">
                 <thead>
                   {activeTab === "history" ? (
@@ -597,7 +658,7 @@ const Purification: React.FC = () => {
                 </thead>
                 <tbody>
                   {activeTab === "history" ? (
-                    processes.length === 0 ? (
+                    filteredProcesses.length === 0 ? (
                       <tr>
                         <td colSpan={8} className="rf-empty-row">
                           <div
@@ -611,13 +672,15 @@ const Purification: React.FC = () => {
                           >
                             <History size={48} style={{ opacity: 0.2 }} />
                             <span>
-                              No purification processes registered yet
+                              {historySearchTerm || historyFromDate || historyToDate
+                                ? "No matching records found"
+                                : "No purification processes registered yet"}
                             </span>
                           </div>
                         </td>
                       </tr>
                     ) : (
-                      processes.map((p) => (
+                      filteredProcesses.map((p) => (
                         <tr
                           key={p.id}
                           className="rf-clickable-row"

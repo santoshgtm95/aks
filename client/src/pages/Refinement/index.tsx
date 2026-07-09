@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useCallback } from "react";
+import React, { useEffect, useState, useCallback, useMemo } from "react";
 import { refinementAPI, workersAPI } from "../../services/api";
 import { useAuth } from "../../context/AuthContext";
 import { useNotification } from "../../context/NotificationContext";
@@ -66,6 +66,9 @@ const Refinement: React.FC = () => {
     workerFees: "",
   });
   const [validationError, setValidationError] = useState<string | null>(null);
+  const [historySearchTerm, setHistorySearchTerm] = useState("");
+  const [historyFromDate, setHistoryFromDate] = useState("");
+  const [historyToDate, setHistoryToDate] = useState("");
 
   useEffect(() => {
     loadData();
@@ -291,6 +294,22 @@ const Refinement: React.FC = () => {
           .toLowerCase()
           .includes(searchTerm.toLowerCase())),
   );
+
+  const filteredProcesses = useMemo(() => {
+    return processes.filter((p) => {
+      const term = historySearchTerm.toLowerCase();
+      const matchesSearch =
+        !term ||
+        (p.productMarker || "").toLowerCase().includes(term) ||
+        (p.category || "").toLowerCase().includes(term) ||
+        (p.warehouseName || "").toLowerCase().includes(term) ||
+        (p.refinementWorkerName || "").toLowerCase().includes(term);
+      const recordDate = p.date ? p.date.slice(0, 10) : "";
+      const matchesFrom = !historyFromDate || recordDate >= historyFromDate;
+      const matchesTo = !historyToDate || recordDate <= historyToDate;
+      return matchesSearch && matchesFrom && matchesTo;
+    });
+  }, [processes, historySearchTerm, historyFromDate, historyToDate]);
 
   if (loading) {
     return (
@@ -541,6 +560,50 @@ const Refinement: React.FC = () => {
 
             {/* Table */}
             <div className="rf-table-wrap">
+              {/* Table Filters */}
+              <div className="rf-table-controls">
+                <div className="rf-search-box rf-history-search-box">
+                  <Search className="rf-input-icon" size={16} />
+                  <input
+                    type="text"
+                    className="rf-search-control"
+                    placeholder="Search history..."
+                    value={historySearchTerm}
+                    onChange={(e) => setHistorySearchTerm(e.target.value)}
+                  />
+                </div>
+                <div className="rf-date-filter">
+                  <div className="rf-date-field">
+                    <span className="rf-date-label">From</span>
+                    <input
+                      type="date"
+                      className="rf-date-input"
+                      value={historyFromDate}
+                      onChange={(e) => setHistoryFromDate(e.target.value)}
+                    />
+                  </div>
+                  <div className="rf-date-field">
+                    <span className="rf-date-label">To</span>
+                    <input
+                      type="date"
+                      className="rf-date-input"
+                      value={historyToDate}
+                      onChange={(e) => setHistoryToDate(e.target.value)}
+                    />
+                  </div>
+                  {(historyFromDate || historyToDate) && (
+                    <button
+                      className="rf-date-clear-btn"
+                      onClick={() => {
+                        setHistoryFromDate("");
+                        setHistoryToDate("");
+                      }}
+                    >
+                      Clear
+                    </button>
+                  )}
+                </div>
+              </div>
               <table className="rf-table">
                 <thead>
                   {activeTab === "history" ? (
@@ -572,15 +635,15 @@ const Refinement: React.FC = () => {
                 </thead>
                 <tbody>
                   {activeTab === "history" ? (
-                    processes.length === 0 ? (
+                    filteredProcesses.length === 0 ? (
                       <tr>
                         <td colSpan={8} className="rf-empty-row">
                           <History size={44} className="rf-empty-icon" />
-                          <span>No refinement processes registered yet</span>
+                          <span>{processes.length === 0 ? "No refinement processes registered yet" : "No records match your search or date filter"}</span>
                         </td>
                       </tr>
                     ) : (
-                      processes.map((p) => (
+                      filteredProcesses.map((p) => (
                         <tr
                           key={p.id}
                           className="rf-clickable-row"

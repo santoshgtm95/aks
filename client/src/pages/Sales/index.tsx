@@ -12,7 +12,8 @@ import {
   ClipboardList,
   User,
   Phone,
-  AlignLeft
+  AlignLeft,
+  Calendar
 } from "lucide-react";
 import {
   formatDateTime,
@@ -33,6 +34,8 @@ const Sales: React.FC = () => {
   const [weightStr, setWeightStr] = useState<string>("");
   const [weightAdjustmentStr, setWeightAdjustmentStr] = useState<string>("");
   const [searchTerm, setSearchTerm] = useState("");
+  const [fromDate, setFromDate] = useState("");
+  const [toDate, setToDate] = useState("");
   const [formData, setFormData] = useState<CreateSaleDto>({
     date: getMyanmarNow(),
     productId: 0,
@@ -169,9 +172,21 @@ const Sales: React.FC = () => {
     return product.remainingWeight + weightAdjustment - formData.weight;
   };
  
-  // Search filter
   const filteredSales = sales.filter((sale) => {
     const term = searchTerm.toLowerCase();
+
+    // Date range filter
+    if (fromDate) {
+      const saleDate = new Date(sale.date.split("T")[0]);
+      const filterFrom = new Date(fromDate);
+      if (saleDate < filterFrom) return false;
+    }
+    if (toDate) {
+      const saleDate = new Date(sale.date.split("T")[0]);
+      const filterTo = new Date(toDate);
+      if (saleDate > filterTo) return false;
+    }
+
     return (
       sale.marker.toLowerCase().includes(term) ||
       (sale.customerName?.toLowerCase() || "").includes(term) ||
@@ -462,6 +477,37 @@ const Sales: React.FC = () => {
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
               />
+            </div>
+            <div className="sales-date-filter">
+              <div className="sales-date-field">
+                <span className="sales-date-label">From</span>
+                <input
+                  type="date"
+                  className="sales-date-input"
+                  value={fromDate}
+                  onChange={(e) => setFromDate(e.target.value)}
+                />
+              </div>
+              <div className="sales-date-field">
+                <span className="sales-date-label">To</span>
+                <input
+                  type="date"
+                  className="sales-date-input"
+                  value={toDate}
+                  onChange={(e) => setToDate(e.target.value)}
+                />
+              </div>
+              {(fromDate || toDate) && (
+                <button
+                  className="sales-date-clear-btn"
+                  onClick={() => {
+                    setFromDate("");
+                    setToDate("");
+                  }}
+                >
+                  Clear
+                </button>
+              )}
             </div>
           </div>
 

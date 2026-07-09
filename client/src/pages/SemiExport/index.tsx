@@ -133,6 +133,9 @@ const SemiExport: React.FC = () => {
   const [activeTab, setActiveTab] = useState<"processing" | "history">(
     "processing",
   );
+  const [historySearchTerm, setHistorySearchTerm] = useState("");
+  const [historyFromDate, setHistoryFromDate] = useState("");
+  const [historyToDate, setHistoryToDate] = useState("");
   const [showHistoryModal, setShowHistoryModal] = useState(false);
   const [showWorkerFeesBreakdown, setShowWorkerFeesBreakdown] = useState(false);
   const [prevSelectedMarker, setPrevSelectedMarker] = useState<string | null>(
@@ -1297,11 +1300,29 @@ const SemiExport: React.FC = () => {
   }, [savedExports, sddRecords, currentCnyRate]);
 
   const filteredHistory = useMemo(() => {
-    if (selectedMarker) {
-      return groupedHistory.filter((g: any) => g.marker === selectedMarker);
+    let list = selectedMarker
+      ? groupedHistory.filter((g: any) => g.marker === selectedMarker)
+      : groupedHistory;
+    if (historySearchTerm) {
+      const term = historySearchTerm.toLowerCase();
+      list = list.filter((g: any) =>
+        (g.marker || "").toLowerCase().includes(term)
+      );
     }
-    return groupedHistory;
-  }, [groupedHistory, selectedMarker]);
+    if (historyFromDate) {
+      list = list.filter((g: any) => {
+        const d = new Date((g.latestDate || "").split("T")[0]);
+        return d >= new Date(historyFromDate);
+      });
+    }
+    if (historyToDate) {
+      list = list.filter((g: any) => {
+        const d = new Date((g.latestDate || "").split("T")[0]);
+        return d <= new Date(historyToDate);
+      });
+    }
+    return list;
+  }, [groupedHistory, selectedMarker, historySearchTerm, historyFromDate, historyToDate]);
 
   const markerWorkerFeesInfo = useMemo(() => {
     let sum = 0;
@@ -4025,6 +4046,33 @@ const SemiExport: React.FC = () => {
               )
             ) : (
               <div className="ledger-history-tab">
+                {/* History Filters */}
+                <div className="se-table-controls">
+                  <div className="se-search-box">
+                    <Search className="se-input-icon" size={16} />
+                    <input
+                      type="text"
+                      className="se-search-control"
+                      placeholder="Search history..."
+                      value={historySearchTerm}
+                      onChange={(e) => setHistorySearchTerm(e.target.value)}
+                    />
+                  </div>
+                  <div className="se-date-filter">
+                    <div className="se-date-field">
+                      <span className="se-date-label">From</span>
+                      <input type="date" className="se-date-input" value={historyFromDate} onChange={(e) => setHistoryFromDate(e.target.value)} />
+                    </div>
+                    <div className="se-date-field">
+                      <span className="se-date-label">To</span>
+                      <input type="date" className="se-date-input" value={historyToDate} onChange={(e) => setHistoryToDate(e.target.value)} />
+                    </div>
+                    {(historyFromDate || historyToDate) && (
+                      <button className="se-date-clear-btn" onClick={() => { setHistoryFromDate(""); setHistoryToDate(""); }}>Clear</button>
+                    )}
+                  </div>
+                </div>
+
                 <div className="rf-table-wrap">
                   <table className="rf-table">
                     <thead>

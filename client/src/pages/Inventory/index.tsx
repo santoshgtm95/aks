@@ -59,6 +59,8 @@ const Inventory: React.FC = () => {
     remaining: 0,
   });
   const [searchTerm, setSearchTerm] = useState("");
+  const [fromDate, setFromDate] = useState("");
+  const [toDate, setToDate] = useState("");
 
   useEffect(() => {
     loadData();
@@ -180,6 +182,19 @@ const Inventory: React.FC = () => {
   const filteredProducts = products.filter((product) => {
     const term = searchTerm.toLowerCase();
     const warehouseName = product.warehouseName || "No Warehouse";
+
+    // Date range filter
+    if (fromDate) {
+      const prodDate = new Date(product.date.split("T")[0]);
+      const filterFrom = new Date(fromDate);
+      if (prodDate < filterFrom) return false;
+    }
+    if (toDate) {
+      const prodDate = new Date(product.date.split("T")[0]);
+      const filterTo = new Date(toDate);
+      if (prodDate > filterTo) return false;
+    }
+
     return (
       product.marker.toLowerCase().includes(term) ||
       product.packages.toLowerCase().includes(term) ||
@@ -402,6 +417,37 @@ const Inventory: React.FC = () => {
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
               />
+            </div>
+            <div className="inventory-date-filter">
+              <div className="inventory-date-field">
+                <span className="inventory-date-label">From</span>
+                <input
+                  type="date"
+                  className="inventory-date-input"
+                  value={fromDate}
+                  onChange={(e) => setFromDate(e.target.value)}
+                />
+              </div>
+              <div className="inventory-date-field">
+                <span className="inventory-date-label">To</span>
+                <input
+                  type="date"
+                  className="inventory-date-input"
+                  value={toDate}
+                  onChange={(e) => setToDate(e.target.value)}
+                />
+              </div>
+              {(fromDate || toDate) && (
+                <button
+                  className="inventory-date-clear-btn"
+                  onClick={() => {
+                    setFromDate("");
+                    setToDate("");
+                  }}
+                >
+                  Clear
+                </button>
+              )}
             </div>
           </div>
 
