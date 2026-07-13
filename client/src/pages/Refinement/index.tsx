@@ -311,6 +311,22 @@ const Refinement: React.FC = () => {
     });
   }, [processes, historySearchTerm, historyFromDate, historyToDate]);
 
+  const filteredRefinementRecords = useMemo(() => {
+    return refinementRecords.filter((p) => {
+      const term = historySearchTerm.toLowerCase();
+      const matchesSearch =
+        !term ||
+        (p.productMarker || "").toLowerCase().includes(term) ||
+        (p.category || "").toLowerCase().includes(term) ||
+        (p.warehouseName || "").toLowerCase().includes(term) ||
+        (p.refinementWorkerName || "").toLowerCase().includes(term);
+      const recordDate = p.date ? p.date.slice(0, 10) : "";
+      const matchesFrom = !historyFromDate || recordDate >= historyFromDate;
+      const matchesTo = !historyToDate || recordDate <= historyToDate;
+      return matchesSearch && matchesFrom && matchesTo;
+    });
+  }, [refinementRecords, historySearchTerm, historyFromDate, historyToDate]);
+
   if (loading) {
     return (
       <div className="rf-loading">
@@ -566,7 +582,7 @@ const Refinement: React.FC = () => {
                   <Search className="rf-input-icon" size={16} />
                   <input
                     type="text"
-                    className="rf-search-control"
+                    className="rf-history-search-control"
                     placeholder="Search history..."
                     value={historySearchTerm}
                     onChange={(e) => setHistorySearchTerm(e.target.value)}
@@ -704,15 +720,15 @@ const Refinement: React.FC = () => {
                         </tr>
                       ))
                     )
-                  ) : refinementRecords.length === 0 ? (
+                  ) : filteredRefinementRecords.length === 0 ? (
                     <tr>
                       <td colSpan={11} className="rf-empty-row">
                         <Package size={44} className="rf-empty-icon" />
-                        <span>No refined stock records yet</span>
+                        <span>{refinementRecords.length === 0 ? "No refined stock records yet" : "No records match your search or date filter"}</span>
                       </td>
                     </tr>
                   ) : (
-                    refinementRecords.map((p) => (
+                    filteredRefinementRecords.map((p) => (
                       <tr key={p.id}>
                         <td className="rf-td-date">{formatDateTime(p.date)}</td>
                         <td>
