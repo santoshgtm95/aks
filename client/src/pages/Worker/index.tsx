@@ -13,6 +13,7 @@ import {
     Phone,
     Pencil,
     UserX,
+    Power,
     AlertCircle,
     Briefcase,
     Home as WarehouseIcon,
@@ -77,7 +78,7 @@ const WorkerPage: React.FC = () => {
     const loadData = async () => {
         try {
             const [workersData, warehousesData] = await Promise.all([
-                workersAPI.getAll(),
+                workersAPI.getAllIncludingInactive(),
                 warehousesAPI.getAll(),
             ]);
             setWorkers(workersData);
@@ -194,6 +195,29 @@ const WorkerPage: React.FC = () => {
         } finally {
             setSubmitting(false);
         }
+    };
+
+    const handleToggleActive = async (worker: Worker) => {
+        const action = worker.isActive ? 'deactivate' : 'activate';
+        const modalType = worker.isActive ? 'warning' : 'success';
+        const confirmBtnText = worker.isActive ? 'Deactivate' : 'Activate';
+        showConfirm(
+            worker.isActive ? 'Set Inactive' : 'Set Active',
+            `Are you sure you want to ${action} "${worker.name}"?`,
+            async () => {
+                try {
+                    await workersAPI.toggleActive(worker.id);
+                    await loadData();
+                    showAlert('Success', `Worker "${worker.name}" is now ${worker.isActive ? 'inactive' : 'active'}.`, 'success');
+                } catch (error: any) {
+                    const msg = error?.response?.data?.message || error?.message || `Failed to ${action} worker.`;
+                    showAlert('Error', typeof msg === 'string' ? msg : `Failed to ${action} worker.`, 'error');
+                }
+            },
+            confirmBtnText,
+            'Cancel',
+            modalType
+        );
     };
 
     const handleDelete = async (id: number) => {
@@ -443,7 +467,7 @@ const WorkerPage: React.FC = () => {
                                     </tr>
                                 ) : (
                                     filteredWorkers.map((worker) => (
-                                        <tr key={worker.id}>
+                                        <tr key={worker.id} style={!worker.isActive ? { opacity: 0.6, background: '#f8fafc' } : undefined}>
                                             <td>
                                                 <span className="worker-badge-name">{worker.name}</span>
                                             </td>
@@ -481,11 +505,21 @@ const WorkerPage: React.FC = () => {
                                                             <Pencil size={14} /> Edit
                                                         </button>
                                                     )}
+                                                    {hasPermission('Staff.Edit') && (
+                                                        <button
+                                                            className={worker.isActive ? 'btn-worker-inactive' : 'btn-worker-activate'}
+                                                            onClick={() => handleToggleActive(worker)}
+                                                            title={worker.isActive ? 'Set Inactive' : 'Set Active'}
+                                                        >
+                                                            <Power size={14} />
+                                                            {worker.isActive ? 'Inactive' : 'Activate'}
+                                                        </button>
+                                                    )}
                                                     {hasPermission('Staff.Delete') && (
                                                         <button
                                                             className="btn-worker-delete"
                                                             onClick={() => handleDelete(worker.id)}
-                                                            title="Deactivate"
+                                                            title="Remove permanently"
                                                         >
                                                             <UserX size={14} /> Remove
                                                         </button>

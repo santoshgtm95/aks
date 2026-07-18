@@ -28,6 +28,30 @@ public class WorkersController : ControllerBase
             .ToListAsync();
     }
 
+    // GET /api/workers/all — includes inactive workers (for management page)
+    [HttpGet("all")]
+    public async Task<ActionResult<List<Worker>>> GetAllWorkers()
+    {
+        return await _context.Workers
+            .Where(w => w.DeleteFlg != 1)
+            .OrderByDescending(w => w.IsActive)
+            .ThenBy(w => w.Name)
+            .ToListAsync();
+    }
+
+    // PATCH /api/workers/{id}/toggle-active
+    [HttpPatch("{id}/toggle-active")]
+    public async Task<IActionResult> ToggleActive(int id)
+    {
+        var existing = await _context.Workers.FindAsync(id);
+        if (existing == null) return NotFound();
+
+        existing.IsActive = !existing.IsActive;
+        existing.UpdateDate = DateTime.UtcNow;
+        await _context.SaveChangesAsync();
+        return Ok(new { isActive = existing.IsActive });
+    }
+
     [HttpPost]
     public async Task<ActionResult<Worker>> CreateWorker([FromBody] Worker worker)
     {

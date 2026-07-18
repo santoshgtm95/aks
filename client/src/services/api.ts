@@ -188,6 +188,14 @@ export const workersAPI = {
     const response = await api.get<Worker[]>("/workers");
     return response.data;
   },
+  getAllIncludingInactive: async (): Promise<Worker[]> => {
+    const response = await api.get<Worker[]>("/workers/all");
+    return response.data;
+  },
+  toggleActive: async (id: number): Promise<{ isActive: boolean }> => {
+    const response = await api.patch<{ isActive: boolean }>(`/workers/${id}/toggle-active`);
+    return response.data;
+  },
   getWashGradingWorkers: async (): Promise<WashGradingWorker[]> => {
     const response = await api.get<WashGradingWorker[]>("/workers/washgrading");
     return response.data;

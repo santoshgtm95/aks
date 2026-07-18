@@ -438,6 +438,8 @@
 }
 
 .btn-worker-edit,
+.btn-worker-inactive,
+.btn-worker-activate,
 .btn-worker-delete {
   background: none;
   border: none;
@@ -459,6 +461,24 @@
 
 .btn-worker-edit:hover {
   background-color: #e0e7ff;
+}
+
+/* Inactive button — amber/orange tone */
+.btn-worker-inactive {
+  color: #d97706;
+}
+
+.btn-worker-inactive:hover {
+  background-color: #fef3c7;
+}
+
+/* Activate button — emerald/green tone */
+.btn-worker-activate {
+  color: #059669;
+}
+
+.btn-worker-activate:hover {
+  background-color: #d1fae5;
 }
 
 .btn-worker-delete {

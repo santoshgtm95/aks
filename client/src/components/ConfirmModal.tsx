@@ -1,5 +1,5 @@
 import React, { useEffect } from 'react';
-import { Trash2, X } from 'lucide-react';
+import { Trash2, X, AlertTriangle, CheckCircle2 } from 'lucide-react';
 
 interface ConfirmModalProps {
     isOpen: boolean;
@@ -7,9 +7,21 @@ interface ConfirmModalProps {
     onConfirm: () => void;
     title: string;
     message: string;
+    confirmText?: string;
+    cancelText?: string;
+    type?: 'danger' | 'warning' | 'success';
 }
 
-const ConfirmModal: React.FC<ConfirmModalProps> = ({ isOpen, onClose, onConfirm, title, message }) => {
+const ConfirmModal: React.FC<ConfirmModalProps> = ({ 
+    isOpen, 
+    onClose, 
+    onConfirm, 
+    title, 
+    message,
+    confirmText = 'Delete',
+    cancelText = 'Cancel',
+    type = 'danger'
+}) => {
     useEffect(() => {
         const handleEscape = (e: KeyboardEvent) => {
             if (e.key === 'Escape') onClose();
@@ -27,6 +39,18 @@ const ConfirmModal: React.FC<ConfirmModalProps> = ({ isOpen, onClose, onConfirm,
 
     if (!isOpen) return null;
 
+    const renderIcon = () => {
+        switch (type) {
+            case 'success':
+                return <CheckCircle2 size={34} color="#059669" strokeWidth={2} />;
+            case 'warning':
+                return <AlertTriangle size={34} color="#d97706" strokeWidth={2} />;
+            case 'danger':
+            default:
+                return <Trash2 size={34} color="#ef4444" strokeWidth={2} />;
+        }
+    };
+
     return (
         <>
             <style>{`
@@ -38,9 +62,17 @@ const ConfirmModal: React.FC<ConfirmModalProps> = ({ isOpen, onClose, onConfirm,
                     from { opacity: 0; transform: scale(0.88) translateY(24px); }
                     to { opacity: 1; transform: scale(1) translateY(0); }
                 }
-                @keyframes confirm-icon-pulse {
+                @keyframes confirm-icon-pulse-danger {
                     0%, 100% { box-shadow: 0 0 0 0 rgba(239,68,68,0.35); }
                     50% { box-shadow: 0 0 0 14px rgba(239,68,68,0); }
+                }
+                @keyframes confirm-icon-pulse-warning {
+                    0%, 100% { box-shadow: 0 0 0 0 rgba(245,158,11,0.35); }
+                    50% { box-shadow: 0 0 0 14px rgba(245,158,11,0); }
+                }
+                @keyframes confirm-icon-pulse-success {
+                    0%, 100% { box-shadow: 0 0 0 0 rgba(16,185,129,0.35); }
+                    50% { box-shadow: 0 0 0 14px rgba(16,185,129,0); }
                 }
                 @keyframes confirm-icon-shake {
                     0%,100% { transform: rotate(0deg); }
@@ -76,7 +108,15 @@ const ConfirmModal: React.FC<ConfirmModalProps> = ({ isOpen, onClose, onConfirm,
                 }
                 .confirm-top-stripe {
                     height: 5px;
+                }
+                .confirm-top-stripe-danger {
                     background: linear-gradient(90deg, #ef4444, #dc2626, #b91c1c);
+                }
+                .confirm-top-stripe-warning {
+                    background: linear-gradient(90deg, #f59e0b, #d97706, #b45309);
+                }
+                .confirm-top-stripe-success {
+                    background: linear-gradient(90deg, #10b981, #059669, #047857);
                 }
                 .confirm-body {
                     padding: 32px 32px 28px;
@@ -108,13 +148,26 @@ const ConfirmModal: React.FC<ConfirmModalProps> = ({ isOpen, onClose, onConfirm,
                     width: 80px;
                     height: 80px;
                     border-radius: 50%;
-                    background: linear-gradient(135deg, #fef2f2, #fee2e2);
-                    border: 3px solid #fecaca;
                     display: flex;
                     align-items: center;
                     justify-content: center;
                     margin: 0 auto 22px;
-                    animation: confirm-icon-pulse 2s ease-in-out infinite, confirm-icon-shake 0.6s ease 0.3s;
+                    animation: confirm-icon-shake 0.6s ease 0.3s;
+                }
+                .confirm-icon-wrap-danger {
+                    background: linear-gradient(135deg, #fef2f2, #fee2e2);
+                    border: 3px solid #fecaca;
+                    animation: confirm-icon-pulse-danger 2s ease-in-out infinite, confirm-icon-shake 0.6s ease 0.3s;
+                }
+                .confirm-icon-wrap-warning {
+                    background: linear-gradient(135deg, #fffbeb, #fef3c7);
+                    border: 3px solid #fde68a;
+                    animation: confirm-icon-pulse-warning 2s ease-in-out infinite, confirm-icon-shake 0.6s ease 0.3s;
+                }
+                .confirm-icon-wrap-success {
+                    background: linear-gradient(135deg, #f0fdf4, #d1fae5);
+                    border: 3px solid #a7f3d0;
+                    animation: confirm-icon-pulse-success 2s ease-in-out infinite, confirm-icon-shake 0.6s ease 0.3s;
                 }
                 .confirm-title {
                     font-size: 1.35rem;
@@ -153,11 +206,10 @@ const ConfirmModal: React.FC<ConfirmModalProps> = ({ isOpen, onClose, onConfirm,
                     color: #334155;
                     transform: translateY(-1px);
                 }
-                .confirm-btn-delete {
+                .confirm-btn-action {
                     height: 48px;
                     border-radius: 14px;
                     border: none;
-                    background: linear-gradient(135deg, #ef4444, #dc2626);
                     color: #ffffff;
                     font-size: 0.95rem;
                     font-weight: 700;
@@ -168,16 +220,36 @@ const ConfirmModal: React.FC<ConfirmModalProps> = ({ isOpen, onClose, onConfirm,
                     justify-content: center;
                     gap: 7px;
                     letter-spacing: 0.2px;
+                }
+                .confirm-btn-danger {
+                    background: linear-gradient(135deg, #ef4444, #dc2626);
                     box-shadow: 0 4px 14px -2px rgba(239,68,68,0.45);
                 }
-                .confirm-btn-delete:hover {
+                .confirm-btn-danger:hover {
                     background: linear-gradient(135deg, #dc2626, #b91c1c);
                     box-shadow: 0 6px 20px -2px rgba(239,68,68,0.55);
                     transform: translateY(-2px);
                 }
-                .confirm-btn-delete:active {
+                .confirm-btn-warning {
+                    background: linear-gradient(135deg, #f59e0b, #d97706);
+                    box-shadow: 0 4px 14px -2px rgba(245,158,11,0.45);
+                }
+                .confirm-btn-warning:hover {
+                    background: linear-gradient(135deg, #d97706, #b45309);
+                    box-shadow: 0 6px 20px -2px rgba(245,158,11,0.55);
+                    transform: translateY(-2px);
+                }
+                .confirm-btn-success {
+                    background: linear-gradient(135deg, #10b981, #059669);
+                    box-shadow: 0 4px 14px -2px rgba(16,185,129,0.45);
+                }
+                .confirm-btn-success:hover {
+                    background: linear-gradient(135deg, #059669, #047857);
+                    box-shadow: 0 6px 20px -2px rgba(16,185,129,0.55);
+                    transform: translateY(-2px);
+                }
+                .confirm-btn-action:active {
                     transform: translateY(0);
-                    box-shadow: 0 2px 8px -2px rgba(239,68,68,0.4);
                 }
                 .confirm-hint {
                     margin-top: 16px;
@@ -188,23 +260,25 @@ const ConfirmModal: React.FC<ConfirmModalProps> = ({ isOpen, onClose, onConfirm,
 
             <div className="confirm-overlay" onClick={onClose}>
                 <div className="confirm-card" onClick={(e) => e.stopPropagation()}>
-                    <div className="confirm-top-stripe" />
+                    <div className={`confirm-top-stripe confirm-top-stripe-${type}`} />
                     <button className="confirm-close-btn" onClick={onClose} aria-label="Close">
                         <X size={16} />
                     </button>
                     <div className="confirm-body">
-                        <div className="confirm-icon-wrap">
-                            <Trash2 size={34} color="#ef4444" strokeWidth={2} />
+                        <div className={`confirm-icon-wrap confirm-icon-wrap-${type}`}>
+                            {renderIcon()}
                         </div>
                         <h2 className="confirm-title">{title}</h2>
                         <p className="confirm-message">{message}</p>
                         <div className="confirm-actions">
                             <button className="confirm-btn-cancel" onClick={onClose}>
-                                Cancel
+                                {cancelText}
                             </button>
-                            <button className="confirm-btn-delete" onClick={() => { onConfirm(); onClose(); }}>
-                                <Trash2 size={16} strokeWidth={2.5} />
-                                Delete
+                            <button className={`confirm-btn-action confirm-btn-${type}`} onClick={() => { onConfirm(); onClose(); }}>
+                                {type === 'danger' && <Trash2 size={16} strokeWidth={2.5} />}
+                                {type === 'warning' && <AlertTriangle size={16} strokeWidth={2.5} />}
+                                {type === 'success' && <CheckCircle2 size={16} strokeWidth={2.5} />}
+                                {confirmText}
                             </button>
                         </div>
                         <p className="confirm-hint">Press <strong>Enter</strong> to confirm · <strong>Esc</strong> to cancel</p>
