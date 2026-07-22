@@ -36,6 +36,7 @@ public class RefinementProcess : BaseEntity
     public Worker? Worker { get; set; }
 
     public ICollection<RefinementRecord> RefinementRecords { get; set; } = new List<RefinementRecord>();
+    public ICollection<RefiningProcess> RefiningProcesses { get; set; } = new List<RefiningProcess>();
 
     [Column(TypeName = "decimal(18,2)")]
     public decimal WorkerFees { get; set; }

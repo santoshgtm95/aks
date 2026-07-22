@@ -3,8 +3,8 @@ using System.ComponentModel.DataAnnotations.Schema;
 
 namespace AKZ.API.Models;
 
-[Table("RefinementRecords")]
-public class RefinementRecord : BaseEntity
+[Table("RefiningProcesses")]
+public class RefiningProcess : BaseEntity
 {
     [Key]
     public int Id { get; set; }
@@ -39,23 +39,11 @@ public class RefinementRecord : BaseEntity
     [Column(TypeName = "decimal(18,4)")]
     public decimal ReturnWeight { get; set; }
 
-    [Column(TypeName = "decimal(18,4)")]
-    public decimal DryWeight { get; set; }
-
-    [Column(TypeName = "decimal(18,4)")]
-    public decimal IncreasedWeight { get; set; }
-
     public int? RefinementProcessId { get; set; }
 
     [ForeignKey("RefinementProcessId")]
     public RefinementProcess? RefinementProcess { get; set; }
 
-    public int? RefiningProcessId { get; set; }
-
-    [ForeignKey("RefiningProcessId")]
-    public RefiningProcess? RefiningProcess { get; set; }
-
-    // Remaining stock after this record for further downstream use
     public double RemainingCount { get; set; }
 
     [Column(TypeName = "decimal(18,4)")]
@@ -63,4 +51,6 @@ public class RefinementRecord : BaseEntity
 
     [Column(TypeName = "decimal(18,2)")]
     public decimal WorkerFees { get; set; }
+
+    public ICollection<RefinementRecord> RefinementRecords { get; set; } = new List<RefinementRecord>();
 }

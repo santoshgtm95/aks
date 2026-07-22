@@ -35,6 +35,7 @@ import type {
   PurifiedRecord,
   AvailablePurifiedCategory,
   RefinementProcess,
+  RefiningProcess,
   RefinementRecord,
   CreateRefinementProcessDto,
   SingleDoubleDrawnRecord,
@@ -498,6 +499,12 @@ export const refinementAPI = {
     );
     return response.data;
   },
+  getRefiningProcesses: async (): Promise<RefiningProcess[]> => {
+    const response = await api.get<RefiningProcess[]>(
+      "/refinement/refining-processes",
+    );
+    return response.data;
+  },
   create: async (
     data: CreateRefinementProcessDto,
   ): Promise<RefinementProcess> => {
@@ -512,6 +519,15 @@ export const refinementAPI = {
   },
   delete: async (id: number): Promise<void> => {
     await api.delete(`/refinement/${id}`);
+  },
+  updateRefiningProcess: async (
+    id: number,
+    data: CreateRefinementProcessDto,
+  ): Promise<void> => {
+    await api.put(`/refinement/refining-processes/${id}`, data);
+  },
+  deleteRefiningProcess: async (id: number): Promise<void> => {
+    await api.delete(`/refinement/refining-processes/${id}`);
   },
   updateRefinementRecord: async (
     id: number,

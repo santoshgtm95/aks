@@ -462,12 +462,34 @@ export interface RefinementProcess {
   category: string;
   count: number;
   weight: number;
+  originalCount: number;
+  originalWeight: number;
   remainingCountAfter: number;
   remainingWeightAfter: number;
   warehouseName?: string;
   refinementWorkerId?: number;
   refinementWorkerName?: string;
   workerFees?: number;
+}
+
+export interface RefiningProcess {
+  id: number;
+  date: string;
+  purifiedRecordId: number;
+  productMarker: string;
+  warehouseName?: string;
+  category: string;
+  count: number;
+  weight: number;
+  refinementWorkerId?: number;
+  refinementWorkerName?: string;
+  lostWeight: number;
+  spoilageWeight: number;
+  returnWeight: number;
+  refinementProcessId?: number;
+  remainingCount: number;
+  remainingWeight: number;
+  workerFees: number;
 }
 
 export interface RefinementRecord {
@@ -482,10 +504,14 @@ export interface RefinementRecord {
   lostWeight: number;
   spoilageWeight: number;
   returnWeight: number;
+  dryWeight?: number;
+  increasedWeight?: number;
   warehouseName?: string;
   refinementWorkerId?: number;
   refinementWorkerName?: string;
   workerFees?: number;
+  refinementProcessId?: number;
+  refiningProcessId?: number;
   isLocked: boolean;
 }
 
@@ -498,8 +524,11 @@ export interface CreateRefinementProcessDto {
   lostWeight: number;
   spoilageWeight?: number;
   returnWeight?: number;
+  dryWeight?: number;
+  increasedWeight?: number;
   refinementWorkerId?: number;
   workerFees?: number;
+  refiningProcessId?: number;
 }
 
 export interface WashGradingWorker {

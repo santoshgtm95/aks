@@ -35,10 +35,15 @@ const Refinement: React.FC = () => {
     AvailablePurifiedCategory[]
   >([]);
   const [processes, setProcesses] = useState<RefinementProcess[]>([]);
+  const [refiningProcesses, setRefiningProcesses] = useState<RefiningProcess[]>(
+    [],
+  );
   const [refinementRecords, setRefinementRecords] = useState<
     RefinementRecord[]
   >([]);
-  const [activeTab, setActiveTab] = useState<"history" | "stock">("history");
+  const [activeTab, setActiveTab] = useState<"history" | "refining" | "stock">(
+    "history",
+  );
   const [refinementWorkers, setRefinementWorkers] = useState<
     RefinementWorker[]
   >([]);
@@ -54,6 +59,8 @@ const Refinement: React.FC = () => {
     useState<AvailablePurifiedCategory | null>(null);
   const [editingProcess, setEditingProcess] =
     useState<RefinementProcess | null>(null);
+  const [editingRefiningProcess, setEditingRefiningProcess] =
+    useState<RefiningProcess | null>(null);
   const [editingRecord, setEditingRecord] = useState<RefinementRecord | null>(
     null,
   );
@@ -76,14 +83,16 @@ const Refinement: React.FC = () => {
 
   const loadData = useCallback(async () => {
     try {
-      const [avail, procs, recs, workers] = await Promise.all([
+      const [avail, procs, refProcs, recs, workers] = await Promise.all([
         refinementAPI.getAvailableCategories(),
         refinementAPI.getAll(),
+        refinementAPI.getRefiningProcesses(),
         refinementAPI.getRefinementRecords(),
         workersAPI.getGirdleBushWorkers(),
       ]);
       setAvailableCategories(avail);
       setProcesses(procs);
+      setRefiningProcesses(refProcs);
       setRefinementRecords(recs);
       setRefinementWorkers(workers);
     } catch (e) {
@@ -178,6 +187,20 @@ const Refinement: React.FC = () => {
       },
     );
 
+  const handleDeleteRefiningProcess = (id: number) =>
+    showConfirm(
+      "Confirm Delete",
+      "Are you sure you want to delete this refining stock record?",
+      async () => {
+        try {
+          await refinementAPI.deleteRefiningProcess(id);
+          await loadData();
+        } catch {
+          showAlert("Error", "Failed to delete refining record", "error");
+        }
+      },
+    );
+
   const handleDeleteRecord = (id: number) =>
     showConfirm(
       "Confirm Delete",
@@ -194,6 +217,7 @@ const Refinement: React.FC = () => {
 
   const handleEditProcess = (p: RefinementProcess) => {
     setEditingProcess(p);
+    setEditingRefiningProcess(null);
     setEditingRecord(null);
     setSelectedCategory(null);
     const dateStr = p.date
@@ -213,6 +237,28 @@ const Refinement: React.FC = () => {
     setShowModal(true);
   };
 
+  const handleEditRefiningProcess = (p: RefiningProcess) => {
+    setEditingRefiningProcess(p);
+    setEditingProcess(null);
+    setEditingRecord(null);
+    setSelectedCategory(null);
+    const dateStr = p.date
+      ? p.date.includes("T")
+        ? p.date.slice(0, 16)
+        : p.date + "T00:00"
+      : getMyanmarNow();
+    setForm({
+      weight: "",
+      spoilageWeight: p.spoilageWeight.toString(),
+      returnWeight: p.returnWeight.toString(),
+      date: dateStr,
+      refinementWorkerId: p.refinementWorkerId || 0,
+      workerFees: p.workerFees ? p.workerFees.toString() : "",
+    });
+    setValidationError(null);
+    setShowModal(true);
+  };
+
   const handleSubmitModal = async (e: React.FormEvent) => {
     e.preventDefault();
     setValidationError(null);
@@ -221,6 +267,7 @@ const Refinement: React.FC = () => {
     const returnWeight = parseFloat(form.returnWeight) || 0;
     const available =
       editingRecord?.weight ??
+      editingRefiningProcess?.weight ??
       editingProcess?.weight ??
       selectedCategory?.remainingWeight ??
       0;
@@ -232,47 +279,82 @@ const Refinement: React.FC = () => {
       setValidationError("Please enter a valid weight");
       return;
     }
-    if (!form.refinementWorkerId) {
-      setValidationError("Please select a refinement worker");
-      return;
+
+    const isRefiningStock =
+      !!editingRefiningProcess ||
+      (!!editingRecord && !!editingRecord.refiningProcessId);
+
+    if (!isRefiningStock) {
+      if (!form.refinementWorkerId) {
+        setValidationError("Please select a refinement worker");
+        return;
+      }
+
+      if (weight + spoilageWeight + returnWeight > available) {
+        setValidationError(
+          `Total weights (Output + Spoilage + Return = ${(weight + spoilageWeight + returnWeight).toFixed(3)}) cannot exceed Available weight (${available.toFixed(3)} viss)`,
+        );
+        return;
+      }
+
+      if (selectedCategory && weight > selectedCategory.remainingWeight) {
+        setValidationError(
+          `Cannot exceed remaining weight (${selectedCategory.remainingWeight.toFixed(3)} viss)`,
+        );
+        return;
+      }
     }
 
-    if (weight + spoilageWeight + returnWeight > available) {
-      setValidationError(
-        `Total weights (Output + Spoilage + Return = ${(weight + spoilageWeight + returnWeight).toFixed(3)}) cannot exceed Available weight (${available.toFixed(3)} viss)`,
-      );
-      return;
-    }
-
-    if (selectedCategory && weight > selectedCategory.remainingWeight) {
-      setValidationError(
-        `Cannot exceed remaining weight (${selectedCategory.remainingWeight.toFixed(3)} viss)`,
-      );
-      return;
-    }
     try {
       const dto = {
         date: combineDateWithMyanmarTime(form.date),
         purifiedRecordId:
           editingProcess?.purifiedRecordId ||
+          editingRefiningProcess?.purifiedRecordId ||
           editingRecord?.purifiedRecordId ||
           selectedCategory!.purifiedRecordId,
         category:
           editingProcess?.category ||
+          editingRefiningProcess?.category ||
           editingRecord?.category ||
           selectedCategory!.category,
         count: 0,
         weight,
-        lostWeight,
-        spoilageWeight,
-        returnWeight,
+        lostWeight: isRefiningStock
+          ? (editingRefiningProcess?.lostWeight ??
+            editingRecord?.lostWeight ??
+            0)
+          : lostWeight,
+        spoilageWeight: isRefiningStock
+          ? (editingRefiningProcess?.spoilageWeight ??
+            editingRecord?.spoilageWeight ??
+            0)
+          : spoilageWeight,
+        returnWeight: isRefiningStock
+          ? (editingRefiningProcess?.returnWeight ??
+            editingRecord?.returnWeight ??
+            0)
+          : returnWeight,
         refinementWorkerId: form.refinementWorkerId,
         workerFees: Number(form.workerFees) || 0,
+        dryWeight:
+          isRefiningStock && weight < available ? available - weight : 0,
+        increasedWeight:
+          isRefiningStock && weight > available ? weight - available : 0,
       };
-      if (editingProcess) await refinementAPI.update(editingProcess.id, dto);
-      else if (editingRecord)
+
+      if (editingRefiningProcess) {
+        await refinementAPI.updateRefiningProcess(
+          editingRefiningProcess.id,
+          dto,
+        );
+      } else if (editingProcess) {
+        await refinementAPI.update(editingProcess.id, dto);
+      } else if (editingRecord) {
         await refinementAPI.updateRefinementRecord(editingRecord.id, dto);
-      else await refinementAPI.create(dto);
+      } else {
+        await refinementAPI.create(dto);
+      }
       setShowModal(false);
       setValidationError(null);
       await loadData();
@@ -307,9 +389,25 @@ const Refinement: React.FC = () => {
       const recordDate = p.date ? p.date.slice(0, 10) : "";
       const matchesFrom = !historyFromDate || recordDate >= historyFromDate;
       const matchesTo = !historyToDate || recordDate <= historyToDate;
-      return matchesSearch && matchesFrom && matchesTo;
+      return matchesSearch && matchesFrom && matchesTo && p.weight > 0.001;
     });
   }, [processes, historySearchTerm, historyFromDate, historyToDate]);
+
+  const filteredRefiningProcesses = useMemo(() => {
+    return refiningProcesses.filter((p) => {
+      const term = historySearchTerm.toLowerCase();
+      const matchesSearch =
+        !term ||
+        (p.productMarker || "").toLowerCase().includes(term) ||
+        (p.category || "").toLowerCase().includes(term) ||
+        (p.warehouseName || "").toLowerCase().includes(term) ||
+        (p.refinementWorkerName || "").toLowerCase().includes(term);
+      const recordDate = p.date ? p.date.slice(0, 10) : "";
+      const matchesFrom = !historyFromDate || recordDate >= historyFromDate;
+      const matchesTo = !historyToDate || recordDate <= historyToDate;
+      return matchesSearch && matchesFrom && matchesTo && p.weight > 0.001;
+    });
+  }, [refiningProcesses, historySearchTerm, historyFromDate, historyToDate]);
 
   const filteredRefinementRecords = useMemo(() => {
     return refinementRecords.filter((p) => {
@@ -554,10 +652,17 @@ const Refinement: React.FC = () => {
                     className={`rf-tab ${activeTab === "history" ? "rf-tab-active" : ""}`}
                     onClick={() => setActiveTab("history")}
                   >
-                    <span className="rf-tab-title">Refinement History</span>
+                    <span className="rf-tab-title">Refinement</span>
                     <span className="rf-tab-sub">
                       Process log of purified bundles
                     </span>
+                  </button>
+                  <button
+                    className={`rf-tab ${activeTab === "refining" ? "rf-tab-active rf-tab-orange" : ""}`}
+                    onClick={() => setActiveTab("refining")}
+                  >
+                    <span className="rf-tab-title">Refining Stock</span>
+                    <span className="rf-tab-sub">Active refining stock</span>
                   </button>
                   <button
                     className={`rf-tab ${activeTab === "stock" ? "rf-tab-active rf-tab-green" : ""}`}
@@ -633,6 +738,17 @@ const Refinement: React.FC = () => {
                       <th>Worker Fees</th>
                       <th className="rf-th-right">Actions</th>
                     </tr>
+                  ) : activeTab === "refining" ? (
+                    <tr>
+                      <th>Date</th>
+                      <th>Bag Marker</th>
+                      <th>Category</th>
+                      <th>Remaining Count</th>
+                      <th>Remaining Weight</th>
+                      <th>Refinement Worker</th>
+                      <th>Worker Fees</th>
+                      <th className="rf-th-right">Actions</th>
+                    </tr>
                   ) : (
                     <tr>
                       <th>Date</th>
@@ -643,6 +759,8 @@ const Refinement: React.FC = () => {
                       <th>Lost Weight</th>
                       <th>Spoilage Weight</th>
                       <th>Return Weight</th>
+                      <th>Dry Weight</th>
+                      <th>Increased Weight</th>
                       <th>Refinement Worker</th>
                       <th>Worker Fees</th>
                       <th className="rf-th-right">Actions</th>
@@ -655,7 +773,11 @@ const Refinement: React.FC = () => {
                       <tr>
                         <td colSpan={8} className="rf-empty-row">
                           <History size={44} className="rf-empty-icon" />
-                          <span>{processes.length === 0 ? "No refinement processes registered yet" : "No records match your search or date filter"}</span>
+                          <span>
+                            {processes.length === 0
+                              ? "No refinement processes registered yet"
+                              : "No records match your search or date filter"}
+                          </span>
                         </td>
                       </tr>
                     ) : (
@@ -720,11 +842,92 @@ const Refinement: React.FC = () => {
                         </tr>
                       ))
                     )
+                  ) : activeTab === "refining" ? (
+                    filteredRefiningProcesses.length === 0 ? (
+                      <tr>
+                        <td colSpan={8} className="rf-empty-row">
+                          <History size={44} className="rf-empty-icon" />
+                          <span>
+                            {refiningProcesses.filter((p) => p.weight > 0.001)
+                              .length === 0
+                              ? "No active refining stock at the moment"
+                              : "No records match your search or date filter"}
+                          </span>
+                        </td>
+                      </tr>
+                    ) : (
+                      filteredRefiningProcesses.map((p) => (
+                        <tr
+                          key={p.id}
+                          className="rf-clickable-row"
+                          onClick={() => handleEditRefiningProcess(p)}
+                        >
+                          <td className="rf-td-date">
+                            {formatDateTime(p.date)}
+                          </td>
+                          <td>
+                            <div className="rf-marker">{p.productMarker}</div>
+                            <div className="rf-warehouse">
+                              {p.warehouseName || "---"}
+                            </div>
+                          </td>
+                          <td>
+                            <span
+                              className={`rf-badge category-${p.category.toLowerCase().replace(/ /g, "-")}`}
+                            >
+                              {p.category}
+                            </span>
+                          </td>
+                          <td>{p.count}</td>
+                          <td className="rf-td-weight">
+                            {p.weight.toFixed(3)}
+                          </td>
+                          <td>
+                            <div className="rf-worker-cell">
+                              <User size={13} />
+                              {p.refinementWorkerName || "---"}
+                            </div>
+                          </td>
+                          <td>
+                            {p.workerFees?.toLocaleString(undefined, {
+                              minimumFractionDigits: 2,
+                              maximumFractionDigits: 2,
+                            }) || "0.00"}
+                          </td>
+                          <td onClick={(e) => e.stopPropagation()}>
+                            <div className="rf-actions">
+                              {hasPermission("Refinement.Edit") && (
+                                <button
+                                  className="rf-action-btn rf-edit-btn"
+                                  onClick={() => handleEditRefiningProcess(p)}
+                                >
+                                  <Pencil size={14} />
+                                </button>
+                              )}
+                              {hasPermission("Refinement.Delete") && (
+                                <button
+                                  className="rf-action-btn rf-delete-btn"
+                                  onClick={() =>
+                                    handleDeleteRefiningProcess(p.id)
+                                  }
+                                >
+                                  <Trash2 size={14} />
+                                </button>
+                              )}
+                            </div>
+                          </td>
+                        </tr>
+                      ))
+                    )
                   ) : filteredRefinementRecords.length === 0 ? (
                     <tr>
-                      <td colSpan={11} className="rf-empty-row">
+                      <td colSpan={13} className="rf-empty-row">
                         <Package size={44} className="rf-empty-icon" />
-                        <span>{refinementRecords.length === 0 ? "No refined stock records yet" : "No records match your search or date filter"}</span>
+                        <span>
+                          {refinementRecords.length === 0
+                            ? "No refined stock records yet"
+                            : "No records match your search or date filter"}
+                        </span>
                       </td>
                     </tr>
                   ) : (
@@ -759,6 +962,18 @@ const Refinement: React.FC = () => {
                           style={{ color: "#3b82f6" }}
                         >
                           {p.returnWeight.toFixed(3)}
+                        </td>
+                        <td
+                          className="rf-td-weight"
+                          style={{ color: "#059669" }}
+                        >
+                          {(p.dryWeight || 0).toFixed(3)}
+                        </td>
+                        <td
+                          className="rf-td-weight"
+                          style={{ color: "#d97706" }}
+                        >
+                          {(p.increasedWeight || 0).toFixed(3)}
                         </td>
                         <td>
                           <div className="rf-worker-cell">
@@ -801,7 +1016,8 @@ const Refinement: React.FC = () => {
       </div>
 
       {/* ── EDIT / CREATE MODAL ── */}
-      {showModal && (editingProcess || editingRecord || selectedCategory) && (
+      {/* ── REFINEMENT HISTORY / MAIN ASSIGNMENT MODAL (GREEN) ── */}
+      {showModal && (editingProcess || selectedCategory) && (
         <div
           className="rf-overlay"
           style={{ zIndex: 1100 }}
@@ -820,9 +1036,7 @@ const Refinement: React.FC = () => {
                 <div>
                   <p className="rf-modal-pre">Refinement Process</p>
                   <h2 className="rf-modal-title">
-                    {editingProcess || editingRecord
-                      ? "Edit Record"
-                      : "Record Refinement"}
+                    {editingProcess ? "Edit Record" : "Record Refinement"}
                   </h2>
                 </div>
               </div>
@@ -843,29 +1057,24 @@ const Refinement: React.FC = () => {
                 <span className="rf-chip-label">Bag Marker</span>
                 <span className="rf-chip-value">
                   {editingProcess?.productMarker ||
-                    editingRecord?.productMarker ||
                     selectedCategory?.productMarker}
                 </span>
               </div>
               <div className="rf-modal-chip">
                 <span className="rf-chip-label">Category</span>
                 <span
-                  className={`rf-badge category-${(editingProcess?.category || editingRecord?.category || selectedCategory?.category || "").toLowerCase().replace(/ /g, "-")}`}
+                  className={`rf-badge category-${(editingProcess?.category || selectedCategory?.category || "").toLowerCase().replace(/ /g, "-")}`}
                   style={{ margin: 0 }}
                 >
-                  {editingProcess?.category ||
-                    editingRecord?.category ||
-                    selectedCategory?.category}
+                  {editingProcess?.category || selectedCategory?.category}
                 </span>
               </div>
               <div className="rf-modal-chip">
                 <span className="rf-chip-label">Available</span>
                 <span className="rf-chip-value rf-chip-orange">
-                  {editingRecord
-                    ? editingRecord.weight.toFixed(3)
-                    : editingProcess
-                      ? editingProcess.weight.toFixed(3)
-                      : selectedCategory?.remainingWeight.toFixed(3)}{" "}
+                  {editingProcess
+                    ? editingProcess.weight.toFixed(3)
+                    : selectedCategory?.remainingWeight.toFixed(3)}{" "}
                   viss
                 </span>
               </div>
@@ -899,128 +1108,135 @@ const Refinement: React.FC = () => {
                 </select>
               </div>
 
-              {/* Weight Fields - Row 1: Output Weight + Spoilage Weight */}
-              <div className="rf-form-row">
-                <div className="rf-form-group">
-                  <label className="rf-form-label">Output Weight</label>
-                  <div className="rf-input-unit-wrap">
-                    <input
-                      type="number"
-                      step="0.001"
-                      className="rf-form-control"
-                      placeholder="0"
-                      value={form.weight}
-                      onChange={(e) => {
-                        setValidationError(null);
-                        setForm((prev) => ({
-                          ...prev,
-                          weight: e.target.value,
-                        }));
-                      }}
-                      required
-                    />
-                    <span className="rf-input-unit">viss</span>
-                  </div>
-                </div>
-                <div className="rf-form-group">
-                  <label className="rf-form-label">Spoilage Weight</label>
-                  <div className="rf-input-unit-wrap">
-                    <input
-                      type="number"
-                      step="0.001"
-                      className="rf-form-control"
-                      placeholder="0"
-                      value={form.spoilageWeight}
-                      onChange={(e) => {
-                        setValidationError(null);
-                        setForm((prev) => ({
-                          ...prev,
-                          spoilageWeight: e.target.value,
-                        }));
-                      }}
-                    />
-                    <span className="rf-input-unit">viss</span>
-                  </div>
-                </div>
-              </div>
-
-              {/* Weight Fields - Row 2: Return Weight (editable) + Lost Weight (auto) */}
+              {/* Weight Fields */}
               {(() => {
                 const available =
-                  editingRecord?.weight ??
                   editingProcess?.weight ??
                   selectedCategory?.remainingWeight ??
                   0;
-                const computedLost = Math.max(
+                const outputWeight = parseFloat(form.weight) || 0;
+                const spoilage = parseFloat(form.spoilageWeight) || 0;
+                const ret = parseFloat(form.returnWeight) || 0;
+                const lost = Math.max(
                   0,
-                  available -
-                    (parseFloat(form.weight) || 0) -
-                    (parseFloat(form.spoilageWeight) || 0) -
-                    (parseFloat(form.returnWeight) || 0),
+                  available - outputWeight - spoilage - ret,
                 );
+
                 return (
-                  <div className="rf-form-row">
-                    <div className="rf-form-group">
-                      <label className="rf-form-label">Return Weight</label>
-                      <div className="rf-input-unit-wrap">
-                        <input
-                          type="number"
-                          step="0.001"
-                          className="rf-form-control"
-                          placeholder="0"
-                          value={form.returnWeight}
-                          onChange={(e) => {
-                            setValidationError(null);
-                            setForm((prev) => ({
-                              ...prev,
-                              returnWeight: e.target.value,
-                            }));
-                          }}
-                        />
-                        <span className="rf-input-unit">viss</span>
+                  <>
+                    {/* Row 1: Output Weight + Spoilage Weight */}
+                    <div className="rf-form-row">
+                      <div className="rf-form-group">
+                        <label className="rf-form-label">Output Weight</label>
+                        <div className="rf-input-unit-wrap">
+                          <input
+                            type="number"
+                            step="0.001"
+                            className="rf-form-control"
+                            placeholder="0"
+                            value={form.weight}
+                            onChange={(e) => {
+                              setValidationError(null);
+                              setForm((prev) => ({
+                                ...prev,
+                                weight: e.target.value,
+                              }));
+                            }}
+                            required
+                          />
+                          <span className="rf-input-unit">viss</span>
+                        </div>
+                      </div>
+                      <div className="rf-form-group">
+                        <label className="rf-form-label">Spoilage Weight</label>
+                        <div className="rf-input-unit-wrap">
+                          <input
+                            type="number"
+                            step="0.001"
+                            className="rf-form-control"
+                            placeholder="0"
+                            value={form.spoilageWeight}
+                            onChange={(e) => {
+                              setValidationError(null);
+                              setForm((prev) => ({
+                                ...prev,
+                                spoilageWeight: e.target.value,
+                              }));
+                            }}
+                          />
+                          <span className="rf-input-unit">viss</span>
+                        </div>
                       </div>
                     </div>
-                    <div className="rf-form-group">
-                      <label
-                        className="rf-form-label"
-                        style={{ color: "#ef4444" }}
-                      >
-                        Lost Weight{" "}
-                        <span
-                          style={{
-                            fontSize: "9px",
-                            fontWeight: 400,
-                            color: "#94a3b8",
-                            textTransform: "none",
-                          }}
+
+                    {/* Row 2: Return Weight + Lost Weight */}
+                    <div className="rf-form-row">
+                      <div className="rf-form-group">
+                        <label className="rf-form-label">Return Weight</label>
+                        <div className="rf-input-unit-wrap">
+                          <input
+                            type="number"
+                            step="0.001"
+                            className="rf-form-control"
+                            placeholder="0"
+                            value={form.returnWeight}
+                            onChange={(e) => {
+                              setValidationError(null);
+                              setForm((prev) => ({
+                                ...prev,
+                                returnWeight: e.target.value,
+                              }));
+                            }}
+                          />
+                          <span className="rf-input-unit">viss</span>
+                        </div>
+                      </div>
+                      <div className="rf-form-group">
+                        <label
+                          className="rf-form-label"
+                          style={{ color: "#ef4444" }}
                         >
-                          (auto)
-                        </span>
-                      </label>
-                      <div className="rf-input-unit-wrap">
-                        <input
-                          type="number"
-                          readOnly
-                          className="rf-form-control"
-                          style={{
-                            background: "#fef2f2",
-                            color: "#ef4444",
-                            fontWeight: 700,
-                            cursor: "not-allowed",
-                            borderColor: "#fecaca",
-                          }}
-                          value={computedLost.toFixed(3)}
-                        />
-                        <span className="rf-input-unit rf-unit-red">viss</span>
+                          Lost Weight{" "}
+                          <span
+                            style={{
+                              fontSize: "9px",
+                              fontWeight: 400,
+                              color: "#94a3b8",
+                              textTransform: "none",
+                            }}
+                          >
+                            (auto)
+                          </span>
+                        </label>
+                        <div className="rf-input-unit-wrap">
+                          <input
+                            type="number"
+                            readOnly
+                            className="rf-form-control"
+                            style={{
+                              background: "#fef2f2",
+                              color: "#ef4444",
+                              fontWeight: 700,
+                              cursor: "not-allowed",
+                              borderColor: "#fecaca",
+                            }}
+                            value={lost.toFixed(3)}
+                          />
+                          <span className="rf-input-unit rf-unit-red">
+                            viss
+                          </span>
+                        </div>
                       </div>
                     </div>
-                  </div>
+                  </>
                 );
               })()}
 
               {/* Worker Fees */}
               <div className="rf-form-group">
-                <label className="rf-form-label">Worker Fees (MMK) <span style={{ color: '#ef4444' }}>*</span></label>
+                <label className="rf-form-label">
+                  Worker Fees (MMK) <span style={{ color: "#ef4444" }}>*</span>
+                </label>
                 <input
                   type="number"
                   min="0"
@@ -1067,9 +1283,373 @@ const Refinement: React.FC = () => {
                 </button>
                 <button type="submit" className="rf-btn-save">
                   <Send size={15} />
-                  {editingRecord || editingProcess
-                    ? "Save Changes"
-                    : "Submit Record"}
+                  {editingProcess ? "Save Changes" : "Submit Record"}
+                </button>
+              </div>
+              {validationError && (
+                <div className="rf-modal-error-msg">{validationError}</div>
+              )}
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* ── REFINING STOCK / REFINED STOCK MODAL (ORANGE) ── */}
+      {showModal && (editingRefiningProcess || editingRecord) && (
+        <div
+          className="rf-overlay"
+          style={{ zIndex: 1100 }}
+          onClick={() => {
+            setShowModal(false);
+            setValidationError(null);
+          }}
+        >
+          <div className="rf-modal" onClick={(e) => e.stopPropagation()}>
+            {/* Modal Header */}
+            <div className="rf-modal-header rf-modal-header-orange">
+              <div className="rf-modal-header-left">
+                <div className="rf-modal-icon">
+                  <Sparkles size={20} />
+                </div>
+                <div>
+                  <p className="rf-modal-pre">Refining Stock Process</p>
+                  <h2 className="rf-modal-title">
+                    {editingRecord ? "Edit Record" : "Record Refinement"}
+                  </h2>
+                </div>
+              </div>
+              <button
+                className="rf-modal-close"
+                onClick={() => {
+                  setShowModal(false);
+                  setValidationError(null);
+                }}
+              >
+                <X size={18} />
+              </button>
+            </div>
+
+            {/* Info Bar */}
+            <div className="rf-modal-info-bar">
+              <div className="rf-modal-chip">
+                <span className="rf-chip-label">Bag Marker</span>
+                <span className="rf-chip-value">
+                  {editingRefiningProcess?.productMarker ||
+                    editingRecord?.productMarker}
+                </span>
+              </div>
+              <div className="rf-modal-chip">
+                <span className="rf-chip-label">Category</span>
+                <span
+                  className={`rf-badge category-${(editingRefiningProcess?.category || editingRecord?.category || "").toLowerCase().replace(/ /g, "-")}`}
+                  style={{ margin: 0 }}
+                >
+                  {editingRefiningProcess?.category || editingRecord?.category}
+                </span>
+              </div>
+              <div className="rf-modal-chip">
+                <span className="rf-chip-label">Available</span>
+                <span className="rf-chip-value rf-chip-orange">
+                  {editingRecord
+                    ? editingRecord.weight.toFixed(3)
+                    : editingRefiningProcess
+                      ? editingRefiningProcess.weight.toFixed(3)
+                      : "0.000"}{" "}
+                  viss
+                </span>
+              </div>
+            </div>
+
+            {/* Form */}
+            <form onSubmit={handleSubmitModal} className="rf-modal-body">
+              {/* Worker (read-only label) */}
+              <div className="rf-form-group">
+                <label className="rf-form-label">
+                  Refinement Worker{" "}
+                  <span style={{ fontSize: "9px", color: "#94a3b8" }}>
+                    (read-only)
+                  </span>
+                </label>
+                <input
+                  type="text"
+                  readOnly
+                  className="rf-form-control"
+                  style={{
+                    background: "#f8fafc",
+                    cursor: "not-allowed",
+                    fontWeight: 600,
+                  }}
+                  value={
+                    editingRefiningProcess?.refinementWorkerName ||
+                    editingRecord?.refinementWorkerName ||
+                    "---"
+                  }
+                />
+              </div>
+
+              {/* Weight Fields */}
+              {(() => {
+                const available =
+                  editingRecord?.weight ?? editingRefiningProcess?.weight ?? 0;
+                const outputWeight = parseFloat(form.weight) || 0;
+                const spoilage = editingRefiningProcess
+                  ? editingRefiningProcess.spoilageWeight
+                  : (editingRecord?.spoilageWeight ?? 0);
+                const ret = editingRefiningProcess
+                  ? editingRefiningProcess.returnWeight
+                  : (editingRecord?.returnWeight ?? 0);
+                const lost = editingRefiningProcess
+                  ? editingRefiningProcess.lostWeight
+                  : (editingRecord?.lostWeight ?? 0);
+
+                const dryWeight =
+                  outputWeight < available ? available - outputWeight : 0;
+                const increasedWeight =
+                  outputWeight > available ? outputWeight - available : 0;
+
+                return (
+                  <>
+                    {/* Row 1: Output Weight + Spoilage Weight (read-only) */}
+                    <div className="rf-form-row">
+                      <div className="rf-form-group">
+                        <label className="rf-form-label">Output Weight</label>
+                        <div className="rf-input-unit-wrap">
+                          <input
+                            type="number"
+                            step="0.001"
+                            className="rf-form-control"
+                            placeholder="0"
+                            value={form.weight}
+                            onChange={(e) => {
+                              setValidationError(null);
+                              setForm((prev) => ({
+                                ...prev,
+                                weight: e.target.value,
+                              }));
+                            }}
+                            required
+                          />
+                          <span className="rf-input-unit">viss</span>
+                        </div>
+                      </div>
+                      <div className="rf-form-group">
+                        <label className="rf-form-label">
+                          Spoilage Weight{" "}
+                          <span style={{ fontSize: "9px", color: "#94a3b8" }}>
+                            (read-only)
+                          </span>
+                        </label>
+                        <div className="rf-input-unit-wrap">
+                          <input
+                            type="number"
+                            step="0.001"
+                            readOnly
+                            className="rf-form-control"
+                            style={{
+                              background: "#f8fafc",
+                              cursor: "not-allowed",
+                            }}
+                            value={spoilage}
+                          />
+                          <span className="rf-input-unit">viss</span>
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Row 2: Return Weight (read-only) + Lost Weight (read-only) */}
+                    <div className="rf-form-row">
+                      <div className="rf-form-group">
+                        <label className="rf-form-label">
+                          Return Weight{" "}
+                          <span style={{ fontSize: "9px", color: "#94a3b8" }}>
+                            (read-only)
+                          </span>
+                        </label>
+                        <div className="rf-input-unit-wrap">
+                          <input
+                            type="number"
+                            step="0.001"
+                            readOnly
+                            className="rf-form-control"
+                            style={{
+                              background: "#f8fafc",
+                              cursor: "not-allowed",
+                            }}
+                            value={ret}
+                          />
+                          <span className="rf-input-unit">viss</span>
+                        </div>
+                      </div>
+                      <div className="rf-form-group">
+                        <label
+                          className="rf-form-label"
+                          style={{ color: "#ef4444" }}
+                        >
+                          Lost Weight{" "}
+                          <span
+                            style={{
+                              fontSize: "9px",
+                              fontWeight: 400,
+                              color: "#94a3b8",
+                              textTransform: "none",
+                            }}
+                          >
+                            (read-only)
+                          </span>
+                        </label>
+                        <div className="rf-input-unit-wrap">
+                          <input
+                            type="number"
+                            readOnly
+                            className="rf-form-control"
+                            style={{
+                              background: "#fef2f2",
+                              color: "#ef4444",
+                              fontWeight: 700,
+                              cursor: "not-allowed",
+                              borderColor: "#fecaca",
+                            }}
+                            value={lost}
+                          />
+                          <span className="rf-input-unit rf-unit-red">
+                            viss
+                          </span>
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Row 3: Dry Weight (auto) + Increased Weight (auto) */}
+                    <div className="rf-form-row">
+                      <div className="rf-form-group">
+                        <label
+                          className="rf-form-label"
+                          style={{ color: "#059669" }}
+                        >
+                          Dry Weight{" "}
+                          <span
+                            style={{
+                              fontSize: "9px",
+                              fontWeight: 400,
+                              color: "#94a3b8",
+                              textTransform: "none",
+                            }}
+                          >
+                            (auto)
+                          </span>
+                        </label>
+                        <div className="rf-input-unit-wrap">
+                          <input
+                            type="number"
+                            readOnly
+                            className="rf-form-control"
+                            style={{
+                              background: "#ecfdf5",
+                              color: "#059669",
+                              fontWeight: 700,
+                              cursor: "not-allowed",
+                              borderColor: "#a7f3d0",
+                            }}
+                            value={dryWeight.toFixed(3)}
+                          />
+                          <span className="rf-input-unit rf-unit-green">
+                            viss
+                          </span>
+                        </div>
+                      </div>
+                      <div className="rf-form-group">
+                        <label
+                          className="rf-form-label"
+                          style={{ color: "#d97706" }}
+                        >
+                          Increased Weight{" "}
+                          <span
+                            style={{
+                              fontSize: "9px",
+                              fontWeight: 400,
+                              color: "#94a3b8",
+                              textTransform: "none",
+                            }}
+                          >
+                            (auto)
+                          </span>
+                        </label>
+                        <div className="rf-input-unit-wrap">
+                          <input
+                            type="number"
+                            readOnly
+                            className="rf-form-control"
+                            style={{
+                              background: "#fffbeb",
+                              color: "#d97706",
+                              fontWeight: 700,
+                              cursor: "not-allowed",
+                              borderColor: "#fde68a",
+                            }}
+                            value={increasedWeight.toFixed(3)}
+                          />
+                          <span
+                            className="rf-input-unit"
+                            style={{ color: "#d97706" }}
+                          >
+                            viss
+                          </span>
+                        </div>
+                      </div>
+                    </div>
+                  </>
+                );
+              })()}
+
+              {/* Worker Fees (read-only) */}
+              <div className="rf-form-group">
+                <label className="rf-form-label">
+                  Worker Fees (MMK){" "}
+                  <span style={{ fontSize: "9px", color: "#94a3b8" }}>
+                    (read-only)
+                  </span>
+                </label>
+                <input
+                  type="number"
+                  readOnly
+                  className="rf-form-control"
+                  style={{ background: "#f8fafc", cursor: "not-allowed" }}
+                  value={form.workerFees}
+                />
+              </div>
+
+              {/* Date */}
+              <div className="rf-form-group">
+                <label className="rf-form-label">Date</label>
+                <input
+                  type="date"
+                  className="rf-form-control"
+                  value={form.date.split("T")[0]}
+                  onChange={(e) => {
+                    setValidationError(null);
+                    setForm((prev) => ({ ...prev, date: e.target.value }));
+                  }}
+                  required
+                />
+              </div>
+
+              {/* Footer */}
+              <div className="rf-modal-footer">
+                <button
+                  type="button"
+                  className="rf-btn-cancel"
+                  onClick={() => {
+                    setShowModal(false);
+                    setValidationError(null);
+                  }}
+                >
+                  <X size={15} /> Cancel
+                </button>
+                <button
+                  type="submit"
+                  className="rf-btn-save rf-btn-save-orange"
+                >
+                  <Send size={15} />
+                  {editingRecord ? "Save Changes" : "Submit Record"}
                 </button>
               </div>
               {validationError && (

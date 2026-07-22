@@ -103,7 +103,7 @@ public class RefinementController : ControllerBase
                     .ThenInclude(pr => pr.Product)
                         .ThenInclude(prod => prod.Warehouse)
             .Include(r => r.Worker)
-            .Include(r => r.RefinementRecords)
+            .Include(r => r.RefiningProcesses)
             .Where(r => r.DeleteFlg == 0)
             .Where(r => warehouseId == null || r.PurifiedRecord.ProcessingRecord.Product.WarehouseId == warehouseId)
             .OrderByDescending(r => r.Date)
@@ -114,17 +114,15 @@ public class RefinementController : ControllerBase
         foreach (var r in processes)
         {
             decimal totalAssigned = r.Weight;
-            decimal totalConsumed = r.RefinementRecords
+            decimal totalConsumed = r.RefiningProcesses
                 .Where(rr => rr.DeleteFlg == 0)
                 .Sum(rr => rr.Weight + rr.LostWeight + rr.SpoilageWeight + rr.ReturnWeight);
 
             decimal remainingWeight = totalAssigned - totalConsumed;
             if (remainingWeight <= 0.001m) continue;
 
-            double usedCount = r.RefinementRecords.Where(rr => rr.DeleteFlg == 0).Sum(rr => rr.Count);
+            double usedCount = r.RefiningProcesses.Where(rr => rr.DeleteFlg == 0).Sum(rr => rr.Count);
             double remainingCount = r.Count - usedCount;
-
-            decimal usedWeight = r.RefinementRecords.Where(rr => rr.DeleteFlg == 0).Sum(rr => rr.Weight);
 
             string warehouseName = r.PurifiedRecord?.ProcessingRecord?.Product?.Warehouse?.Name ?? "";
 
@@ -137,12 +135,74 @@ public class RefinementController : ControllerBase
                 Category = r.Category,
                 Count = remainingCount,
                 Weight = remainingWeight,
+                OriginalCount = r.Count,
+                OriginalWeight = r.Weight,
                 RemainingCountAfter = r.RemainingCountAfter,
                 RemainingWeightAfter = r.RemainingWeightAfter,
                 WarehouseName = warehouseName,
                 RefinementWorkerId = r.RefinementWorkerId,
                 RefinementWorkerName = r.Worker?.Name ?? "",
                 WorkerFees = r.WorkerFees,
+            });
+        }
+
+        return Ok(result);
+    }
+
+    // GET /api/refinement/refining-processes
+    // Returns all RefiningProcesses
+    [HttpGet("refining-processes")]
+    public async Task<ActionResult<List<RefiningProcessDto>>> GetRefiningProcesses()
+    {
+        var warehouseId = GetCurrentUserWarehouseId();
+
+        var refiningProcesses = await _context.RefiningProcesses
+            .Include(r => r.PurifiedRecord)
+                .ThenInclude(p => p.ProcessingRecord)
+                    .ThenInclude(pr => pr.Product)
+                        .ThenInclude(prod => prod.Warehouse)
+            .Include(r => r.Worker)
+            .Include(r => r.RefinementRecords)
+            .Where(r => r.DeleteFlg == 0)
+            .Where(r => warehouseId == null || r.PurifiedRecord.ProcessingRecord.Product.WarehouseId == warehouseId)
+            .OrderByDescending(r => r.Date)
+            .ToListAsync();
+
+        var result = new List<RefiningProcessDto>();
+
+        foreach (var r in refiningProcesses)
+        {
+            decimal totalAssigned = r.Weight;
+            decimal totalConsumed = r.RefinementRecords
+                .Where(rr => rr.DeleteFlg == 0)
+                .Sum(rr => rr.Weight + rr.LostWeight + rr.SpoilageWeight + rr.ReturnWeight);
+
+            decimal remainingWeight = Math.Max(0, totalAssigned - totalConsumed);
+
+            double usedCount = r.RefinementRecords.Where(rr => rr.DeleteFlg == 0).Sum(rr => rr.Count);
+            double remainingCount = Math.Max(0, r.Count - usedCount);
+
+            string warehouseName = r.PurifiedRecord?.ProcessingRecord?.Product?.Warehouse?.Name ?? "";
+
+            result.Add(new RefiningProcessDto
+            {
+                Id = r.Id,
+                Date = r.Date,
+                PurifiedRecordId = r.PurifiedRecordId,
+                ProductMarker = r.PurifiedRecord?.ProcessingRecord?.Product?.Marker ?? "",
+                WarehouseName = warehouseName,
+                Category = r.Category,
+                Count = remainingCount,
+                Weight = remainingWeight,
+                RefinementWorkerId = r.RefinementWorkerId,
+                RefinementWorkerName = r.Worker?.Name ?? "",
+                LostWeight = r.LostWeight,
+                SpoilageWeight = r.SpoilageWeight,
+                ReturnWeight = r.ReturnWeight,
+                RefinementProcessId = r.RefinementProcessId,
+                RemainingCount = remainingCount,
+                RemainingWeight = remainingWeight,
+                WorkerFees = r.WorkerFees
             });
         }
 
@@ -195,6 +255,8 @@ public class RefinementController : ControllerBase
                 LostWeight = r.LostWeight,
                 SpoilageWeight = r.SpoilageWeight,
                 ReturnWeight = r.ReturnWeight,
+                DryWeight = r.DryWeight,
+                IncreasedWeight = r.IncreasedWeight,
                 WorkerFees = r.WorkerFees,
                 IsLocked = _context.SingleDoubleDrawnRecords.Any(rr => rr.RefinementRecordId == r.Id && rr.DeleteFlg == 0)
             });
@@ -202,6 +264,7 @@ public class RefinementController : ControllerBase
 
         return Ok(result);
     }
+
 
     // POST /api/refinement
     // Creates a RefinementProcess and decrements PurifiedRecord.RemainingCount
@@ -267,7 +330,7 @@ public class RefinementController : ControllerBase
     }
 
     // PUT /api/refinement/{id}
-    // Creates or updates a RefinementRecord linked to the given process
+    // Creates or updates a RefiningProcess linked to the given process
     [HttpPut("{id}")]
     public async Task<IActionResult> UpdateProcess(int id, [FromBody] CreateRefinementProcessDto dto)
     {
@@ -282,7 +345,7 @@ public class RefinementController : ControllerBase
             : 0;
         double count = unitWeight > 0 ? (double)(dto.Weight / unitWeight) : dto.Count;
 
-        var refinementRecord = new RefinementRecord
+        var refiningProcess = new RefiningProcess
         {
             Date = dto.Date.Date.Add(DateTime.UtcNow.AddHours(6.5).TimeOfDay),
             PurifiedRecordId = process.PurifiedRecordId,
@@ -298,7 +361,7 @@ public class RefinementController : ControllerBase
             RefinementProcessId = id,
             WorkerFees = dto.WorkerFees
         };
-        _context.RefinementRecords.Add(refinementRecord);
+        _context.RefiningProcesses.Add(refiningProcess);
 
         process.WorkerFees = dto.WorkerFees;
 
@@ -312,18 +375,88 @@ public class RefinementController : ControllerBase
     public async Task<IActionResult> DeleteProcess(int id)
     {
         var process = await _context.RefinementProcesses
-            .Include(r => r.RefinementRecords)
+            .Include(r => r.RefiningProcesses)
+                .ThenInclude(rp => rp.RefinementRecords)
             .FirstOrDefaultAsync(r => r.Id == id);
 
         if (process == null) return NotFound();
 
+        // Remove linked RefiningProcesses and RefinementRecords
+        foreach (var rp in process.RefiningProcesses.Where(r => r.DeleteFlg == 0))
+        {
+            foreach (var rec in rp.RefinementRecords.Where(r => r.DeleteFlg == 0))
+            {
+                _context.RefinementRecords.Remove(rec);
+            }
+            _context.RefiningProcesses.Remove(rp);
+        }
+
+        _context.RefinementProcesses.Remove(process);
+        await _context.SaveChangesAsync();
+        _notifier.NotifyChange();
+        return NoContent();
+    }
+
+    // PUT /api/refinement/refining-processes/{id}
+    // Creates a RefinementRecord linked to the given RefiningProcess
+    [HttpPut("refining-processes/{id}")]
+    public async Task<IActionResult> UpdateRefiningProcess(int id, [FromBody] CreateRefinementProcessDto dto)
+    {
+        var refiningProcess = await _context.RefiningProcesses
+            .Include(r => r.PurifiedRecord)
+            .FirstOrDefaultAsync(r => r.Id == id);
+
+        if (refiningProcess == null) return NotFound();
+
+        decimal unitWeight = (decimal)refiningProcess.PurifiedRecord.Count > 0
+            ? refiningProcess.PurifiedRecord.Weight / (decimal)refiningProcess.PurifiedRecord.Count
+            : 0;
+        double count = unitWeight > 0 ? (double)(dto.Weight / unitWeight) : dto.Count;
+
+        var refinementRecord = new RefinementRecord
+        {
+            Date = dto.Date.Date.Add(DateTime.UtcNow.AddHours(6.5).TimeOfDay),
+            PurifiedRecordId = refiningProcess.PurifiedRecordId,
+            Category = refiningProcess.Category,
+            Count = count,
+            Weight = dto.Weight,
+            LostWeight = refiningProcess.LostWeight,
+            SpoilageWeight = refiningProcess.SpoilageWeight,
+            ReturnWeight = refiningProcess.ReturnWeight,
+            DryWeight = dto.DryWeight,
+            IncreasedWeight = dto.IncreasedWeight,
+            RemainingCount = count,
+            RemainingWeight = dto.Weight,
+            RefinementWorkerId = dto.RefinementWorkerId,
+            RefinementProcessId = refiningProcess.RefinementProcessId,
+            RefiningProcessId = id,
+            WorkerFees = dto.WorkerFees
+        };
+
+        _context.RefinementRecords.Add(refinementRecord);
+
+        await _context.SaveChangesAsync();
+        _notifier.NotifyChange();
+        return Ok();
+    }
+
+    // DELETE /api/refinement/refining-processes/{id}
+    [HttpDelete("refining-processes/{id}")]
+    public async Task<IActionResult> DeleteRefiningProcess(int id)
+    {
+        var refiningProcess = await _context.RefiningProcesses
+            .Include(r => r.RefinementRecords)
+            .FirstOrDefaultAsync(r => r.Id == id);
+
+        if (refiningProcess == null) return NotFound();
+
         // Remove linked RefinementRecords
-        foreach (var rec in process.RefinementRecords.Where(r => r.DeleteFlg == 0))
+        foreach (var rec in refiningProcess.RefinementRecords.Where(r => r.DeleteFlg == 0))
         {
             _context.RefinementRecords.Remove(rec);
         }
 
-        _context.RefinementProcesses.Remove(process);
+        _context.RefiningProcesses.Remove(refiningProcess);
         await _context.SaveChangesAsync();
         _notifier.NotifyChange();
         return NoContent();
@@ -350,10 +483,13 @@ public class RefinementController : ControllerBase
         record.LostWeight = dto.LostWeight;
         record.SpoilageWeight = dto.SpoilageWeight;
         record.ReturnWeight = dto.ReturnWeight;
+        record.DryWeight = dto.DryWeight;
+        record.IncreasedWeight = dto.IncreasedWeight;
         record.RemainingCount = count;
         record.RemainingWeight = dto.Weight;
         record.RefinementWorkerId = dto.RefinementWorkerId;
         record.WorkerFees = dto.WorkerFees;
+
 
         // Sync process if exists
         if (record.RefinementProcessId.HasValue)

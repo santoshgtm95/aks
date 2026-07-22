@@ -565,6 +565,9 @@
 .rf-tab-active.rf-tab-green .rf-tab-title {
   color: #059669;
 }
+.rf-tab-active.rf-tab-orange .rf-tab-title {
+  color: #ea580c;
+}
 
 /* Count Badge */
 .rf-header-badge {
@@ -916,6 +919,11 @@
   color: white;
 }
 
+.rf-modal-header-orange {
+  background: linear-gradient(135deg, #c2410c, #ea580c);
+}
+
+
 .rf-modal-header-left {
   display: flex;
   align-items: center;
@@ -1087,6 +1095,10 @@
   color: #ef4444;
 }
 
+.rf-unit-green {
+  color: #059669;
+}
+
 /* Modal Footer */
 .rf-modal-footer {
   display: flex;
@@ -1145,6 +1157,16 @@
 .rf-btn-save:active {
   transform: translateY(0);
 }
+
+.rf-btn-save-orange {
+  background: linear-gradient(135deg, #c2410c, #ea580c) !important;
+  box-shadow: 0 4px 14px rgba(234, 88, 12, 0.35) !important;
+}
+
+.rf-btn-save-orange:hover {
+  box-shadow: 0 6px 20px rgba(234, 88, 12, 0.45) !important;
+}
+
 
 .rf-modal-error-msg {
   color: #ef4444;
@@ -1315,3 +1337,13 @@
   color: #94a3b8;
   pointer-events: none;
 }
+
+.status-completed {
+  background: #dcfce7;
+  color: #15803d;
+}
+.status-refining {
+  background: #ffedd5;
+  color: #c2410c;
+}
+

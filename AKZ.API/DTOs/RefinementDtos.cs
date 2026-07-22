@@ -12,6 +12,8 @@ public class RefinementProcessDto
     public decimal Weight { get; set; }
     public double RemainingCountAfter { get; set; }
     public decimal RemainingWeightAfter { get; set; }
+    public double OriginalCount { get; set; }
+    public decimal OriginalWeight { get; set; }
     public int? RefinementWorkerId { get; set; }
     public string RefinementWorkerName { get; set; } = string.Empty;
     public decimal WorkerFees { get; set; }
@@ -32,8 +34,33 @@ public class RefinementRecordDto
     public decimal LostWeight { get; set; }
     public decimal SpoilageWeight { get; set; }
     public decimal ReturnWeight { get; set; }
+    public decimal DryWeight { get; set; }
+    public decimal IncreasedWeight { get; set; }
     public decimal WorkerFees { get; set; }
+    public int? RefinementProcessId { get; set; }
+    public int? RefiningProcessId { get; set; }
     public bool IsLocked { get; set; }
+}
+
+public class RefiningProcessDto
+{
+    public int Id { get; set; }
+    public DateTime Date { get; set; }
+    public int PurifiedRecordId { get; set; }
+    public string ProductMarker { get; set; } = string.Empty;
+    public string WarehouseName { get; set; } = string.Empty;
+    public string Category { get; set; } = string.Empty;
+    public double Count { get; set; }
+    public decimal Weight { get; set; }
+    public int? RefinementWorkerId { get; set; }
+    public string RefinementWorkerName { get; set; } = string.Empty;
+    public decimal LostWeight { get; set; }
+    public decimal SpoilageWeight { get; set; }
+    public decimal ReturnWeight { get; set; }
+    public int? RefinementProcessId { get; set; }
+    public double RemainingCount { get; set; }
+    public decimal RemainingWeight { get; set; }
+    public decimal WorkerFees { get; set; }
 }
 
 public class CreateRefinementProcessDto
@@ -47,7 +74,10 @@ public class CreateRefinementProcessDto
     public decimal LostWeight { get; set; }
     public decimal SpoilageWeight { get; set; }
     public decimal ReturnWeight { get; set; }
+    public decimal DryWeight { get; set; }
+    public decimal IncreasedWeight { get; set; }
     public decimal WorkerFees { get; set; }
+    public int? RefiningProcessId { get; set; }
 }
 
 public class AvailablePurifiedCategoryDto

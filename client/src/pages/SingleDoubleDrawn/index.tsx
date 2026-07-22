@@ -750,13 +750,6 @@ const SingleDoubleDrawn: React.FC = () => {
                         <em>viss</em>
                       </span>
                     </div>
-                    <div className="card-stat card-stat-return">
-                      <span className="card-stat-label">Return</span>
-                      <span className="card-stat-value">
-                        {record.returnWeight.toFixed(3)}
-                        <em>viss</em>
-                      </span>
-                    </div>
                   </div>
                 </div>
               ))
@@ -916,10 +909,34 @@ const SingleDoubleDrawn: React.FC = () => {
                           </span>
                         </div>
                       </div>
-                      <div className="detail-info-card card-worker">
-                        <div className="detail-label">Refinement Worker</div>
+                      <div className="detail-info-card card-dry">
+                        <div className="detail-label">Dry Weight</div>
                         <div className="detail-value">
-                          {selectedRecord.placeName || "—"}
+                          {(selectedRecord.dryWeight || 0).toFixed(3)}{" "}
+                          <span
+                            style={{
+                              fontSize: "11px",
+                              fontWeight: 600,
+                              color: "#64748b",
+                            }}
+                          >
+                            viss
+                          </span>
+                        </div>
+                      </div>
+                      <div className="detail-info-card card-increased">
+                        <div className="detail-label">Increased Weight</div>
+                        <div className="detail-value">
+                          {(selectedRecord.increasedWeight || 0).toFixed(3)}{" "}
+                          <span
+                            style={{
+                              fontSize: "11px",
+                              fontWeight: 600,
+                              color: "#64748b",
+                            }}
+                          >
+                            viss
+                          </span>
                         </div>
                       </div>
                     </div>
@@ -1561,7 +1578,10 @@ const SingleDoubleDrawn: React.FC = () => {
                             </select>
                           </div>
                           <div className="form-group">
-                            <label>Worker Fees (MMK) <span style={{ color: '#ef4444' }}>*</span></label>
+                            <label>
+                              Worker Fees (MMK){" "}
+                              <span style={{ color: "#ef4444" }}>*</span>
+                            </label>
                             <input
                               type="number"
                               min="0"
@@ -2062,20 +2082,42 @@ const SingleDoubleDrawn: React.FC = () => {
                             className="sdd-search-control"
                             placeholder="Search history..."
                             value={historySearchTerm}
-                            onChange={(e) => setHistorySearchTerm(e.target.value)}
+                            onChange={(e) =>
+                              setHistorySearchTerm(e.target.value)
+                            }
                           />
                         </div>
                         <div className="sdd-date-filter">
                           <div className="sdd-date-field">
                             <span className="sdd-date-label">From</span>
-                            <input type="date" className="sdd-date-input" value={historyFromDate} onChange={(e) => setHistoryFromDate(e.target.value)} />
+                            <input
+                              type="date"
+                              className="sdd-date-input"
+                              value={historyFromDate}
+                              onChange={(e) =>
+                                setHistoryFromDate(e.target.value)
+                              }
+                            />
                           </div>
                           <div className="sdd-date-field">
                             <span className="sdd-date-label">To</span>
-                            <input type="date" className="sdd-date-input" value={historyToDate} onChange={(e) => setHistoryToDate(e.target.value)} />
+                            <input
+                              type="date"
+                              className="sdd-date-input"
+                              value={historyToDate}
+                              onChange={(e) => setHistoryToDate(e.target.value)}
+                            />
                           </div>
                           {(historyFromDate || historyToDate) && (
-                            <button className="sdd-date-clear-btn" onClick={() => { setHistoryFromDate(""); setHistoryToDate(""); }}>Clear</button>
+                            <button
+                              className="sdd-date-clear-btn"
+                              onClick={() => {
+                                setHistoryFromDate("");
+                                setHistoryToDate("");
+                              }}
+                            >
+                              Clear
+                            </button>
                           )}
                         </div>
                       </div>
