@@ -6,6 +6,7 @@ import { useLongPoll } from "../../hooks/useLongPoll";
 import type {
   AvailablePurifiedCategory,
   RefinementProcess,
+  RefiningProcess,
   RefinementRecord,
   RefinementWorker,
 } from "../../types";
