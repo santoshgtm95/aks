@@ -162,6 +162,7 @@ public class RefinementController : ControllerBase
                     .ThenInclude(pr => pr.Product)
                         .ThenInclude(prod => prod.Warehouse)
             .Include(r => r.Worker)
+            .Include(r => r.RefinementProcess)
             .Include(r => r.RefinementRecords)
             .Where(r => r.DeleteFlg == 0)
             .Where(r => warehouseId == null || r.PurifiedRecord.ProcessingRecord.Product.WarehouseId == warehouseId)
@@ -175,7 +176,7 @@ public class RefinementController : ControllerBase
             decimal totalAssigned = r.Weight;
             decimal totalConsumed = r.RefinementRecords
                 .Where(rr => rr.DeleteFlg == 0)
-                .Sum(rr => rr.Weight + rr.LostWeight + rr.SpoilageWeight + rr.ReturnWeight);
+                .Sum(rr => rr.Weight + rr.LostWeight + rr.SpoilageWeight + rr.ReturnWeight + rr.DryWeight);
 
             decimal remainingWeight = Math.Max(0, totalAssigned - totalConsumed);
 
@@ -194,11 +195,13 @@ public class RefinementController : ControllerBase
                 Category = r.Category,
                 Count = remainingCount,
                 Weight = remainingWeight,
+                AssignedWeight = r.RefinementProcess?.Weight ?? r.Weight,
                 RefinementWorkerId = r.RefinementWorkerId,
                 RefinementWorkerName = r.Worker?.Name ?? "",
                 LostWeight = r.LostWeight,
                 SpoilageWeight = r.SpoilageWeight,
                 ReturnWeight = r.ReturnWeight,
+                IncreasedWeight = r.IncreasedWeight,
                 RefinementProcessId = r.RefinementProcessId,
                 RemainingCount = remainingCount,
                 RemainingWeight = remainingWeight,
@@ -222,6 +225,9 @@ public class RefinementController : ControllerBase
                     .ThenInclude(pr => pr.Product)
                         .ThenInclude(prod => prod.Warehouse)
             .Include(r => r.Worker)
+            .Include(r => r.RefinementProcess)
+            .Include(r => r.RefiningProcess)
+                .ThenInclude(rp => rp.RefinementProcess)
             .Where(r => r.DeleteFlg == 0)
             .Where(r => warehouseId == null || r.PurifiedRecord.ProcessingRecord.Product.WarehouseId == warehouseId)
             .OrderByDescending(r => r.Date)
@@ -249,6 +255,7 @@ public class RefinementController : ControllerBase
                 Category = r.Category,
                 Count = r.Count,
                 Weight = r.Weight,
+                AssignedWeight = r.RefinementProcess?.Weight ?? r.RefiningProcess?.RefinementProcess?.Weight ?? r.Weight,
                 WarehouseName = warehouseName,
                 RefinementWorkerId = r.RefinementWorkerId,
                 RefinementWorkerName = r.Worker?.Name ?? "",
@@ -355,6 +362,7 @@ public class RefinementController : ControllerBase
             LostWeight = dto.LostWeight,
             SpoilageWeight = dto.SpoilageWeight,
             ReturnWeight = dto.ReturnWeight,
+            IncreasedWeight = dto.IncreasedWeight,
             RemainingCount = count,
             RemainingWeight = dto.Weight,
             RefinementWorkerId = dto.RefinementWorkerId,
@@ -404,6 +412,7 @@ public class RefinementController : ControllerBase
     {
         var refiningProcess = await _context.RefiningProcesses
             .Include(r => r.PurifiedRecord)
+            .Include(r => r.RefinementProcess)
             .FirstOrDefaultAsync(r => r.Id == id);
 
         if (refiningProcess == null) return NotFound();
@@ -413,6 +422,11 @@ public class RefinementController : ControllerBase
             : 0;
         double count = unitWeight > 0 ? (double)(dto.Weight / unitWeight) : dto.Count;
 
+        decimal assignedWeight = refiningProcess.RefinementProcess?.Weight ?? refiningProcess.Weight;
+        decimal calculatedLostWeight = (assignedWeight > 0 && dto.Weight > 0)
+            ? Math.Max(0, assignedWeight - (dto.Weight + refiningProcess.SpoilageWeight + refiningProcess.ReturnWeight))
+            : dto.LostWeight;
+
         var refinementRecord = new RefinementRecord
         {
             Date = dto.Date.Date.Add(DateTime.UtcNow.AddHours(6.5).TimeOfDay),
@@ -420,11 +434,11 @@ public class RefinementController : ControllerBase
             Category = refiningProcess.Category,
             Count = count,
             Weight = dto.Weight,
-            LostWeight = refiningProcess.LostWeight,
+            LostWeight = calculatedLostWeight,
             SpoilageWeight = refiningProcess.SpoilageWeight,
             ReturnWeight = refiningProcess.ReturnWeight,
             DryWeight = dto.DryWeight,
-            IncreasedWeight = dto.IncreasedWeight,
+            IncreasedWeight = refiningProcess.IncreasedWeight,
             RemainingCount = count,
             RemainingWeight = dto.Weight,
             RefinementWorkerId = dto.RefinementWorkerId,
@@ -468,6 +482,9 @@ public class RefinementController : ControllerBase
     {
         var record = await _context.RefinementRecords
             .Include(r => r.PurifiedRecord)
+            .Include(r => r.RefinementProcess)
+            .Include(r => r.RefiningProcess)
+                .ThenInclude(rp => rp.RefinementProcess)
             .FirstOrDefaultAsync(r => r.Id == id);
 
         if (record == null) return NotFound();
@@ -477,14 +494,24 @@ public class RefinementController : ControllerBase
             : 0;
         double count = unitWeight > 0 ? (double)(dto.Weight / unitWeight) : dto.Count;
 
+        decimal assignedWeight = record.RefinementProcess?.Weight
+            ?? record.RefiningProcess?.RefinementProcess?.Weight
+            ?? record.Weight;
+
+        decimal spoilage = record.SpoilageWeight;
+        decimal ret = record.ReturnWeight;
+        decimal calculatedLostWeight = (assignedWeight > 0 && dto.Weight > 0)
+            ? Math.Max(0, assignedWeight - (dto.Weight + spoilage + ret))
+            : dto.LostWeight;
+
         record.Date = dto.Date.Date.Add(DateTime.UtcNow.AddHours(6.5).TimeOfDay);
         record.Count = count;
         record.Weight = dto.Weight;
-        record.LostWeight = dto.LostWeight;
-        record.SpoilageWeight = dto.SpoilageWeight;
-        record.ReturnWeight = dto.ReturnWeight;
+        record.LostWeight = calculatedLostWeight;
+        record.SpoilageWeight = spoilage;
+        record.ReturnWeight = ret;
         record.DryWeight = dto.DryWeight;
-        record.IncreasedWeight = dto.IncreasedWeight;
+        record.IncreasedWeight = record.RefiningProcess?.IncreasedWeight ?? record.IncreasedWeight;
         record.RemainingCount = count;
         record.RemainingWeight = dto.Weight;
         record.RefinementWorkerId = dto.RefinementWorkerId;

@@ -29,6 +29,7 @@ public class RefinementRecordDto
     public string Category { get; set; } = string.Empty;
     public double Count { get; set; }
     public decimal Weight { get; set; }
+    public decimal AssignedWeight { get; set; }
     public int? RefinementWorkerId { get; set; }
     public string RefinementWorkerName { get; set; } = string.Empty;
     public decimal LostWeight { get; set; }
@@ -52,11 +53,13 @@ public class RefiningProcessDto
     public string Category { get; set; } = string.Empty;
     public double Count { get; set; }
     public decimal Weight { get; set; }
+    public decimal AssignedWeight { get; set; }
     public int? RefinementWorkerId { get; set; }
     public string RefinementWorkerName { get; set; } = string.Empty;
     public decimal LostWeight { get; set; }
     public decimal SpoilageWeight { get; set; }
     public decimal ReturnWeight { get; set; }
+    public decimal IncreasedWeight { get; set; }
     public int? RefinementProcessId { get; set; }
     public double RemainingCount { get; set; }
     public decimal RemainingWeight { get; set; }

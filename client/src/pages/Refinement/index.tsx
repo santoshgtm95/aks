@@ -289,17 +289,20 @@ const Refinement: React.FC = () => {
         setValidationError("Please select a refinement worker");
         return;
       }
-
-      if (weight + spoilageWeight + returnWeight > available) {
+    } else {
+      const assigned =
+        editingRefiningProcess?.assignedWeight ??
+        editingRecord?.assignedWeight ??
+        0;
+      const maxOutputWeight =
+        assigned > 0 && available > 0
+          ? Math.min(assigned, available)
+          : available > 0
+            ? available
+            : assigned;
+      if (maxOutputWeight > 0 && weight > maxOutputWeight) {
         setValidationError(
-          `Total weights (Output + Spoilage + Return = ${(weight + spoilageWeight + returnWeight).toFixed(3)}) cannot exceed Available weight (${available.toFixed(3)} viss)`,
-        );
-        return;
-      }
-
-      if (selectedCategory && weight > selectedCategory.remainingWeight) {
-        setValidationError(
-          `Cannot exceed remaining weight (${selectedCategory.remainingWeight.toFixed(3)} viss)`,
+          `Output weight cannot exceed maximum allowed weight (${maxOutputWeight.toFixed(3)} viss)`,
         );
         return;
       }
@@ -321,9 +324,24 @@ const Refinement: React.FC = () => {
         count: 0,
         weight,
         lostWeight: isRefiningStock
-          ? (editingRefiningProcess?.lostWeight ??
-            editingRecord?.lostWeight ??
-            0)
+          ? (() => {
+              const assigned =
+                editingRefiningProcess?.assignedWeight ??
+                editingRecord?.assignedWeight ??
+                0;
+              const baseLost = editingRefiningProcess
+                ? editingRefiningProcess.lostWeight
+                : (editingRecord?.lostWeight ?? 0);
+              const spoilage = editingRefiningProcess
+                ? editingRefiningProcess.spoilageWeight
+                : (editingRecord?.spoilageWeight ?? 0);
+              const ret = editingRefiningProcess
+                ? editingRefiningProcess.returnWeight
+                : (editingRecord?.returnWeight ?? 0);
+              return weight > 0 && assigned > 0
+                ? Math.max(0, assigned - (weight + spoilage + ret))
+                : baseLost;
+            })()
           : lostWeight,
         spoilageWeight: isRefiningStock
           ? (editingRefiningProcess?.spoilageWeight ??
@@ -337,10 +355,12 @@ const Refinement: React.FC = () => {
           : returnWeight,
         refinementWorkerId: form.refinementWorkerId,
         workerFees: Number(form.workerFees) || 0,
-        dryWeight:
-          isRefiningStock && weight < available ? available - weight : 0,
-        increasedWeight:
-          isRefiningStock && weight > available ? weight - available : 0,
+        dryWeight: weight < available ? available - weight : 0,
+        increasedWeight: isRefiningStock
+          ? (editingRefiningProcess?.increasedWeight ??
+            editingRecord?.increasedWeight ??
+            0)
+          : weight > available ? weight - available : 0,
       };
 
       if (editingRefiningProcess) {
@@ -745,6 +765,7 @@ const Refinement: React.FC = () => {
                       <th>Category</th>
                       <th>Remaining Count</th>
                       <th>Remaining Weight</th>
+                      <th>Increased Weight</th>
                       <th>Refinement Worker</th>
                       <th>Worker Fees</th>
                       <th className="rf-th-right">Actions</th>
@@ -845,7 +866,7 @@ const Refinement: React.FC = () => {
                   ) : activeTab === "refining" ? (
                     filteredRefiningProcesses.length === 0 ? (
                       <tr>
-                        <td colSpan={8} className="rf-empty-row">
+                        <td colSpan={9} className="rf-empty-row">
                           <History size={44} className="rf-empty-icon" />
                           <span>
                             {refiningProcesses.filter((p) => p.weight > 0.001)
@@ -881,6 +902,12 @@ const Refinement: React.FC = () => {
                           <td>{p.count}</td>
                           <td className="rf-td-weight">
                             {p.weight.toFixed(3)}
+                          </td>
+                          <td
+                            className="rf-td-weight"
+                            style={{ color: "#d97706" }}
+                          >
+                            {(p.increasedWeight || 0).toFixed(3)}
                           </td>
                           <td>
                             <div className="rf-worker-cell">
@@ -1121,6 +1148,8 @@ const Refinement: React.FC = () => {
                   0,
                   available - outputWeight - spoilage - ret,
                 );
+                const increased =
+                  outputWeight > available ? outputWeight - available : 0;
 
                 return (
                   <>
@@ -1223,6 +1252,49 @@ const Refinement: React.FC = () => {
                             value={lost.toFixed(3)}
                           />
                           <span className="rf-input-unit rf-unit-red">
+                            viss
+                          </span>
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Row 3: Increased Weight */}
+                    <div className="rf-form-row">
+                      <div className="rf-form-group">
+                        <label
+                          className="rf-form-label"
+                          style={{ color: "#d97706" }}
+                        >
+                          Increased Weight{" "}
+                          <span
+                            style={{
+                              fontSize: "9px",
+                              fontWeight: 400,
+                              color: "#94a3b8",
+                              textTransform: "none",
+                            }}
+                          >
+                            (auto)
+                          </span>
+                        </label>
+                        <div className="rf-input-unit-wrap">
+                          <input
+                            type="number"
+                            readOnly
+                            className="rf-form-control"
+                            style={{
+                              background: "#fffbeb",
+                              color: "#d97706",
+                              fontWeight: 700,
+                              cursor: "not-allowed",
+                              borderColor: "#fde68a",
+                            }}
+                            value={increased.toFixed(3)}
+                          />
+                          <span
+                            className="rf-input-unit"
+                            style={{ color: "#d97706" }}
+                          >
                             viss
                           </span>
                         </div>
@@ -1348,6 +1420,17 @@ const Refinement: React.FC = () => {
                 </span>
               </div>
               <div className="rf-modal-chip">
+                <span className="rf-chip-label">Assigned</span>
+                <span className="rf-chip-value" style={{ color: "#6366f1" }}>
+                  {editingRefiningProcess?.assignedWeight != null
+                    ? editingRefiningProcess.assignedWeight.toFixed(3)
+                    : editingRecord?.assignedWeight != null
+                      ? editingRecord.assignedWeight.toFixed(3)
+                      : "0.000"}{" "}
+                  viss
+                </span>
+              </div>
+              <div className="rf-modal-chip">
                 <span className="rf-chip-label">Available</span>
                 <span className="rf-chip-value rf-chip-orange">
                   {editingRecord
@@ -1398,14 +1481,29 @@ const Refinement: React.FC = () => {
                 const ret = editingRefiningProcess
                   ? editingRefiningProcess.returnWeight
                   : (editingRecord?.returnWeight ?? 0);
-                const lost = editingRefiningProcess
+                const assigned =
+                  editingRefiningProcess?.assignedWeight ??
+                  editingRecord?.assignedWeight ??
+                  0;
+                const baseLost = editingRefiningProcess
                   ? editingRefiningProcess.lostWeight
                   : (editingRecord?.lostWeight ?? 0);
+                const lost =
+                  assigned > 0 && outputWeight > 0
+                    ? Math.max(0, assigned - (outputWeight + spoilage + ret))
+                    : baseLost;
+                const processIncreased = editingRefiningProcess
+                  ? editingRefiningProcess.increasedWeight || 0
+                  : editingRecord?.increasedWeight || 0;
 
                 const dryWeight =
                   outputWeight < available ? available - outputWeight : 0;
-                const increasedWeight =
-                  outputWeight > available ? outputWeight - available : 0;
+                const maxOutputWeight =
+                  assigned > 0 && available > 0
+                    ? Math.min(assigned, available)
+                    : available > 0
+                      ? available
+                      : assigned;
 
                 return (
                   <>
@@ -1417,15 +1515,27 @@ const Refinement: React.FC = () => {
                           <input
                             type="number"
                             step="0.001"
+                            max={maxOutputWeight > 0 ? maxOutputWeight : undefined}
                             className="rf-form-control"
                             placeholder="0"
                             value={form.weight}
                             onChange={(e) => {
                               setValidationError(null);
-                              setForm((prev) => ({
-                                ...prev,
-                                weight: e.target.value,
-                              }));
+                              const val = parseFloat(e.target.value);
+                              if (maxOutputWeight > 0 && val > maxOutputWeight) {
+                                setForm((prev) => ({
+                                  ...prev,
+                                  weight: maxOutputWeight.toString(),
+                                }));
+                                setValidationError(
+                                  `Output weight cannot exceed maximum allowed weight (${maxOutputWeight.toFixed(3)} viss)`,
+                                );
+                              } else {
+                                setForm((prev) => ({
+                                  ...prev,
+                                  weight: e.target.value,
+                                }));
+                              }
                             }}
                             required
                           />
@@ -1509,7 +1619,7 @@ const Refinement: React.FC = () => {
                               cursor: "not-allowed",
                               borderColor: "#fecaca",
                             }}
-                            value={lost}
+                            value={lost.toFixed(3)}
                           />
                           <span className="rf-input-unit rf-unit-red">
                             viss
@@ -1518,8 +1628,37 @@ const Refinement: React.FC = () => {
                       </div>
                     </div>
 
-                    {/* Row 3: Dry Weight (auto) + Increased Weight (auto) */}
+                    {/* Row 3: Process Increased Weight (read-only) + Dry Weight (auto) */}
                     <div className="rf-form-row">
+                      <div className="rf-form-group">
+                        <label
+                          className="rf-form-label"
+                          style={{ color: "#d97706" }}
+                        >
+                          Process Increased Weight
+                        </label>
+                        <div className="rf-input-unit-wrap">
+                          <input
+                            type="number"
+                            readOnly
+                            className="rf-form-control"
+                            style={{
+                              background: "#fffbeb",
+                              color: "#d97706",
+                              fontWeight: 700,
+                              cursor: "not-allowed",
+                              borderColor: "#fde68a",
+                            }}
+                            value={processIncreased.toFixed(3)}
+                          />
+                          <span
+                            className="rf-input-unit"
+                            style={{ color: "#d97706" }}
+                          >
+                            viss
+                          </span>
+                        </div>
+                      </div>
                       <div className="rf-form-group">
                         <label
                           className="rf-form-label"
@@ -1552,45 +1691,6 @@ const Refinement: React.FC = () => {
                             value={dryWeight.toFixed(3)}
                           />
                           <span className="rf-input-unit rf-unit-green">
-                            viss
-                          </span>
-                        </div>
-                      </div>
-                      <div className="rf-form-group">
-                        <label
-                          className="rf-form-label"
-                          style={{ color: "#d97706" }}
-                        >
-                          Increased Weight{" "}
-                          <span
-                            style={{
-                              fontSize: "9px",
-                              fontWeight: 400,
-                              color: "#94a3b8",
-                              textTransform: "none",
-                            }}
-                          >
-                            (auto)
-                          </span>
-                        </label>
-                        <div className="rf-input-unit-wrap">
-                          <input
-                            type="number"
-                            readOnly
-                            className="rf-form-control"
-                            style={{
-                              background: "#fffbeb",
-                              color: "#d97706",
-                              fontWeight: 700,
-                              cursor: "not-allowed",
-                              borderColor: "#fde68a",
-                            }}
-                            value={increasedWeight.toFixed(3)}
-                          />
-                          <span
-                            className="rf-input-unit"
-                            style={{ color: "#d97706" }}
-                          >
                             viss
                           </span>
                         </div>

@@ -481,11 +481,13 @@ export interface RefiningProcess {
   category: string;
   count: number;
   weight: number;
+  assignedWeight?: number;
   refinementWorkerId?: number;
   refinementWorkerName?: string;
   lostWeight: number;
   spoilageWeight: number;
   returnWeight: number;
+  increasedWeight?: number;
   refinementProcessId?: number;
   remainingCount: number;
   remainingWeight: number;
@@ -501,6 +503,7 @@ export interface RefinementRecord {
   category: string;
   count: number;
   weight: number;
+  assignedWeight?: number;
   lostWeight: number;
   spoilageWeight: number;
   returnWeight: number;

@@ -39,6 +39,9 @@ public class RefiningProcess : BaseEntity
     [Column(TypeName = "decimal(18,4)")]
     public decimal ReturnWeight { get; set; }
 
+    [Column(TypeName = "decimal(18,4)")]
+    public decimal IncreasedWeight { get; set; }
+
     public int? RefinementProcessId { get; set; }
 
     [ForeignKey("RefinementProcessId")]
