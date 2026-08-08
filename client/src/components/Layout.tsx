@@ -82,30 +82,32 @@ const Layout: React.FC = () => {
         </div>
 
         <nav className="app-sidebar-nav">
+          {/* Main Menu Section */}
+          <div className="app-nav-section-title">Main Overview</div>
+
           {hasPermission("Dashboard.View") && (
             <Link
               to="/dashboard"
               className={`app-nav-item ${isActive("/dashboard") ? "active" : ""}`}
               onClick={closeMobileMenu}
             >
-              <LayoutDashboard className="app-nav-icon" size={24} />
-              Dashboard
+              <LayoutDashboard className="app-nav-icon" size={20} />
+              <span>Dashboard</span>
             </Link>
           )}
+
           {(hasPermission("Warehouse.View") ||
             hasPermission("Warehouse.Create") ||
             hasPermission("Warehouse.Edit") ||
             hasPermission("Warehouse.Delete")) && (
-            <>
-              <Link
-                to="/warehouses"
-                className={`app-nav-item ${isActive("/warehouses") ? "active" : ""}`}
-                onClick={closeMobileMenu}
-              >
-                <Warehouse className="app-nav-icon" size={24} />
-                Warehouses
-              </Link>
-            </>
+            <Link
+              to="/warehouses"
+              className={`app-nav-item ${isActive("/warehouses") ? "active" : ""}`}
+              onClick={closeMobileMenu}
+            >
+              <Warehouse className="app-nav-icon" size={20} />
+              <span>Warehouses</span>
+            </Link>
           )}
 
           {(hasPermission("Inventory.View") ||
@@ -117,10 +119,13 @@ const Layout: React.FC = () => {
               className={`app-nav-item ${isActive("/warehouse") ? "active" : ""}`}
               onClick={closeMobileMenu}
             >
-              <Warehouse className="app-nav-icon" size={24} />
-              Inventory
+              <Warehouse className="app-nav-icon" size={20} />
+              <span>Inventory</span>
             </Link>
           )}
+
+          {/* Operations Section */}
+          <div className="app-nav-section-title">Operations &amp; Processing</div>
 
           {(hasPermission("Sales.View") ||
             hasPermission("Sales.Create") ||
@@ -131,8 +136,8 @@ const Layout: React.FC = () => {
               className={`app-nav-item ${isActive("/sales") ? "active" : ""}`}
               onClick={closeMobileMenu}
             >
-              <ShoppingCart className="app-nav-icon" size={24} />
-              Raw Material Sale List
+              <ShoppingCart className="app-nav-icon" size={20} />
+              <span>Raw Material Sale List</span>
             </Link>
           )}
 
@@ -143,40 +148,41 @@ const Layout: React.FC = () => {
               className={`app-nav-item ${isActive("/wash-grading") ? "active" : ""}`}
               onClick={closeMobileMenu}
             >
-              <Layers className="nav-icon" size={24} />
-              Wash/Grading
+              <Layers className="app-nav-icon" size={20} />
+              <span>Wash/Grading</span>
             </Link>
           )}
-          {/* Mess Labour page */}
+
           {hasPermission("MessLabour.View") && (
             <Link
               to="/mess-labour"
               className={`app-nav-item ${isActive("/mess-labour") ? "active" : ""}`}
               onClick={closeMobileMenu}
             >
-              <Wrench className="app-nav-icon" size={24} />
-              Mess Labour
+              <Wrench className="app-nav-icon" size={20} />
+              <span>Mess Labour</span>
             </Link>
           )}
+
           {hasPermission("Sales2.View") && (
             <Link
               to="/purification"
               className={`app-nav-item ${isActive("/purification") ? "active" : ""}`}
               onClick={closeMobileMenu}
             >
-              <Layers className="app-nav-icon" size={24} />
-              Purification
+              <Layers className="app-nav-icon" size={20} />
+              <span>Purification</span>
             </Link>
           )}
-          {/* Refinement page */}
+
           {hasPermission("Refinement.View") && (
             <Link
               to="/refinement"
               className={`app-nav-item ${isActive("/refinement") ? "active" : ""}`}
               onClick={closeMobileMenu}
             >
-              <Wrench className="app-nav-icon" size={24} />
-              Gridle-bush
+              <Wrench className="app-nav-icon" size={20} />
+              <span>Gridle-bush</span>
             </Link>
           )}
 
@@ -187,8 +193,8 @@ const Layout: React.FC = () => {
               className={`app-nav-item ${isActive("/single-double-drawn") ? "active" : ""}`}
               onClick={closeMobileMenu}
             >
-              <TrendingUp className="nav-icon" size={24} />
-              Single & Double Drawn
+              <TrendingUp className="app-nav-icon" size={20} />
+              <span>Single &amp; Double Drawn</span>
             </Link>
           )}
 
@@ -198,8 +204,8 @@ const Layout: React.FC = () => {
               className={`app-nav-item ${isActive("/semi-export-purchase") ? "active" : ""}`}
               onClick={closeMobileMenu}
             >
-              <ShoppingCart className="app-nav-icon" size={24} />
-              Semi Export Purchase
+              <ShoppingCart className="app-nav-icon" size={20} />
+              <span>Semi Export Purchase</span>
             </Link>
           )}
 
@@ -209,8 +215,8 @@ const Layout: React.FC = () => {
               className={`app-nav-item ${isActive("/semi-export") ? "active" : ""}`}
               onClick={closeMobileMenu}
             >
-              <Briefcase className="app-nav-icon" size={24} />
-              Semi Export
+              <Briefcase className="app-nav-icon" size={20} />
+              <span>Semi Export</span>
             </Link>
           )}
 
@@ -220,10 +226,13 @@ const Layout: React.FC = () => {
               className={`app-nav-item ${isActive("/sales6") ? "active" : ""}`}
               onClick={closeMobileMenu}
             >
-              <ShoppingCart className="app-nav-icon" size={24} />
-              Export List
+              <ShoppingCart className="app-nav-icon" size={20} />
+              <span>Export List</span>
             </Link>
           )}
+
+          {/* Finance & Reports Section */}
+          <div className="app-nav-section-title">Finance &amp; Analytics</div>
 
           {hasPermission("CashFlow.View") && (
             <Link
@@ -231,8 +240,8 @@ const Layout: React.FC = () => {
               className={`app-nav-item ${isActive("/cash-flow") ? "active" : ""}`}
               onClick={closeMobileMenu}
             >
-              <DollarSign className="app-nav-icon" size={24} />
-              Cash Flow
+              <DollarSign className="app-nav-icon" size={20} />
+              <span>Cash Flow</span>
             </Link>
           )}
 
@@ -242,10 +251,13 @@ const Layout: React.FC = () => {
               className={`app-nav-item ${isActive("/report") ? "active" : ""}`}
               onClick={closeMobileMenu}
             >
-              <TrendingUp className="app-nav-icon" size={24} />
-              Reports
+              <TrendingUp className="app-nav-icon" size={20} />
+              <span>Reports</span>
             </Link>
           )}
+
+          {/* Administration Section */}
+          <div className="app-nav-section-title">Administration</div>
 
           {hasPermission("Staff.View") && (
             <Link
@@ -253,8 +265,8 @@ const Layout: React.FC = () => {
               className={`app-nav-item ${isActive("/staff") ? "active" : ""}`}
               onClick={closeMobileMenu}
             >
-              <Users className="app-nav-icon" size={24} />
-              Staff
+              <Users className="app-nav-icon" size={20} />
+              <span>Staff</span>
             </Link>
           )}
 
@@ -264,8 +276,8 @@ const Layout: React.FC = () => {
               className={`app-nav-item ${isActive("/workers") ? "active" : ""}`}
               onClick={closeMobileMenu}
             >
-              <Users className="app-nav-icon" size={24} />
-              Workers
+              <Users className="app-nav-icon" size={20} />
+              <span>Workers</span>
             </Link>
           )}
 
@@ -275,8 +287,8 @@ const Layout: React.FC = () => {
               className={`app-nav-item ${isActive("/permissions") ? "active" : ""}`}
               onClick={closeMobileMenu}
             >
-              <Shield className="app-nav-icon" size={24} />
-              Permissions
+              <Shield className="app-nav-icon" size={20} />
+              <span>Permissions</span>
             </Link>
           )}
 
@@ -286,8 +298,8 @@ const Layout: React.FC = () => {
               className={`app-nav-item ${isActive("/exchange-rates") ? "active" : ""}`}
               onClick={closeMobileMenu}
             >
-              <DollarSign className="app-nav-icon" size={24} />
-              Exchange Rates
+              <DollarSign className="app-nav-icon" size={20} />
+              <span>Exchange Rates</span>
             </Link>
           )}
 
@@ -297,8 +309,8 @@ const Layout: React.FC = () => {
               className={`app-nav-item ${isActive("/audit-logs") ? "active" : ""}`}
               onClick={closeMobileMenu}
             >
-              <Shield className="app-nav-icon" size={24} />
-              Audit Logs
+              <Shield className="app-nav-icon" size={20} />
+              <span>Audit Logs</span>
             </Link>
           )}
         </nav>
