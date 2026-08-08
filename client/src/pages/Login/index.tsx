@@ -1,6 +1,7 @@
 import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "../../context/AuthContext";
+import AnimatedBackground from "../../components/AnimatedBackground";
 import "./index.css";
 
 /* ── Inline SVG Icons ── */
@@ -41,15 +42,6 @@ const AlertIcon = () => (
   </svg>
 );
 
-/* ── 12 rising particles ── */
-const Particles = () => (
-  <div className="login-particles" aria-hidden="true">
-    {Array.from({ length: 12 }).map((_, i) => (
-      <div key={i} className="lgn-particle" />
-    ))}
-  </div>
-);
-
 /* ══════════════════════════════════════════════
    LOGIN COMPONENT
 ══════════════════════════════════════════════ */
@@ -82,13 +74,7 @@ const Login: React.FC = () => {
 
   return (
     <div className="login-container">
-      {/* Animated background */}
-      <div className="login-grid" aria-hidden="true" />
-      <div className="login-orb login-orb-1" aria-hidden="true" />
-      <div className="login-orb login-orb-2" aria-hidden="true" />
-      <div className="login-orb login-orb-3" aria-hidden="true" />
-      <div className="login-orb login-orb-4" aria-hidden="true" />
-      <Particles />
+      <AnimatedBackground />
 
       {/* Card */}
       <div className="login-card">

@@ -608,12 +608,16 @@
   background: white;
 }
 
-.worker-assign-checkbox input[type="checkbox"]:checked ~ .worker-assign-checkmark {
+.worker-assign-checkbox
+  input[type="checkbox"]:checked
+  ~ .worker-assign-checkmark {
   background: #4f46e5;
   border-color: #4f46e5;
 }
 
-.worker-assign-checkbox input[type="checkbox"]:checked ~ .worker-assign-checkmark::after {
+.worker-assign-checkbox
+  input[type="checkbox"]:checked
+  ~ .worker-assign-checkmark::after {
   content: "";
   position: absolute;
   left: 5px;

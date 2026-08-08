@@ -98,7 +98,23 @@ const PermissionManagement: React.FC = () => {
 
     return (
         <div className="permissions-page fade-in">
-            <h1 className="page-title">Permission Management</h1>
+            <div className="pm-hero fade-in">
+            <div className="pm-hero-left">
+                <div className="pm-hero-icon">
+                    <Shield size={26} strokeWidth={1.8} />
+                </div>
+                <div className="pm-hero-text">
+                    <h1>Permission Management</h1>
+                    <p>Assign module-level permissions for staff members</p>
+                </div>
+            </div>
+            <div className="pm-hero-right">
+                <div className="pm-stat-pill">
+                    <span className="stat-num">{users.length}</span>
+                    <span className="stat-label">{users.length === 1 ? 'Staff' : 'Staff'}</span>
+                </div>
+            </div>
+        </div>
 
             <div className="permissions-container">
                 {/* User Sidebar */}

@@ -8,7 +8,6 @@
 .purification-container {
   display: flex;
   flex-direction: column;
-  background: #f1f5f9;
   min-height: calc(100vh - 64px);
   font-family: "Inter", sans-serif;
   box-sizing: border-box;
@@ -1555,7 +1554,10 @@
   border-bottom: 1px solid #e2e8f0;
   flex-wrap: wrap;
 }
-.pu-search-box { position: relative; width: 300px; }
+.pu-search-box {
+  position: relative;
+  width: 300px;
+}
 .pu-search-control {
   width: 100%;
   padding: 8px 12px 8px 36px;
@@ -1568,7 +1570,9 @@
   font-family: inherit;
   height: 36px;
 }
-.pu-search-control:focus { border-color: #3b82f6; }
+.pu-search-control:focus {
+  border-color: #3b82f6;
+}
 .pu-input-icon {
   position: absolute;
   left: 12px;
@@ -1577,9 +1581,24 @@
   color: #94a3b8;
   pointer-events: none;
 }
-.pu-date-filter { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; }
-.pu-date-field { display: flex; align-items: center; gap: 8px; }
-.pu-date-label { font-size: 12px; font-weight: 600; color: #64748b; text-transform: uppercase; letter-spacing: 0.5px; }
+.pu-date-filter {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+.pu-date-field {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.pu-date-label {
+  font-size: 12px;
+  font-weight: 600;
+  color: #64748b;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
 .pu-date-input {
   padding: 6px 10px;
   border: 1.5px solid #e2e8f0;
@@ -1591,7 +1610,9 @@
   font-family: inherit;
   height: 36px;
 }
-.pu-date-input:focus { border-color: #3b82f6; }
+.pu-date-input:focus {
+  border-color: #3b82f6;
+}
 .pu-date-clear-btn {
   padding: 6px 12px;
   background: #f1f5f9;
@@ -1606,8 +1627,16 @@
   display: flex;
   align-items: center;
 }
-.pu-date-clear-btn:hover { background: #e2e8f0; color: #0f172a; }
+.pu-date-clear-btn:hover {
+  background: #e2e8f0;
+  color: #0f172a;
+}
 @media (max-width: 768px) {
-  .pu-table-controls { flex-direction: column; align-items: stretch; }
-  .pu-search-box { width: 100%; }
+  .pu-table-controls {
+    flex-direction: column;
+    align-items: stretch;
+  }
+  .pu-search-box {
+    width: 100%;
+  }
 }

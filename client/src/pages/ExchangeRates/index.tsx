@@ -63,13 +63,23 @@ const ExchangeRates: React.FC = () => {
 
   return (
     <div className="exchange-rates-page fade-in">
-      <h1
-        className="page-title"
-        style={{ display: "flex", alignItems: "center", gap: "8px" }}
-      >
-        <BadgeDollarSign size={28} />
-        Currency Exchange Rates
-      </h1>
+    <div className="er-hero fade-in">
+      <div className="er-hero-left">
+        <div className="er-hero-icon">
+          <BadgeDollarSign size={26} strokeWidth={1.8} />
+        </div>
+        <div className="er-hero-text">
+          <h1>Currency Exchange Rates</h1>
+          <p>Manage and update exchange rates for all currencies</p>
+        </div>
+      </div>
+      <div className="er-hero-right">
+        <div className="er-stat-pill">
+          <span className="stat-num">{history.length}</span>
+          <span className="stat-label">Records</span>
+        </div>
+      </div>
+    </div>
 
       <div className="exchange-grid">
         <div className="exchange-card">

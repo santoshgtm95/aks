@@ -1,10 +1,120 @@
 .exchange-rates-page {
-  padding: 24px;
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  font-family: "Inter", sans-serif;
+  color: #1e293b;
+  box-sizing: border-box;
+}
+
+/* ── ER Hero Header (matches Worker hero style) ── */
+.er-hero {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  border-radius: 24px 24px 0 0;
+  padding: 10px 20px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 15px;
+  position: relative;
+  overflow: hidden;
+  margin-bottom: 24px;
+}
+
+.er-hero::before {
+  content: "";
+  position: absolute;
+  top: -60px;
+  right: -60px;
+  width: 240px;
+  height: 240px;
+  background: rgba(255, 255, 255, 0.07);
+  border-radius: 50%;
+}
+
+.er-hero::after {
+  content: "";
+  position: absolute;
+  bottom: -80px;
+  left: 30%;
+  width: 180px;
+  height: 180px;
+  background: rgba(255, 255, 255, 0.05);
+  border-radius: 50%;
+}
+
+.er-hero-left {
+  display: flex;
+  align-items: center;
+  gap: 20px;
+  position: relative;
+  z-index: 1;
+}
+
+.er-hero-icon {
+  width: 50px;
+  height: 50px;
+  background: rgba(255, 255, 255, 0.2);
+  border-radius: 18px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: white;
+  backdrop-filter: blur(8px);
+  border: 1px solid rgba(255, 255, 255, 0.25);
+  flex-shrink: 0;
+}
+
+.er-hero-text h1 {
+  font-size: 1.25rem;
+  font-weight: 800;
+  color: #fff;
+  margin: 0 0 4px;
+  letter-spacing: -0.5px;
+}
+
+.er-hero-text p {
+  color: rgba(255, 255, 255, 0.75);
+  font-size: 0.8rem;
+  margin: 0;
+}
+
+.er-hero-right {
+  display: flex;
+  align-items: center;
+  gap: 20px;
+  position: relative;
+  z-index: 1;
+}
+
+.er-stat-pill {
+  background: rgba(255, 255, 255, 0.15);
+  border: 1px solid rgba(255, 255, 255, 0.25);
+  border-radius: 16px;
+  padding: 1px 10px;
+  text-align: center;
+  backdrop-filter: blur(8px);
+  color: white;
+}
+
+.er-stat-pill .stat-num {
+  font-size: 1.25rem;
+  font-weight: 800;
+  line-height: 1;
+  display: block;
+}
+
+.er-stat-pill .stat-label {
+  font-size: 0.75rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  color: rgba(255, 255, 255, 0.75);
 }
 
 .exchange-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(400px, 1fr));
+  grid-template-columns: repeat(auto-fill, minmax(360px, 1fr));
   gap: 24px;
   margin-bottom: 32px;
 }
@@ -132,6 +242,7 @@
   padding: 20px;
   border-radius: 8px;
   box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+  margin-top: 0px;
 }
 
 .status-active {
@@ -141,22 +252,6 @@
 
 .status-inactive {
   color: #6b7280;
-}
-
-@media (max-width: 768px) {
-  .exchange-rates-page {
-    padding: 16px;
-  }
-
-  .exchange-grid {
-    grid-template-columns: 1fr;
-    gap: 16px;
-  }
-
-  .history-section {
-    padding: 16px;
-    overflow-x: auto;
-  }
 }
 
 .table th {
@@ -169,4 +264,27 @@
   position: sticky;
   top: 0;
   z-index: 10;
+}
+
+@media (max-width: 768px) {
+  .er-hero {
+    flex-direction: column;
+    align-items: flex-start;
+    padding: 28px 24px;
+    gap: 20px;
+  }
+  .er-hero-right {
+    width: 100%;
+  }
+  .exchange-rates-page {
+    padding: 16px;
+  }
+  .exchange-grid {
+    grid-template-columns: 1fr;
+    gap: 16px;
+  }
+  .history-section {
+    padding: 16px;
+    overflow-x: auto;
+  }
 }

@@ -3,6 +3,8 @@ import { format } from "date-fns";
 import api from "../../services/api";
 import Modal from "../../components/Modal";
 import "./index.css";
+import { ClipboardList } from "lucide-react";
+
 
 interface AuditLog {
   id: number;
@@ -96,7 +98,23 @@ const AuditLogs: React.FC = () => {
 
   return (
     <div className="audit-logs-container">
-      <h2>Audit Logs</h2>
+      <div className="al-hero fade-in">
+        <div className="al-hero-left">
+          <div className="al-hero-icon">
+            <ClipboardList size={26} strokeWidth={1.8} />
+          </div>
+          <div className="al-hero-text">
+            <h1>Audit Logs</h1>
+            <p>Review changes and activities across the system</p>
+          </div>
+        </div>
+        <div className="al-hero-right">
+          <div className="al-stat-pill">
+            <span className="stat-num">{logs.length}</span>
+            <span className="stat-label">Logs</span>
+          </div>
+        </div>
+      </div>
       {loading ? (
         <p>Loading...</p>
       ) : (

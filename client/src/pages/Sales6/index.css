@@ -2,7 +2,6 @@
 .export-list-container {
   display: flex;
   flex-direction: column;
-  background: #f1f5f9;
   min-height: calc(100vh - 64px);
   font-family: "Inter", sans-serif;
   box-sizing: border-box;
@@ -1694,7 +1693,10 @@ td.highlight-td {
   flex-wrap: wrap;
   margin-bottom: 8px;
 }
-.s6-search-box { position: relative; width: 300px; }
+.s6-search-box {
+  position: relative;
+  width: 300px;
+}
 .s6-search-control {
   width: 100%;
   padding: 8px 12px 8px 36px;
@@ -1707,7 +1709,9 @@ td.highlight-td {
   font-family: inherit;
   height: 36px;
 }
-.s6-search-control:focus { border-color: #2563eb; }
+.s6-search-control:focus {
+  border-color: #2563eb;
+}
 .s6-input-icon {
   position: absolute;
   left: 12px;
@@ -1716,9 +1720,24 @@ td.highlight-td {
   color: #94a3b8;
   pointer-events: none;
 }
-.s6-date-filter { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; }
-.s6-date-field { display: flex; align-items: center; gap: 8px; }
-.s6-date-label { font-size: 12px; font-weight: 600; color: #64748b; text-transform: uppercase; letter-spacing: 0.5px; }
+.s6-date-filter {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+.s6-date-field {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.s6-date-label {
+  font-size: 12px;
+  font-weight: 600;
+  color: #64748b;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
 .s6-date-input {
   padding: 6px 10px;
   border: 1.5px solid #e2e8f0;
@@ -1730,7 +1749,9 @@ td.highlight-td {
   font-family: inherit;
   height: 36px;
 }
-.s6-date-input:focus { border-color: #2563eb; }
+.s6-date-input:focus {
+  border-color: #2563eb;
+}
 .s6-date-clear-btn {
   padding: 6px 12px;
   background: #f1f5f9;
@@ -1745,8 +1766,16 @@ td.highlight-td {
   display: flex;
   align-items: center;
 }
-.s6-date-clear-btn:hover { background: #e2e8f0; color: #0f172a; }
+.s6-date-clear-btn:hover {
+  background: #e2e8f0;
+  color: #0f172a;
+}
 @media (max-width: 768px) {
-  .s6-table-controls { flex-direction: column; align-items: stretch; }
-  .s6-search-box { width: 100%; }
+  .s6-table-controls {
+    flex-direction: column;
+    align-items: stretch;
+  }
+  .s6-search-box {
+    width: 100%;
+  }
 }
