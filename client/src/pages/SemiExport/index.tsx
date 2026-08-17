@@ -1306,7 +1306,7 @@ const SemiExport: React.FC = () => {
     if (historySearchTerm) {
       const term = historySearchTerm.toLowerCase();
       list = list.filter((g: any) =>
-        (g.marker || "").toLowerCase().includes(term)
+        (g.marker || "").toLowerCase().includes(term),
       );
     }
     if (historyFromDate) {
@@ -1322,7 +1322,13 @@ const SemiExport: React.FC = () => {
       });
     }
     return list;
-  }, [groupedHistory, selectedMarker, historySearchTerm, historyFromDate, historyToDate]);
+  }, [
+    groupedHistory,
+    selectedMarker,
+    historySearchTerm,
+    historyFromDate,
+    historyToDate,
+  ]);
 
   const markerWorkerFeesInfo = useMemo(() => {
     let sum = 0;
@@ -3961,14 +3967,14 @@ const SemiExport: React.FC = () => {
               <div className="rf-header-left">
                 <div className="rf-tab-group" style={{ marginLeft: "24px" }}>
                   <button
-                    className={`rf-tab ${activeTab === "processing" ? "rf-tab-active" : ""}`}
+                    className={`rf-tab ${activeTab === "processing" ? "rf-tab-active rf-tab-orange" : ""}`}
                     onClick={() => setActiveTab("processing")}
                   >
                     <span className="rf-tab-title">Processing</span>
                     <span className="rf-tab-sub">Sales Calculations</span>
                   </button>
                   <button
-                    className={`rf-tab ${activeTab === "history" ? "rf-tab-active" : ""}`}
+                    className={`rf-tab ${activeTab === "history" ? "rf-tab-active rf-tab-blue" : ""}`}
                     onClick={() => setActiveTab("history")}
                   >
                     <span className="rf-tab-title">History</span>
@@ -4061,14 +4067,32 @@ const SemiExport: React.FC = () => {
                   <div className="se-date-filter">
                     <div className="se-date-field">
                       <span className="se-date-label">From</span>
-                      <input type="date" className="se-date-input" value={historyFromDate} onChange={(e) => setHistoryFromDate(e.target.value)} />
+                      <input
+                        type="date"
+                        className="se-date-input"
+                        value={historyFromDate}
+                        onChange={(e) => setHistoryFromDate(e.target.value)}
+                      />
                     </div>
                     <div className="se-date-field">
                       <span className="se-date-label">To</span>
-                      <input type="date" className="se-date-input" value={historyToDate} onChange={(e) => setHistoryToDate(e.target.value)} />
+                      <input
+                        type="date"
+                        className="se-date-input"
+                        value={historyToDate}
+                        onChange={(e) => setHistoryToDate(e.target.value)}
+                      />
                     </div>
                     {(historyFromDate || historyToDate) && (
-                      <button className="se-date-clear-btn" onClick={() => { setHistoryFromDate(""); setHistoryToDate(""); }}>Clear</button>
+                      <button
+                        className="se-date-clear-btn"
+                        onClick={() => {
+                          setHistoryFromDate("");
+                          setHistoryToDate("");
+                        }}
+                      >
+                        Clear
+                      </button>
                     )}
                   </div>
                 </div>

@@ -361,7 +361,9 @@ const Refinement: React.FC = () => {
           ? (editingRefiningProcess?.increasedWeight ??
             editingRecord?.increasedWeight ??
             0)
-          : weight > available ? weight - available : 0,
+          : weight > available
+            ? weight - available
+            : 0,
       };
 
       if (editingRefiningProcess) {
@@ -686,7 +688,7 @@ const Refinement: React.FC = () => {
                     <span className="rf-tab-sub">Active refining stock</span>
                   </button>
                   <button
-                    className={`rf-tab ${activeTab === "stock" ? "rf-tab-active rf-tab-green" : ""}`}
+                    className={`rf-tab ${activeTab === "stock" ? "rf-tab-active rf-tab-blue" : ""}`}
                     onClick={() => setActiveTab("stock")}
                   >
                     <span className="rf-tab-title">Refined Stock</span>
@@ -1516,14 +1518,19 @@ const Refinement: React.FC = () => {
                           <input
                             type="number"
                             step="0.001"
-                            max={maxOutputWeight > 0 ? maxOutputWeight : undefined}
+                            max={
+                              maxOutputWeight > 0 ? maxOutputWeight : undefined
+                            }
                             className="rf-form-control"
                             placeholder="0"
                             value={form.weight}
                             onChange={(e) => {
                               setValidationError(null);
                               const val = parseFloat(e.target.value);
-                              if (maxOutputWeight > 0 && val > maxOutputWeight) {
+                              if (
+                                maxOutputWeight > 0 &&
+                                val > maxOutputWeight
+                              ) {
                                 setForm((prev) => ({
                                   ...prev,
                                   weight: maxOutputWeight.toString(),

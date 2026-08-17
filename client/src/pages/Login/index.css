@@ -81,7 +81,7 @@
 .login-badge {
   display: flex;
   justify-content: center;
-  margin-bottom: 28px;
+  margin-bottom: 24px;
   animation: badgeDrop 0.8s cubic-bezier(0.22, 1, 0.36, 1) 0.15s both;
 }
 
@@ -91,24 +91,33 @@
 }
 
 .login-badge-icon {
-  width: 66px;
-  height: 66px;
-  border-radius: 18px;
-  background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%);
+  width: 120px;
+  height: 120px;
+  border-radius: 30px;
+  background: white;
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 29px;
   position: relative;
   overflow: hidden;
-  box-shadow: 0 0 0 5px rgba(99, 102, 241, 0.14), 0 8px 28px rgba(99, 102, 241, 0.30);
+  box-shadow: 0 0 0 7px rgba(99, 102, 241, 0.18), 0 14px 40px rgba(99, 102, 241, 0.40);
   animation: badgePulse 3s ease-in-out infinite;
+  padding: 6px;
+}
+
+.login-logo-img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  border-radius: 24px;
+  display: block;
 }
 
 @keyframes badgePulse {
-  0%, 100% { box-shadow: 0 0 0 5px rgba(99,102,241,0.14), 0 8px 28px rgba(99,102,241,0.30); }
-  50%       { box-shadow: 0 0 0 10px rgba(99,102,241,0.08), 0 12px 36px rgba(99,102,241,0.40); }
+  0%, 100% { box-shadow: 0 0 0 7px rgba(99,102,241,0.18), 0 14px 40px rgba(99,102,241,0.40); }
+  50%       { box-shadow: 0 0 0 14px rgba(99,102,241,0.10), 0 18px 50px rgba(99,102,241,0.50); }
 }
+
 
 .login-badge-icon::before {
   content: '';
@@ -121,11 +130,13 @@
 
 .login-badge-ring {
   position: absolute;
-  width: 88px; height: 88px;
+  width: 148px; height: 148px;
   border-radius: 50%;
-  border: 2px dashed rgba(99,102,241,0.25);
+  border: 2px dashed rgba(99,102,241,0.28);
   animation: ringRotate 12s linear infinite;
 }
+
+
 
 .login-badge-ring::after {
   content: '';

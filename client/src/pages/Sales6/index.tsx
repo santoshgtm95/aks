@@ -1107,14 +1107,14 @@ const Sales6: React.FC = () => {
               <div className="rf-header-left">
                 <div className="rf-tab-group" style={{ marginLeft: "24px" }}>
                   <button
-                    className={`rf-tab ${activeTab === "processing" ? "rf-tab-active" : ""}`}
+                    className={`rf-tab ${activeTab === "processing" ? "rf-tab-active rf-tab-orange" : ""}`}
                     onClick={() => setActiveTab("processing")}
                   >
                     <span className="rf-tab-title">Processing</span>
                     <span className="rf-tab-sub">Sell &amp; Export Colors</span>
                   </button>
                   <button
-                    className={`rf-tab ${activeTab === "history" ? "rf-tab-active" : ""}`}
+                    className={`rf-tab ${activeTab === "history" ? "rf-tab-active rf-tab-blue" : ""}`}
                     onClick={() => setActiveTab("history")}
                   >
                     <span className="rf-tab-title">History</span>
@@ -1698,19 +1698,24 @@ const Sales6: React.FC = () => {
                     : exports;
                   if (historySearchTerm) {
                     const term = historySearchTerm.toLowerCase();
-                    filteredExports = filteredExports.filter((e) =>
-                      (e.selectedColors || "").toLowerCase().includes(term) ||
-                      (e.ledgerName || "").toLowerCase().includes(term)
+                    filteredExports = filteredExports.filter(
+                      (e) =>
+                        (e.selectedColors || "").toLowerCase().includes(term) ||
+                        (e.ledgerName || "").toLowerCase().includes(term),
                     );
                   }
                   if (historyFromDate) {
-                    filteredExports = filteredExports.filter((e) =>
-                      new Date(e.date.split("T")[0]) >= new Date(historyFromDate)
+                    filteredExports = filteredExports.filter(
+                      (e) =>
+                        new Date(e.date.split("T")[0]) >=
+                        new Date(historyFromDate),
                     );
                   }
                   if (historyToDate) {
-                    filteredExports = filteredExports.filter((e) =>
-                      new Date(e.date.split("T")[0]) <= new Date(historyToDate)
+                    filteredExports = filteredExports.filter(
+                      (e) =>
+                        new Date(e.date.split("T")[0]) <=
+                        new Date(historyToDate),
                     );
                   }
 
@@ -1745,148 +1750,171 @@ const Sales6: React.FC = () => {
                             className="s6-search-control"
                             placeholder="Search colors, ledger..."
                             value={historySearchTerm}
-                            onChange={(e) => setHistorySearchTerm(e.target.value)}
+                            onChange={(e) =>
+                              setHistorySearchTerm(e.target.value)
+                            }
                           />
                         </div>
                         <div className="s6-date-filter">
                           <div className="s6-date-field">
                             <span className="s6-date-label">From</span>
-                            <input type="date" className="s6-date-input" value={historyFromDate} onChange={(e) => setHistoryFromDate(e.target.value)} />
+                            <input
+                              type="date"
+                              className="s6-date-input"
+                              value={historyFromDate}
+                              onChange={(e) =>
+                                setHistoryFromDate(e.target.value)
+                              }
+                            />
                           </div>
                           <div className="s6-date-field">
                             <span className="s6-date-label">To</span>
-                            <input type="date" className="s6-date-input" value={historyToDate} onChange={(e) => setHistoryToDate(e.target.value)} />
+                            <input
+                              type="date"
+                              className="s6-date-input"
+                              value={historyToDate}
+                              onChange={(e) => setHistoryToDate(e.target.value)}
+                            />
                           </div>
                           {(historyFromDate || historyToDate) && (
-                            <button className="s6-date-clear-btn" onClick={() => { setHistoryFromDate(""); setHistoryToDate(""); }}>Clear</button>
+                            <button
+                              className="s6-date-clear-btn"
+                              onClick={() => {
+                                setHistoryFromDate("");
+                                setHistoryToDate("");
+                              }}
+                            >
+                              Clear
+                            </button>
                           )}
                         </div>
                       </div>
 
                       <div className="rf-table-wrap">
                         <table className="rf-table">
-                        <thead>
-                          <tr>
-                            <th>Date</th>
-                            {!selectedLedger && <th>Ledger</th>}
-                            <th>Colors Sold</th>
-                            <th>Markers</th>
-                            <th>Selling Price</th>
-                            <th>Weight (viss)</th>
-                            <th>Weight (kg)</th>
-                            <th>Product Amt (CNY)</th>
-                            <th>Product Amt (MMK)</th>
-                            <th>Worker Fees</th>
-                            <th>Grand Total</th>
-                            <th>P&amp;L</th>
-                          </tr>
-                        </thead>
-                        <tbody>
-                          {filteredExports.map((sale) => {
-                            const saleLedger = ledgers.find(
-                              (l) => l.id === sale.ledgerId,
-                            );
-                            return (
-                              <tr
-                                key={sale.id}
-                                style={{ cursor: "pointer" }}
-                                onClick={() => {
-                                  setSelectedHistory(sale);
-                                  setIsHistoryModalOpen(true);
-                                }}
-                              >
-                                <td className="rf-td-date">
-                                  {new Date(sale.date).toLocaleDateString()}
-                                </td>
-                                {!selectedLedger && (
-                                  <td
-                                    style={{
-                                      fontWeight: 700,
-                                      color: "#2563eb",
-                                    }}
-                                  >
-                                    {saleLedger
-                                      ? saleLedger.ledgerName
-                                      : `Ledger #${sale.ledgerId}`}
-                                  </td>
-                                )}
-                                <td>
-                                  <div className="history-colors-list">
-                                    {sale.selectedColors
-                                      .split(", ")
-                                      .map((col) => (
-                                        <span
-                                          key={col}
-                                          className="history-color-tag"
-                                        >
-                                          {col}
-                                        </span>
-                                      ))}
-                                  </div>
-                                </td>
-                                <td>
-                                  <div className="history-colors-list">
-                                    {saleLedger ? (
-                                      saleLedger.markers.map((m) => (
-                                        <span
-                                          key={m.markerName}
-                                          className="history-color-tag"
-                                          style={{
-                                            background: "rgba(99,102,241,0.15)",
-                                            color: "#a5b4fc",
-                                          }}
-                                        >
-                                          {m.markerName}
-                                        </span>
-                                      ))
-                                    ) : (
-                                      <span className="history-color-tag">
-                                        —
-                                      </span>
-                                    )}
-                                  </div>
-                                </td>
-                                <td className="font-numeric">
-                                  {sale.sellingPrice.toLocaleString()} MMK
-                                </td>
-                                <td className="font-numeric">
-                                  {sale.selectedWeight.toFixed(3)}
-                                </td>
-                                <td className="font-numeric">
-                                  {sale.totalExportWeightKg.toFixed(3)}
-                                </td>
-                                <td className="font-numeric">
-                                  ¥{sale.productAmountCNY.toLocaleString()}
-                                </td>
-                                <td className="font-numeric">
-                                  {Math.round(
-                                    sale.productAmountMMK,
-                                  ).toLocaleString()}{" "}
-                                  MMK
-                                </td>
-                                <td className="font-numeric">
-                                  {sale.workerFees.toLocaleString()} MMK
-                                </td>
-                                <td className="font-numeric highlight-td">
-                                  {Math.round(
-                                    sale.grandTotalMMK,
-                                  ).toLocaleString()}{" "}
-                                  MMK
-                                </td>
-                                <td
-                                  className={`font-numeric ${sale.sellingPrice - sale.grandTotalMMK >= 0 ? "pnl-profit-td" : "pnl-loss-td"}`}
+                          <thead>
+                            <tr>
+                              <th>Date</th>
+                              {!selectedLedger && <th>Ledger</th>}
+                              <th>Colors Sold</th>
+                              <th>Markers</th>
+                              <th>Selling Price</th>
+                              <th>Weight (viss)</th>
+                              <th>Weight (kg)</th>
+                              <th>Product Amt (CNY)</th>
+                              <th>Product Amt (MMK)</th>
+                              <th>Worker Fees</th>
+                              <th>Grand Total</th>
+                              <th>P&amp;L</th>
+                            </tr>
+                          </thead>
+                          <tbody>
+                            {filteredExports.map((sale) => {
+                              const saleLedger = ledgers.find(
+                                (l) => l.id === sale.ledgerId,
+                              );
+                              return (
+                                <tr
+                                  key={sale.id}
+                                  style={{ cursor: "pointer" }}
+                                  onClick={() => {
+                                    setSelectedHistory(sale);
+                                    setIsHistoryModalOpen(true);
+                                  }}
                                 >
-                                  {sale.sellingPrice - sale.grandTotalMMK >= 0
-                                    ? "+"
-                                    : ""}
-                                  {Math.round(
-                                    sale.sellingPrice - sale.grandTotalMMK,
-                                  ).toLocaleString()}{" "}
-                                  MMK
-                                </td>
-                              </tr>
-                            );
-                          })}
+                                  <td className="rf-td-date">
+                                    {new Date(sale.date).toLocaleDateString()}
+                                  </td>
+                                  {!selectedLedger && (
+                                    <td
+                                      style={{
+                                        fontWeight: 700,
+                                        color: "#2563eb",
+                                      }}
+                                    >
+                                      {saleLedger
+                                        ? saleLedger.ledgerName
+                                        : `Ledger #${sale.ledgerId}`}
+                                    </td>
+                                  )}
+                                  <td>
+                                    <div className="history-colors-list">
+                                      {sale.selectedColors
+                                        .split(", ")
+                                        .map((col) => (
+                                          <span
+                                            key={col}
+                                            className="history-color-tag"
+                                          >
+                                            {col}
+                                          </span>
+                                        ))}
+                                    </div>
+                                  </td>
+                                  <td>
+                                    <div className="history-colors-list">
+                                      {saleLedger ? (
+                                        saleLedger.markers.map((m) => (
+                                          <span
+                                            key={m.markerName}
+                                            className="history-color-tag"
+                                            style={{
+                                              background:
+                                                "rgba(99,102,241,0.15)",
+                                              color: "#a5b4fc",
+                                            }}
+                                          >
+                                            {m.markerName}
+                                          </span>
+                                        ))
+                                      ) : (
+                                        <span className="history-color-tag">
+                                          —
+                                        </span>
+                                      )}
+                                    </div>
+                                  </td>
+                                  <td className="font-numeric">
+                                    {sale.sellingPrice.toLocaleString()} MMK
+                                  </td>
+                                  <td className="font-numeric">
+                                    {sale.selectedWeight.toFixed(3)}
+                                  </td>
+                                  <td className="font-numeric">
+                                    {sale.totalExportWeightKg.toFixed(3)}
+                                  </td>
+                                  <td className="font-numeric">
+                                    ¥{sale.productAmountCNY.toLocaleString()}
+                                  </td>
+                                  <td className="font-numeric">
+                                    {Math.round(
+                                      sale.productAmountMMK,
+                                    ).toLocaleString()}{" "}
+                                    MMK
+                                  </td>
+                                  <td className="font-numeric">
+                                    {sale.workerFees.toLocaleString()} MMK
+                                  </td>
+                                  <td className="font-numeric highlight-td">
+                                    {Math.round(
+                                      sale.grandTotalMMK,
+                                    ).toLocaleString()}{" "}
+                                    MMK
+                                  </td>
+                                  <td
+                                    className={`font-numeric ${sale.sellingPrice - sale.grandTotalMMK >= 0 ? "pnl-profit-td" : "pnl-loss-td"}`}
+                                  >
+                                    {sale.sellingPrice - sale.grandTotalMMK >= 0
+                                      ? "+"
+                                      : ""}
+                                    {Math.round(
+                                      sale.sellingPrice - sale.grandTotalMMK,
+                                    ).toLocaleString()}{" "}
+                                    MMK
+                                  </td>
+                                </tr>
+                              );
+                            })}
                           </tbody>
                         </table>
                       </div>

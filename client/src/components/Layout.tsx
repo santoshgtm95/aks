@@ -19,6 +19,7 @@ import {
   Wrench,
 } from "lucide-react";
 import AnimatedBackground from "./AnimatedBackground";
+import Logo from "../assets/Logo.png";
 import "./Layout.css";
 
 const Layout: React.FC = () => {
@@ -70,9 +71,10 @@ const Layout: React.FC = () => {
         <div className="app-sidebar-header">
           <div className="app-sidebar-brand">
             <div className="app-sidebar-brand-icon" aria-hidden="true">
-              👑
+              <img src={Logo} alt="King Panthera Logo" className="app-sidebar-brand-logo-img" />
             </div>
             <div className="app-sidebar-title-group">
+
               <h2>King Panthera</h2>
               {user?.roleName && (
                 <span className="app-role-badge-pill">{user.roleName}</span>

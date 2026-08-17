@@ -925,14 +925,14 @@ const MessLabour: React.FC = () => {
                 </div>
                 <div className="rf-tab-group">
                   <button
-                    className={`rf-tab ${activeTab === "processing" ? "rf-tab-active rf-tab-green" : ""}`}
+                    className={`rf-tab ${activeTab === "processing" ? "rf-tab-active rf-tab-orange" : ""}`}
                     onClick={() => setActiveTab("processing")}
                   >
                     <span className="rf-tab-title">Processing</span>
                     <span className="rf-tab-sub">Sort selected bag</span>
                   </button>
                   <button
-                    className={`rf-tab ${activeTab === "history" ? "rf-tab-active rf-tab-green" : ""}`}
+                    className={`rf-tab ${activeTab === "history" ? "rf-tab-active rf-tab-blue" : ""}`}
                     onClick={() => setActiveTab("history")}
                   >
                     <span className="rf-tab-title">Mess-Labour History</span>

@@ -1,13 +1,10 @@
 import React, { useEffect, useState, useMemo, useCallback } from "react";
 import { useAuth } from "../../context/AuthContext";
 import { useLongPoll } from "../../hooks/useLongPoll";
-import {
-  refinementAPI,
-  singleDoubleDrawnAPI,
-  workersAPI,
-} from "../../services/api";
+import { singleDoubleDrawnAPI, workersAPI } from "../../services/api";
 import type {
-  RefinementRecord,
+  AvailableRefinedStock,
+  SingleDoubleDrawnProcess,
   SingleDoubleDrawnRecord,
   SingleDoubleDrawnWorker,
 } from "../../types";
@@ -18,35 +15,14 @@ import {
   Send,
   Scissors,
   Trash2,
-  LayoutGrid,
-  Weight,
+  Loader2,
+  X,
+  AlertCircle,
   CheckCircle2,
+  Layers,
 } from "lucide-react";
-
 import { formatDateTime } from "../../utils/format";
 import "./index.css";
-
-// Helper: sum all size fields of a SingleDoubleDrawnRecord (including Spoilage and Return sizes)
-const sumRecordSizes = (r: SingleDoubleDrawnRecord): number =>
-  r.size6 +
-  r.size7 +
-  r.size8 +
-  r.size9 +
-  r.size10 +
-  r.size10B +
-  r.size12 +
-  r.size14 +
-  r.size16 +
-  r.size18 +
-  r.size20 +
-  r.size22 +
-  r.size24 +
-  r.size26 +
-  r.size28 +
-  r.sizeBar +
-  (r.spoilageSize ?? 0) +
-  (r.returnSize ?? 0) +
-  (r.singleDoubleLostWeight ?? 0);
 
 // Helper: calculate total CNY amount of a SingleDoubleDrawnRecord (sum of weight * price for all sizes)
 const calculateRecordTotalAmount = (r: SingleDoubleDrawnRecord): number =>
@@ -161,14 +137,25 @@ const renderBToTenBadges = (record: SingleDoubleDrawnRecord) => {
 
 const SingleDoubleDrawn: React.FC = () => {
   const { hasPermission } = useAuth();
-  const [refinedRecords, setRefinedRecords] = useState<RefinementRecord[]>([]);
+  const [availableStock, setAvailableStock] = useState<AvailableRefinedStock[]>(
+    [],
+  );
+  const [processes, setProcesses] = useState<SingleDoubleDrawnProcess[]>([]);
   const [savedRecords, setSavedRecords] = useState<SingleDoubleDrawnRecord[]>(
     [],
   );
+  const [workers, setWorkers] = useState<SingleDoubleDrawnWorker[]>([]);
   const [loading, setLoading] = useState(true);
-  const [selectedRecordId, setSelectedRecordId] = useState<number | null>(null);
+  const [submittingKey, setSubmittingKey] = useState<string | null>(null);
+
+  // Sidebar inputs
+  const [selectedWorkers, setSelectedWorkers] = useState<
+    Record<string, number>
+  >({});
+  const [inputWeights, setInputWeights] = useState<Record<string, string>>({});
   const [searchTerm, setSearchTerm] = useState("");
-  const [formError, setFormError] = useState("");
+
+  // Tabs
   const [activeTab, setActiveTab] = useState<"processing" | "history">(
     "processing",
   );
@@ -176,8 +163,14 @@ const SingleDoubleDrawn: React.FC = () => {
   const [historyFromDate, setHistoryFromDate] = useState("");
   const [historyToDate, setHistoryToDate] = useState("");
 
-  // Two Inches Category sizes: 6, 7, 8, 9, 10
+  // Modal Sorting state
+  const [showModal, setShowModal] = useState(false);
+  const [selectedProcess, setSelectedProcess] =
+    useState<SingleDoubleDrawnProcess | null>(null);
+  const [savingRecord, setSavingRecord] = useState(false);
+  const [formError, setFormError] = useState("");
 
+  // Modal Form Inputs
   const [twoInchesForm, setTwoInchesForm] = useState({
     size6: "",
     size7: "",
@@ -186,7 +179,6 @@ const SingleDoubleDrawn: React.FC = () => {
     size10: "",
   });
 
-  // Two Inches Category prices: 6, 7, 8, 9, 10
   const [twoInchesPricesForm, setTwoInchesPricesForm] = useState({
     price6: "",
     price7: "",
@@ -195,7 +187,6 @@ const SingleDoubleDrawn: React.FC = () => {
     price10: "",
   });
 
-  // B to Ten Category sizes: 10B, 12, 14, 16, 18, 20, 22, 24, 26, 28, Bar
   const [bToTenForm, setBToTenForm] = useState({
     size10B: "",
     size12: "",
@@ -210,7 +201,6 @@ const SingleDoubleDrawn: React.FC = () => {
     sizeBar: "",
   });
 
-  // B to Ten Category prices
   const [bToTenPricesForm, setBToTenPricesForm] = useState({
     price10B: "",
     price12: "",
@@ -225,17 +215,14 @@ const SingleDoubleDrawn: React.FC = () => {
     priceBar: "",
   });
 
-  // Spoilage and Return sizes for Two Inches (weight + price)
   const [spoilageSizeWeight, setSpoilageSizeWeight] = useState("");
   const [spoilageSizePrice, setSpoilageSizePrice] = useState("");
   const [returnSizeWeight, setReturnSizeWeight] = useState("");
   const [returnSizePrice, setReturnSizePrice] = useState("");
-
   const [singleDoubleLostWeight, setSingleDoubleLostWeight] = useState("");
-  const [workerId, setWorkerId] = useState("");
-  const [workerFees, setWorkerFees] = useState("");
-  const [note, setNote] = useState("");
-  const [workers, setWorkers] = useState<SingleDoubleDrawnWorker[]>([]);
+  const [modalWorkerId, setModalWorkerId] = useState("");
+  const [modalWorkerFees, setModalWorkerFees] = useState("");
+  const [modalNote, setModalNote] = useState("");
 
   useEffect(() => {
     loadData();
@@ -243,17 +230,19 @@ const SingleDoubleDrawn: React.FC = () => {
 
   const loadData = useCallback(async () => {
     try {
-      const [recordsData, savedData, workersData] = await Promise.all([
-        refinementAPI.getRefinementRecords(),
-        singleDoubleDrawnAPI.getAll(),
-        workersAPI.getSingleDoubleDrawnWorkers(),
-      ]);
-      setRefinedRecords(recordsData);
+      const [stockData, processesData, savedData, workersData] =
+        await Promise.all([
+          singleDoubleDrawnAPI.getAvailableRefinedStock(),
+          singleDoubleDrawnAPI.getProcesses(),
+          singleDoubleDrawnAPI.getAll(),
+          workersAPI.getSingleDoubleDrawnWorkers(),
+        ]);
+      setAvailableStock(stockData);
+      setProcesses(processesData);
       setSavedRecords(savedData);
-
       setWorkers(workersData);
     } catch (error) {
-      console.error("Failed to load data:", error);
+      console.error("Failed to load SingleDoubleDrawn data:", error);
     } finally {
       setLoading(false);
     }
@@ -261,29 +250,152 @@ const SingleDoubleDrawn: React.FC = () => {
 
   useLongPoll(loadData);
 
-  const selectedRecord = useMemo(
-    () => refinedRecords.find((r) => r.id === selectedRecordId),
-    [refinedRecords, selectedRecordId],
-  );
+  // Active processes that are not yet sorted/saved
+  const activeProcesses = useMemo(() => {
+    return processes.filter(
+      (p) =>
+        p.remainingWeight > 0.001 &&
+        !savedRecords.some((r) => r.singleDoubleDrawnProcessId === p.id),
+    );
+  }, [processes, savedRecords]);
 
-  // Calculate saved total per refinement record (for sidebar filtering & remaining weight)
-  const savedTotalByRefinement = useMemo(() => {
-    const map: Record<number, number> = {};
-    savedRecords.forEach((sr) => {
-      const total = sumRecordSizes(sr);
-      map[sr.refinementRecordId] = (map[sr.refinementRecordId] || 0) + total;
+  // Sidebar Filter
+  const filteredStock = useMemo(() => {
+    return availableStock.filter((s) => {
+      const term = searchTerm.toLowerCase();
+      return (
+        s.productMarker.toLowerCase().includes(term) ||
+        (s.category || "").toLowerCase().includes(term) ||
+        (s.warehouseName || "").toLowerCase().includes(term)
+      );
     });
-    return map;
-  }, [savedRecords]);
+  }, [availableStock, searchTerm]);
 
-  // Already-sorted weight for the selected record
-  const alreadySortedWeight = useMemo(() => {
-    if (!selectedRecordId) return 0;
-    return savedTotalByRefinement[selectedRecordId] || 0;
-  }, [selectedRecordId, savedTotalByRefinement]);
+  // History Filter
+  const filteredSavedRecords = useMemo(() => {
+    return savedRecords.filter((r) => {
+      const term = historySearchTerm.toLowerCase();
+      const marker = (r.refinementRecordMarker || "").toLowerCase();
+      const cat = (r.refinementRecordCategory || "").toLowerCase();
+      if (term && !marker.includes(term) && !cat.includes(term)) return false;
+      if (historyFromDate) {
+        const d = new Date(r.date.split("T")[0]);
+        if (d < new Date(historyFromDate)) return false;
+      }
+      if (historyToDate) {
+        const d = new Date(r.date.split("T")[0]);
+        if (d > new Date(historyToDate)) return false;
+      }
+      return true;
+    });
+  }, [savedRecords, historySearchTerm, historyFromDate, historyToDate]);
 
-  // Real-time current form total (includes spoilage and return sizes)
-  const currentFormTotal = useMemo(() => {
+  // Sidebar card inline assign
+  const handleAssignToProcess = async (avail: AvailableRefinedStock) => {
+    const key = `${avail.refinementRecordId}`;
+    const workerIdVal = selectedWorkers[key];
+    if (!workerIdVal) {
+      alert("Please select a Single & Double worker before assigning.");
+      return;
+    }
+
+    const weightVal = parseFloat(inputWeights[key] || "0");
+    if (!weightVal || weightVal <= 0) {
+      alert("Please enter a valid weight to assign.");
+      return;
+    }
+    if (weightVal > avail.remainingWeight + 0.001) {
+      alert(
+        `Entered weight (${weightVal} viss) exceeds available remaining weight (${avail.remainingWeight.toFixed(3)} viss).`,
+      );
+      return;
+    }
+
+    try {
+      setSubmittingKey(key);
+      await singleDoubleDrawnAPI.createProcess({
+        refinementRecordId: avail.refinementRecordId,
+        weight: weightVal,
+        workerId: workerIdVal,
+        workerFees: 0,
+      });
+
+      setInputWeights((prev) => ({ ...prev, [key]: "" }));
+      await loadData();
+      setActiveTab("processing");
+    } catch (err: any) {
+      console.error("Failed to assign refinement stock:", err);
+      const msg =
+        err.response?.data?.message || "Failed to assign refined stock.";
+      alert(msg);
+    } finally {
+      setSubmittingKey(null);
+    }
+  };
+
+  // Open Sorting Modal for a process
+  const handleOpenProcessModal = (process: SingleDoubleDrawnProcess) => {
+    setSelectedProcess(process);
+    setFormError("");
+    setTwoInchesForm({
+      size6: "",
+      size7: "",
+      size8: "",
+      size9: "",
+      size10: "",
+    });
+    setTwoInchesPricesForm({
+      price6: "",
+      price7: "",
+      price8: "",
+      price9: "",
+      price10: "",
+    });
+    setBToTenForm({
+      size10B: "",
+      size12: "",
+      size14: "",
+      size16: "",
+      size18: "",
+      size20: "",
+      size22: "",
+      size24: "",
+      size26: "",
+      size28: "",
+      sizeBar: "",
+    });
+    setBToTenPricesForm({
+      price10B: "",
+      price12: "",
+      price14: "",
+      price16: "",
+      price18: "",
+      price20: "",
+      price22: "",
+      price24: "",
+      price26: "",
+      price28: "",
+      priceBar: "",
+    });
+    setSpoilageSizeWeight("");
+    setSpoilageSizePrice("");
+    setReturnSizeWeight("");
+    setReturnSizePrice("");
+    setSingleDoubleLostWeight("");
+    setModalWorkerId(process.workerId ? process.workerId.toString() : "");
+    setModalWorkerFees(process.workerFees ? process.workerFees.toString() : "");
+    setModalNote("");
+    setShowModal(true);
+  };
+
+  const handleCloseModal = () => {
+    setShowModal(false);
+    setSelectedProcess(null);
+    setFormError("");
+  };
+
+  // Real-time current modal form totals
+  const currentModalFormTotal = useMemo(() => {
     const twoInchesTotal = Object.values(twoInchesForm).reduce(
       (sum, v) => sum + (parseFloat(v) || 0),
       0,
@@ -297,25 +409,15 @@ const SingleDoubleDrawn: React.FC = () => {
     return twoInchesTotal + bToTenTotal + spoilageVal + returnVal;
   }, [twoInchesForm, bToTenForm, spoilageSizeWeight, returnSizeWeight]);
 
-  // Remaining weight = Output Weight - already saved - current form input (spoilage+return now included in currentFormTotal)
-  const remainingWeight = useMemo(() => {
-    if (!selectedRecord) return 0;
+  const modalRemainingWeight = useMemo(() => {
+    if (!selectedProcess) return 0;
     const lostWeightVal = parseFloat(singleDoubleLostWeight) || 0;
     return (
-      selectedRecord.weight -
-      alreadySortedWeight -
-      currentFormTotal -
-      lostWeightVal
+      selectedProcess.remainingWeight - currentModalFormTotal - lostWeightVal
     );
-  }, [
-    selectedRecord,
-    alreadySortedWeight,
-    currentFormTotal,
-    singleDoubleLostWeight,
-  ]);
+  }, [selectedProcess, currentModalFormTotal, singleDoubleLostWeight]);
 
-  // Real-time current form total amount (sum of weights * prices)
-  const totalFormAmount = useMemo(() => {
+  const totalModalFormAmount = useMemo(() => {
     let total = 0;
     ["6", "7", "8", "9", "10"].forEach((size) => {
       const w =
@@ -359,7 +461,6 @@ const SingleDoubleDrawn: React.FC = () => {
         ) || 0;
       total += w * p;
     });
-    // Include spoilage and return sizes
     total +=
       (parseFloat(spoilageSizeWeight) || 0) *
       (parseFloat(spoilageSizePrice) || 0);
@@ -377,88 +478,34 @@ const SingleDoubleDrawn: React.FC = () => {
     returnSizePrice,
   ]);
 
-  // Filter sidebar: hide fully sorted, apply search
-  const filteredRecords = useMemo(() => {
-    return refinedRecords.filter((r) => {
-      // Hide if saved total matches output weight (fully sorted)
-      const savedTotal = savedTotalByRefinement[r.id] || 0;
-      const isFullySorted =
-        r.weight > 0 && Math.abs(savedTotal - r.weight) < 0.001;
-      if (isFullySorted) return false;
-
-      // Search filter
-      return (
-        r.productMarker.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        (r.category || "").toLowerCase().includes(searchTerm.toLowerCase()) ||
-        (r.warehouseName || "").toLowerCase().includes(searchTerm.toLowerCase())
-      );
-    });
-  }, [refinedRecords, searchTerm, savedTotalByRefinement]);
-
-  // Filter history (savedRecords)
-  const filteredSavedRecords = useMemo(() => {
-    return savedRecords.filter((r) => {
-      const term = historySearchTerm.toLowerCase();
-      const marker = (r.refinementRecordMarker || "").toLowerCase();
-      const cat = (r.refinementRecordCategory || "").toLowerCase();
-      if (term && !marker.includes(term) && !cat.includes(term)) return false;
-      if (historyFromDate) {
-        const d = new Date(r.date.split("T")[0]);
-        if (d < new Date(historyFromDate)) return false;
-      }
-      if (historyToDate) {
-        const d = new Date(r.date.split("T")[0]);
-        if (d > new Date(historyToDate)) return false;
-      }
-      return true;
-    });
-  }, [savedRecords, historySearchTerm, historyFromDate, historyToDate]);
-
-  const handleTwoInchesChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const { name, value } = e.target;
-    setTwoInchesForm((prev) => ({ ...prev, [name]: value }));
-  };
-
-  const handleTwoInchesPriceChange = (
-    e: React.ChangeEvent<HTMLInputElement>,
-  ) => {
-    const { name, value } = e.target;
-    setTwoInchesPricesForm((prev) => ({ ...prev, [name]: value }));
-  };
-
-  const handleBToTenChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const { name, value } = e.target;
-    setBToTenForm((prev) => ({ ...prev, [name]: value }));
-  };
-
-  const handleBToTenPriceChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const { name, value } = e.target;
-    setBToTenPricesForm((prev) => ({ ...prev, [name]: value }));
-  };
-
-  const handleSubmit = async (e: React.FormEvent) => {
+  const handleSubmitModal = async (e: React.FormEvent) => {
     e.preventDefault();
     setFormError("");
-    if (!selectedRecordId || !selectedRecord) return;
+    if (!selectedProcess) return;
 
-    // Validate: current form total + already saved must equal output weight
-    if (currentFormTotal <= 0) {
-      setFormError("Please enter at least one size value.");
+    if (currentModalFormTotal <= 0) {
+      setFormError("Please enter at least one size weight value.");
       return;
     }
 
-    if (Math.abs(remainingWeight) > 0.001) {
+    if (!modalWorkerId || parseInt(modalWorkerId) <= 0) {
       setFormError(
-        `Total sizes must equal remaining weight. Remaining: ${remainingWeight.toFixed(3)} viss`,
+        "Single & Double worker is required. Please select a worker.",
       );
       return;
     }
 
-    // Validate: for any size with weight entered, price must also be entered and greater than 0
+    if (Math.abs(modalRemainingWeight) > 0.001) {
+      setFormError(
+        `Total sizes + lost weight must equal batch remaining weight. Remaining difference: ${modalRemainingWeight.toFixed(3)} viss`,
+      );
+      return;
+    }
+
+    // Validate prices
     let priceMissing = false;
     let missingSize = "";
 
-    // Check Two Inches
     ["6", "7", "8", "9", "10"].forEach((size) => {
       const wVal =
         parseFloat(
@@ -476,7 +523,6 @@ const SingleDoubleDrawn: React.FC = () => {
       }
     });
 
-    // Check spoilage and return sizes
     if (
       (parseFloat(spoilageSizeWeight) || 0) > 0 &&
       (parseFloat(spoilageSizePrice) || 0) < 0
@@ -492,7 +538,6 @@ const SingleDoubleDrawn: React.FC = () => {
       missingSize = "Return";
     }
 
-    // Check B to Ten
     [
       "10B",
       "12",
@@ -534,9 +579,11 @@ const SingleDoubleDrawn: React.FC = () => {
     }
 
     try {
+      setSavingRecord(true);
       const dto = {
         date: new Date().toISOString(),
-        refinementRecordId: selectedRecordId,
+        refinementRecordId: selectedProcess.refinementRecordId,
+        singleDoubleDrawnProcessId: selectedProcess.id,
 
         // Two Inches Weights
         size6: parseFloat(twoInchesForm.size6) || 0,
@@ -578,15 +625,14 @@ const SingleDoubleDrawn: React.FC = () => {
         price28: parseFloat(bToTenPricesForm.price28) || 0,
         priceBar: parseFloat(bToTenPricesForm.priceBar) || 0,
 
-        lostWeight: selectedRecord.lostWeight || 0,
-        spoilageWeight: selectedRecord.spoilageWeight || 0,
-        returnWeight: selectedRecord.returnWeight || 0,
+        lostWeight: selectedProcess.lostWeight || 0,
+        spoilageWeight: selectedProcess.spoilageWeight || 0,
+        returnWeight: selectedProcess.returnWeight || 0,
         singleDoubleLostWeight: parseFloat(singleDoubleLostWeight) || 0,
-        workerId: workerId ? parseInt(workerId) : undefined,
-        workerFees: parseFloat(workerFees) || 0,
-        note: note,
+        workerId: modalWorkerId ? parseInt(modalWorkerId) : undefined,
+        workerFees: parseFloat(modalWorkerFees) || 0,
+        note: modalNote,
 
-        // Spoilage and Return sizes
         spoilageSize: parseFloat(spoilageSizeWeight) || 0,
         returnSize: parseFloat(returnSizeWeight) || 0,
         priceSpoilageSize: parseFloat(spoilageSizePrice) || 0,
@@ -594,64 +640,31 @@ const SingleDoubleDrawn: React.FC = () => {
       };
 
       await singleDoubleDrawnAPI.create(dto);
-
-      // Clear forms
-      setTwoInchesForm({
-        size6: "",
-        size7: "",
-        size8: "",
-        size9: "",
-        size10: "",
-      });
-      setTwoInchesPricesForm({
-        price6: "",
-        price7: "",
-        price8: "",
-        price9: "",
-        price10: "",
-      });
-      setBToTenForm({
-        size10B: "",
-        size12: "",
-        size14: "",
-        size16: "",
-        size18: "",
-        size20: "",
-        size22: "",
-        size24: "",
-        size26: "",
-        size28: "",
-        sizeBar: "",
-      });
-      setBToTenPricesForm({
-        price10B: "",
-        price12: "",
-        price14: "",
-        price16: "",
-        price18: "",
-        price20: "",
-        price22: "",
-        price24: "",
-        price26: "",
-        price28: "",
-        priceBar: "",
-      });
-      setSpoilageSizeWeight("");
-      setSpoilageSizePrice("");
-      setReturnSizeWeight("");
-      setReturnSizePrice("");
-      setSingleDoubleLostWeight("");
-      setWorkerFees("");
-      setWorkerId("");
-      setNote("");
-      setFormError("");
-      setSelectedRecordId(null);
-
+      handleCloseModal();
       await loadData();
     } catch (error: any) {
-      console.error("Failed to save record:", error);
+      console.error("Failed to save sorting record:", error);
       const serverMessage = error.response?.data?.message;
       setFormError(serverMessage || "Failed to save record. Please try again.");
+    } finally {
+      setSavingRecord(false);
+    }
+  };
+
+  const handleDeleteProcess = async (id: number) => {
+    if (
+      !window.confirm(
+        "Are you sure you want to delete this assigned sorting batch?",
+      )
+    )
+      return;
+    try {
+      await singleDoubleDrawnAPI.deleteProcess(id);
+      await loadData();
+    } catch (err: any) {
+      console.error("Failed to delete process:", err);
+      const msg = err.response?.data?.message || "Failed to delete process";
+      alert(msg);
     }
   };
 
@@ -679,11 +692,20 @@ const SingleDoubleDrawn: React.FC = () => {
             <Sparkles size={30} strokeWidth={1.8} />
           </div>
           <div className="sdd-hero-text">
-            <h1>Single & Double Drawn</h1>
-            <p>Manage drawn records, length categorization, and worker wages</p>
+            <h1>Single &amp; Double Drawn</h1>
+            <p>
+              Assign refined stock to workers, categorize sizes, and track
+              sorting output
+            </p>
           </div>
         </div>
         <div className="sdd-hero-right">
+          <div className="sdd-stat-pill">
+            <span className="stat-num">{activeProcesses.length}</span>
+            <span className="stat-label">
+              {activeProcesses.length === 1 ? "Active Batch" : "Active Batches"}
+            </span>
+          </div>
           <div className="sdd-stat-pill">
             <span className="stat-num">{savedRecords.length}</span>
             <span className="stat-label">
@@ -694,19 +716,18 @@ const SingleDoubleDrawn: React.FC = () => {
       </div>
 
       <div className="sdd-layout">
-        {/* Left Sidebar: Refined Stock List */}
+        {/* ── LEFT SIDEBAR: Refined Stock List (rf-bag-card design) ── */}
         <aside className="rf-sidebar">
           <div className="rf-sidebar-header">
             <Package size={18} />
             <span>Refined Stock</span>
           </div>
 
-          {/* Search in rf-sidebar */}
           <div className="rf-search-box">
             <Search size={16} className="rf-search-icon" />
             <input
               type="text"
-              placeholder="Search marker, category..."
+              placeholder="Search marker, category, warehouse..."
               className="rf-search-input"
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
@@ -714,50 +735,148 @@ const SingleDoubleDrawn: React.FC = () => {
           </div>
 
           <div className="rf-card-list">
-            {filteredRecords.length === 0 ? (
-              <div className="rf-empty-sidebar">No refined stock found</div>
+            {filteredStock.length === 0 ? (
+              <div className="rf-empty-sidebar">No refined stock available</div>
             ) : (
-              filteredRecords.map((record) => (
-                <div
-                  key={record.id}
-                  className={`product-card ${selectedRecordId === record.id ? "selected" : ""}`}
-                  onClick={() => {
-                    setSelectedRecordId(record.id);
-                    setActiveTab("processing");
-                  }}
-                >
-                  <div className="card-header">
-                    <div className="card-title-group">
-                      <span className="card-marker">
-                        {record.productMarker}
-                      </span>
-                      <span className="card-warehouse">
-                        <Package size={11} strokeWidth={2} />
-                        {record.warehouseName || "---"}
+              filteredStock.map((avail) => {
+                const key = `${avail.refinementRecordId}`;
+                const isSubmitting = submittingKey === key;
+                return (
+                  <div key={key} className="rf-bag-card">
+                    {/* Card Top */}
+                    <div className="rf-card-top">
+                      <div className="rf-card-info">
+                        <span className="rf-card-marker">
+                          {avail.productMarker}
+                        </span>
+                        <span className="rf-card-warehouse">
+                          {avail.warehouseName || "---"}
+                        </span>
+                      </div>
+                      <span
+                        className={`rf-badge category-${(avail.category || "").toLowerCase().replace(/[\s.]+/g, "-")}`}
+                      >
+                        {avail.category}
                       </span>
                     </div>
-                    <span
-                      className={`rf-badge category-${(record.category || "").toLowerCase().replace(".", "")}`}
+
+                    {/* Stats Row */}
+                    <div className="rf-stats-row">
+                      <div className="rf-stat">
+                        <span className="rf-stat-label">Available</span>
+                        <span className="rf-stat-value rf-stat-blue">
+                          {avail.remainingWeight.toFixed(3)}{" "}
+                          <span className="rf-stat-unit">viss</span>
+                        </span>
+                      </div>
+                      <div className="rf-stat rf-stat-right">
+                        <span className="rf-stat-label">Output</span>
+                        <span className="rf-stat-value">
+                          {avail.outputWeight.toFixed(3)}{" "}
+                          <span className="rf-stat-unit">viss</span>
+                        </span>
+                      </div>
+                    </div>
+
+                    {/* Single & Double Drawn Worker Select */}
+                    <div className="rf-worker-select-wrap">
+                      <label className="rf-field-label">
+                        Single &amp; Double Worker{" "}
+                        <span style={{ color: "#ef4444" }}>*</span>
+                      </label>
+                      <select
+                        className="rf-select"
+                        value={selectedWorkers[key] || ""}
+                        onChange={(e) => {
+                          const val = e.target.value
+                            ? parseInt(e.target.value)
+                            : 0;
+                          setSelectedWorkers((prev) => ({
+                            ...prev,
+                            [key]: val,
+                          }));
+                        }}
+                      >
+                        <option value="">-- Select Worker --</option>
+                        {workers
+                          .filter(
+                            (w) =>
+                              !avail.warehouseId ||
+                              w.warehouseId === avail.warehouseId,
+                          )
+                          .map((w) => (
+                            <option key={w.id} value={w.id}>
+                              {w.name}
+                            </option>
+                          ))}
+                      </select>
+                    </div>
+
+                    {/* Weight Input + Max Button */}
+                    <div
+                      className="rf-input-group"
+                      style={{
+                        display: "flex",
+                        gap: "8px",
+                        marginBottom: "12px",
+                        alignItems: "center",
+                      }}
                     >
-                      {record.category}
-                    </span>
-                  </div>
-                  <div className="card-details">
-                    <div className="card-stat card-stat-output">
-                      <span className="card-stat-label">Output</span>
-                      <span className="card-stat-value">
-                        {record.weight.toFixed(3)}
-                        <em>viss</em>
-                      </span>
+                      <input
+                        type="number"
+                        placeholder="Weight (viss)"
+                        className="rf-select"
+                        style={{ flex: 1, minWidth: 0, cursor: "text" }}
+                        value={inputWeights[key] || ""}
+                        onChange={(e) => {
+                          const val = e.target.value;
+                          setInputWeights((prev) => ({ ...prev, [key]: val }));
+                        }}
+                        min="0"
+                        step="0.001"
+                        max={avail.remainingWeight}
+                      />
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setInputWeights((prev) => ({
+                            ...prev,
+                            [key]: avail.remainingWeight.toFixed(3),
+                          }));
+                        }}
+                        className="rf-max-btn"
+                      >
+                        Max
+                      </button>
                     </div>
+
+                    {/* Assign Button */}
+                    {hasPermission("SingleDoubleDrawn.Create") && (
+                      <button
+                        className="rf-assign-btn"
+                        onClick={() => handleAssignToProcess(avail)}
+                        disabled={isSubmitting}
+                      >
+                        {isSubmitting ? (
+                          <>
+                            <Loader2 className="rf-spin" size={16} />{" "}
+                            Assigning...
+                          </>
+                        ) : (
+                          <>
+                            <Send size={16} /> Assign to Sort
+                          </>
+                        )}
+                      </button>
+                    )}
                   </div>
-                </div>
-              ))
+                );
+              })
             )}
           </div>
         </aside>
 
-        {/* Right Main Content */}
+        {/* ── RIGHT MAIN CONTENT ── */}
         <main className="rf-main">
           <div className="rf-main-card">
             {/* Header & Tabs */}
@@ -774,30 +893,25 @@ const SingleDoubleDrawn: React.FC = () => {
                 </div>
                 <div className="rf-tab-group">
                   <button
-                    className={`rf-tab ${activeTab === "processing" ? "rf-tab-active rf-tab-green" : ""}`}
+                    className={`rf-tab ${activeTab === "processing" ? "rf-tab-active rf-tab-orange" : ""}`}
                     onClick={() => setActiveTab("processing")}
                   >
                     <span className="rf-tab-title">Processing</span>
                     <span className="rf-tab-sub">
-                      Sort selected refined stock
+                      Active sorting batches ({activeProcesses.length})
                     </span>
                   </button>
                   <button
-                    className={`rf-tab ${activeTab === "history" ? "rf-tab-active rf-tab-green" : ""}`}
+                    className={`rf-tab ${activeTab === "history" ? "rf-tab-active rf-tab-blue" : ""}`}
                     onClick={() => setActiveTab("history")}
                   >
                     <span className="rf-tab-title">Sorting History</span>
                     <span className="rf-tab-sub">
-                      View saved sorting records
+                      Completed sorting records ({savedRecords.length})
                     </span>
                   </button>
                 </div>
               </div>
-
-              <div
-                className="rf-header-right"
-                style={{ display: "flex", alignItems: "center", gap: "12px" }}
-              ></div>
             </div>
 
             {/* Tab Content */}
@@ -806,1502 +920,952 @@ const SingleDoubleDrawn: React.FC = () => {
               style={{ flex: 1, overflowY: "auto", paddingRight: "4px" }}
             >
               {activeTab === "processing" ? (
-                selectedRecord ? (
-                  <div
-                    className="fade-in"
-                    style={{
-                      display: "flex",
-                      flexDirection: "column",
-                      gap: "24px",
-                    }}
-                  >
-                    {/* Header details */}
-                    <div
-                      style={{
-                        paddingBottom: "16px",
-                        borderBottom: "1.5px solid #f1f5f9",
-                        marginBottom: "8px",
-                      }}
-                    >
-                      <h2
-                        style={{
-                          fontSize: "20px",
-                          fontWeight: "800",
-                          color: "#0f172a",
-                          margin: 0,
-                        }}
-                      >
-                        Single &amp; Double Drawn Sorting
-                      </h2>
-                      <p
-                        style={{
-                          fontSize: "13.5px",
-                          color: "#64748b",
-                          margin: "6px 0 0 0",
-                          fontWeight: "500",
-                        }}
-                      >
-                        Refined Record:{" "}
-                        <strong>{selectedRecord.productMarker}</strong> (
-                        {selectedRecord.category})
-                      </p>
-                    </div>
-
-                    {/* Detail Info Cards */}
-                    <div className="record-detail-section">
-                      <div className="detail-info-card card-output">
-                        <div className="detail-label">Output Weight</div>
-                        <div className="detail-value">
-                          {selectedRecord.weight.toFixed(3)}{" "}
-                          <span
-                            style={{
-                              fontSize: "11px",
-                              fontWeight: 600,
-                              color: "#64748b",
-                            }}
-                          >
-                            viss
-                          </span>
-                        </div>
-                      </div>
-                      <div className="detail-info-card card-lost">
-                        <div className="detail-label">Lost Weight</div>
-                        <div className="detail-value">
-                          {selectedRecord.lostWeight.toFixed(3)}{" "}
-                          <span
-                            style={{
-                              fontSize: "11px",
-                              fontWeight: 600,
-                              color: "#64748b",
-                            }}
-                          >
-                            viss
-                          </span>
-                        </div>
-                      </div>
-                      <div className="detail-info-card card-spoilage">
-                        <div className="detail-label">Spoilage Weight</div>
-                        <div className="detail-value">
-                          {selectedRecord.spoilageWeight.toFixed(3)}{" "}
-                          <span
-                            style={{
-                              fontSize: "11px",
-                              fontWeight: 600,
-                              color: "#64748b",
-                            }}
-                          >
-                            viss
-                          </span>
-                        </div>
-                      </div>
-                      <div className="detail-info-card card-return">
-                        <div className="detail-label">Return Weight</div>
-                        <div className="detail-value">
-                          {selectedRecord.returnWeight.toFixed(3)}{" "}
-                          <span
-                            style={{
-                              fontSize: "11px",
-                              fontWeight: 600,
-                              color: "#64748b",
-                            }}
-                          >
-                            viss
-                          </span>
-                        </div>
-                      </div>
-                      <div className="detail-info-card card-dry">
-                        <div className="detail-label">Dry Weight</div>
-                        <div className="detail-value">
-                          {(selectedRecord.dryWeight || 0).toFixed(3)}{" "}
-                          <span
-                            style={{
-                              fontSize: "11px",
-                              fontWeight: 600,
-                              color: "#64748b",
-                            }}
-                          >
-                            viss
-                          </span>
-                        </div>
-                      </div>
-                      <div className="detail-info-card card-increased">
-                        <div className="detail-label">Increased Weight</div>
-                        <div className="detail-value">
-                          {(selectedRecord.increasedWeight || 0).toFixed(3)}{" "}
-                          <span
-                            style={{
-                              fontSize: "11px",
-                              fontWeight: 600,
-                              color: "#64748b",
-                            }}
-                          >
-                            viss
-                          </span>
-                        </div>
-                      </div>
-                    </div>
-
-                    {/* Category Size forms */}
-                    {hasPermission("SingleDoubleDrawn.Create") && (
-                      <form onSubmit={handleSubmit}>
-                        <div className="categories-container">
-                          {/* Column 1: Two Inches Category */}
-                          <div className="category-column category-column-two">
-                            <h3 className="category-title">
-                              <LayoutGrid
-                                size={18}
-                                style={{ color: "#2563eb" }}
-                              />
-                              Two Inches Category
-                            </h3>
-                            <div
-                              className="table-container"
-                              style={{
-                                border: "1.5px solid #e2e8f0",
-                                borderRadius: "12px",
-                                overflow: "hidden",
-                                background: "white",
-                              }}
-                            >
-                              <table
-                                className="table"
-                                style={{
-                                  width: "100%",
-                                  borderCollapse: "collapse",
-                                  textAlign: "left",
-                                  fontSize: "13.5px",
-                                }}
-                              >
-                                <thead>
-                                  <tr
-                                    style={{
-                                      background: "#f8fafc",
-                                      borderBottom: "1.5px solid #e2e8f0",
-                                    }}
-                                  >
-                                    <th
-                                      style={{
-                                        padding: "10px 16px",
-                                        fontWeight: "700",
-                                        color: "#475569",
-                                      }}
-                                    >
-                                      SIZE
-                                    </th>
-                                    <th
-                                      style={{
-                                        padding: "10px 16px",
-                                        fontWeight: "700",
-                                        color: "#475569",
-                                        width: "160px",
-                                      }}
-                                    >
-                                      WEIGHT (viss)
-                                    </th>
-                                    <th
-                                      style={{
-                                        padding: "10px 16px",
-                                        fontWeight: "700",
-                                        color: "#475569",
-                                        width: "160px",
-                                      }}
-                                    >
-                                      PRICE (CNY)
-                                    </th>
-                                    <th
-                                      style={{
-                                        padding: "10px 16px",
-                                        fontWeight: "700",
-                                        color: "#475569",
-                                        textAlign: "right",
-                                      }}
-                                    >
-                                      AMOUNT (CNY)
-                                    </th>
-                                  </tr>
-                                </thead>
-                                <tbody>
-                                  {["6", "7", "8", "9", "10"].map((size) => {
-                                    const weightVal =
-                                      parseFloat(
-                                        twoInchesForm[
-                                          `size${size}` as keyof typeof twoInchesForm
-                                        ],
-                                      ) || 0;
-                                    const priceVal =
-                                      parseFloat(
-                                        twoInchesPricesForm[
-                                          `price${size}` as keyof typeof twoInchesPricesForm
-                                        ],
-                                      ) || 0;
-                                    const amount = weightVal * priceVal;
-                                    return (
-                                      <tr
-                                        key={size}
-                                        style={{
-                                          borderBottom: "1px solid #f1f5f9",
-                                        }}
-                                      >
-                                        <td
-                                          style={{
-                                            padding: "10px 16px",
-                                            fontWeight: "700",
-                                            color: "#1e293b",
-                                          }}
-                                        >
-                                          Size {size}
-                                        </td>
-                                        <td style={{ padding: "6px 16px" }}>
-                                          <input
-                                            type="number"
-                                            step="0.001"
-                                            name={`size${size}`}
-                                            placeholder="0"
-                                            value={
-                                              twoInchesForm[
-                                                `size${size}` as keyof typeof twoInchesForm
-                                              ]
-                                            }
-                                            onChange={handleTwoInchesChange}
-                                            style={{
-                                              width: "100%",
-                                              padding: "8px 12px",
-                                              borderRadius: "8px",
-                                              border: "1.5px solid #cbd5e1",
-                                              fontSize: "13.5px",
-                                              fontWeight: "600",
-                                              outline: "none",
-                                              boxSizing: "border-box",
-                                            }}
-                                          />
-                                        </td>
-                                        <td style={{ padding: "6px 16px" }}>
-                                          <input
-                                            type="number"
-                                            name={`price${size}`}
-                                            placeholder="0"
-                                            value={
-                                              twoInchesPricesForm[
-                                                `price${size}` as keyof typeof twoInchesPricesForm
-                                              ]
-                                            }
-                                            onChange={
-                                              handleTwoInchesPriceChange
-                                            }
-                                            style={{
-                                              width: "100%",
-                                              padding: "8px 12px",
-                                              borderRadius: "8px",
-                                              border: "1.5px solid #cbd5e1",
-                                              fontSize: "13.5px",
-                                              fontWeight: "600",
-                                              outline: "none",
-                                              boxSizing: "border-box",
-                                            }}
-                                          />
-                                        </td>
-                                        <td
-                                          style={{
-                                            padding: "10px 16px",
-                                            textAlign: "right",
-                                            fontWeight: "700",
-                                            color: "#0f172a",
-                                          }}
-                                        >
-                                          {amount > 0
-                                            ? amount.toLocaleString(undefined, {
-                                                minimumFractionDigits: 2,
-                                                maximumFractionDigits: 2,
-                                              })
-                                            : "0.00"}
-                                        </td>
-                                      </tr>
-                                    );
-                                  })}
-
-                                  {/* Spoilage row */}
-                                  {(() => {
-                                    const spoilageW =
-                                      parseFloat(spoilageSizeWeight) || 0;
-                                    const spoilageP =
-                                      parseFloat(spoilageSizePrice) || 0;
-                                    const spoilageAmt = spoilageW * spoilageP;
-                                    return (
-                                      <tr
-                                        style={{
-                                          borderBottom: "1px solid #f1f5f9",
-                                          background: "#fffaf8",
-                                        }}
-                                      >
-                                        <td
-                                          style={{
-                                            padding: "10px 16px",
-                                            fontWeight: "700",
-                                            color: "#ea580c",
-                                          }}
-                                        >
-                                          Spoilage
-                                        </td>
-                                        <td style={{ padding: "6px 16px" }}>
-                                          <input
-                                            type="number"
-                                            step="0.001"
-                                            placeholder="0"
-                                            value={spoilageSizeWeight}
-                                            onChange={(e) =>
-                                              setSpoilageSizeWeight(
-                                                e.target.value,
-                                              )
-                                            }
-                                            style={{
-                                              width: "100%",
-                                              padding: "8px 12px",
-                                              borderRadius: "8px",
-                                              border: "1.5px solid #ffedd5",
-                                              fontSize: "13.5px",
-                                              fontWeight: "600",
-                                              outline: "none",
-                                              boxSizing: "border-box",
-                                              background: "#fff",
-                                            }}
-                                          />
-                                        </td>
-                                        <td style={{ padding: "6px 16px" }}>
-                                          <input
-                                            type="number"
-                                            step="1"
-                                            placeholder="0"
-                                            value={spoilageSizePrice}
-                                            onChange={(e) =>
-                                              setSpoilageSizePrice(
-                                                e.target.value,
-                                              )
-                                            }
-                                            style={{
-                                              width: "100%",
-                                              padding: "8px 12px",
-                                              borderRadius: "8px",
-                                              border:
-                                                spoilageW > 0 && spoilageP < 0
-                                                  ? "1.5px solid #ef4444"
-                                                  : "1.5px solid #ffedd5",
-                                              fontSize: "13.5px",
-                                              fontWeight: "600",
-                                              outline: "none",
-                                              boxSizing: "border-box",
-                                              background: "#fff",
-                                            }}
-                                          />
-                                        </td>
-                                        <td
-                                          style={{
-                                            padding: "10px 16px",
-                                            textAlign: "right",
-                                            fontWeight: "700",
-                                            color:
-                                              spoilageAmt > 0
-                                                ? "#ea580c"
-                                                : "#cbd5e1",
-                                          }}
-                                        >
-                                          {spoilageAmt > 0
-                                            ? spoilageAmt.toLocaleString(
-                                                undefined,
-                                                {
-                                                  minimumFractionDigits: 2,
-                                                  maximumFractionDigits: 2,
-                                                },
-                                              )
-                                            : "0.00"}
-                                        </td>
-                                      </tr>
-                                    );
-                                  })()}
-
-                                  {/* Return row */}
-                                  {(() => {
-                                    const returnW =
-                                      parseFloat(returnSizeWeight) || 0;
-                                    const returnP =
-                                      parseFloat(returnSizePrice) || 0;
-                                    const returnAmt = returnW * returnP;
-                                    return (
-                                      <tr
-                                        style={{
-                                          borderBottom: "1px solid #f1f5f9",
-                                          background: "#f8fafc",
-                                        }}
-                                      >
-                                        <td
-                                          style={{
-                                            padding: "10px 16px",
-                                            fontWeight: "700",
-                                            color: "#2563eb",
-                                          }}
-                                        >
-                                          Return
-                                        </td>
-                                        <td style={{ padding: "6px 16px" }}>
-                                          <input
-                                            type="number"
-                                            step="0.001"
-                                            placeholder="0"
-                                            value={returnSizeWeight}
-                                            onChange={(e) =>
-                                              setReturnSizeWeight(
-                                                e.target.value,
-                                              )
-                                            }
-                                            style={{
-                                              width: "100%",
-                                              padding: "8px 12px",
-                                              borderRadius: "8px",
-                                              border: "1.5px solid #dbeafe",
-                                              fontSize: "13.5px",
-                                              fontWeight: "600",
-                                              outline: "none",
-                                              boxSizing: "border-box",
-                                              background: "#fff",
-                                            }}
-                                          />
-                                        </td>
-                                        <td style={{ padding: "6px 16px" }}>
-                                          <input
-                                            type="number"
-                                            step="1"
-                                            placeholder="0"
-                                            value={returnSizePrice}
-                                            onChange={(e) =>
-                                              setReturnSizePrice(e.target.value)
-                                            }
-                                            style={{
-                                              width: "100%",
-                                              padding: "8px 12px",
-                                              borderRadius: "8px",
-                                              border:
-                                                returnW > 0 && returnP < 0
-                                                  ? "1.5px solid #ef4444"
-                                                  : "1.5px solid #dbeafe",
-                                              fontSize: "13.5px",
-                                              fontWeight: "600",
-                                              outline: "none",
-                                              boxSizing: "border-box",
-                                              background: "#fff",
-                                            }}
-                                          />
-                                        </td>
-                                        <td
-                                          style={{
-                                            padding: "10px 16px",
-                                            textAlign: "right",
-                                            fontWeight: "700",
-                                            color:
-                                              returnAmt > 0
-                                                ? "#2563eb"
-                                                : "#cbd5e1",
-                                          }}
-                                        >
-                                          {returnAmt > 0
-                                            ? returnAmt.toLocaleString(
-                                                undefined,
-                                                {
-                                                  minimumFractionDigits: 2,
-                                                  maximumFractionDigits: 2,
-                                                },
-                                              )
-                                            : "0.00"}
-                                        </td>
-                                      </tr>
-                                    );
-                                  })()}
-                                </tbody>
-                              </table>
-                            </div>
-                          </div>
-
-                          {/* Column 2: B to Ten Category */}
-                          <div className="category-column category-column-b">
-                            <h3 className="category-title">
-                              <LayoutGrid
-                                size={18}
-                                style={{ color: "#8b5cf6" }}
-                              />
-                              B to Ten Category
-                            </h3>
-                            <div
-                              className="table-container"
-                              style={{
-                                border: "1.5px solid #e2e8f0",
-                                borderRadius: "12px",
-                                overflow: "hidden",
-                                background: "white",
-                              }}
-                            >
-                              <table
-                                className="table"
-                                style={{
-                                  width: "100%",
-                                  borderCollapse: "collapse",
-                                  textAlign: "left",
-                                  fontSize: "13.5px",
-                                }}
-                              >
-                                <thead>
-                                  <tr
-                                    style={{
-                                      background: "#f8fafc",
-                                      borderBottom: "1.5px solid #e2e8f0",
-                                    }}
-                                  >
-                                    <th
-                                      style={{
-                                        padding: "10px 16px",
-                                        fontWeight: "700",
-                                        color: "#475569",
-                                      }}
-                                    >
-                                      SIZE
-                                    </th>
-                                    <th
-                                      style={{
-                                        padding: "10px 16px",
-                                        fontWeight: "700",
-                                        color: "#475569",
-                                        width: "160px",
-                                      }}
-                                    >
-                                      WEIGHT (viss)
-                                    </th>
-                                    <th
-                                      style={{
-                                        padding: "10px 16px",
-                                        fontWeight: "700",
-                                        color: "#475569",
-                                        width: "160px",
-                                      }}
-                                    >
-                                      PRICE (CNY)
-                                    </th>
-                                    <th
-                                      style={{
-                                        padding: "10px 16px",
-                                        fontWeight: "700",
-                                        color: "#475569",
-                                        textAlign: "right",
-                                      }}
-                                    >
-                                      AMOUNT (CNY)
-                                    </th>
-                                  </tr>
-                                </thead>
-                                <tbody>
-                                  {[
-                                    "10B",
-                                    "12",
-                                    "14",
-                                    "16",
-                                    "18",
-                                    "20",
-                                    "22",
-                                    "24",
-                                    "26",
-                                    "28",
-                                    "Bar",
-                                  ].map((size) => {
-                                    const fieldName =
-                                      size === "10B"
-                                        ? "size10B"
-                                        : size === "Bar"
-                                          ? "sizeBar"
-                                          : `size${size}`;
-                                    const priceFieldName =
-                                      size === "10B"
-                                        ? "price10B"
-                                        : size === "Bar"
-                                          ? "priceBar"
-                                          : `price${size}`;
-                                    const displayLabel =
-                                      size === "10B"
-                                        ? "Size 10B"
-                                        : `Size ${size}`;
-
-                                    const weightVal =
-                                      parseFloat(
-                                        bToTenForm[
-                                          fieldName as keyof typeof bToTenForm
-                                        ],
-                                      ) || 0;
-                                    const priceVal =
-                                      parseFloat(
-                                        bToTenPricesForm[
-                                          priceFieldName as keyof typeof bToTenPricesForm
-                                        ],
-                                      ) || 0;
-                                    const amount = weightVal * priceVal;
-
-                                    return (
-                                      <tr
-                                        key={size}
-                                        style={{
-                                          borderBottom: "1px solid #f1f5f9",
-                                        }}
-                                      >
-                                        <td
-                                          style={{
-                                            padding: "10px 16px",
-                                            fontWeight: "700",
-                                            color: "#1e293b",
-                                          }}
-                                        >
-                                          {displayLabel}
-                                        </td>
-                                        <td style={{ padding: "6px 16px" }}>
-                                          <input
-                                            type="number"
-                                            step="0.001"
-                                            name={fieldName}
-                                            placeholder="0"
-                                            value={
-                                              bToTenForm[
-                                                fieldName as keyof typeof bToTenForm
-                                              ]
-                                            }
-                                            onChange={handleBToTenChange}
-                                            style={{
-                                              width: "100%",
-                                              padding: "8px 12px",
-                                              borderRadius: "8px",
-                                              border: "1.5px solid #cbd5e1",
-                                              fontSize: "13.5px",
-                                              fontWeight: "600",
-                                              outline: "none",
-                                              boxSizing: "border-box",
-                                            }}
-                                          />
-                                        </td>
-                                        <td style={{ padding: "6px 16px" }}>
-                                          <input
-                                            type="number"
-                                            name={priceFieldName}
-                                            placeholder="0"
-                                            value={
-                                              bToTenPricesForm[
-                                                priceFieldName as keyof typeof bToTenPricesForm
-                                              ]
-                                            }
-                                            onChange={handleBToTenPriceChange}
-                                            style={{
-                                              width: "100%",
-                                              padding: "8px 12px",
-                                              borderRadius: "8px",
-                                              border: "1.5px solid #cbd5e1",
-                                              fontSize: "13.5px",
-                                              fontWeight: "600",
-                                              outline: "none",
-                                              boxSizing: "border-box",
-                                            }}
-                                          />
-                                        </td>
-                                        <td
-                                          style={{
-                                            padding: "10px 16px",
-                                            textAlign: "right",
-                                            fontWeight: "700",
-                                            color: "#0f172a",
-                                          }}
-                                        >
-                                          {amount > 0
-                                            ? amount.toLocaleString(undefined, {
-                                                minimumFractionDigits: 2,
-                                                maximumFractionDigits: 2,
-                                              })
-                                            : "0.00"}
-                                        </td>
-                                      </tr>
-                                    );
-                                  })}
-                                </tbody>
-                              </table>
-                            </div>
-                          </div>
-                        </div>
-
-                        {/* New Worker & Note Inputs */}
-                        <div
-                          style={{
-                            display: "grid",
-                            gridTemplateColumns: "1fr 1fr 1fr",
-                            gap: "16px",
-                            marginBottom: "24px",
-                          }}
-                        >
-                          <div className="form-group">
-                            <label>Lost Weight (viss)</label>
-                            <input
-                              type="number"
-                              step="0.001"
-                              placeholder="0"
-                              value={singleDoubleLostWeight}
-                              onChange={(e) =>
-                                setSingleDoubleLostWeight(e.target.value)
-                              }
-                              className="form-input"
-                              style={{
-                                width: "100%",
-                                padding: "8px 12px",
-                                border: "1.5px solid #cbd5e1",
-                                borderRadius: "8px",
-                                boxSizing: "border-box",
-                              }}
-                            />
-                          </div>
-                          <div className="form-group">
-                            <label>Worker</label>
-                            <select
-                              className="form-select"
-                              value={workerId}
-                              onChange={(e) => setWorkerId(e.target.value)}
-                              style={{
-                                width: "100%",
-                                padding: "8px 12px",
-                                border: "1.5px solid #cbd5e1",
-                                borderRadius: "8px",
-                                boxSizing: "border-box",
-                              }}
-                            >
-                              <option value="">Select Worker</option>
-                              {workers.map((w) => (
-                                <option key={w.id} value={w.id}>
-                                  {w.name} ({w.warehouseName})
-                                </option>
-                              ))}
-                            </select>
-                          </div>
-                          <div className="form-group">
-                            <label>
-                              Worker Fees (MMK){" "}
-                              <span style={{ color: "#ef4444" }}>*</span>
-                            </label>
-                            <input
-                              type="number"
-                              min="0"
-                              step="0.01"
-                              placeholder="0"
-                              value={workerFees}
-                              onChange={(e) => setWorkerFees(e.target.value)}
-                              className="form-input"
-                              style={{
-                                width: "100%",
-                                padding: "8px 12px",
-                                border: "1.5px solid #cbd5e1",
-                                borderRadius: "8px",
-                                boxSizing: "border-box",
-                              }}
-                              required
-                            />
-                          </div>
-                          <div className="form-group">
-                            <label>Note</label>
-                            <input
-                              type="text"
-                              placeholder="Add a note..."
-                              value={note}
-                              onChange={(e) => setNote(e.target.value)}
-                              className="form-input"
-                              style={{
-                                width: "100%",
-                                padding: "8px 12px",
-                                border: "1.5px solid #cbd5e1",
-                                borderRadius: "8px",
-                                boxSizing: "border-box",
-                              }}
-                            />
-                          </div>
-                        </div>
-                        {/* Remaining Weight Bar */}
-                        <div
-                          className="remaining-weight-bar"
-                          style={{
-                            display: "flex",
-                            alignItems: "center",
-                            justifyContent: "space-between",
-                            padding: "16px 20px",
-                            borderRadius: "12px",
-                            marginBottom: "16px",
-                            border: `2px solid ${Math.abs(remainingWeight) < 0.001 ? "#10b981" : remainingWeight < 0 ? "#ef4444" : "#f59e0b"}`,
-                            background:
-                              Math.abs(remainingWeight) < 0.001
-                                ? "linear-gradient(135deg, #ecfdf5 0%, #d1fae5 100%)"
-                                : remainingWeight < 0
-                                  ? "linear-gradient(135deg, #fef2f2 0%, #fee2e2 100%)"
-                                  : "linear-gradient(135deg, #fffbeb 0%, #fef3c7 100%)",
-                            transition: "all 0.3s ease",
-                          }}
-                        >
-                          <div
-                            style={{
-                              display: "flex",
-                              alignItems: "center",
-                              gap: "12px",
-                            }}
-                          >
-                            {Math.abs(remainingWeight) < 0.001 ? (
-                              <CheckCircle2
-                                size={22}
-                                style={{ color: "#10b981" }}
-                              />
-                            ) : (
-                              <Weight
-                                size={22}
-                                style={{
-                                  color:
-                                    remainingWeight < 0 ? "#ef4444" : "#f59e0b",
-                                }}
-                              />
-                            )}
-                            <div>
-                              <div
-                                style={{
-                                  fontSize: "11px",
-                                  fontWeight: 700,
-                                  textTransform: "uppercase",
-                                  letterSpacing: "0.06em",
-                                  color:
-                                    Math.abs(remainingWeight) < 0.001
-                                      ? "#059669"
-                                      : remainingWeight < 0
-                                        ? "#dc2626"
-                                        : "#d97706",
-                                  marginBottom: "2px",
-                                }}
-                              >
-                                {Math.abs(remainingWeight) < 0.001
-                                  ? "Fully Matched"
-                                  : remainingWeight < 0
-                                    ? "Exceeded"
-                                    : "Remaining Weight"}
-                              </div>
-                              <div
-                                style={{
-                                  fontSize: "11px",
-                                  color: "#64748b",
-                                  fontWeight: 500,
-                                }}
-                              >
-                                Output: {selectedRecord.weight.toFixed(3)} viss
-                                — Already Saved:{" "}
-                                {alreadySortedWeight.toFixed(3)} viss — Current
-                                Input: {currentFormTotal.toFixed(3)} viss —
-                                Total Amount: {totalFormAmount.toLocaleString()}{" "}
-                                CNY
-                              </div>
-                            </div>
-                          </div>
-                          <div
-                            style={{
-                              fontSize: "24px",
-                              fontWeight: 800,
-                              color:
-                                Math.abs(remainingWeight) < 0.001
-                                  ? "#10b981"
-                                  : remainingWeight < 0
-                                    ? "#ef4444"
-                                    : "#f59e0b",
-                            }}
-                          >
-                            {remainingWeight.toFixed(3)}{" "}
-                            <span style={{ fontSize: "12px", fontWeight: 700 }}>
-                              viss
-                            </span>
-                          </div>
-                        </div>
-
-                        <button
-                          type="submit"
-                          className="submit-btn"
-                          disabled={
-                            Math.abs(remainingWeight) > 0.001 ||
-                            currentFormTotal <= 0
-                          }
-                          style={{
-                            width: "100%",
-                            padding: "14px",
-                            background:
-                              Math.abs(remainingWeight) > 0.001 ||
-                              currentFormTotal <= 0
-                                ? "#94a3b8"
-                                : "linear-gradient(135deg, #2563eb, #1d4ed8)",
-                            color: "white",
-                            border: "none",
-                            borderRadius: "10px",
-                            fontSize: "15px",
-                            fontWeight: "700",
-                            cursor:
-                              Math.abs(remainingWeight) > 0.001 ||
-                              currentFormTotal <= 0
-                                ? "not-allowed"
-                                : "pointer",
-                            display: "flex",
-                            alignItems: "center",
-                            justifyContent: "center",
-                            gap: "8px",
-                            boxShadow:
-                              Math.abs(remainingWeight) > 0.001 ||
-                              currentFormTotal <= 0
-                                ? "none"
-                                : "0 4px 12px rgba(37,99,235,0.2)",
-                            opacity:
-                              Math.abs(remainingWeight) > 0.001 ||
-                              currentFormTotal <= 0
-                                ? 0.7
-                                : 1,
-                            transition: "all 0.3s ease",
-                          }}
-                        >
-                          <Send size={16} /> Confirm &amp; Save Sorting Record
-                        </button>
-
-                        {formError && (
-                          <p
-                            style={{
-                              color: "#ef4444",
-                              fontSize: "13px",
-                              fontWeight: 600,
-                              marginTop: "10px",
-                              textAlign: "center",
-                            }}
-                          >
-                            {formError}
-                          </p>
-                        )}
-                      </form>
-                    )}
-                  </div>
-                ) : (
-                  /* No selection placeholder in activeTab === processing */
-                  <div
-                    className="fade-in"
-                    style={{
-                      display: "flex",
-                      flexDirection: "column",
-                      alignItems: "center",
-                      justifyContent: "center",
-                      color: "#94a3b8",
-                      padding: "80px 20px",
-                      background: "#f8fafc",
-                      borderRadius: "16px",
-                      border: "2px dashed #e2e8f0",
-                      textAlign: "center",
-                    }}
-                  >
-                    <Sparkles
-                      size={40}
-                      style={{ color: "#cbd5e1", marginBottom: "12px" }}
-                    />
+                /* ── PROCESSING TAB: List of active assigned batches ── */
+                <div>
+                  <div style={{ marginBottom: "16px" }}>
                     <h3
                       style={{
                         fontSize: "16px",
-                        fontWeight: "700",
-                        color: "#64748b",
-                        margin: "0 0 4px 0",
+                        fontWeight: "800",
+                        color: "#0f172a",
+                        margin: 0,
                       }}
                     >
-                      No Selection
+                      Active Sorting Batches
                     </h3>
-                    <p style={{ fontSize: "13px", margin: 0 }}>
-                      Select a refined stock record from the sidebar to start
-                      sorting sizes.
+                    <p
+                      style={{
+                        fontSize: "13px",
+                        color: "#64748b",
+                        margin: "4px 0 0 0",
+                      }}
+                    >
+                      Assigned refined stock waiting to be processed into Single
+                      &amp; Double sizes. Click <strong>Process / Sort</strong>{" "}
+                      to open sorting form.
                     </p>
                   </div>
-                )
-              ) : (
-                /* HISTORY TAB */
-                <div
-                  className="fade-in"
-                  style={{
-                    display: "flex",
-                    flexDirection: "column",
-                    gap: "20px",
-                  }}
-                >
-                  {selectedRecordId ? (
-                    /* Selected stock item history */
-                    <div>
-                      <div
-                        style={{
-                          display: "flex",
-                          justifyContent: "space-between",
-                          alignItems: "center",
-                          background: "#f8fafc",
-                          padding: "12px 18px",
-                          borderRadius: "12px",
-                          border: "1px solid #e2e8f0",
-                          marginBottom: "16px",
-                        }}
-                      >
-                        <div>
-                          <span
-                            style={{
-                              fontSize: "12px",
-                              fontWeight: "600",
-                              color: "#64748b",
-                            }}
-                          >
-                            Showing history for:
-                          </span>
-                          <h3
-                            style={{
-                              fontSize: "15px",
-                              fontWeight: "700",
-                              color: "#0f172a",
-                              margin: "2px 0 0 0",
-                            }}
-                          >
-                            {selectedRecord?.productMarker} (
-                            {selectedRecord?.category}) —{" "}
-                            {selectedRecord?.warehouseName}
-                          </h3>
-                        </div>
-                        <button
-                          onClick={() => setSelectedRecordId(null)}
-                          style={{
-                            padding: "6px 12px",
-                            fontSize: "12.5px",
-                            fontWeight: "600",
-                            color: "#2563eb",
-                            background: "white",
-                            border: "1.5px solid #cbd5e1",
-                            borderRadius: "8px",
-                            cursor: "pointer",
-                            transition: "all 0.2s",
-                          }}
-                        >
-                          Clear Selection &amp; Show All
-                        </button>
-                      </div>
 
-                      <div className="rf-table-wrap">
-                        <table className="rf-table">
-                          <thead>
-                            <tr>
-                              <th>Date</th>
-                              <th>Two Inches Sizes (6,7,8,9,10)</th>
-                              <th>B to Ten Sizes (10,12,14...Bar)</th>
-                              <th>Lost Weight</th>
-                              <th>Single/Double Lost Weight</th>
-                              <th>Spoilage Weight</th>
-                              <th>Return Weight</th>
-                              <th>Worker</th>
-                              <th>Note</th>
-                              <th>Worker Fees (MMK)</th>
-                              <th className="rf-th-right">Total Amount</th>
-                              <th style={{ textAlign: "center" }}>Actions</th>
-                            </tr>
-                          </thead>
-                          <tbody>
-                            {savedRecords.filter(
-                              (r) => r.refinementRecordId === selectedRecordId,
-                            ).length === 0 ? (
-                              <tr>
-                                <td colSpan={12} className="rf-empty-row">
-                                  <Package
-                                    size={44}
-                                    className="rf-empty-icon"
-                                  />
-                                  <span>
-                                    No sorting history recorded for this stock
-                                    item.
+                  <div className="rf-table-wrap">
+                    <table className="rf-table">
+                      <thead>
+                        <tr>
+                          <th>Date</th>
+                          <th>Stock Marker</th>
+                          <th>Warehouse / Category</th>
+                          <th className="rf-th-right">Assigned (viss)</th>
+                          <th className="rf-th-right">Remaining (viss)</th>
+                          <th>Assigned Worker</th>
+                          <th style={{ textAlign: "center" }}>Actions</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {activeProcesses.length === 0 ? (
+                          <tr>
+                            <td colSpan={7} className="rf-empty-row">
+                              <Package size={44} className="rf-empty-icon" />
+                              <span>
+                                No active sorting batches. Assign a refined
+                                stock bag from the sidebar to start sorting.
+                              </span>
+                            </td>
+                          </tr>
+                        ) : (
+                          activeProcesses.map((proc) => (
+                            <tr key={proc.id}>
+                              <td className="rf-td-date">
+                                {formatDateTime(proc.date)}
+                              </td>
+                              <td>
+                                <span className="rf-marker">
+                                  {proc.productMarker}
+                                </span>
+                              </td>
+                              <td>
+                                <div className="rf-warehouse">
+                                  {proc.warehouseName || "---"} •{" "}
+                                  <span
+                                    className={`rf-badge category-${(proc.category || "").toLowerCase().replace(/[\s.]+/g, "-")}`}
+                                    style={{ marginLeft: "4px" }}
+                                  >
+                                    {proc.category}
                                   </span>
-                                </td>
-                              </tr>
-                            ) : (
-                              savedRecords
-                                .filter(
-                                  (r) =>
-                                    r.refinementRecordId === selectedRecordId,
-                                )
-                                .map((record) => (
-                                  <tr key={record.id}>
-                                    <td className="rf-td-date">
-                                      {formatDateTime(record.date)}
-                                    </td>
-                                    <td>{renderTwoInchesBadges(record)}</td>
-                                    <td>{renderBToTenBadges(record)}</td>
-                                    <td
-                                      style={{
-                                        color: "#64748b",
-                                        fontWeight: "600",
-                                      }}
+                                </div>
+                              </td>
+                              <td className="rf-td-weight rf-th-right">
+                                {proc.weight.toFixed(3)} viss
+                              </td>
+                              <td className="rf-td-weight rf-blue rf-th-right">
+                                {proc.remainingWeight.toFixed(3)} viss
+                              </td>
+                              <td>
+                                <span
+                                  style={{
+                                    fontWeight: "600",
+                                    color: "#334155",
+                                  }}
+                                >
+                                  {proc.workerName || "---"}
+                                </span>
+                              </td>
+                              <td>
+                                <div
+                                  className="rf-actions"
+                                  style={{
+                                    justifyContent: "center",
+                                    gap: "8px",
+                                  }}
+                                >
+                                  {hasPermission(
+                                    "SingleDoubleDrawn.Create",
+                                  ) && (
+                                    <button
+                                      className="sdd-process-action-btn"
+                                      onClick={() =>
+                                        handleOpenProcessModal(proc)
+                                      }
+                                      title="Open Sorting Form"
                                     >
-                                      {record.lostWeight
-                                        ? record.lostWeight.toFixed(3)
-                                        : "0.000"}{" "}
-                                      viss
-                                    </td>
-                                    <td
-                                      style={{
-                                        color: "#ea580c",
-                                        fontWeight: "600",
-                                      }}
+                                      <Scissors size={14} /> Process / Sort
+                                    </button>
+                                  )}
+                                  {hasPermission(
+                                    "SingleDoubleDrawn.Delete",
+                                  ) && (
+                                    <button
+                                      onClick={() =>
+                                        handleDeleteProcess(proc.id)
+                                      }
+                                      className="rf-action-btn rf-delete-btn"
+                                      title="Delete Batch"
                                     >
-                                      {record.singleDoubleLostWeight
-                                        ? record.singleDoubleLostWeight.toFixed(
-                                            3,
-                                          )
-                                        : "0.000"}{" "}
-                                      viss
-                                    </td>
-                                    <td
-                                      style={{
-                                        color: "#ea580c",
-                                        fontWeight: "600",
-                                      }}
-                                    >
-                                      {record.spoilageWeight
-                                        ? record.spoilageWeight.toFixed(3)
-                                        : "0.000"}{" "}
-                                      viss
-                                    </td>
-                                    <td
-                                      style={{
-                                        color: "#2563eb",
-                                        fontWeight: "600",
-                                      }}
-                                    >
-                                      {record.returnWeight
-                                        ? record.returnWeight.toFixed(3)
-                                        : "0.000"}{" "}
-                                      viss
-                                    </td>
-                                    <td
-                                      style={{
-                                        color: "#334155",
-                                        fontWeight: "500",
-                                      }}
-                                    >
-                                      {record.workerName || "---"}
-                                    </td>
-                                    <td
-                                      style={{
-                                        color: "#64748b",
-                                        maxWidth: "150px",
-                                      }}
-                                    >
-                                      <div
-                                        style={{
-                                          whiteSpace: "nowrap",
-                                          overflow: "hidden",
-                                          textOverflow: "ellipsis",
-                                        }}
-                                        title={record.note}
-                                      >
-                                        {record.note || "---"}
-                                      </div>
-                                    </td>
-                                    <td
-                                      style={{
-                                        color: "#0f172a",
-                                        fontWeight: "600",
-                                      }}
-                                    >
-                                      {record.workerFees?.toLocaleString(
-                                        undefined,
-                                        {
-                                          minimumFractionDigits: 2,
-                                          maximumFractionDigits: 2,
-                                        },
-                                      ) || "0.00"}
-                                    </td>
-                                    <td className="rf-td-weight rf-green rf-th-right">
-                                      {calculateRecordTotalAmount(
-                                        record,
-                                      ).toLocaleString(undefined, {
-                                        minimumFractionDigits: 2,
-                                        maximumFractionDigits: 2,
-                                      })}{" "}
-                                      CNY
-                                    </td>
-                                    <td>
-                                      <div
-                                        className="rf-actions"
-                                        style={{ justifyContent: "center" }}
-                                      >
-                                        {hasPermission(
-                                          "SingleDoubleDrawn.Delete",
-                                        ) && (
-                                          <button
-                                            onClick={() =>
-                                              handleDeleteRecord(record.id)
-                                            }
-                                            className="rf-action-btn rf-delete-btn"
-                                          >
-                                            <Trash2 size={14} />
-                                          </button>
-                                        )}
-                                      </div>
-                                    </td>
-                                  </tr>
-                                ))
-                            )}
-                          </tbody>
-                        </table>
-                      </div>
-                    </div>
-                  ) : (
-                    /* Global history */
-                    <div>
-                      <div style={{ marginBottom: "16px" }}>
-                        <h3
-                          style={{
-                            fontSize: "16px",
-                            fontWeight: "800",
-                            color: "#0f172a",
-                            margin: 0,
-                          }}
-                        >
-                          Global Sorting History
-                        </h3>
-                        <p
-                          style={{
-                            fontSize: "13px",
-                            color: "#64748b",
-                            margin: "4px 0 0 0",
-                          }}
-                        >
-                          All single &amp; double drawn sorting records across
-                          all stock items
-                        </p>
-                      </div>
-
-                      {/* History Filters */}
-                      <div className="sdd-table-controls">
-                        <div className="sdd-search-box">
-                          <Search className="sdd-input-icon" size={16} />
-                          <input
-                            type="text"
-                            className="sdd-search-control"
-                            placeholder="Search history..."
-                            value={historySearchTerm}
-                            onChange={(e) =>
-                              setHistorySearchTerm(e.target.value)
-                            }
-                          />
-                        </div>
-                        <div className="sdd-date-filter">
-                          <div className="sdd-date-field">
-                            <span className="sdd-date-label">From</span>
-                            <input
-                              type="date"
-                              className="sdd-date-input"
-                              value={historyFromDate}
-                              onChange={(e) =>
-                                setHistoryFromDate(e.target.value)
-                              }
-                            />
-                          </div>
-                          <div className="sdd-date-field">
-                            <span className="sdd-date-label">To</span>
-                            <input
-                              type="date"
-                              className="sdd-date-input"
-                              value={historyToDate}
-                              onChange={(e) => setHistoryToDate(e.target.value)}
-                            />
-                          </div>
-                          {(historyFromDate || historyToDate) && (
-                            <button
-                              className="sdd-date-clear-btn"
-                              onClick={() => {
-                                setHistoryFromDate("");
-                                setHistoryToDate("");
-                              }}
-                            >
-                              Clear
-                            </button>
-                          )}
-                        </div>
-                      </div>
-
-                      <div className="rf-table-wrap">
-                        <table className="rf-table">
-                          <thead>
-                            <tr>
-                              <th>Stock Item</th>
-                              <th>Date</th>
-                              <th>Two Inches Sizes</th>
-                              <th>B to Ten Sizes </th>
-                              <th>Lost Weight</th>
-                              <th>S/D Lost Weight</th>
-                              <th>Spoilage Weight</th>
-                              <th>Return Weight</th>
-                              <th>Worker</th>
-                              <th>Note</th>
-                              <th>Worker Fees (MMK)</th>
-                              <th className="rf-th-right">Total Amount</th>
-                              <th style={{ textAlign: "center" }}>Actions</th>
+                                      <Trash2 size={14} />
+                                    </button>
+                                  )}
+                                </div>
+                              </td>
                             </tr>
-                          </thead>
-                          <tbody>
-                            {filteredSavedRecords.length === 0 ? (
-                              <tr>
-                                <td colSpan={13} className="rf-empty-row">
-                                  <Package
-                                    size={44}
-                                    className="rf-empty-icon"
-                                  />
-                                  <span>No sorting history recorded.</span>
-                                </td>
-                              </tr>
-                            ) : (
-                              filteredSavedRecords.map((record) => (
-                                <tr key={record.id}>
-                                  <td>
-                                    <div className="rf-marker">
-                                      {record.refinementRecordMarker || "---"}
-                                    </div>
-                                    <div className="rf-warehouse">
-                                      {record.refinementRecordWarehouseName ||
-                                        "---"}{" "}
-                                      •{" "}
-                                      {record.refinementRecordCategory || "---"}
-                                    </div>
-                                  </td>
-                                  <td className="rf-td-date">
-                                    {formatDateTime(record.date)}
-                                  </td>
-                                  <td>{renderTwoInchesBadges(record)}</td>
-                                  <td>{renderBToTenBadges(record)}</td>
-                                  <td
-                                    style={{
-                                      color: "#64748b",
-                                      fontWeight: "600",
-                                    }}
-                                  >
-                                    {record.lostWeight
-                                      ? record.lostWeight.toFixed(3)
-                                      : "0.000"}{" "}
-                                    viss
-                                  </td>
-                                  <td
-                                    style={{
-                                      color: "#ea580c",
-                                      fontWeight: "600",
-                                    }}
-                                  >
-                                    {record.singleDoubleLostWeight
-                                      ? record.singleDoubleLostWeight.toFixed(3)
-                                      : "0.000"}{" "}
-                                    viss
-                                  </td>
-                                  <td
-                                    style={{
-                                      color: "#ea580c",
-                                      fontWeight: "600",
-                                    }}
-                                  >
-                                    {record.spoilageWeight
-                                      ? record.spoilageWeight.toFixed(3)
-                                      : "0.000"}{" "}
-                                    viss
-                                  </td>
-                                  <td
-                                    style={{
-                                      color: "#2563eb",
-                                      fontWeight: "600",
-                                    }}
-                                  >
-                                    {record.returnWeight
-                                      ? record.returnWeight.toFixed(3)
-                                      : "0.000"}{" "}
-                                    viss
-                                  </td>
-                                  <td
-                                    style={{
-                                      color: "#334155",
-                                      fontWeight: "500",
-                                    }}
-                                  >
-                                    {record.workerName || "---"}
-                                  </td>
-                                  <td
-                                    style={{
-                                      color: "#64748b",
-                                      maxWidth: "150px",
-                                    }}
-                                  >
-                                    <div
-                                      style={{
-                                        whiteSpace: "nowrap",
-                                        overflow: "hidden",
-                                        textOverflow: "ellipsis",
-                                      }}
-                                      title={record.note}
-                                    >
-                                      {record.note || "---"}
-                                    </div>
-                                  </td>
-                                  <td
-                                    style={{
-                                      color: "#0f172a",
-                                      fontWeight: "600",
-                                    }}
-                                  >
-                                    {record.workerFees?.toLocaleString(
-                                      undefined,
-                                      {
-                                        minimumFractionDigits: 2,
-                                        maximumFractionDigits: 2,
-                                      },
-                                    ) || "0.00"}
-                                  </td>
-                                  <td className="rf-td-weight rf-green rf-th-right">
-                                    {calculateRecordTotalAmount(
-                                      record,
-                                    ).toLocaleString(undefined, {
-                                      minimumFractionDigits: 2,
-                                      maximumFractionDigits: 2,
-                                    })}{" "}
-                                    CNY
-                                  </td>
-                                  <td>
-                                    <div
-                                      className="rf-actions"
-                                      style={{ justifyContent: "center" }}
-                                    >
-                                      {hasPermission(
-                                        "SingleDoubleDrawn.Delete",
-                                      ) && (
-                                        <button
-                                          onClick={() =>
-                                            handleDeleteRecord(record.id)
-                                          }
-                                          className="rf-action-btn rf-delete-btn"
-                                          disabled={record.isLocked}
-                                          style={{
-                                            cursor: record.isLocked
-                                              ? "not-allowed"
-                                              : "pointer",
-                                          }}
-                                        >
-                                          <Trash2 size={14} />
-                                        </button>
-                                      )}
-                                    </div>
-                                  </td>
-                                </tr>
-                              ))
-                            )}
-                          </tbody>
-                        </table>
-                      </div>
+                          ))
+                        )}
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
+              ) : (
+                /* ── HISTORY TAB: All saved SingleDoubleDrawn records ── */
+                <div>
+                  <div style={{ marginBottom: "16px" }}>
+                    <h3
+                      style={{
+                        fontSize: "16px",
+                        fontWeight: "800",
+                        color: "#0f172a",
+                        margin: 0,
+                      }}
+                    >
+                      Global Sorting History
+                    </h3>
+                    <p
+                      style={{
+                        fontSize: "13px",
+                        color: "#64748b",
+                        margin: "4px 0 0 0",
+                      }}
+                    >
+                      All single &amp; double drawn sorting records across all
+                      stock items
+                    </p>
+                  </div>
+
+                  {/* History Filters */}
+                  <div className="sdd-table-controls">
+                    <div className="sdd-search-box">
+                      <Search className="sdd-input-icon" size={16} />
+                      <input
+                        type="text"
+                        className="sdd-search-control"
+                        placeholder="Search history..."
+                        value={historySearchTerm}
+                        onChange={(e) => setHistorySearchTerm(e.target.value)}
+                      />
                     </div>
-                  )}
+                    <div className="sdd-date-filter">
+                      <div className="sdd-date-field">
+                        <span className="sdd-date-label">From</span>
+                        <input
+                          type="date"
+                          className="sdd-date-input"
+                          value={historyFromDate}
+                          onChange={(e) => setHistoryFromDate(e.target.value)}
+                        />
+                      </div>
+                      <div className="sdd-date-field">
+                        <span className="sdd-date-label">To</span>
+                        <input
+                          type="date"
+                          className="sdd-date-input"
+                          value={historyToDate}
+                          onChange={(e) => setHistoryToDate(e.target.value)}
+                        />
+                      </div>
+                      {(historyFromDate || historyToDate) && (
+                        <button
+                          className="sdd-date-clear-btn"
+                          onClick={() => {
+                            setHistoryFromDate("");
+                            setHistoryToDate("");
+                          }}
+                        >
+                          Clear
+                        </button>
+                      )}
+                    </div>
+                  </div>
+
+                  <div className="rf-table-wrap">
+                    <table className="rf-table">
+                      <thead>
+                        <tr>
+                          <th>Stock Item</th>
+                          <th>Date</th>
+                          <th>Two Inches Sizes</th>
+                          <th>B to Ten Sizes</th>
+                          <th>Lost Weight</th>
+                          <th>S/D Lost Weight</th>
+                          <th>Spoilage Weight</th>
+                          <th>Return Weight</th>
+                          <th>Worker</th>
+                          <th>Note</th>
+                          <th>Worker Fees (MMK)</th>
+                          <th className="rf-th-right">Total Amount</th>
+                          <th style={{ textAlign: "center" }}>Actions</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {filteredSavedRecords.length === 0 ? (
+                          <tr>
+                            <td colSpan={13} className="rf-empty-row">
+                              <Package size={44} className="rf-empty-icon" />
+                              <span>No sorting history recorded.</span>
+                            </td>
+                          </tr>
+                        ) : (
+                          filteredSavedRecords.map((record) => (
+                            <tr key={record.id}>
+                              <td>
+                                <div className="rf-marker">
+                                  {record.refinementRecordMarker || "---"}
+                                </div>
+                                <div className="rf-warehouse">
+                                  {record.refinementRecordWarehouseName ||
+                                    "---"}{" "}
+                                  • {record.refinementRecordCategory || "---"}
+                                </div>
+                              </td>
+                              <td className="rf-td-date">
+                                {formatDateTime(record.date)}
+                              </td>
+                              <td>{renderTwoInchesBadges(record)}</td>
+                              <td>{renderBToTenBadges(record)}</td>
+                              <td
+                                style={{ color: "#64748b", fontWeight: "600" }}
+                              >
+                                {record.lostWeight
+                                  ? record.lostWeight.toFixed(3)
+                                  : "0.000"}{" "}
+                                viss
+                              </td>
+                              <td
+                                style={{ color: "#ea580c", fontWeight: "600" }}
+                              >
+                                {record.singleDoubleLostWeight
+                                  ? record.singleDoubleLostWeight.toFixed(3)
+                                  : "0.000"}{" "}
+                                viss
+                              </td>
+                              <td
+                                style={{ color: "#ea580c", fontWeight: "600" }}
+                              >
+                                {record.spoilageWeight
+                                  ? record.spoilageWeight.toFixed(3)
+                                  : "0.000"}{" "}
+                                viss
+                              </td>
+                              <td
+                                style={{ color: "#2563eb", fontWeight: "600" }}
+                              >
+                                {record.returnWeight
+                                  ? record.returnWeight.toFixed(3)
+                                  : "0.000"}{" "}
+                                viss
+                              </td>
+                              <td
+                                style={{ color: "#334155", fontWeight: "500" }}
+                              >
+                                {record.workerName || "---"}
+                              </td>
+                              <td
+                                style={{ color: "#64748b", maxWidth: "150px" }}
+                              >
+                                <div
+                                  style={{
+                                    whiteSpace: "nowrap",
+                                    overflow: "hidden",
+                                    textOverflow: "ellipsis",
+                                  }}
+                                  title={record.note}
+                                >
+                                  {record.note || "---"}
+                                </div>
+                              </td>
+                              <td
+                                style={{ color: "#0f172a", fontWeight: "600" }}
+                              >
+                                {record.workerFees?.toLocaleString(undefined, {
+                                  minimumFractionDigits: 2,
+                                  maximumFractionDigits: 2,
+                                }) || "0.00"}
+                              </td>
+                              <td className="rf-td-weight rf-green rf-th-right">
+                                {calculateRecordTotalAmount(
+                                  record,
+                                ).toLocaleString(undefined, {
+                                  minimumFractionDigits: 2,
+                                  maximumFractionDigits: 2,
+                                })}{" "}
+                                CNY
+                              </td>
+                              <td>
+                                <div
+                                  className="rf-actions"
+                                  style={{ justifyContent: "center" }}
+                                >
+                                  {hasPermission(
+                                    "SingleDoubleDrawn.Delete",
+                                  ) && (
+                                    <button
+                                      onClick={() =>
+                                        handleDeleteRecord(record.id)
+                                      }
+                                      className="rf-action-btn rf-delete-btn"
+                                      disabled={record.isLocked}
+                                      style={{
+                                        cursor: record.isLocked
+                                          ? "not-allowed"
+                                          : "pointer",
+                                      }}
+                                      title={
+                                        record.isLocked
+                                          ? "Record is locked by Export"
+                                          : "Delete Record"
+                                      }
+                                    >
+                                      <Trash2 size={14} />
+                                    </button>
+                                  )}
+                                </div>
+                              </td>
+                            </tr>
+                          ))
+                        )}
+                      </tbody>
+                    </table>
+                  </div>
                 </div>
               )}
             </div>
           </div>
         </main>
       </div>
+
+      {/* ── POPUP MODAL BOX: Full Sorting Form ── */}
+      {showModal && selectedProcess && (
+        <div className="sdd-modal-overlay" onClick={handleCloseModal}>
+          <div
+            className="sdd-modal-content"
+            onClick={(e) => e.stopPropagation()}
+          >
+            {/* Modal Header */}
+            <div className="sdd-modal-header">
+              <div className="sdd-modal-header-left">
+                <div className="sdd-modal-icon">
+                  <Scissors size={22} />
+                </div>
+                <div>
+                  <div className="sdd-modal-pre">
+                    <span>Batch Sorting Mode</span>
+                    <span className="sdd-modal-pill-tag">
+                      Single &amp; Double
+                    </span>
+                  </div>
+                  <h2 className="sdd-modal-title">
+                    <span className="sdd-modal-marker-text">
+                      {selectedProcess.productMarker}
+                    </span>
+                    <span className="sdd-modal-badge sdd-badge-wh">
+                      {selectedProcess.warehouseName}
+                    </span>
+                    <span className="sdd-modal-badge sdd-badge-cat">
+                      {selectedProcess.category}
+                    </span>
+                  </h2>
+                </div>
+              </div>
+              <button
+                className="sdd-modal-close"
+                onClick={handleCloseModal}
+                title="Close"
+              >
+                <X size={20} />
+              </button>
+            </div>
+
+            {/* Modal Info Bar */}
+            <div className="sdd-modal-info-bar">
+              <div className="sdd-modal-chip">
+                <span className="sdd-chip-label">Batch Weight</span>
+                <span className="sdd-chip-value">
+                  {selectedProcess.weight.toFixed(3)} <em>viss</em>
+                </span>
+              </div>
+              <div className="sdd-modal-chip sdd-chip-accent">
+                <span className="sdd-chip-label">Remaining To Sort</span>
+                <span className="sdd-chip-value sdd-chip-blue">
+                  {selectedProcess.remainingWeight.toFixed(3)} <em>viss</em>
+                </span>
+              </div>
+              <div className="sdd-modal-chip">
+                <span className="sdd-chip-label">Refined Lost</span>
+                <span className="sdd-chip-value sdd-chip-muted">
+                  {selectedProcess.lostWeight.toFixed(3)} <em>viss</em>
+                </span>
+              </div>
+              <div className="sdd-modal-chip">
+                <span className="sdd-chip-label">Spoilage Weight</span>
+                <span className="sdd-chip-value sdd-chip-orange">
+                  {selectedProcess.spoilageWeight.toFixed(3)} <em>viss</em>
+                </span>
+              </div>
+              <div className="sdd-modal-chip">
+                <span className="sdd-chip-label">Return Weight</span>
+                <span className="sdd-chip-value sdd-chip-cyan">
+                  {selectedProcess.returnWeight.toFixed(3)} <em>viss</em>
+                </span>
+              </div>
+            </div>
+
+            {/* Modal Body: Form */}
+            <form className="sdd-modal-form" onSubmit={handleSubmitModal}>
+              <div className="sdd-modal-body">
+                {formError && (
+                  <div className="sdd-modal-error-msg">
+                    <AlertCircle size={18} />
+                    <span>{formError}</span>
+                  </div>
+                )}
+
+                <div className="sdd-columns-grid">
+                  {/* Column 1: Two Inches Category */}
+                  <div className="sdd-category-card sdd-cat-two">
+                    <div className="sdd-cat-header">
+                      <div className="sdd-cat-header-title">
+                        <div className="sdd-cat-icon-badge sdd-badge-two">
+                          <Layers size={17} />
+                        </div>
+                        <h3>Two Inches Category</h3>
+                      </div>
+                      <span className="sdd-cat-count-pill">
+                        5 Sizes + 2 Extra
+                      </span>
+                    </div>
+
+                    <div className="sdd-table-container">
+                      <table className="sdd-size-table">
+                        <thead>
+                          <tr>
+                            <th>Size</th>
+                            <th style={{ width: "135px" }}>Weight (viss)</th>
+                            <th style={{ width: "135px" }}>Price (CNY)</th>
+                            <th className="sdd-th-right">Amount (CNY)</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {["6", "7", "8", "9", "10"].map((size) => {
+                            const weightVal =
+                              parseFloat(
+                                twoInchesForm[
+                                  `size${size}` as keyof typeof twoInchesForm
+                                ],
+                              ) || 0;
+                            const priceVal =
+                              parseFloat(
+                                twoInchesPricesForm[
+                                  `price${size}` as keyof typeof twoInchesPricesForm
+                                ],
+                              ) || 0;
+                            const amount = weightVal * priceVal;
+                            return (
+                              <tr
+                                key={size}
+                                className={
+                                  weightVal > 0 ? "sdd-row-active" : ""
+                                }
+                              >
+                                <td>
+                                  <span className="sdd-size-badge sdd-size-badge-blue">
+                                    Size {size}&quot;
+                                  </span>
+                                </td>
+                                <td>
+                                  <div className="sdd-input-wrap">
+                                    <input
+                                      type="number"
+                                      step="0.001"
+                                      name={`size${size}`}
+                                      placeholder="0.000"
+                                      value={
+                                        twoInchesForm[
+                                          `size${size}` as keyof typeof twoInchesForm
+                                        ]
+                                      }
+                                      onChange={(e) => {
+                                        const { name, value } = e.target;
+                                        setTwoInchesForm((prev) => ({
+                                          ...prev,
+                                          [name]: value,
+                                        }));
+                                      }}
+                                      className="sdd-modal-input sdd-input-weight"
+                                    />
+                                  </div>
+                                </td>
+                                <td>
+                                  <div className="sdd-input-wrap">
+                                    <input
+                                      type="number"
+                                      step="0.01"
+                                      name={`price${size}`}
+                                      placeholder="0.00"
+                                      value={
+                                        twoInchesPricesForm[
+                                          `price${size}` as keyof typeof twoInchesPricesForm
+                                        ]
+                                      }
+                                      onChange={(e) => {
+                                        const { name, value } = e.target;
+                                        setTwoInchesPricesForm((prev) => ({
+                                          ...prev,
+                                          [name]: value,
+                                        }));
+                                      }}
+                                      className="sdd-modal-input sdd-input-price"
+                                    />
+                                  </div>
+                                </td>
+                                <td className="sdd-td-amount sdd-amount-blue">
+                                  {amount.toLocaleString(undefined, {
+                                    minimumFractionDigits: 2,
+                                    maximumFractionDigits: 2,
+                                  })}
+                                </td>
+                              </tr>
+                            );
+                          })}
+
+                          {/* Spoilage size */}
+                          <tr
+                            className={`sdd-row-spoilage ${parseFloat(spoilageSizeWeight) > 0 ? "sdd-row-active" : ""}`}
+                          >
+                            <td>
+                              <span className="sdd-size-badge sdd-size-badge-orange">
+                                Spoilage
+                              </span>
+                            </td>
+                            <td>
+                              <div className="sdd-input-wrap">
+                                <input
+                                  type="number"
+                                  step="0.001"
+                                  placeholder="0.000"
+                                  value={spoilageSizeWeight}
+                                  onChange={(e) =>
+                                    setSpoilageSizeWeight(e.target.value)
+                                  }
+                                  className="sdd-modal-input sdd-input-weight"
+                                />
+                              </div>
+                            </td>
+                            <td>
+                              <div className="sdd-input-wrap">
+                                <input
+                                  type="number"
+                                  step="0.01"
+                                  placeholder="0.00"
+                                  value={spoilageSizePrice}
+                                  onChange={(e) =>
+                                    setSpoilageSizePrice(e.target.value)
+                                  }
+                                  className="sdd-modal-input sdd-input-price"
+                                />
+                              </div>
+                            </td>
+                            <td className="sdd-td-amount sdd-amount-orange">
+                              {(
+                                (parseFloat(spoilageSizeWeight) || 0) *
+                                (parseFloat(spoilageSizePrice) || 0)
+                              ).toLocaleString(undefined, {
+                                minimumFractionDigits: 2,
+                                maximumFractionDigits: 2,
+                              })}
+                            </td>
+                          </tr>
+
+                          {/* Return size */}
+                          <tr
+                            className={`sdd-row-return ${parseFloat(returnSizeWeight) > 0 ? "sdd-row-active" : ""}`}
+                          >
+                            <td>
+                              <span className="sdd-size-badge sdd-size-badge-cyan">
+                                Return
+                              </span>
+                            </td>
+                            <td>
+                              <div className="sdd-input-wrap">
+                                <input
+                                  type="number"
+                                  step="0.001"
+                                  placeholder="0.000"
+                                  value={returnSizeWeight}
+                                  onChange={(e) =>
+                                    setReturnSizeWeight(e.target.value)
+                                  }
+                                  className="sdd-modal-input sdd-input-weight"
+                                />
+                              </div>
+                            </td>
+                            <td>
+                              <div className="sdd-input-wrap">
+                                <input
+                                  type="number"
+                                  step="0.01"
+                                  placeholder="0.00"
+                                  value={returnSizePrice}
+                                  onChange={(e) =>
+                                    setReturnSizePrice(e.target.value)
+                                  }
+                                  className="sdd-modal-input sdd-input-price"
+                                />
+                              </div>
+                            </td>
+                            <td className="sdd-td-amount sdd-amount-cyan">
+                              {(
+                                (parseFloat(returnSizeWeight) || 0) *
+                                (parseFloat(returnSizePrice) || 0)
+                              ).toLocaleString(undefined, {
+                                minimumFractionDigits: 2,
+                                maximumFractionDigits: 2,
+                              })}
+                            </td>
+                          </tr>
+                        </tbody>
+                      </table>
+                    </div>
+                  </div>
+
+                  {/* Column 2: B to Ten Category */}
+                  <div className="sdd-category-card sdd-cat-b">
+                    <div className="sdd-cat-header">
+                      <div className="sdd-cat-header-title">
+                        <div className="sdd-cat-icon-badge sdd-badge-b">
+                          <Layers size={17} />
+                        </div>
+                        <h3>B to Ten Category</h3>
+                      </div>
+                      <span className="sdd-cat-count-pill sdd-pill-purple">
+                        11 Sizes
+                      </span>
+                    </div>
+
+                    <div className="sdd-table-container">
+                      <table className="sdd-size-table">
+                        <thead>
+                          <tr>
+                            <th>Size</th>
+                            <th style={{ width: "135px" }}>Weight (viss)</th>
+                            <th style={{ width: "135px" }}>Price (CNY)</th>
+                            <th className="sdd-th-right">Amount (CNY)</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {[
+                            "10B",
+                            "12",
+                            "14",
+                            "16",
+                            "18",
+                            "20",
+                            "22",
+                            "24",
+                            "26",
+                            "28",
+                            "Bar",
+                          ].map((size) => {
+                            const fieldName =
+                              size === "10B"
+                                ? "size10B"
+                                : size === "Bar"
+                                  ? "sizeBar"
+                                  : `size${size}`;
+                            const priceFieldName =
+                              size === "10B"
+                                ? "price10B"
+                                : size === "Bar"
+                                  ? "priceBar"
+                                  : `price${size}`;
+                            const weightVal =
+                              parseFloat(
+                                bToTenForm[
+                                  fieldName as keyof typeof bToTenForm
+                                ],
+                              ) || 0;
+                            const priceVal =
+                              parseFloat(
+                                bToTenPricesForm[
+                                  priceFieldName as keyof typeof bToTenPricesForm
+                                ],
+                              ) || 0;
+                            const amount = weightVal * priceVal;
+                            return (
+                              <tr
+                                key={size}
+                                className={
+                                  weightVal > 0 ? "sdd-row-active" : ""
+                                }
+                              >
+                                <td>
+                                  <span className="sdd-size-badge sdd-size-badge-purple">
+                                    {size === "Bar" ? "Bar" : `Size ${size}"`}
+                                  </span>
+                                </td>
+                                <td>
+                                  <div className="sdd-input-wrap">
+                                    <input
+                                      type="number"
+                                      step="0.001"
+                                      name={fieldName}
+                                      placeholder="0.000"
+                                      value={
+                                        bToTenForm[
+                                          fieldName as keyof typeof bToTenForm
+                                        ]
+                                      }
+                                      onChange={(e) => {
+                                        const { name, value } = e.target;
+                                        setBToTenForm((prev) => ({
+                                          ...prev,
+                                          [name]: value,
+                                        }));
+                                      }}
+                                      className="sdd-modal-input sdd-input-weight"
+                                    />
+                                  </div>
+                                </td>
+                                <td>
+                                  <div className="sdd-input-wrap">
+                                    <input
+                                      type="number"
+                                      step="0.01"
+                                      name={priceFieldName}
+                                      placeholder="0.00"
+                                      value={
+                                        bToTenPricesForm[
+                                          priceFieldName as keyof typeof bToTenPricesForm
+                                        ]
+                                      }
+                                      onChange={(e) => {
+                                        const { name, value } = e.target;
+                                        setBToTenPricesForm((prev) => ({
+                                          ...prev,
+                                          [name]: value,
+                                        }));
+                                      }}
+                                      className="sdd-modal-input sdd-input-price"
+                                    />
+                                  </div>
+                                </td>
+                                <td className="sdd-td-amount sdd-amount-purple">
+                                  {amount.toLocaleString(undefined, {
+                                    minimumFractionDigits: 2,
+                                    maximumFractionDigits: 2,
+                                  })}
+                                </td>
+                              </tr>
+                            );
+                          })}
+                        </tbody>
+                      </table>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Bottom metadata details inputs */}
+                <div className="sdd-meta-card">
+                  <div className="sdd-meta-header">
+                    <span className="sdd-meta-title">
+                      Batch &amp; Worker Details
+                    </span>
+                    <span className="sdd-meta-sub">
+                      Specify worker assignment, waste, and fees
+                    </span>
+                  </div>
+
+                  <div className="sdd-meta-grid">
+                    <div className="sdd-field-group">
+                      <label className="sdd-meta-label">
+                        S/D Lost Weight (viss)
+                      </label>
+                      <input
+                        type="number"
+                        step="0.001"
+                        placeholder="0.000"
+                        value={singleDoubleLostWeight}
+                        onChange={(e) =>
+                          setSingleDoubleLostWeight(e.target.value)
+                        }
+                        className="sdd-modal-input sdd-meta-input"
+                      />
+                    </div>
+
+                    <div className="sdd-field-group">
+                      <label className="sdd-meta-label">
+                        Single &amp; Double Worker{" "}
+                        <span style={{ color: "#ef4444" }}>*</span>
+                      </label>
+                      <select
+                        value={modalWorkerId}
+                        onChange={(e) => setModalWorkerId(e.target.value)}
+                        className="sdd-modal-input sdd-meta-input"
+                      >
+                        <option value="">-- Select Worker --</option>
+                        {workers
+                          .filter(
+                            (w) =>
+                              !selectedProcess.warehouseId ||
+                              w.warehouseId === selectedProcess.warehouseId,
+                          )
+                          .map((w) => (
+                            <option key={w.id} value={w.id}>
+                              {w.name}
+                            </option>
+                          ))}
+                      </select>
+                    </div>
+
+                    <div className="sdd-field-group">
+                      <label className="sdd-meta-label">
+                        Worker Fees (MMK)
+                      </label>
+                      <input
+                        type="number"
+                        step="1"
+                        placeholder="0.00"
+                        value={modalWorkerFees}
+                        onChange={(e) => setModalWorkerFees(e.target.value)}
+                        className="sdd-modal-input sdd-meta-input"
+                      />
+                    </div>
+
+                    <div className="sdd-field-group sdd-field-full">
+                      <label className="sdd-meta-label">
+                        Notes &amp; Remarks
+                      </label>
+                      <input
+                        type="text"
+                        placeholder="Add any batch sorting remarks or details..."
+                        value={modalNote}
+                        onChange={(e) => setModalNote(e.target.value)}
+                        className="sdd-modal-input sdd-meta-input"
+                      />
+                    </div>
+                  </div>
+                </div>
+
+                {/* Real-time Summary Card inside Modal */}
+                <div className="sdd-summary-card">
+                  <div className="sdd-summary-left">
+                    <div className="sdd-summary-stat">
+                      <span className="sdd-stat-caption">Total Sorted</span>
+                      <strong className="sdd-stat-val sdd-val-cyan">
+                        {currentModalFormTotal.toFixed(3)}{" "}
+                        <span className="sdd-unit">viss</span>
+                      </strong>
+                    </div>
+
+                    <div className="sdd-summary-divider" />
+
+                    <div className="sdd-summary-stat">
+                      <span className="sdd-stat-caption">Sorting Balance</span>
+                      {Math.abs(modalRemainingWeight) < 0.001 ? (
+                        <div className="sdd-balance-badge sdd-balanced">
+                          <CheckCircle2 size={16} />
+                          <span>Balanced (0.000 viss)</span>
+                        </div>
+                      ) : (
+                        <div className="sdd-balance-badge sdd-unbalanced">
+                          <AlertCircle size={16} />
+                          <span>
+                            {modalRemainingWeight > 0 ? "+" : ""}
+                            {modalRemainingWeight.toFixed(3)} viss{" "}
+                            {modalRemainingWeight > 0 ? "remaining" : "over"}
+                          </span>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+
+                  <div className="sdd-summary-right">
+                    <span className="sdd-stat-caption">Total Valuation</span>
+                    <strong className="sdd-stat-val sdd-val-emerald">
+                      {totalModalFormAmount.toLocaleString(undefined, {
+                        minimumFractionDigits: 2,
+                        maximumFractionDigits: 2,
+                      })}{" "}
+                      <span className="sdd-unit-cny">CNY</span>
+                    </strong>
+                  </div>
+                </div>
+              </div>
+
+              {/* Modal Actions Footer */}
+              <div className="sdd-modal-footer">
+                <button
+                  type="button"
+                  className="sdd-modal-btn sdd-modal-cancel-btn"
+                  onClick={handleCloseModal}
+                  disabled={savingRecord}
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  className="sdd-modal-btn sdd-modal-submit-btn"
+                  disabled={savingRecord}
+                >
+                  {savingRecord ? (
+                    <>
+                      <Loader2 className="rf-spin" size={16} /> Saving...
+                    </>
+                  ) : (
+                    <>
+                      <Scissors size={16} /> Save Sorting Record
+                    </>
+                  )}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

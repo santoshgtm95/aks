@@ -551,7 +551,7 @@ const Purification: React.FC = () => {
 
                 <div className="rf-tab-group">
                   <button
-                    className={`rf-tab ${activeTab === "history" ? "rf-tab-active" : ""}`}
+                    className={`rf-tab ${activeTab === "history" ? "rf-tab-active rf-tab-orange" : ""}`}
                     onClick={() => setActiveTab("history")}
                   >
                     <span className="rf-tab-title">Purification History</span>
@@ -672,7 +672,9 @@ const Purification: React.FC = () => {
                           >
                             <History size={48} style={{ opacity: 0.2 }} />
                             <span>
-                              {historySearchTerm || historyFromDate || historyToDate
+                              {historySearchTerm ||
+                              historyFromDate ||
+                              historyToDate
                                 ? "No matching records found"
                                 : "No purification processes registered yet"}
                             </span>

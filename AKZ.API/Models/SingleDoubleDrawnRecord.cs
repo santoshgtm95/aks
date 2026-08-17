@@ -17,6 +17,11 @@ public class SingleDoubleDrawnRecord : BaseEntity
     [ForeignKey("RefinementRecordId")]
     public RefinementRecord RefinementRecord { get; set; } = null!;
 
+    public int? SingleDoubleDrawnProcessId { get; set; }
+
+    [ForeignKey("SingleDoubleDrawnProcessId")]
+    public SingleDoubleDrawnProcess? SingleDoubleDrawnProcess { get; set; }
+
     // Two Inches Category (5 sizes)
     [Column(TypeName = "decimal(18,4)")]
     public decimal Size6 { get; set; }

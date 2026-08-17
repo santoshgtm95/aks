@@ -606,6 +606,7 @@ export interface SingleDoubleDrawnRecord {
   id: number;
   date: string;
   refinementRecordId: number;
+  singleDoubleDrawnProcessId?: number;
   refinementRecordMarker?: string;
   refinementRecordCategory?: string;
   refinementRecordWarehouseName?: string;
@@ -671,6 +672,49 @@ export interface SingleDoubleDrawnRecord {
   isLocked: boolean;
 }
 
+export interface AvailableRefinedStock {
+  refinementRecordId: number;
+  productMarker: string;
+  warehouseName: string;
+  warehouseId?: number;
+  category: string;
+  outputWeight: number;
+  remainingWeight: number;
+  lostWeight: number;
+  spoilageWeight: number;
+  returnWeight: number;
+  dryWeight: number;
+  increasedWeight: number;
+}
+
+export interface SingleDoubleDrawnProcess {
+  id: number;
+  date: string;
+  refinementRecordId: number;
+  productMarker: string;
+  warehouseName: string;
+  warehouseId?: number;
+  category: string;
+  weight: number;
+  remainingWeight: number;
+  workerId?: number;
+  workerName?: string;
+  workerFees: number;
+  lostWeight: number;
+  spoilageWeight: number;
+  returnWeight: number;
+  dryWeight: number;
+  increasedWeight: number;
+}
+
+export interface CreateSingleDoubleDrawnProcessDto {
+  date?: string;
+  refinementRecordId: number;
+  weight: number;
+  workerId?: number;
+  workerFees?: number;
+}
+
 export interface LedgerDto {
   id: number;
   ledgerName: string;
@@ -694,6 +738,7 @@ export interface LedgerMarkerDto {
 export interface CreateSingleDoubleDrawnRecordDto {
   date: string;
   refinementRecordId: number;
+  singleDoubleDrawnProcessId?: number;
   size6: number;
   size7: number;
   size8: number;
@@ -736,7 +781,9 @@ export interface CreateSingleDoubleDrawnRecordDto {
   returnSize: number;
   priceSpoilageSize: number;
   priceReturnSize: number;
+  workerFees?: number;
 }
+
 
 export interface SemiExportRecord {
   id: number;

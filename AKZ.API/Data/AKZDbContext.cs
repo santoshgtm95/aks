@@ -32,6 +32,7 @@ public class AKZDbContext : DbContext
     public DbSet<RefiningProcess> RefiningProcesses { get; set; }
     public DbSet<RefinementRecord> RefinementRecords { get; set; }
     public DbSet<RefinementWorker> RefinementWorkers { get; set; }
+    public DbSet<SingleDoubleDrawnProcess> SingleDoubleDrawnProcesses { get; set; }
     public DbSet<SingleDoubleDrawnRecord> SingleDoubleDrawnRecords { get; set; }
     public DbSet<SingleDoubleDrawnWorker> SingleDoubleDrawnWorkers { get; set; }
     public DbSet<SemiExportRecord> SemiExportRecords { get; set; }
@@ -349,6 +350,7 @@ public class AKZDbContext : DbContext
         modelBuilder.Entity<RefinementProcess>().HasQueryFilter(e => e.DeleteFlg == 0);
         modelBuilder.Entity<RefiningProcess>().HasQueryFilter(e => e.DeleteFlg == 0);
         modelBuilder.Entity<RefinementRecord>().HasQueryFilter(e => e.DeleteFlg == 0);
+        modelBuilder.Entity<SingleDoubleDrawnProcess>().HasQueryFilter(e => e.DeleteFlg == 0);
         modelBuilder.Entity<SingleDoubleDrawnRecord>().HasQueryFilter(e => e.DeleteFlg == 0);
         modelBuilder.Entity<SingleDoubleDrawnWorker>().HasQueryFilter(e => e.DeleteFlg == 0);
         modelBuilder.Entity<SemiExportRecord>().HasQueryFilter(e => e.DeleteFlg == 0);
@@ -369,6 +371,24 @@ public class AKZDbContext : DbContext
             .HasOne(r => r.PurifiedRecord)
             .WithMany()
             .HasForeignKey(r => r.PurifiedRecordId)
+            .OnDelete(DeleteBehavior.Restrict);
+
+        modelBuilder.Entity<SingleDoubleDrawnProcess>()
+            .HasOne(s => s.RefinementRecord)
+            .WithMany()
+            .HasForeignKey(s => s.RefinementRecordId)
+            .OnDelete(DeleteBehavior.Restrict);
+
+        modelBuilder.Entity<SingleDoubleDrawnProcess>()
+            .HasOne(s => s.Worker)
+            .WithMany()
+            .HasForeignKey(s => s.WorkerId)
+            .OnDelete(DeleteBehavior.Restrict);
+
+        modelBuilder.Entity<SingleDoubleDrawnRecord>()
+            .HasOne(s => s.SingleDoubleDrawnProcess)
+            .WithMany(p => p.SingleDoubleDrawnRecords)
+            .HasForeignKey(s => s.SingleDoubleDrawnProcessId)
             .OnDelete(DeleteBehavior.Restrict);
 
         modelBuilder.Entity<SingleDoubleDrawnRecord>()

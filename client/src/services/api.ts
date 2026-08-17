@@ -40,6 +40,9 @@ import type {
   CreateRefinementProcessDto,
   SingleDoubleDrawnRecord,
   CreateSingleDoubleDrawnRecordDto,
+  AvailableRefinedStock,
+  SingleDoubleDrawnProcess,
+  CreateSingleDoubleDrawnProcessDto,
   SemiExportRecord,
   UpsertSemiExportRecordDto,
   UpsertSemiExportPurchaseRecordsDto,
@@ -598,6 +601,30 @@ export const washGradingAPI = {
 };
 
 export const singleDoubleDrawnAPI = {
+  getAvailableRefinedStock: async (): Promise<AvailableRefinedStock[]> => {
+    const response = await api.get<AvailableRefinedStock[]>(
+      "/singledoubledrawn/available-refined-stock",
+    );
+    return response.data;
+  },
+  getProcesses: async (): Promise<SingleDoubleDrawnProcess[]> => {
+    const response = await api.get<SingleDoubleDrawnProcess[]>(
+      "/singledoubledrawn/processes",
+    );
+    return response.data;
+  },
+  createProcess: async (
+    data: CreateSingleDoubleDrawnProcessDto,
+  ): Promise<SingleDoubleDrawnProcess> => {
+    const response = await api.post<SingleDoubleDrawnProcess>(
+      "/singledoubledrawn/processes",
+      data,
+    );
+    return response.data;
+  },
+  deleteProcess: async (id: number): Promise<void> => {
+    await api.delete(`/singledoubledrawn/processes/${id}`);
+  },
   getAll: async (
     refinementRecordId?: number,
   ): Promise<SingleDoubleDrawnRecord[]> => {
@@ -622,6 +649,7 @@ export const singleDoubleDrawnAPI = {
     await api.delete(`/singledoubledrawn/${id}`);
   },
 };
+
 
 export const semiExportAPI = {
   getAll: async (): Promise<SemiExportRecord[]> => {

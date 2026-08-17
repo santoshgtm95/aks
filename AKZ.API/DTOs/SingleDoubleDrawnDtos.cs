@@ -84,13 +84,61 @@ public class SingleDoubleDrawnRecordDto
     public decimal WashGradingWorkerFees { get; set; }
     public decimal WashGradingLostWeight { get; set; }
     public int? WashGradingRecordId { get; set; }
+    public int? SingleDoubleDrawnProcessId { get; set; }
     public bool IsLocked { get; set; }
+}
+
+public class AvailableRefinedStockDto
+{
+    public int RefinementRecordId { get; set; }
+    public string ProductMarker { get; set; } = string.Empty;
+    public string WarehouseName { get; set; } = string.Empty;
+    public int? WarehouseId { get; set; }
+    public string Category { get; set; } = string.Empty;
+    public decimal OutputWeight { get; set; }
+    public decimal RemainingWeight { get; set; }
+    public decimal LostWeight { get; set; }
+    public decimal SpoilageWeight { get; set; }
+    public decimal ReturnWeight { get; set; }
+    public decimal DryWeight { get; set; }
+    public decimal IncreasedWeight { get; set; }
+}
+
+public class SingleDoubleDrawnProcessDto
+{
+    public int Id { get; set; }
+    public DateTime Date { get; set; }
+    public int RefinementRecordId { get; set; }
+    public string ProductMarker { get; set; } = string.Empty;
+    public string WarehouseName { get; set; } = string.Empty;
+    public int? WarehouseId { get; set; }
+    public string Category { get; set; } = string.Empty;
+    public decimal Weight { get; set; }
+    public decimal RemainingWeight { get; set; }
+    public int? WorkerId { get; set; }
+    public string WorkerName { get; set; } = string.Empty;
+    public decimal WorkerFees { get; set; }
+    public decimal LostWeight { get; set; }
+    public decimal SpoilageWeight { get; set; }
+    public decimal ReturnWeight { get; set; }
+    public decimal DryWeight { get; set; }
+    public decimal IncreasedWeight { get; set; }
+}
+
+public class CreateSingleDoubleDrawnProcessDto
+{
+    public DateTime? Date { get; set; }
+    public int RefinementRecordId { get; set; }
+    public decimal Weight { get; set; }
+    public int? WorkerId { get; set; }
+    public decimal WorkerFees { get; set; }
 }
 
 public class CreateSingleDoubleDrawnRecordDto
 {
     public DateTime Date { get; set; }
     public int RefinementRecordId { get; set; }
+    public int? SingleDoubleDrawnProcessId { get; set; }
 
     // Two Inches Category
     public decimal Size6 { get; set; }
@@ -146,3 +194,4 @@ public class CreateSingleDoubleDrawnRecordDto
     public decimal PriceReturnSize { get; set; }
     public decimal WorkerFees { get; set; }
 }
+

@@ -159,7 +159,8 @@ const SemiExportPurchase: React.FC = () => {
         !(r.customerName || "").toLowerCase().includes(term) &&
         !(r.color || "").toLowerCase().includes(term) &&
         !(r.workerName || "").toLowerCase().includes(term)
-      ) return false;
+      )
+        return false;
       if (historyFromDate) {
         const d = new Date((r.createdAt || "").split("T")[0]);
         if (d < new Date(historyFromDate)) return false;
@@ -847,97 +848,115 @@ const SemiExportPurchase: React.FC = () => {
           <div className="sep-date-filter">
             <div className="sep-date-field">
               <span className="sep-date-label">From</span>
-              <input type="date" className="sep-date-input" value={historyFromDate} onChange={(e) => setHistoryFromDate(e.target.value)} />
+              <input
+                type="date"
+                className="sep-date-input"
+                value={historyFromDate}
+                onChange={(e) => setHistoryFromDate(e.target.value)}
+              />
             </div>
             <div className="sep-date-field">
               <span className="sep-date-label">To</span>
-              <input type="date" className="sep-date-input" value={historyToDate} onChange={(e) => setHistoryToDate(e.target.value)} />
+              <input
+                type="date"
+                className="sep-date-input"
+                value={historyToDate}
+                onChange={(e) => setHistoryToDate(e.target.value)}
+              />
             </div>
             {(historyFromDate || historyToDate) && (
-              <button className="sep-date-clear-btn" onClick={() => { setHistoryFromDate(""); setHistoryToDate(""); }}>Clear</button>
+              <button
+                className="sep-date-clear-btn"
+                onClick={() => {
+                  setHistoryFromDate("");
+                  setHistoryToDate("");
+                }}
+              >
+                Clear
+              </button>
             )}
           </div>
         </div>
 
         <div className="table-responsive sep-table-wrap">
           <table className="sep-data-table">
-          <thead>
-            <tr>
-              <th>Customer</th>
-              <th>Contact</th>
-              <th>Color</th>
-              <th>Worker</th>
-              <th>Receive DateTime</th>
-              <th className="sep-num">Total weight</th>
-              <th className="sep-num">Assign weight</th>
-              <th className="sep-num">Lost weight</th>
-              <th className="sep-num">Sorting Lost weight</th>
-              <th className="sep-num">Worker fees</th>
-              <th className="sep-num">Rate</th>
-              <th>Saved Date</th>
-              <th style={{ width: "60px" }}>Action</th>
-            </tr>
-          </thead>
-          <tbody>
-            {filteredSortingHistory.map((record) => (
-              <tr
-                key={record.id}
-                className="sep-sorting-record-row"
-                onClick={() => openHistoryModal(record)}
-                role="button"
-                tabIndex={0}
-                onKeyDown={(e) => {
-                  if (e.key === "Enter" || e.key === " ") {
-                    e.preventDefault();
-                    openHistoryModal(record);
-                  }
-                }}
-                title="Open sorting history details"
-              >
-                <td className="sep-primary-cell">{record.customerName}</td>
-                <td>{record.contact}</td>
-                <td>{record.color}</td>
-                <td className="sep-primary-cell">
-                  {record.workerName || "---"}
-                </td>
-                <td>{formatDateTime(record.receiveDateTime)}</td>
-                <td className="sep-num sep-blue-cell">
-                  {getHistoryTotalWeight(record).toFixed(3)}
-                </td>
-                <td className="sep-num">{record.assignWeight.toFixed(3)}</td>
-                <td
-                  className={`sep-num ${record.lostWeight > 0 ? "sep-loss-cell" : ""}`}
-                >
-                  {record.lostWeight.toFixed(3)}
-                </td>
-                <td
-                  className={`sep-num ${getHistorySortingLostWeight(record) > 0 ? "sep-loss-cell" : ""}`}
-                >
-                  {getHistorySortingLostWeight(record).toFixed(3)}
-                </td>
-                <td className="sep-num">
-                  {(record.workerFees || 0).toLocaleString()}
-                </td>
-                <td className="sep-num">
-                  {record.exchangeRateRate.toLocaleString()}
-                </td>
-                <td>{formatDateTime(record.createdAt)}</td>
-                <td
-                  style={{ textAlign: "center" }}
-                  onClick={(e) => e.stopPropagation()}
-                >
-                  {hasPermission("SemiExport.Delete") && (
-                    <button
-                      className="sep-delete-btn"
-                      title="Delete sorting history record"
-                      onClick={(e) => handleDeleteHistory(e, record.id)}
-                    >
-                      <Trash2 size={14} />
-                    </button>
-                  )}
-                </td>
+            <thead>
+              <tr>
+                <th>Customer</th>
+                <th>Contact</th>
+                <th>Color</th>
+                <th>Worker</th>
+                <th>Receive DateTime</th>
+                <th className="sep-num">Total weight</th>
+                <th className="sep-num">Assign weight</th>
+                <th className="sep-num">Lost weight</th>
+                <th className="sep-num">Sorting Lost weight</th>
+                <th className="sep-num">Worker fees</th>
+                <th className="sep-num">Rate</th>
+                <th>Saved Date</th>
+                <th style={{ width: "60px" }}>Action</th>
               </tr>
-            ))}
+            </thead>
+            <tbody>
+              {filteredSortingHistory.map((record) => (
+                <tr
+                  key={record.id}
+                  className="sep-sorting-record-row"
+                  onClick={() => openHistoryModal(record)}
+                  role="button"
+                  tabIndex={0}
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter" || e.key === " ") {
+                      e.preventDefault();
+                      openHistoryModal(record);
+                    }
+                  }}
+                  title="Open sorting history details"
+                >
+                  <td className="sep-primary-cell">{record.customerName}</td>
+                  <td>{record.contact}</td>
+                  <td>{record.color}</td>
+                  <td className="sep-primary-cell">
+                    {record.workerName || "---"}
+                  </td>
+                  <td>{formatDateTime(record.receiveDateTime)}</td>
+                  <td className="sep-num sep-blue-cell">
+                    {getHistoryTotalWeight(record).toFixed(3)}
+                  </td>
+                  <td className="sep-num">{record.assignWeight.toFixed(3)}</td>
+                  <td
+                    className={`sep-num ${record.lostWeight > 0 ? "sep-loss-cell" : ""}`}
+                  >
+                    {record.lostWeight.toFixed(3)}
+                  </td>
+                  <td
+                    className={`sep-num ${getHistorySortingLostWeight(record) > 0 ? "sep-loss-cell" : ""}`}
+                  >
+                    {getHistorySortingLostWeight(record).toFixed(3)}
+                  </td>
+                  <td className="sep-num">
+                    {(record.workerFees || 0).toLocaleString()}
+                  </td>
+                  <td className="sep-num">
+                    {record.exchangeRateRate.toLocaleString()}
+                  </td>
+                  <td>{formatDateTime(record.createdAt)}</td>
+                  <td
+                    style={{ textAlign: "center" }}
+                    onClick={(e) => e.stopPropagation()}
+                  >
+                    {hasPermission("SemiExport.Delete") && (
+                      <button
+                        className="sep-delete-btn"
+                        title="Delete sorting history record"
+                        onClick={(e) => handleDeleteHistory(e, record.id)}
+                      >
+                        <Trash2 size={14} />
+                      </button>
+                    )}
+                  </td>
+                </tr>
+              ))}
             </tbody>
           </table>
         </div>
@@ -1239,7 +1258,7 @@ const SemiExportPurchase: React.FC = () => {
                   <button
                     type="button"
                     onClick={() => setActiveTab("processing")}
-                    className={`rf-tab rf-tab-green ${activeTab === "processing" ? "rf-tab-active" : ""}`}
+                    className={`rf-tab rf-tab-orange ${activeTab === "processing" ? "rf-tab-active" : ""}`}
                   >
                     <span className="rf-tab-title">Processing</span>
                     <span className="rf-tab-sub">
@@ -1249,7 +1268,7 @@ const SemiExportPurchase: React.FC = () => {
                   <button
                     type="button"
                     onClick={() => setActiveTab("history")}
-                    className={`rf-tab ${activeTab === "history" ? "rf-tab-active" : ""}`}
+                    className={`rf-tab rf-tab-blue ${activeTab === "history" ? "rf-tab-active" : ""}`}
                   >
                     <span className="rf-tab-title">Sorting History</span>
                     <span className="rf-tab-sub">Saved purchase records</span>
@@ -1622,7 +1641,9 @@ const SemiExportPurchase: React.FC = () => {
                   value={selectedSortingRecord.workerName || ""}
                   readOnly
                 />
-                <label htmlFor="sep-worker-fees">Worker Fees: <span style={{ color: '#ef4444' }}>*</span></label>
+                <label htmlFor="sep-worker-fees">
+                  Worker Fees: <span style={{ color: "#ef4444" }}>*</span>
+                </label>
                 <input
                   id="sep-worker-fees"
                   type="number"

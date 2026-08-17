@@ -22,6 +22,272 @@ public class SingleDoubleDrawnController : ControllerBase
         _notifier = notifier;
     }
 
+    private int? GetCurrentUserWarehouseId()
+    {
+        var claim = User.FindFirst("warehouseId")?.Value;
+        if (string.IsNullOrEmpty(claim)) return null;
+        return int.TryParse(claim, out var id) ? id : null;
+    }
+
+    // Helper: sum sizes of a SingleDoubleDrawnRecord
+    private static decimal SumRecordSizes(SingleDoubleDrawnRecord r) =>
+        r.Size6 + r.Size7 + r.Size8 + r.Size9 + r.Size10 +
+        r.Size10B + r.Size12 + r.Size14 + r.Size16 + r.Size18 +
+        r.Size20 + r.Size22 + r.Size24 + r.Size26 + r.Size28 + r.SizeBar +
+        r.SpoilageSize + r.ReturnSize + r.SingleDoubleLostWeight;
+
+    // GET /api/singledoubledrawn/available-refined-stock
+    // Returns RefinementRecords that still have remaining unassigned weight
+    [HttpGet("available-refined-stock")]
+    public async Task<ActionResult<List<AvailableRefinedStockDto>>> GetAvailableRefinedStock()
+    {
+        var warehouseId = GetCurrentUserWarehouseId();
+
+        var refinementRecords = await _context.RefinementRecords
+            .Include(rr => rr.PurifiedRecord)
+                .ThenInclude(p => p.ProcessingRecord)
+                    .ThenInclude(pr => pr.Product)
+                        .ThenInclude(prod => prod.Warehouse)
+            .Where(rr => rr.DeleteFlg == 0)
+            .Where(rr => warehouseId == null || (rr.PurifiedRecord.ProcessingRecord.Product.WarehouseId == warehouseId))
+            .OrderByDescending(rr => rr.Date)
+            .ToListAsync();
+
+        var assignedProcesses = await _context.SingleDoubleDrawnProcesses
+            .Where(p => p.DeleteFlg == 0)
+            .ToListAsync();
+
+        var directRecords = await _context.SingleDoubleDrawnRecords
+            .Where(r => r.DeleteFlg == 0 && r.SingleDoubleDrawnProcessId == null)
+            .ToListAsync();
+
+        var result = new List<AvailableRefinedStockDto>();
+
+        foreach (var rr in refinementRecords)
+        {
+            var product = rr.PurifiedRecord?.ProcessingRecord?.Product;
+            if (product == null) continue;
+
+            decimal totalAssignedInProcesses = assignedProcesses
+                .Where(p => p.RefinementRecordId == rr.Id)
+                .Sum(p => p.Weight);
+
+            decimal totalDirectSorted = directRecords
+                .Where(r => r.RefinementRecordId == rr.Id)
+                .Sum(r => SumRecordSizes(r));
+
+            decimal usedWeight = totalAssignedInProcesses + totalDirectSorted;
+            decimal remainingWeight = rr.Weight - usedWeight;
+
+            if (remainingWeight <= 0.001m) continue;
+
+            string warehouseName = product.Warehouse?.Name ?? "";
+            if (string.IsNullOrEmpty(warehouseName) && product.WarehouseId.HasValue)
+            {
+                var warehouse = await _context.Warehouses.FindAsync(product.WarehouseId.Value);
+                if (warehouse != null) warehouseName = warehouse.Name;
+            }
+
+            result.Add(new AvailableRefinedStockDto
+            {
+                RefinementRecordId = rr.Id,
+                ProductMarker = product.Marker,
+                WarehouseName = warehouseName,
+                WarehouseId = product.WarehouseId,
+                Category = rr.Category,
+                OutputWeight = rr.Weight,
+                RemainingWeight = remainingWeight,
+                LostWeight = rr.LostWeight,
+                SpoilageWeight = rr.SpoilageWeight,
+                ReturnWeight = rr.ReturnWeight,
+                DryWeight = rr.DryWeight,
+                IncreasedWeight = rr.IncreasedWeight
+            });
+        }
+
+        return Ok(result);
+    }
+
+    // GET /api/singledoubledrawn/processes
+    // Returns active SingleDoubleDrawn processes
+    [HttpGet("processes")]
+    public async Task<ActionResult<List<SingleDoubleDrawnProcessDto>>> GetProcesses()
+    {
+        var warehouseId = GetCurrentUserWarehouseId();
+
+        var processes = await _context.SingleDoubleDrawnProcesses
+            .Include(p => p.RefinementRecord)
+                .ThenInclude(rr => rr.PurifiedRecord)
+                    .ThenInclude(pr => pr.ProcessingRecord)
+                        .ThenInclude(prod => prod.Product)
+                            .ThenInclude(w => w.Warehouse)
+            .Include(p => p.Worker)
+            .Include(p => p.SingleDoubleDrawnRecords)
+            .Where(p => p.DeleteFlg == 0)
+            .Where(p => warehouseId == null || p.RefinementRecord.PurifiedRecord.ProcessingRecord.Product.WarehouseId == warehouseId)
+            .OrderByDescending(p => p.Date)
+            .ToListAsync();
+
+        var result = new List<SingleDoubleDrawnProcessDto>();
+
+        foreach (var p in processes)
+        {
+            var product = p.RefinementRecord?.PurifiedRecord?.ProcessingRecord?.Product;
+            string marker = product?.Marker ?? "";
+            string warehouseName = product?.Warehouse?.Name ?? "";
+
+            decimal totalSorted = p.SingleDoubleDrawnRecords
+                .Where(sr => sr.DeleteFlg == 0)
+                .Sum(sr => SumRecordSizes(sr));
+
+            decimal remainingWeight = Math.Max(0, p.Weight - totalSorted);
+
+            // Don't show in processing if already fully sorted or saved in SingleDoubleDrawnRecords
+            if (remainingWeight <= 0.001m || p.SingleDoubleDrawnRecords.Any(sr => sr.DeleteFlg == 0))
+            {
+                continue;
+            }
+
+            result.Add(new SingleDoubleDrawnProcessDto
+            {
+                Id = p.Id,
+                Date = p.Date,
+                RefinementRecordId = p.RefinementRecordId,
+                ProductMarker = marker,
+                WarehouseName = warehouseName,
+                WarehouseId = product?.WarehouseId,
+                Category = p.Category,
+                Weight = p.Weight,
+                RemainingWeight = remainingWeight,
+                WorkerId = p.WorkerId,
+                WorkerName = p.Worker?.Name ?? "",
+                WorkerFees = p.WorkerFees,
+                LostWeight = p.RefinementRecord?.LostWeight ?? 0,
+                SpoilageWeight = p.RefinementRecord?.SpoilageWeight ?? 0,
+                ReturnWeight = p.RefinementRecord?.ReturnWeight ?? 0,
+                DryWeight = p.RefinementRecord?.DryWeight ?? 0,
+                IncreasedWeight = p.RefinementRecord?.IncreasedWeight ?? 0
+            });
+
+        }
+
+        return Ok(result);
+    }
+
+    [HttpPost("processes")]
+    public async Task<ActionResult<SingleDoubleDrawnProcessDto>> CreateProcess([FromBody] CreateSingleDoubleDrawnProcessDto dto)
+    {
+        if (dto.Weight <= 0)
+        {
+            return BadRequest(new { message = "Weight must be greater than zero" });
+        }
+
+        if (!dto.WorkerId.HasValue || dto.WorkerId.Value <= 0)
+        {
+            return BadRequest(new { message = "Single & Double Drawn worker is required." });
+        }
+
+        var refinementRecord = await _context.RefinementRecords
+            .Include(rr => rr.PurifiedRecord)
+                .ThenInclude(p => p.ProcessingRecord)
+                    .ThenInclude(pr => pr.Product)
+                        .ThenInclude(prod => prod.Warehouse)
+            .FirstOrDefaultAsync(rr => rr.Id == dto.RefinementRecordId && rr.DeleteFlg == 0);
+
+        if (refinementRecord == null)
+        {
+            return BadRequest(new { message = "Refined Stock record not found" });
+        }
+
+        // Validate remaining weight
+        var assignedWeightInProcesses = await _context.SingleDoubleDrawnProcesses
+            .Where(p => p.RefinementRecordId == dto.RefinementRecordId && p.DeleteFlg == 0)
+            .SumAsync(p => p.Weight);
+
+        var directSorted = await _context.SingleDoubleDrawnRecords
+            .Where(r => r.RefinementRecordId == dto.RefinementRecordId && r.SingleDoubleDrawnProcessId == null && r.DeleteFlg == 0)
+            .ToListAsync();
+
+        decimal totalDirectSorted = directSorted.Sum(r => SumRecordSizes(r));
+        decimal availableRemaining = refinementRecord.Weight - (assignedWeightInProcesses + totalDirectSorted);
+
+        if (dto.Weight > availableRemaining + 0.001m)
+        {
+            return BadRequest(new { message = $"Assigned weight ({dto.Weight} viss) exceeds available remaining weight ({availableRemaining:F3} viss)" });
+        }
+
+        Worker? worker = null;
+        if (dto.WorkerId.HasValue)
+        {
+            worker = await _context.Workers.FindAsync(dto.WorkerId.Value);
+        }
+
+        var process = new SingleDoubleDrawnProcess
+        {
+            Date = dto.Date ?? DateTime.UtcNow.AddHours(6.5),
+            RefinementRecordId = dto.RefinementRecordId,
+            Category = refinementRecord.Category,
+            Weight = dto.Weight,
+            RemainingWeight = dto.Weight,
+            WorkerId = dto.WorkerId,
+            WorkerFees = dto.WorkerFees
+        };
+
+        _context.SingleDoubleDrawnProcesses.Add(process);
+        await _context.SaveChangesAsync();
+        _notifier.NotifyChange();
+
+        var product = refinementRecord.PurifiedRecord?.ProcessingRecord?.Product;
+
+        var resultDto = new SingleDoubleDrawnProcessDto
+        {
+            Id = process.Id,
+            Date = process.Date,
+            RefinementRecordId = process.RefinementRecordId,
+            ProductMarker = product?.Marker ?? "",
+            WarehouseName = product?.Warehouse?.Name ?? "",
+            WarehouseId = product?.WarehouseId,
+            Category = process.Category,
+            Weight = process.Weight,
+            RemainingWeight = process.RemainingWeight,
+            WorkerId = process.WorkerId,
+            WorkerName = worker?.Name ?? "",
+            WorkerFees = process.WorkerFees,
+            LostWeight = refinementRecord.LostWeight,
+            SpoilageWeight = refinementRecord.SpoilageWeight,
+            ReturnWeight = refinementRecord.ReturnWeight,
+            DryWeight = refinementRecord.DryWeight,
+            IncreasedWeight = refinementRecord.IncreasedWeight
+        };
+
+        return Ok(resultDto);
+    }
+
+    // DELETE /api/singledoubledrawn/processes/{id}
+    [HttpDelete("processes/{id}")]
+    public async Task<IActionResult> DeleteProcess(int id)
+    {
+        var process = await _context.SingleDoubleDrawnProcesses
+            .Include(p => p.SingleDoubleDrawnRecords)
+            .FirstOrDefaultAsync(p => p.Id == id && p.DeleteFlg == 0);
+
+        if (process == null)
+        {
+            return NotFound();
+        }
+
+        if (process.SingleDoubleDrawnRecords.Any(r => r.DeleteFlg == 0))
+        {
+            return BadRequest(new { message = "Cannot delete a process that already has sorting records created" });
+        }
+
+        process.DeleteFlg = 1;
+        await _context.SaveChangesAsync();
+        _notifier.NotifyChange();
+
+        return NoContent();
+    }
+
     [HttpGet]
     public async Task<ActionResult<List<SingleDoubleDrawnRecordDto>>> GetRecords([FromQuery] int? refinementRecordId = null)
     {
@@ -95,6 +361,7 @@ public class SingleDoubleDrawnController : ControllerBase
                 Id = r.Id,
                 Date = r.Date,
                 RefinementRecordId = r.RefinementRecordId,
+                SingleDoubleDrawnProcessId = r.SingleDoubleDrawnProcessId,
                 RefinementRecordMarker = marker,
                 RefinementRecordCategory = category,
                 RefinementRecordWarehouseName = warehouseName,
@@ -209,11 +476,16 @@ public class SingleDoubleDrawnController : ControllerBase
             .Include(rr => rr.PurifiedRecord)
                 .ThenInclude(p => p.PurificationWorkers)
                     .ThenInclude(pw => pw.Purifier)
-            .FirstOrDefaultAsync(rr => rr.Id == dto.RefinementRecordId);
+            .FirstOrDefaultAsync(rr => rr.Id == dto.RefinementRecordId && rr.DeleteFlg == 0);
 
         if (refinementRecord == null)
         {
             return BadRequest(new { message = "Refined Stock record not found" });
+        }
+
+        if (!dto.WorkerId.HasValue || dto.WorkerId.Value <= 0)
+        {
+            return BadRequest(new { message = "Single & Double Drawn worker is required." });
         }
 
         // Validate: for any size weight > 0, price must be > 0 (Two Inches Category sizes can be 0, but not negative)
@@ -237,10 +509,18 @@ public class SingleDoubleDrawnController : ControllerBase
             return BadRequest(new { message = "Price is required for all entered size weights." });
         }
 
+        SingleDoubleDrawnProcess? process = null;
+        if (dto.SingleDoubleDrawnProcessId.HasValue)
+        {
+            process = await _context.SingleDoubleDrawnProcesses
+                .FirstOrDefaultAsync(p => p.Id == dto.SingleDoubleDrawnProcessId.Value && p.DeleteFlg == 0);
+        }
+
         var record = new SingleDoubleDrawnRecord
         {
             Date = dto.Date,
             RefinementRecordId = dto.RefinementRecordId,
+            SingleDoubleDrawnProcessId = dto.SingleDoubleDrawnProcessId,
 
             // Two Inches Category
             Size6 = dto.Size6,
@@ -297,6 +577,13 @@ public class SingleDoubleDrawnController : ControllerBase
         };
 
         _context.SingleDoubleDrawnRecords.Add(record);
+
+        if (process != null)
+        {
+            decimal sortedTotal = SumRecordSizes(record);
+            process.RemainingWeight = Math.Max(0, process.RemainingWeight - sortedTotal);
+        }
+
         await _context.SaveChangesAsync();
         _notifier.NotifyChange();
 
@@ -317,6 +604,7 @@ public class SingleDoubleDrawnController : ControllerBase
             Id = record.Id,
             Date = record.Date,
             RefinementRecordId = record.RefinementRecordId,
+            SingleDoubleDrawnProcessId = record.SingleDoubleDrawnProcessId,
             RefinementRecordMarker = marker,
             RefinementRecordCategory = category,
             RefinementRecordWarehouseName = warehouseName,
@@ -407,6 +695,15 @@ public class SingleDoubleDrawnController : ControllerBase
         if (record == null)
         {
             return NotFound();
+        }
+
+        if (record.SingleDoubleDrawnProcessId.HasValue)
+        {
+            var process = await _context.SingleDoubleDrawnProcesses.FindAsync(record.SingleDoubleDrawnProcessId.Value);
+            if (process != null)
+            {
+                process.RemainingWeight += SumRecordSizes(record);
+            }
         }
 
         _context.SingleDoubleDrawnRecords.Remove(record);

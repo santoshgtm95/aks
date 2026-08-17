@@ -2,6 +2,7 @@ import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "../../context/AuthContext";
 import AnimatedBackground from "../../components/AnimatedBackground";
+import Logo from "../../assets/Logo.png";
 import "./index.css";
 
 /* ── Inline SVG Icons ── */
@@ -83,9 +84,12 @@ const Login: React.FC = () => {
         <div className="login-badge">
           <div style={{ position: "relative", display: "flex", alignItems: "center", justifyContent: "center" }}>
             <div className="login-badge-ring" aria-hidden="true" />
-            <div className="login-badge-icon" aria-hidden="true">👑</div>
+            <div className="login-badge-icon" aria-hidden="true">
+              <img src={Logo} alt="King Panthera Logo" className="login-logo-img" />
+            </div>
           </div>
         </div>
+
 
         {/* Header */}
         <div className="login-header">
