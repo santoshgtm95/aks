@@ -63,7 +63,9 @@ import type {
   MarkerByDateDto,
 } from "../types";
 
-const API_BASE_URL = "/api";
+// Set VITE_API_URL in .env.production (e.g. https://api.kingpanthera.com/api).
+// Falls back to "/api", which the Vite dev proxy forwards to the local API.
+export const API_BASE_URL = import.meta.env.VITE_API_URL ?? "/api";
 
 const api = axios.create({
   baseURL: API_BASE_URL,

@@ -1,6 +1,10 @@
 import React, { useState } from "react";
 import { FileBarChart } from "lucide-react";
-import { reportsAPI, semiExportPurchaseAPI } from "../../services/api";
+import {
+  API_BASE_URL,
+  reportsAPI,
+  semiExportPurchaseAPI,
+} from "../../services/api";
 import type { MarkerByDateDto, SemiExportPurchase } from "../../types";
 import "./index.css";
 interface SelectedReportTypes {
@@ -137,7 +141,7 @@ const Report: React.FC = () => {
         params.append("semiPurchaseIds", id.toString()),
       );
       const response = await fetch(
-        `/api/reports/download-excel?${params.toString()}`,
+        `${API_BASE_URL}/reports/download-excel?${params.toString()}`,
       );
       if (!response.ok) {
         let message = "Failed to download report";
