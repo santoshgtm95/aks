@@ -1,4 +1,4 @@
-using Microsoft.AspNetCore.Authorization;
+﻿using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using AKZ.API.Data;
@@ -62,6 +62,8 @@ public class SalesController : ControllerBase
                 PlusMinusWeight = s.PlusMinusWeight,
                 Price = s.Price,
                 Currency = s.Currency,
+                ExchangeRateId = s.ExchangeRateId,
+                ExchangeRateRate = s.ExchangeRateRate,
                 SellerId = s.SellerId,
                 SellerName = s.Seller.FullName,
                 TotalRemaining = s.TotalRemaining,
@@ -96,6 +98,8 @@ public class SalesController : ControllerBase
                 PlusMinusWeight = s.PlusMinusWeight,
                 Price = s.Price,
                 Currency = s.Currency,
+                ExchangeRateId = s.ExchangeRateId,
+                ExchangeRateRate = s.ExchangeRateRate,
                 SellerId = s.SellerId,
                 SellerName = s.Seller.FullName,
                 TotalRemaining = s.TotalRemaining,
@@ -127,11 +131,41 @@ public class SalesController : ControllerBase
             return BadRequest(new { message = "Product not found" });
         }
 
-        decimal newRemaining = (product.Weight + dto.PlusMinusWeight) - dto.Weight;
-        if (newRemaining < 0)
+        const decimal VISS_TO_KG = 1.633m;
+        string productUnit = (product.Unit ?? "").Trim().ToLower();
+        string saleUnit = (dto.Unit ?? "").Trim().ToLower();
+
+        bool isProductKg = productUnit == "kg" || productUnit == "kilogram";
+        bool isSaleKg = saleUnit == "kg" || saleUnit == "kilogram";
+
+        decimal soldInProductUnit = dto.Weight;
+        decimal adjInProductUnit = dto.PlusMinusWeight;
+
+        if (isProductKg && !isSaleKg)
+        {
+            // Product registered in KG, selling in Viss -> 1 viss = 1.633 kg
+            soldInProductUnit = dto.Weight * VISS_TO_KG;
+            adjInProductUnit = dto.PlusMinusWeight * VISS_TO_KG;
+        }
+        else if (!isProductKg && isSaleKg)
+        {
+            // Product registered in Viss, selling in KG -> 1 kg = 1 / 1.633 viss
+            soldInProductUnit = dto.Weight / VISS_TO_KG;
+            adjInProductUnit = dto.PlusMinusWeight / VISS_TO_KG;
+        }
+
+        decimal newRemaining = (product.RemainingWeight + adjInProductUnit) - soldInProductUnit;
+        if (newRemaining < -0.0001m)
         {
             return BadRequest(new { message = "Insufficient stock" });
         }
+
+        if (Math.Abs(newRemaining) < 0.0001m)
+        {
+            newRemaining = 0;
+        }
+
+        decimal roundedRemaining = Math.Round(newRemaining, 2);
 
         var sale = new Sale
         {
@@ -143,8 +177,10 @@ public class SalesController : ControllerBase
             PlusMinusWeight = dto.PlusMinusWeight,
             Price = dto.Price,
             Currency = dto.Currency,
+            ExchangeRateId = dto.ExchangeRateId,
+            ExchangeRateRate = dto.ExchangeRateRate,
             SellerId = userId,
-            TotalRemaining = newRemaining,
+            TotalRemaining = roundedRemaining,
             Category = dto.Category,
             CustomerName = dto.CustomerName,
             CustomerContact = dto.CustomerContact,
@@ -152,7 +188,7 @@ public class SalesController : ControllerBase
         };
 
         // Update product remaining weight
-        product.RemainingWeight = newRemaining;
+        product.RemainingWeight = roundedRemaining;
 
         _context.Sales.Add(sale);
         await _context.SaveChangesAsync();
@@ -175,6 +211,8 @@ public class SalesController : ControllerBase
             PlusMinusWeight = sale.PlusMinusWeight,
             Price = sale.Price,
             Currency = sale.Currency,
+            ExchangeRateId = sale.ExchangeRateId,
+            ExchangeRateRate = sale.ExchangeRateRate,
             SellerId = sale.SellerId,
             SellerName = sale.Seller.FullName,
             TotalRemaining = sale.TotalRemaining,
@@ -204,8 +242,26 @@ public class SalesController : ControllerBase
 
             if (sale.Product != null)
             {
-                // Restore product remaining weight
-                sale.Product.RemainingWeight += sale.Weight - sale.PlusMinusWeight;
+                const decimal VISS_TO_KG = 1.633m;
+                string productUnit = (sale.Product.Unit ?? "").Trim().ToLower();
+                string saleUnit = (sale.Unit ?? "").Trim().ToLower();
+
+                bool isProductKg = productUnit == "kg" || productUnit == "kilogram";
+                bool isSaleKg = saleUnit == "kg" || saleUnit == "kilogram";
+
+                decimal netSold = sale.Weight - sale.PlusMinusWeight;
+                decimal restoreWeight = netSold;
+
+                if (isProductKg && !isSaleKg)
+                {
+                    restoreWeight = netSold * VISS_TO_KG;
+                }
+                else if (!isProductKg && isSaleKg)
+                {
+                    restoreWeight = netSold / VISS_TO_KG;
+                }
+
+                sale.Product.RemainingWeight = Math.Round(sale.Product.RemainingWeight + restoreWeight, 2);
                 sale.Product.UpdateDate = DateTime.Now;
             }
 

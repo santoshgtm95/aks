@@ -1,4 +1,4 @@
-/* Sales Page Container */
+﻿/* Sales Page Container */
 .sales-page-container {
   display: flex;
   flex-direction: column;
@@ -657,4 +657,189 @@
 .sales-date-clear-btn:hover {
   background: #e2e8f0;
   color: #0f172a;
+}
+
+/* Unit Toggle Button (weight input) */
+.sales-unit-toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 0 12px;
+  height: auto;
+  border: 1.5px solid #e2e8f0;
+  border-left: none;
+  background: #eff6ff;
+  color: #2563eb;
+  font-size: 11px;
+  font-weight: 800;
+  cursor: pointer;
+  border-radius: 0 10px 10px 0;
+  transition: all 0.2s;
+  white-space: nowrap;
+  letter-spacing: 0.3px;
+  min-width: 62px;
+  justify-content: center;
+}
+
+.sales-unit-toggle:hover {
+  background: #dbeafe;
+  color: #1d4ed8;
+  border-color: #93c5fd;
+}
+
+.sales-unit-toggle:active {
+  background: #bfdbfe;
+}
+
+
+/* Unit Selection & Conversion Controls */
+.sales-weight-header-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-bottom: 2px;
+}
+
+.sales-unit-choice-wrap {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.sales-unit-choice-label {
+  font-size: 11px;
+  font-weight: 700;
+  color: #64748b;
+  text-transform: uppercase;
+  letter-spacing: 0.3px;
+}
+
+.sales-unit-segmented {
+  display: inline-flex;
+  background: #f1f5f9;
+  border-radius: 8px;
+  padding: 2px;
+  border: 1px solid #e2e8f0;
+}
+
+.sales-unit-segment-btn {
+  padding: 2px 10px;
+  font-size: 11px;
+  font-weight: 700;
+  border: none;
+  background: transparent;
+  color: #64748b;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.sales-unit-segment-btn:hover {
+  color: #1e293b;
+}
+
+.sales-unit-segment-btn.active {
+  background: #2563eb;
+  color: #ffffff;
+  box-shadow: 0 1px 3px rgba(37, 99, 235, 0.25);
+}
+
+.sales-unit-convert-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 2px 8px;
+  font-size: 11px;
+  font-weight: 600;
+  border: 1px solid #cbd5e1;
+  background: white;
+  color: #475569;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.sales-unit-convert-pill:hover {
+  background: #f8fafc;
+  color: #2563eb;
+  border-color: #93c5fd;
+}
+
+.sales-conversion-hint {
+  font-size: 11.5px;
+  font-weight: 600;
+  color: #2563eb;
+  margin-top: 4px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.sales-conversion-formula {
+  font-size: 10.5px;
+  font-weight: 500;
+  color: #64748b;
+}
+
+/* Currency Selection & Rate Controls */
+.sales-price-header-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-bottom: 2px;
+}
+
+.sales-currency-segmented {
+  display: inline-flex;
+  background: #f1f5f9;
+  border-radius: 8px;
+  padding: 2px;
+  border: 1px solid #e2e8f0;
+}
+
+.sales-currency-btn {
+  padding: 2px 8px;
+  font-size: 11px;
+  font-weight: 700;
+  border: none;
+  background: transparent;
+  color: #64748b;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.sales-currency-btn:hover {
+  color: #1e293b;
+}
+
+.sales-currency-btn.active {
+  background: #059669;
+  color: #ffffff;
+  box-shadow: 0 1px 3px rgba(5, 150, 105, 0.25);
+}
+
+.sales-rate-hint {
+  font-size: 11.5px;
+  font-weight: 600;
+  color: #059669;
+  margin-top: 4px;
+  display: flex;
+  align-items: center;
+  gap: 5px;
+}
+
+.sales-rate-badge {
+  font-size: 10px;
+  font-weight: 700;
+  padding: 1px 6px;
+  background: #ecfdf5;
+  color: #047857;
+  border: 1px solid #a7f3d0;
+  border-radius: 4px;
+  margin-left: 4px;
 }

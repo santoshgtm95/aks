@@ -1,4 +1,4 @@
-export interface User {
+﻿export interface User {
   id: number;
   username: string;
   fullName: string;
@@ -77,6 +77,8 @@ export interface Sale {
   plusMinusWeight: number;
   price: number;
   currency: string;
+  exchangeRateId?: number;
+  exchangeRateRate?: number;
   sellerId: number;
   sellerName: string;
   totalRemaining: number;
@@ -96,6 +98,8 @@ export interface CreateSaleDto {
   plusMinusWeight: number;
   price: number;
   currency: string;
+  exchangeRateId?: number;
+  exchangeRateRate?: number;
   category: string;
   customerName?: string;
   customerContact?: string;

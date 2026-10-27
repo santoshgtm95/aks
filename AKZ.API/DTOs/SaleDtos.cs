@@ -1,4 +1,4 @@
-namespace AKZ.API.DTOs;
+﻿namespace AKZ.API.DTOs;
 
 public class SaleDto
 {
@@ -14,6 +14,8 @@ public class SaleDto
     public decimal PlusMinusWeight { get; set; }
     public decimal Price { get; set; }
     public string Currency { get; set; } = string.Empty;
+    public int? ExchangeRateId { get; set; }
+    public decimal? ExchangeRateRate { get; set; }
     public int SellerId { get; set; }
     public string SellerName { get; set; } = string.Empty;
     public decimal TotalRemaining { get; set; }
@@ -34,6 +36,8 @@ public class CreateSaleDto
     public decimal PlusMinusWeight { get; set; }
     public decimal Price { get; set; }
     public string Currency { get; set; } = "MMK";
+    public int? ExchangeRateId { get; set; }
+    public decimal? ExchangeRateRate { get; set; }
     public string Category { get; set; } = "General";
     public string? CustomerName { get; set; }
     public string? CustomerContact { get; set; }

@@ -1,9 +1,9 @@
 import React, { useEffect, useState, useCallback } from "react";
 import { useAuth } from "../../context/AuthContext";
-import { salesAPI, productsAPI } from "../../services/api";
+import { salesAPI, productsAPI, exchangeRatesAPI } from "../../services/api";
 import { useNotification } from "../../context/NotificationContext";
 import { useLongPoll } from "../../hooks/useLongPoll";
-import type { Sale, Product, CreateSaleDto } from "../../types";
+import type { Sale, Product, CreateSaleDto, ExchangeRate } from "../../types";
 import {
   Trash2,
   ShoppingCart,
@@ -13,6 +13,8 @@ import {
   User,
   Phone,
   AlignLeft,
+  ArrowLeftRight,
+  BadgeDollarSign,
 } from "lucide-react";
 import {
   formatDateTime,
@@ -21,17 +23,73 @@ import {
 } from "../../utils/format";
 import "./index.css";
 
+// Conversion: 1 viss = 1.633 kg
+const VISS_TO_KG = 1.633;
+const toKg = (viss: number) => parseFloat((viss * VISS_TO_KG).toFixed(4));
+const toViss = (kg: number) => parseFloat((kg / VISS_TO_KG).toFixed(4));
+const getBothUnits = (weight: number, storedUnit: string) => {
+  const isViss = (storedUnit || "").toLowerCase().trim() === "viss";
+  if (isViss) {
+    return { viss: weight, kg: toKg(weight) };
+  } else {
+    return { kg: weight, viss: toViss(weight) };
+  }
+};
+
+const getMmkRate = (currency: string, rates: ExchangeRate[]): number => {
+  const curr = (currency || "").toUpperCase().trim();
+  if (curr === "MMK") return 1;
+  const match = rates.find(
+    (r) =>
+      r.fromCurrency.toUpperCase() === curr &&
+      r.toCurrency.toUpperCase() === "MMK",
+  );
+  if (match && match.rate > 0) return match.rate;
+  if (curr === "USD") return 4300;
+  if (curr === "CNY") return 590;
+  if (curr === "INR") return 42;
+  return 1;
+};
+
+const getExchangeRateRecord = (
+  currency: string,
+  rates: ExchangeRate[],
+): ExchangeRate | undefined => {
+  const curr = (currency || "").toUpperCase().trim();
+  return rates.find(
+    (r) =>
+      r.fromCurrency.toUpperCase() === curr &&
+      r.toCurrency.toUpperCase() === "MMK",
+  );
+};
+
+const convertCurrency = (
+  amount: number,
+  fromCurr: string,
+  toCurr: string,
+  rates: ExchangeRate[],
+): number => {
+  if (fromCurr.toUpperCase() === toCurr.toUpperCase()) return amount;
+  const fromRate = getMmkRate(fromCurr, rates);
+  const toRate = getMmkRate(toCurr, rates);
+  return parseFloat(((amount * fromRate) / toRate).toFixed(2));
+};
+
 const PAGE_CATEGORY = "Sales";
+const CURRENCIES = ["MMK", "USD", "CNY", "INR"] as const;
 
 const Sales: React.FC = () => {
   const { hasPermission } = useAuth();
   const { showAlert, showConfirm } = useNotification();
   const [sales, setSales] = useState<Sale[]>([]);
   const [products, setProducts] = useState<Product[]>([]);
+  const [exchangeRates, setExchangeRates] = useState<ExchangeRate[]>([]);
   const [loading, setLoading] = useState(true);
   const [weightAdjustment, setWeightAdjustment] = useState<number>(0);
   const [weightStr, setWeightStr] = useState<string>("");
+  const [priceStr, setPriceStr] = useState<string>("");
   const [weightAdjustmentStr, setWeightAdjustmentStr] = useState<string>("");
+  const [inputUnit, setInputUnit] = useState<"kg" | "viss">("kg");
   const [searchTerm, setSearchTerm] = useState("");
   const [fromDate, setFromDate] = useState("");
   const [toDate, setToDate] = useState("");
@@ -56,12 +114,14 @@ const Sales: React.FC = () => {
 
   const loadData = useCallback(async () => {
     try {
-      const [salesData, productsData] = await Promise.all([
+      const [salesData, productsData, ratesData] = await Promise.all([
         salesAPI.getAll(PAGE_CATEGORY),
         productsAPI.getAll(),
+        exchangeRatesAPI.getActive(),
       ]);
       setSales(salesData);
       setProducts(productsData.filter((p) => p.remainingWeight > 0));
+      setExchangeRates(ratesData);
     } catch (error) {
       console.error("Failed to load sales data:", error);
     } finally {
@@ -81,40 +141,139 @@ const Sales: React.FC = () => {
     if (name === "productId") {
       const selectedProduct = products.find((p) => p.id === parseInt(value));
       if (selectedProduct) {
+        const prodUnit =
+          (selectedProduct.unit || "").toLowerCase().trim() === "viss"
+            ? "viss"
+            : "kg";
+        const prodCurr = selectedProduct.currency || "MMK";
+        setInputUnit(prodUnit);
+
+        const initialPrice = selectedProduct.price;
+        setPriceStr(initialPrice > 0 ? initialPrice.toString() : "");
+
+        const rateRec = getExchangeRateRecord(prodCurr, exchangeRates);
+        const rateVal = getMmkRate(prodCurr, exchangeRates);
+
         setFormData((prev) => ({
           ...prev,
           productId: selectedProduct.id,
           marker: selectedProduct.marker,
-          unit: selectedProduct.unit,
-          price: selectedProduct.price,
-          currency: selectedProduct.currency,
+          unit: prodUnit,
+          price: initialPrice,
+          currency: prodCurr,
+          exchangeRateId: prodCurr === "MMK" ? undefined : rateRec?.id,
+          exchangeRateRate: prodCurr === "MMK" ? 1 : rateVal,
         }));
       }
+    } else if (name === "weight") {
+      setWeightStr(value);
+      setFormData((prev) => ({
+        ...prev,
+        unit: inputUnit,
+        weight: value === "" ? 0 : parseFloat(value) || 0,
+      }));
     } else {
-      if (name === "weight") {
-        setWeightStr(value);
-        setFormData((prev) => ({
-          ...prev,
-          weight: value === "" ? 0 : parseFloat(value) || 0,
-        }));
-      } else {
-        setFormData((prev) => ({
-          ...prev,
-          [name]:
-            name === "price" ? (value === "" ? 0 : parseFloat(value)) : value,
-        }));
-      }
+      setFormData((prev) => ({
+        ...prev,
+        [name]: value,
+      }));
     }
+  };
+
+  const handlePriceChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const val = e.target.value;
+    setPriceStr(val);
+    setFormData((prev) => ({
+      ...prev,
+      price: val === "" ? 0 : parseFloat(val) || 0,
+    }));
+  };
+
+  const handleSelectCurrency = (newCurrency: string) => {
+    if (newCurrency === formData.currency) return;
+    const oldCurrency = formData.currency || "MMK";
+    const currentPrice = formData.price || 0;
+
+    const convertedPrice = convertCurrency(
+      currentPrice,
+      oldCurrency,
+      newCurrency,
+      exchangeRates,
+    );
+    setPriceStr(convertedPrice > 0 ? convertedPrice.toString() : "");
+
+    const rateRec = getExchangeRateRecord(newCurrency, exchangeRates);
+    const rateVal = getMmkRate(newCurrency, exchangeRates);
+
+    setFormData((prev) => ({
+      ...prev,
+      currency: newCurrency,
+      price: convertedPrice,
+      exchangeRateId: newCurrency === "MMK" ? undefined : rateRec?.id,
+      exchangeRateRate: newCurrency === "MMK" ? 1 : rateVal,
+    }));
+  };
+
+  const handleSelectUnit = (newUnit: "kg" | "viss") => {
+    if (newUnit === inputUnit) return;
+    const currentPrice = formData.price || 0;
+    let convertedPrice = currentPrice;
+    if (inputUnit === "kg" && newUnit === "viss") {
+      convertedPrice = parseFloat((currentPrice * VISS_TO_KG).toFixed(2));
+    } else if (inputUnit === "viss" && newUnit === "kg") {
+      convertedPrice = parseFloat((currentPrice / VISS_TO_KG).toFixed(2));
+    }
+
+    setInputUnit(newUnit);
+    setPriceStr(convertedPrice > 0 ? convertedPrice.toString() : "");
+    setFormData((prev) => ({
+      ...prev,
+      unit: newUnit,
+      price: convertedPrice,
+    }));
+  };
+
+  const handleConvertWeight = () => {
+    const currentWeight = parseFloat(weightStr) || 0;
+    const newUnit = inputUnit === "kg" ? "viss" : "kg";
+    const convertedWeight =
+      newUnit === "viss" ? toViss(currentWeight) : toKg(currentWeight);
+
+    const currentPrice = formData.price || 0;
+    let convertedPrice = currentPrice;
+    if (inputUnit === "kg" && newUnit === "viss") {
+      convertedPrice = parseFloat((currentPrice * VISS_TO_KG).toFixed(2));
+    } else if (inputUnit === "viss" && newUnit === "kg") {
+      convertedPrice = parseFloat((currentPrice / VISS_TO_KG).toFixed(2));
+    }
+
+    setInputUnit(newUnit);
+    setWeightStr(currentWeight > 0 ? convertedWeight.toString() : "");
+    setPriceStr(convertedPrice > 0 ? convertedPrice.toString() : "");
+    setFormData((prev) => ({
+      ...prev,
+      unit: newUnit,
+      weight: convertedWeight,
+      price: convertedPrice,
+    }));
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     try {
+      const activeCurr = formData.currency || "MMK";
+      const rateRec = getExchangeRateRecord(activeCurr, exchangeRates);
+      const rateVal = getMmkRate(activeCurr, exchangeRates);
+
       await salesAPI.create({
         ...formData,
+        unit: inputUnit,
         plusMinusWeight: weightAdjustment,
+        exchangeRateId: activeCurr === "MMK" ? undefined : (formData.exchangeRateId || rateRec?.id),
+        exchangeRateRate: activeCurr === "MMK" ? 1 : (formData.exchangeRateRate || rateVal),
         date: combineDateWithMyanmarTime(formData.date),
       });
+
       setFormData({
         date: getMyanmarNow(),
         productId: 0,
@@ -131,7 +290,9 @@ const Sales: React.FC = () => {
       });
       setWeightAdjustment(0);
       setWeightStr("");
+      setPriceStr("");
       setWeightAdjustmentStr("");
+      setInputUnit("kg");
       loadData();
     } catch (error: any) {
       showAlert(
@@ -164,7 +325,23 @@ const Sales: React.FC = () => {
   const getRemainingAfterSale = () => {
     const product = products.find((p) => p.id === formData.productId);
     if (!product) return 0;
-    return product.remainingWeight + weightAdjustment - formData.weight;
+
+    const prodUnit = (product.unit || "").toLowerCase().trim();
+    const isProductKg = prodUnit === "kg" || prodUnit === "kilogram";
+    const isSaleKg = inputUnit === "kg";
+
+    let soldInProductUnit = formData.weight || 0;
+    let adjInProductUnit = weightAdjustment || 0;
+
+    if (isProductKg && !isSaleKg) {
+      soldInProductUnit = (formData.weight || 0) * VISS_TO_KG;
+      adjInProductUnit = (weightAdjustment || 0) * VISS_TO_KG;
+    } else if (!isProductKg && isSaleKg) {
+      soldInProductUnit = (formData.weight || 0) / VISS_TO_KG;
+      adjInProductUnit = (weightAdjustment || 0) / VISS_TO_KG;
+    }
+
+    return product.remainingWeight + adjInProductUnit - soldInProductUnit;
   };
 
   const filteredSales = sales.filter((sale) => {
@@ -195,6 +372,9 @@ const Sales: React.FC = () => {
   if (loading) {
     return <div className="spinner"></div>;
   }
+
+  const selectedProduct = products.find((p) => p.id === formData.productId);
+  const currentMmkRate = getMmkRate(formData.currency, exchangeRates);
 
   return (
     <div className="sales-page-container fade-in">
@@ -250,17 +430,58 @@ const Sales: React.FC = () => {
                         required
                       >
                         <option value="0">-- Select Product --</option>
-                        {products.map((p) => (
-                          <option key={p.id} value={p.id}>
-                            {p.marker} ({p.remainingWeight} {p.unit} available)
-                          </option>
-                        ))}
+                        {products.map((p) => {
+                          const isKg =
+                            (p.unit || "").toLowerCase().trim() === "kg";
+                          const otherUnit = isKg ? "viss" : "kg";
+                          const otherVal = isKg
+                            ? p.remainingWeight / VISS_TO_KG
+                            : p.remainingWeight * VISS_TO_KG;
+                          return (
+                            <option key={p.id} value={p.id}>
+                              {p.marker} ({p.remainingWeight} {p.unit} /{" "}
+                              {otherVal.toFixed(2)} {otherUnit} available)
+                            </option>
+                          );
+                        })}
                       </select>
                     </div>
                   </div>
 
                   <div className="sales-input-group">
-                    <label className="sales-label">Weight to Sell</label>
+                    <div className="sales-weight-header-row">
+                      <label className="sales-label" style={{ margin: 0 }}>
+                        Weight to Sell
+                      </label>
+                      <div className="sales-unit-choice-wrap">
+                        <span className="sales-unit-choice-label">Unit:</span>
+                        <div className="sales-unit-segmented">
+                          <button
+                            type="button"
+                            className={`sales-unit-segment-btn ${inputUnit === "kg" ? "active" : ""}`}
+                            onClick={() => handleSelectUnit("kg")}
+                          >
+                            KG
+                          </button>
+                          <button
+                            type="button"
+                            className={`sales-unit-segment-btn ${inputUnit === "viss" ? "active" : ""}`}
+                            onClick={() => handleSelectUnit("viss")}
+                          >
+                            Viss
+                          </button>
+                        </div>
+                        <button
+                          type="button"
+                          className="sales-unit-convert-pill"
+                          onClick={handleConvertWeight}
+                          title="Convert entered value between KG and Viss"
+                        >
+                          <ArrowLeftRight size={11} />
+                          <span>Convert</span>
+                        </button>
+                      </div>
+                    </div>
                     <div className="sales-input-field-wrapper">
                       <input
                         type="number"
@@ -274,9 +495,20 @@ const Sales: React.FC = () => {
                         placeholder="0"
                       />
                       <span className="sales-input-suffix">
-                        {formData.unit}
+                        {inputUnit.toUpperCase()}
                       </span>
                     </div>
+                    {formData.weight > 0 && (
+                      <div className="sales-conversion-hint">
+                        ≈{" "}
+                        {inputUnit === "viss"
+                          ? `${(formData.weight * VISS_TO_KG).toFixed(3)} kg`
+                          : `${(formData.weight / VISS_TO_KG).toFixed(3)} viss`}
+                        <span className="sales-conversion-formula">
+                          ({inputUnit === "viss" ? "1 viss = 1.633 kg" : "1.633 kg = 1 viss"})
+                        </span>
+                      </div>
+                    )}
                   </div>
 
                   <div className="sales-input-group">
@@ -285,7 +517,7 @@ const Sales: React.FC = () => {
                       <input
                         type="number"
                         step="any"
-                        className="sales-control"
+                        className="sales-control sales-control-with-suffix"
                         value={weightAdjustmentStr}
                         onChange={(e) => {
                           setWeightAdjustmentStr(e.target.value);
@@ -318,26 +550,55 @@ const Sales: React.FC = () => {
                           fontWeight: weightAdjustment !== 0 ? 600 : undefined,
                         }}
                       />
+                      <span className="sales-input-suffix">
+                        {inputUnit.toUpperCase()}
+                      </span>
                     </div>
                   </div>
 
+                  {/* Price per Unit - Fully Editable & Multi-Currency */}
                   <div className="sales-input-group">
-                    <label className="sales-label">Price per Unit</label>
+                    <div className="sales-price-header-row">
+                      <label className="sales-label" style={{ margin: 0 }}>
+                        Price per Unit ({inputUnit.toUpperCase()})
+                      </label>
+                      <div className="sales-currency-segmented">
+                        {CURRENCIES.map((curr) => (
+                          <button
+                            key={curr}
+                            type="button"
+                            className={`sales-currency-btn ${formData.currency === curr ? "active" : ""}`}
+                            onClick={() => handleSelectCurrency(curr)}
+                          >
+                            {curr}
+                          </button>
+                        ))}
+                      </div>
+                    </div>
                     <div className="sales-input-field-wrapper">
                       <input
                         type="number"
                         name="price"
-                        step="0.01"
+                        step="any"
                         className="sales-control sales-control-with-suffix"
-                        value={formData.price || ""}
-                        readOnly
+                        value={priceStr}
+                        onChange={handlePriceChange}
                         required
-                        placeholder="0"
+                        placeholder="Enter price per unit"
                       />
                       <span className="sales-input-suffix">
                         {formData.currency}
                       </span>
                     </div>
+                    {formData.currency !== "MMK" && (
+                      <div className="sales-rate-hint">
+                        <BadgeDollarSign size={13} />
+                        <span>
+                          1 {formData.currency} = {currentMmkRate.toLocaleString()} MMK
+                        </span>
+                        <span className="sales-rate-badge">Rate saved with record</span>
+                      </div>
+                    )}
                   </div>
 
                   {/* Calculations Info widgets */}
@@ -355,6 +616,16 @@ const Sales: React.FC = () => {
                           {formData.currency}
                         </span>
                       </span>
+                      {formData.currency !== "MMK" && (
+                        <div style={{ fontSize: "11px", opacity: 0.8, fontWeight: 500, marginTop: "2px" }}>
+                          ≈ {(
+                            (formData.weight || 0) * (formData.price || 0) * currentMmkRate
+                          ).toLocaleString(undefined, {
+                            maximumFractionDigits: 0,
+                          })}{" "}
+                          <span style={{ fontSize: "9px" }}>MMK</span>
+                        </div>
+                      )}
                     </div>
 
                     <div
@@ -366,10 +637,55 @@ const Sales: React.FC = () => {
                     >
                       <span className="sales-calc-label">Remaining</span>
                       <span className="sales-calc-value">
-                        {getRemainingAfterSale().toFixed(2)}{" "}
-                        <span style={{ fontSize: "10px", fontWeight: "600" }}>
-                          {formData.unit}
-                        </span>
+                        {(() => {
+                          const prodUnit =
+                            (selectedProduct?.unit || "kg")
+                              .toLowerCase()
+                              .trim() === "viss"
+                              ? "viss"
+                              : "kg";
+                          const otherUnit = prodUnit === "kg" ? "viss" : "kg";
+                          const rem = getRemainingAfterSale();
+                          const remOther =
+                            prodUnit === "kg"
+                              ? rem / VISS_TO_KG
+                              : rem * VISS_TO_KG;
+                          return (
+                            <>
+                              <span>
+                                {rem.toLocaleString(undefined, {
+                                  minimumFractionDigits: 2,
+                                  maximumFractionDigits: 2,
+                                })}{" "}
+                                <span
+                                  style={{
+                                    fontSize: "10px",
+                                    fontWeight: "600",
+                                  }}
+                                >
+                                  {prodUnit}
+                                </span>
+                              </span>
+                              <div
+                                style={{
+                                  fontSize: "11px",
+                                  opacity: 0.8,
+                                  fontWeight: 500,
+                                  marginTop: "2px",
+                                }}
+                              >
+                                ≈{" "}
+                                {remOther.toLocaleString(undefined, {
+                                  minimumFractionDigits: 2,
+                                  maximumFractionDigits: 2,
+                                })}{" "}
+                                <span style={{ fontSize: "9px" }}>
+                                  {otherUnit}
+                                </span>
+                              </div>
+                            </>
+                          );
+                        })()}
                       </span>
                     </div>
                   </div>
@@ -560,10 +876,35 @@ const Sales: React.FC = () => {
                           </div>
                         </td>
                         <td style={{ fontWeight: 600, color: "#1e293b" }}>
-                          {sale.weight.toFixed(2)}{" "}
-                          <span style={{ fontSize: "11px", color: "#64748b" }}>
-                            {sale.unit}
-                          </span>
+                          {(() => {
+                            const units = getBothUnits(sale.weight, sale.unit);
+                            return (
+                              <>
+                                <div>
+                                  {units.kg.toFixed(3)}{" "}
+                                  <span
+                                    style={{
+                                      fontSize: "11px",
+                                      color: "#64748b",
+                                    }}
+                                  >
+                                    kg
+                                  </span>
+                                </div>
+                                <div
+                                  style={{
+                                    color: "#64748b",
+                                    fontSize: "12px",
+                                  }}
+                                >
+                                  {units.viss.toFixed(3)}{" "}
+                                  <span style={{ fontSize: "10px" }}>
+                                    viss
+                                  </span>
+                                </div>
+                              </>
+                            );
+                          })()}
                         </td>
                         <td
                           style={{
@@ -579,29 +920,72 @@ const Sales: React.FC = () => {
                         >
                           {sale.plusMinusWeight > 0
                             ? `+${sale.plusMinusWeight}`
-                            : sale.plusMinusWeight || 0}
+                            : sale.plusMinusWeight || 0}{" "}
+                          <span style={{ fontSize: "10px", color: "#94a3b8" }}>
+                            {sale.unit}
+                          </span>
                         </td>
                         <td style={{ whiteSpace: "nowrap" }}>
-                          {sale.price.toLocaleString(undefined, {
-                            minimumFractionDigits: 2,
-                          })}{" "}
-                          <span style={{ fontSize: "11px", color: "#64748b" }}>
-                            {sale.currency}
-                          </span>
+                          <div>
+                            {sale.price.toLocaleString(undefined, {
+                              minimumFractionDigits: 2,
+                              maximumFractionDigits: 2,
+                            })}{" "}
+                            <span
+                              style={{ fontSize: "11px", color: "#64748b" }}
+                            >
+                              {sale.currency}
+                            </span>
+                          </div>
+                          {sale.currency !== "MMK" && sale.exchangeRateRate && (
+                            <div
+                              style={{
+                                fontSize: "10px",
+                                color: "#059669",
+                                fontWeight: 600,
+                              }}
+                            >
+                              Rate: {sale.exchangeRateRate.toLocaleString()}
+                            </div>
+                          )}
                         </td>
                         <td
                           className="sales-row-total"
                           style={{ whiteSpace: "nowrap" }}
                         >
-                          {(sale.weight * sale.price).toLocaleString(
-                            undefined,
-                            {
-                              minimumFractionDigits: 2,
-                            },
-                          )}{" "}
-                          <span style={{ fontSize: "11px", color: "#64748b" }}>
-                            {sale.currency}
-                          </span>
+                          <div>
+                            {(sale.weight * sale.price).toLocaleString(
+                              undefined,
+                              {
+                                minimumFractionDigits: 2,
+                                maximumFractionDigits: 2,
+                              },
+                            )}{" "}
+                            <span
+                              style={{ fontSize: "11px", color: "#64748b" }}
+                            >
+                              {sale.currency}
+                            </span>
+                          </div>
+                          {sale.currency !== "MMK" && sale.exchangeRateRate && (
+                            <div
+                              style={{
+                                fontSize: "10px",
+                                color: "#64748b",
+                                fontWeight: 500,
+                              }}
+                            >
+                              ≈{" "}
+                              {(
+                                sale.weight *
+                                sale.price *
+                                sale.exchangeRateRate
+                              ).toLocaleString(undefined, {
+                                maximumFractionDigits: 0,
+                              })}{" "}
+                              MMK
+                            </div>
+                          )}
                         </td>
                         <td>{sale.sellerName}</td>
                         <td>

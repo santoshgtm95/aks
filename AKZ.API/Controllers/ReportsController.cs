@@ -1,4 +1,4 @@
-using Microsoft.AspNetCore.Mvc;
+﻿using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using ClosedXML.Excel;
 using AKZ.API.Data;
@@ -259,6 +259,7 @@ public class ReportsController : ControllerBase
                 s.PlusMinusWeight,
                 s.Price,
                 s.Currency,
+                s.ExchangeRateRate,
                 s.TotalRemaining,
                 s.CustomerName,
                 s.CustomerContact,
@@ -270,7 +271,7 @@ public class ReportsController : ControllerBase
 
         WriteSheet(workbook, 2, "Raw Material Report", new[]
         {
-            "Date", "Product Marker", "Sale Marker", "Category", "Unit", "Weight", "Plus/Minus Weight", "Price", "Currency", "Total Remaining", "Customer Name", "Customer Contact", "Remark", "Seller", "Create Date"
+            "Date", "Product Marker", "Sale Marker", "Category", "Unit", "Weight", "Plus/Minus Weight", "Price", "Currency", "Exchange Rate", "Total Remaining", "Customer Name", "Customer Contact", "Remark", "Seller", "Create Date"
         }, records);
     }
 

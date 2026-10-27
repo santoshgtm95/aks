@@ -1658,8 +1658,8 @@ namespace AKZ.API.Migrations
 
                     b.Property<string>("Currency")
                         .IsRequired()
-                        .HasMaxLength(3)
-                        .HasColumnType("nvarchar(3)");
+                        .HasMaxLength(10)
+                        .HasColumnType("nvarchar(10)");
 
                     b.Property<string>("CustomerContact")
                         .HasMaxLength(50)
@@ -1680,6 +1680,12 @@ namespace AKZ.API.Migrations
 
                     b.Property<int>("DeleteFlg")
                         .HasColumnType("int");
+
+                    b.Property<int?>("ExchangeRateId")
+                        .HasColumnType("int");
+
+                    b.Property<decimal?>("ExchangeRateRate")
+                        .HasColumnType("decimal(18,4)");
 
                     b.Property<string>("Marker")
                         .IsRequired()
@@ -1721,6 +1727,8 @@ namespace AKZ.API.Migrations
                         .HasColumnType("decimal(18,2)");
 
                     b.HasKey("Id");
+
+                    b.HasIndex("ExchangeRateId");
 
                     b.HasIndex("ProductId");
 
@@ -3200,6 +3208,10 @@ namespace AKZ.API.Migrations
 
             modelBuilder.Entity("AKZ.API.Models.Sale", b =>
                 {
+                    b.HasOne("AKZ.API.Models.ExchangeRate", "ExchangeRate")
+                        .WithMany()
+                        .HasForeignKey("ExchangeRateId");
+
                     b.HasOne("AKZ.API.Models.Product", "Product")
                         .WithMany("Sales")
                         .HasForeignKey("ProductId")
@@ -3211,6 +3223,8 @@ namespace AKZ.API.Migrations
                         .HasForeignKey("SellerId")
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
+
+                    b.Navigation("ExchangeRate");
 
                     b.Navigation("Product");
 

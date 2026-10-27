@@ -1,4 +1,4 @@
-using System.ComponentModel.DataAnnotations;
+﻿using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
 
 namespace AKZ.API.Models;
@@ -38,8 +38,16 @@ public class Sale : BaseEntity
     public decimal Price { get; set; }
 
     [Required]
-    [MaxLength(3)]
-    public string Currency { get; set; } = "MMK"; // CNY, MMK, INR
+    [MaxLength(10)]
+    public string Currency { get; set; } = "MMK"; // MMK, USD, CNY, INR
+
+    public int? ExchangeRateId { get; set; }
+
+    [ForeignKey("ExchangeRateId")]
+    public ExchangeRate? ExchangeRate { get; set; }
+
+    [Column(TypeName = "decimal(18,4)")]
+    public decimal? ExchangeRateRate { get; set; }
 
     public int SellerId { get; set; }
 
